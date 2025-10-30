@@ -1,0 +1,5 @@
+{
+  "name": "Sanctuary Book Reader",
+  "description": "A visually appealing web application for organizing and reading your digital book collection. It features a 3D library view, a customizable reader, and light/dark theme support.",
+  "requestFramePermissions": []
+}
