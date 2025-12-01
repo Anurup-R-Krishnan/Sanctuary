@@ -1,12 +1,12 @@
 export enum Theme {
-  LIGHT = 'light',
-  DARK = 'dark',
+  LIGHT = "light",
+  DARK = "dark",
 }
 
 export enum View {
-  LIBRARY = 'library',
-  READER = 'reader',
-  SETTINGS = 'settings',
+  LIBRARY = "library",
+  READER = "reader",
+  SETTINGS = "settings",
 }
 
 export interface Book {
@@ -16,5 +16,5 @@ export interface Book {
   coverUrl: string; // This will be a Blob URL
   epubBlob: Blob;
   progress: number; // Percentage 0-100
-  lastLocation: string; // ePub CFI string for last read location
+  lastLocation: string;
 }
