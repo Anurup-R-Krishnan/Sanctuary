@@ -1,46 +1,98 @@
-import React, { useState } from 'react';
-import { Theme } from '../types';
-import ThemeToggle from './ThemeToggle';
-import { SearchIcon } from './icons/SearchIcon';
+import React from "react";
+import { Search, LogOut, LogIn, User } from "lucide-react";
+
+import { Theme } from "../types";
+import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
   theme: Theme;
   onToggleTheme: () => void;
   searchTerm: string;
   onSearch: (term: string) => void;
+  isGuest?: boolean;
+  onShowLogin?: () => void;
+  onSignOut?: () => void;
+  onContinueAsGuest?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ theme, onToggleTheme, searchTerm, onSearch }) => {
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-
+const Header: React.FC<HeaderProps> = ({
+  theme,
+  onToggleTheme,
+  searchTerm,
+  onSearch,
+  isGuest = false,
+  onShowLogin,
+  onSignOut,
+  onContinueAsGuest,
+}) => {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 p-4 md:px-8 bg-light-primary/80 dark:bg-dark-primary/80 backdrop-blur-lg shadow-soft-md dark:shadow-dark-soft-md">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-light-secondary dark:bg-dark-secondary shadow-md px-4 md:px-8 py-4">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center">
-          <svg width="32" height="32" viewBox="0 0 24 24" className="text-light-accent dark:text-dark-accent mr-3">
-            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8s8 3.59 8 8s-3.59 8-8 8zm-1-12h2v4h-2zm0 6h2v2h-2z" opacity="0.3"/>
-            <path fill="currentColor" d="M12 4c-4.41 0-8 3.59-8 8s3.59 8 8 8s8-3.59 8-8s-3.59-8-8-8zm0 16c-3.31 0-6-2.69-6-6s2.69-6 6-6s6 2.69 6 6s-2.69 6-6 6zm1-10h-2v4h2v-4zm0 6h-2v2h2v-2z"/>
-          </svg>
-          <h1 className="font-serif text-xl font-semibold tracking-wider text-light-text dark:text-dark-text" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-            Sanctuary
-          </h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 text-light-text dark:text-dark-text">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Sanctuary
+            </h1>
+            {isGuest && (
+              <span
+                className="hidden sm:inline-flex items-center gap-1 rounded-full bg-amber-100/80 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200 px-3 py-1 text-xs font-medium"
+                title="Guest mode stores books locally only and resets when you sign in."
+              >
+                <User className="h-3.5 w-3.5" />
+                Guest mode
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="relative hidden sm:block">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <SearchIcon className="h-5 w-5 text-light-text-muted dark:text-dark-text-muted" />
-            </div>
+
+        <div className="flex-1 flex justify-center px-4">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
+              placeholder="Search library..."
               value={searchTerm}
-              onChange={(e) => onSearch(e.target.value)}
-              placeholder={isSearchFocused ? "Search for books, authors..." : "Search"}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-              className={`pl-10 pr-4 py-2 rounded-full bg-light-surface dark:bg-dark-surface border border-transparent focus:border-light-accent dark:focus:border-dark-accent focus:outline-none focus:ring-2 focus:ring-light-accent/50 dark:focus:ring-dark-accent/50 transition-all duration-300 ease-in-out text-light-text dark:text-dark-text placeholder-light-text-muted dark:placeholder-dark-text-muted ${isSearchFocused || searchTerm ? 'w-64' : 'w-40'}`}
+              onChange={(event) => onSearch(event.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-light-primary dark:bg-dark-primary border border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted transition-shadow"
             />
           </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3">
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+
+          {!isGuest && onContinueAsGuest && (
+            <button
+              type="button"
+              onClick={onContinueAsGuest}
+              className="hidden sm:inline-flex items-center gap-2 rounded-full border border-indigo-200/60 dark:border-indigo-400/30 bg-transparent px-3.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 dark:text-indigo-200 dark:hover:bg-indigo-800/40 transition-colors"
+            >
+              Continue as guest
+            </button>
+          )}
+
+          {isGuest ? (
+            <button
+              type="button"
+              onClick={onShowLogin}
+              disabled={!onShowLogin}
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign in
+            </button>
+          ) : (
+            onSignOut && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="inline-flex items-center gap-2 rounded-full bg-light-primary dark:bg-dark-primary px-3.5 py-2 text-sm font-medium text-light-text dark:text-dark-text hover:bg-light-card dark:hover:bg-dark-card focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            )
+          )}
         </div>
       </div>
     </header>
