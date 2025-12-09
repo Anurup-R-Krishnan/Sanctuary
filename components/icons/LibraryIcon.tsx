@@ -1,18 +1,22 @@
 import React from "react";
 
-export const LibraryIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+interface IconProps {
+  className?: string;
+}
+
+export const LibraryIcon: React.FC<IconProps> = ({ className }) => (
   <svg
-    {...props}
     xmlns="http://www.w3.org/2000/svg"
-    fill="none"
     viewBox="0 0 24 24"
+    fill="none"
     stroke="currentColor"
-    strokeWidth={2}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
   >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"
-    />
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+    <path d="M8 11h8" />
+    <path d="M8 7h6" />
   </svg>
 );
