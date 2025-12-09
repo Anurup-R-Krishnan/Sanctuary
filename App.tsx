@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { Theme, View, Book } from "./types";
@@ -42,12 +47,14 @@ const App: React.FC = () => {
 
     bootstrapSession();
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isActive) return;
-      setSession(nextSession);
-      setIsGuest(false);
-      setIsAuthLoading(false);
-    });
+    const { data } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        if (!isActive) return;
+        setSession(nextSession);
+        setIsGuest(false);
+        setIsAuthLoading(false);
+      },
+    );
 
     return () => {
       isActive = false;
@@ -103,10 +110,10 @@ const App: React.FC = () => {
 
     if (theme === Theme.DARK) {
       root.classList.add("dark");
-      document.body.style.backgroundColor = "#1c1815";
+      document.body.style.backgroundColor = "#141210";
     } else {
       root.classList.remove("dark");
-      document.body.style.backgroundColor = "#f9f7f0";
+      document.body.style.backgroundColor = "#faf8f3";
     }
   }, [theme]);
 
@@ -169,8 +176,16 @@ const App: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-light-primary dark:bg-dark-primary">
-        <p className="text-light-text dark:text-dark-text">Loading...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary gap-4">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-2xl blur-xl opacity-30 animate-pulse" />
+          <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center">
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          </div>
+        </div>
+        <p className="text-sm text-light-text-muted dark:text-dark-text-muted animate-pulse">
+          Loading Sanctuary...
+        </p>
       </div>
     );
   }
@@ -181,6 +196,15 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-500">
+      {/* Subtle background texture */}
+      <div className="fixed inset-0 bg-noise opacity-[0.015] dark:opacity-[0.03] pointer-events-none" />
+      
+      {/* Gradient orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-light-accent/10 dark:bg-dark-accent/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+      </div>
+
       <Header
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -191,17 +215,13 @@ const App: React.FC = () => {
         onSignOut={session ? handleSignOut : undefined}
       />
 
-      <main className="px-4 md:px-8 pt-28 pb-24 relative space-y-4">
-        {isGuest && (
-          <div className="rounded-lg border border-amber-300/60 dark:border-amber-200/30 bg-amber-50 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100 px-4 py-3 text-sm">
-            You&apos;re browsing as a guest. Books and reading progress stay on
-            this device only. Sign in any time to sync across devices.
-          </div>
-        )}
-
+      <main className="relative px-4 md:px-6 lg:px-8 pt-24 pb-32 max-w-7xl mx-auto">
+        {/* Library View */}
         <div
-          className={`transition-opacity duration-300 ${
-            isLibraryVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          className={`transition-all duration-500 ease-out ${
+            isLibraryVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-4 pointer-events-none absolute inset-x-0"
           }`}
         >
           <LibraryGrid
@@ -212,9 +232,12 @@ const App: React.FC = () => {
           />
         </div>
 
+        {/* Other Views */}
         <div
-          className={`absolute top-28 left-0 right-0 px-4 md:px-8 transition-opacity duration-300 ${
-            !isLibraryVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+          className={`transition-all duration-500 ease-out ${
+            !isLibraryVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-4 pointer-events-none absolute inset-x-0"
           }`}
         >
           {renderView()}
