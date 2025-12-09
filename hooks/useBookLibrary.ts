@@ -9,9 +9,24 @@ type UseBookLibraryOptions = {
   persistent?: boolean;
 };
 
-type StoredBook = Omit<Book, "coverUrl"> & {
+interface StoredBook {
+  id: string;
+  title: string;
+  author: string;
   coverUrl: Blob;
-};
+  epubBlob: Blob;
+  progress: number;
+  lastLocation: string;
+  genre?: string;
+  completedAt?: string;
+  addedAt?: string;
+  isFavorite?: boolean;
+  isIncognito?: boolean;
+  series?: string;
+  seriesIndex?: number;
+  tags?: string[];
+  readingList?: "to-read" | "reading" | "finished";
+}
 
 const isStoredBookArray = (items: unknown[]): items is StoredBook[] => {
   return items.every(
@@ -19,7 +34,7 @@ const isStoredBookArray = (items: unknown[]): items is StoredBook[] => {
       typeof item === "object" &&
       item !== null &&
       "coverUrl" in item &&
-      item.coverUrl instanceof Blob,
+      (item as StoredBook).coverUrl instanceof Blob,
   );
 };
 
@@ -65,14 +80,29 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
 
         cleanupObjectUrls();
 
-        const hydrated =
+        const hydrated: Book[] =
           Array.isArray(stored) && isStoredBookArray(stored)
-            ? stored.map((storedBook) => ({
-                ...storedBook,
-                coverUrl: registerObjectUrl(
-                  URL.createObjectURL(storedBook.coverUrl),
-                ),
-              }))
+            ? stored.map((storedBook): Book => {
+                const coverBlob = storedBook.coverUrl;
+                return {
+                  id: storedBook.id,
+                  title: storedBook.title,
+                  author: storedBook.author,
+                  coverUrl: registerObjectUrl(URL.createObjectURL(coverBlob)),
+                  epubBlob: storedBook.epubBlob,
+                  progress: storedBook.progress,
+                  lastLocation: storedBook.lastLocation,
+                  genre: storedBook.genre,
+                  completedAt: storedBook.completedAt,
+                  addedAt: storedBook.addedAt,
+                  isFavorite: storedBook.isFavorite,
+                  isIncognito: storedBook.isIncognito,
+                  series: storedBook.series,
+                  seriesIndex: storedBook.seriesIndex,
+                  tags: storedBook.tags,
+                  readingList: storedBook.readingList,
+                };
+              })
             : [];
 
         setBooks(hydrated);

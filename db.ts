@@ -14,12 +14,12 @@ function openDB(): Promise<IDBDatabase> {
 
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onerror = (event) => {
+    request.onerror = () => {
       console.error("Database error:", request.error);
       reject("Database error");
     };
 
-    request.onsuccess = (event) => {
+    request.onsuccess = () => {
       db = request.result;
       resolve(db);
     };
@@ -44,7 +44,8 @@ export async function addBook(book: Book): Promise<void> {
   });
 }
 
-export async function getBooks(): Promise<Book[]> {
+// Returns unknown[] to allow proper type narrowing with type guards
+export async function getBooks(): Promise<unknown[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, "readonly");

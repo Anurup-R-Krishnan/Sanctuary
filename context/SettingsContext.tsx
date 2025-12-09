@@ -1,249 +1,192 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  ReactNode,
-} from "react";
+import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
+
+type TextAlignment = "left" | "justify" | "center";
 
 interface Settings {
+  // Typography
   fontSize: number;
   lineHeight: number;
-  immersiveMode: boolean;
-  continuousMode: boolean;
+  textAlignment: TextAlignment;
+  fontPairing: string;
+  maxTextWidth: number;
+  hyphenation: boolean;
+  // Layout
   pageMargin: number;
   paragraphSpacing: number;
-  textAlignment: "left" | "justify" | "center";
-  fontPairing: string;
   dropCaps: boolean;
+  // Reading Mode
+  immersiveMode: boolean;
+  continuousMode: boolean;
+  // Colors
   readerForeground: string;
   readerBackground: string;
   readerAccent: string;
-  setFontSize: (size: number) => void;
-  setLineHeight: (height: number) => void;
-  setImmersiveMode: (enabled: boolean) => void;
-  setContinuousMode: (enabled: boolean) => void;
-  setPageMargin: (value: number) => void;
-  setParagraphSpacing: (value: number) => void;
-  setTextAlignment: (
-    alignment: "left" | "justify" | "center",
-  ) => void;
-  setFontPairing: (key: string) => void;
-  setDropCaps: (enabled: boolean) => void;
-  setReaderForeground: (color: string) => void;
-  setReaderBackground: (color: string) => void;
-  setReaderAccent: (color: string) => void;
+  // Stats Settings
+  dailyGoal: number;
+  weeklyGoal: number;
+  showStreakReminder: boolean;
+  trackingEnabled: boolean;
+  // Accessibility
+  screenReaderMode: boolean;
+  reduceMotion: boolean;
+  // Setters
+  setFontSize: (v: number) => void;
+  setLineHeight: (v: number) => void;
+  setTextAlignment: (v: TextAlignment) => void;
+  setFontPairing: (v: string) => void;
+  setMaxTextWidth: (v: number) => void;
+  setHyphenation: (v: boolean) => void;
+  setPageMargin: (v: number) => void;
+  setParagraphSpacing: (v: number) => void;
+  setDropCaps: (v: boolean) => void;
+  setImmersiveMode: (v: boolean) => void;
+  setContinuousMode: (v: boolean) => void;
+  setReaderForeground: (v: string) => void;
+  setReaderBackground: (v: string) => void;
+  setReaderAccent: (v: string) => void;
+  setDailyGoal: (v: number) => void;
+  setWeeklyGoal: (v: number) => void;
+  setShowStreakReminder: (v: boolean) => void;
+  setTrackingEnabled: (v: boolean) => void;
+  setScreenReaderMode: (v: boolean) => void;
+  setReduceMotion: (v: boolean) => void;
+  resetToDefaults: () => void;
+  applyPreset: (preset: "comfort" | "focus" | "night") => void;
 }
 
-const SettingsContext = createContext<Settings | undefined>(
-  undefined,
-);
+const SettingsContext = createContext<Settings | undefined>(undefined);
 
-export const SettingsProvider: React.FC<{
-  children: ReactNode;
-}> = ({ children }) => {
-  const [fontSize, setFontSize] = useState<number>(() => {
-    const saved = localStorage.getItem("sanctuary-fontSize");
-    return saved ? parseInt(saved, 10) : 18;
-  });
+const DEFAULTS = {
+  fontSize: 18,
+  lineHeight: 1.8,
+  textAlignment: "left" as TextAlignment,
+  fontPairing: "merriweather-georgia",
+  maxTextWidth: 65,
+  hyphenation: true,
+  pageMargin: 32,
+  paragraphSpacing: 20,
+  dropCaps: false,
+  immersiveMode: false,
+  continuousMode: false,
+  readerForeground: "#2B2B2B",
+  readerBackground: "#FBF8F3",
+  readerAccent: "#c7a77b",
+  dailyGoal: 30,
+  weeklyGoal: 150,
+  showStreakReminder: true,
+  trackingEnabled: true,
+  screenReaderMode: false,
+  reduceMotion: false,
+};
 
-  const [lineHeight, setLineHeight] = useState<number>(() => {
-    const saved = localStorage.getItem("sanctuary-lineHeight");
-    return saved ? parseFloat(saved) : 1.6;
-  });
-
-  const [immersiveMode, setImmersiveMode] = useState<boolean>(
-    () => {
-      const saved = localStorage.getItem(
-        "sanctuary-immersiveMode",
-      );
-      return saved ? saved === "true" : false;
-    },
-  );
-
-  const [continuousMode, setContinuousMode] = useState<boolean>(
-    () => {
-      const saved = localStorage.getItem(
-        "sanctuary-continuousMode",
-      );
-      return saved ? saved === "true" : false;
-    },
-  );
-
-  const [pageMargin, setPageMargin] = useState<number>(() => {
-    const saved = localStorage.getItem("sanctuary-pageMargin");
-    return saved ? parseFloat(saved) : 24;
-  });
-
-  const [paragraphSpacing, setParagraphSpacing] =
-    useState<number>(() => {
-      const saved = localStorage.getItem(
-        "sanctuary-paragraphSpacing",
-      );
-      return saved ? parseFloat(saved) : 16;
-    });
-
-  const [textAlignment, setTextAlignment] = useState<
-    "left" | "justify" | "center"
-  >(() => {
-    const saved = localStorage.getItem(
-      "sanctuary-textAlignment",
-    );
-    if (
-      saved === "left" ||
-      saved === "justify" ||
-      saved === "center"
-    ) {
-      return saved;
+const usePersisted = <T,>(key: string, defaultValue: T): [T, (v: T) => void] => {
+  const [value, setValue] = useState<T>(() => {
+    const saved = localStorage.getItem(`sanctuary-${key}`);
+    if (saved === null) return defaultValue;
+    try {
+      return JSON.parse(saved) as T;
+    } catch {
+      return saved as unknown as T;
     }
-    return "left";
   });
 
-  const [fontPairing, setFontPairing] = useState<string>(() => {
-    return (
-      localStorage.getItem("sanctuary-fontPairing") ||
-      "merriweather-georgia"
-    );
-  });
-
-  const [dropCaps, setDropCaps] = useState<boolean>(() => {
-    const saved = localStorage.getItem("sanctuary-dropCaps");
-    return saved ? saved === "true" : false;
-  });
-
-  const [readerForeground, setReaderForeground] =
-    useState<string>(() => {
-      return (
-        localStorage.getItem("sanctuary-readerForeground") ||
-        "#1f2933"
-      );
-    });
-
-  const [readerBackground, setReaderBackground] =
-    useState<string>(() => {
-      return (
-        localStorage.getItem("sanctuary-readerBackground") ||
-        "transparent"
-      );
-    });
-
-  const [readerAccent, setReaderAccent] = useState<string>(
-    () => {
-      return (
-        localStorage.getItem("sanctuary-readerAccent") ||
-        "#3b82f6"
-      );
-    },
-  );
-
   useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-fontSize",
-      fontSize.toString(),
-    );
-  }, [fontSize]);
+    localStorage.setItem(`sanctuary-${key}`, JSON.stringify(value));
+  }, [key, value]);
 
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-lineHeight",
-      lineHeight.toString(),
-    );
-  }, [lineHeight]);
+  return [value, setValue];
+};
 
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-immersiveMode",
-      immersiveMode.toString(),
-    );
-  }, [immersiveMode]);
+export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [fontSize, setFontSize] = usePersisted("fontSize", DEFAULTS.fontSize);
+  const [lineHeight, setLineHeight] = usePersisted("lineHeight", DEFAULTS.lineHeight);
+  const [textAlignment, setTextAlignment] = usePersisted<TextAlignment>("textAlignment", DEFAULTS.textAlignment);
+  const [fontPairing, setFontPairing] = usePersisted("fontPairing", DEFAULTS.fontPairing);
+  const [maxTextWidth, setMaxTextWidth] = usePersisted("maxTextWidth", DEFAULTS.maxTextWidth);
+  const [hyphenation, setHyphenation] = usePersisted("hyphenation", DEFAULTS.hyphenation);
+  const [pageMargin, setPageMargin] = usePersisted("pageMargin", DEFAULTS.pageMargin);
+  const [paragraphSpacing, setParagraphSpacing] = usePersisted("paragraphSpacing", DEFAULTS.paragraphSpacing);
+  const [dropCaps, setDropCaps] = usePersisted("dropCaps", DEFAULTS.dropCaps);
+  const [immersiveMode, setImmersiveMode] = usePersisted("immersiveMode", DEFAULTS.immersiveMode);
+  const [continuousMode, setContinuousMode] = usePersisted("continuousMode", DEFAULTS.continuousMode);
+  const [readerForeground, setReaderForeground] = usePersisted("readerForeground", DEFAULTS.readerForeground);
+  const [readerBackground, setReaderBackground] = usePersisted("readerBackground", DEFAULTS.readerBackground);
+  const [readerAccent, setReaderAccent] = usePersisted("readerAccent", DEFAULTS.readerAccent);
+  const [dailyGoal, setDailyGoal] = usePersisted("dailyGoal", DEFAULTS.dailyGoal);
+  const [weeklyGoal, setWeeklyGoal] = usePersisted("weeklyGoal", DEFAULTS.weeklyGoal);
+  const [showStreakReminder, setShowStreakReminder] = usePersisted("showStreakReminder", DEFAULTS.showStreakReminder);
+  const [trackingEnabled, setTrackingEnabled] = usePersisted("trackingEnabled", DEFAULTS.trackingEnabled);
+  const [screenReaderMode, setScreenReaderMode] = usePersisted("screenReaderMode", DEFAULTS.screenReaderMode);
+  const [reduceMotion, setReduceMotion] = usePersisted("reduceMotion", DEFAULTS.reduceMotion);
 
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-continuousMode",
-      continuousMode.toString(),
-    );
-  }, [continuousMode]);
+  const resetToDefaults = () => {
+    setFontSize(DEFAULTS.fontSize);
+    setLineHeight(DEFAULTS.lineHeight);
+    setTextAlignment(DEFAULTS.textAlignment);
+    setFontPairing(DEFAULTS.fontPairing);
+    setMaxTextWidth(DEFAULTS.maxTextWidth);
+    setHyphenation(DEFAULTS.hyphenation);
+    setPageMargin(DEFAULTS.pageMargin);
+    setParagraphSpacing(DEFAULTS.paragraphSpacing);
+    setDropCaps(DEFAULTS.dropCaps);
+    setImmersiveMode(DEFAULTS.immersiveMode);
+    setContinuousMode(DEFAULTS.continuousMode);
+    setReaderForeground(DEFAULTS.readerForeground);
+    setReaderBackground(DEFAULTS.readerBackground);
+    setReaderAccent(DEFAULTS.readerAccent);
+  };
 
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-pageMargin",
-      pageMargin.toString(),
-    );
-  }, [pageMargin]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-paragraphSpacing",
-      paragraphSpacing.toString(),
-    );
-  }, [paragraphSpacing]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-textAlignment",
-      textAlignment,
-    );
-  }, [textAlignment]);
-
-  useEffect(() => {
-    localStorage.setItem("sanctuary-fontPairing", fontPairing);
-  }, [fontPairing]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-dropCaps",
-      dropCaps.toString(),
-    );
-  }, [dropCaps]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-readerForeground",
-      readerForeground,
-    );
-  }, [readerForeground]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-readerBackground",
-      readerBackground,
-    );
-  }, [readerBackground]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "sanctuary-readerAccent",
-      readerAccent,
-    );
-  }, [readerAccent]);
+  const applyPreset = (preset: "comfort" | "focus" | "night") => {
+    if (preset === "comfort") {
+      setFontSize(18);
+      setLineHeight(1.8);
+      setReaderForeground("#2B2B2B");
+      setReaderBackground("#FBF8F3");
+      setPageMargin(32);
+      setParagraphSpacing(20);
+    } else if (preset === "focus") {
+      setFontSize(20);
+      setLineHeight(2.0);
+      setReaderForeground("#1a1a1a");
+      setReaderBackground("#ffffff");
+      setPageMargin(48);
+      setParagraphSpacing(24);
+      setMaxTextWidth(55);
+    } else if (preset === "night") {
+      setFontSize(18);
+      setLineHeight(1.8);
+      setReaderForeground("#e8e6e3");
+      setReaderBackground("#1a1a1a");
+      setPageMargin(32);
+      setParagraphSpacing(20);
+    }
+  };
 
   return (
     <SettingsContext.Provider
       value={{
-        fontSize,
-        setFontSize,
-        lineHeight,
-        setLineHeight,
-        immersiveMode,
-        setImmersiveMode,
-        continuousMode,
-        setContinuousMode,
-        pageMargin,
-        setPageMargin,
-        paragraphSpacing,
-        setParagraphSpacing,
-        textAlignment,
-        setTextAlignment,
-        fontPairing,
-        setFontPairing,
-        dropCaps,
-        setDropCaps,
-        readerForeground,
-        setReaderForeground,
-        readerBackground,
-        setReaderBackground,
-        readerAccent,
-        setReaderAccent,
+        fontSize, setFontSize,
+        lineHeight, setLineHeight,
+        textAlignment, setTextAlignment,
+        fontPairing, setFontPairing,
+        maxTextWidth, setMaxTextWidth,
+        hyphenation, setHyphenation,
+        pageMargin, setPageMargin,
+        paragraphSpacing, setParagraphSpacing,
+        dropCaps, setDropCaps,
+        immersiveMode, setImmersiveMode,
+        continuousMode, setContinuousMode,
+        readerForeground, setReaderForeground,
+        readerBackground, setReaderBackground,
+        readerAccent, setReaderAccent,
+        dailyGoal, setDailyGoal,
+        weeklyGoal, setWeeklyGoal,
+        showStreakReminder, setShowStreakReminder,
+        trackingEnabled, setTrackingEnabled,
+        screenReaderMode, setScreenReaderMode,
+        reduceMotion, setReduceMotion,
+        resetToDefaults,
+        applyPreset,
       }}
     >
       {children}
@@ -253,10 +196,6 @@ export const SettingsProvider: React.FC<{
 
 export const useSettings = (): Settings => {
   const context = useContext(SettingsContext);
-  if (!context) {
-    throw new Error(
-      "useSettings must be used within a SettingsProvider",
-    );
-  }
+  if (!context) throw new Error("useSettings must be used within SettingsProvider");
   return context;
 };
