@@ -10,6 +10,32 @@ export enum View {
   STATS = "stats",
 }
 
+export interface Highlight {
+  id: string;
+  cfi: string;
+  text: string;
+  color: "yellow" | "green" | "blue" | "pink" | "purple";
+  note?: string;
+  createdAt: string;
+}
+
+export interface Bookmark {
+  id: string;
+  cfi: string;
+  title: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface VocabWord {
+  id: string;
+  word: string;
+  definition?: string;
+  context?: string;
+  bookId: string;
+  createdAt: string;
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -21,12 +47,17 @@ export interface Book {
   genre?: string;
   completedAt?: string;
   addedAt?: string;
+  lastOpenedAt?: string;
   isFavorite?: boolean;
   isIncognito?: boolean;
   series?: string;
   seriesIndex?: number;
   tags?: string[];
   readingList?: "to-read" | "reading" | "finished";
+  highlights?: Highlight[];
+  bookmarks?: Bookmark[];
+  totalPages?: number;
+  locationHistory?: string[];
 }
 
 export interface Badge {
@@ -59,3 +90,7 @@ export interface ReadingStats {
   readingPersonality: string;
   personalityDescription: string;
 }
+
+export type SortOption = "title" | "author" | "recent" | "progress" | "added";
+export type ViewMode = "grid" | "list";
+export type FilterOption = "all" | "favorites" | "to-read" | "reading" | "finished";
