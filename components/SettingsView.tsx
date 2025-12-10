@@ -29,183 +29,271 @@ const SettingsView: React.FC = () => {
   const presets = [
     { id: "comfort", label: "Comfort", desc: "Warm, easy on eyes" },
     { id: "focus", label: "Focus", desc: "Clean, minimal" },
-    { id: "night", label: "Night", desc: "Dark mode optimized" },
+    { id: "night", label: "Night", desc: "Dark mode" },
   ] as const;
 
   const activePairing = fontPairingOptions.find((o) => o.key === fontPairing) ?? fontPairingOptions[0];
 
   const Toggle = ({ enabled, onChange, label, description }: { enabled: boolean; onChange: () => void; label: string; description?: string }) => (
-    <div className="flex items-start justify-between gap-6 py-1">
-      <div className="flex-1">
-        <span className="font-medium text-light-text dark:text-dark-text">{label}</span>
-        {description && <p className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1">{description}</p>}
+    <div className="flex items-start justify-between gap-4 py-0.5">
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
+        {description && <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">{description}</p>}
       </div>
-      <button type="button" role="switch" aria-checked={enabled} onClick={onChange}
-        className={`relative flex-shrink-0 inline-flex items-center h-7 w-12 rounded-full transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-light-accent/50 ${enabled ? "bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400" : "bg-light-card dark:bg-dark-card"}`}>
-        <span className={`inline-block w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${enabled ? "translate-x-6" : "translate-x-1"}`} />
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        onClick={onChange}
+        className={`toggle flex-shrink-0 ${enabled ? "active" : ""}`}
+      >
+        <span className="toggle-thumb" />
       </button>
     </div>
   );
 
   const Slider = ({ id, label, value, min, max, step, onChange, unit = "" }: { id: string; label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void; unit?: string }) => (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
         <label htmlFor={id} className="text-sm font-medium text-light-text dark:text-dark-text">{label}</label>
-        <span className="text-sm font-semibold text-light-accent dark:text-dark-accent tabular-nums">{typeof value === 'number' && value % 1 !== 0 ? value.toFixed(1) : value}{unit}</span>
+        <span className="text-sm font-medium text-light-accent dark:text-dark-accent tabular-nums">
+          {typeof value === "number" && value % 1 !== 0 ? value.toFixed(1) : value}{unit}
+        </span>
       </div>
-      <input id={id} type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 bg-light-card dark:bg-dark-card rounded-full appearance-none cursor-pointer" />
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full"
+      />
     </div>
   );
 
-  const SectionCard = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) => (
-    <div className="card p-8 space-y-8">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/15 dark:to-amber-400/15">
-          <Icon className="w-6 h-6 text-light-accent dark:text-dark-accent" />
+  const Section = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) => (
+    <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
+      <div className="flex items-center gap-2.5 mb-5">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10">
+          <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
         </div>
-        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">{title}</h3>
+        <h3 className="text-base font-semibold text-light-text dark:text-dark-text">{title}</h3>
       </div>
-      <div className="space-y-6">{children}</div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-fadeInUp pb-12">
-      <div className="mb-10">
-        <h2 className="text-4xl font-serif font-bold text-light-text dark:text-dark-text">Settings</h2>
-        <p className="text-light-text-muted dark:text-dark-text-muted mt-2 text-lg">Customize your reading experience</p>
+    <div className="max-w-3xl mx-auto space-y-5 pb-12">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
+        <p className="text-light-text-muted dark:text-dark-text-muted mt-1 text-sm">Customize your experience</p>
       </div>
 
-      {/* Quick Presets */}
-      <div className="card p-8">
-        <div className="flex items-center gap-4 mb-6">
-          <Zap className="w-6 h-6 text-light-accent dark:text-dark-accent" />
-          <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">Quick Presets</h3>
+      <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10">
+            <Zap className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+          </div>
+          <h3 className="text-base font-semibold text-light-text dark:text-dark-text">Quick Presets</h3>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2">
           {presets.map((p) => (
-            <button key={p.id} onClick={() => applyPreset(p.id)}
-              className="p-5 rounded-xl text-left bg-light-card/50 dark:bg-dark-card/50 hover:bg-light-card dark:hover:bg-dark-card transition-all border-2 border-transparent hover:border-light-accent/20 dark:hover:border-dark-accent/20">
-              <span className="text-sm font-medium text-light-text dark:text-dark-text block">{p.label}</span>
-              <span className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1">{p.desc}</span>
+            <button
+              key={p.id}
+              onClick={() => applyPreset(p.id)}
+              className="p-3 rounded-lg text-left bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] border border-transparent hover:border-light-accent/15 dark:hover:border-dark-accent/15 transition-all duration-150 group"
+            >
+              <span className="text-sm font-medium text-light-text dark:text-dark-text block group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors">{p.label}</span>
+              <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted">{p.desc}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Typography */}
-      <SectionCard title="Typography" icon={Type}>
+      <Section title="Typography" icon={Type}>
         <Slider id="fontSize" label="Font Size" value={fontSize} min={14} max={28} step={1} onChange={setFontSize} unit="px" />
         <Slider id="lineHeight" label="Line Height" value={lineHeight} min={1.2} max={2.2} step={0.1} onChange={setLineHeight} />
-        <Slider id="maxTextWidth" label="Max Text Width" value={maxTextWidth} min={45} max={80} step={5} onChange={setMaxTextWidth} unit="ch" />
-        
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-light-text dark:text-dark-text">Font Pairing</label>
-          <div className="grid grid-cols-2 gap-3">
+        <Slider id="maxTextWidth" label="Text Width" value={maxTextWidth} min={45} max={80} step={5} onChange={setMaxTextWidth} unit="ch" />
+
+        <div className="space-y-2.5">
+          <label className="text-sm font-medium text-light-text dark:text-dark-text">Font</label>
+          <div className="grid grid-cols-2 gap-1.5">
             {fontPairingOptions.map((option) => (
-              <button key={option.key} onClick={() => setFontPairing(option.key)}
-                className={`p-4 rounded-xl text-left transition-all duration-200 ${fontPairing === option.key ? "bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/15 dark:to-amber-400/15 border-2 border-light-accent/30 dark:border-dark-accent/30" : "bg-light-card/50 dark:bg-dark-card/50 border-2 border-transparent hover:border-light-card dark:hover:border-dark-card"}`}>
+              <button
+                key={option.key}
+                onClick={() => setFontPairing(option.key)}
+                className={`p-2.5 rounded-lg text-left transition-all duration-150 ${
+                  fontPairing === option.key
+                    ? "bg-light-accent/8 dark:bg-dark-accent/8 border border-light-accent/20 dark:border-dark-accent/20"
+                    : "bg-black/[0.02] dark:bg-white/[0.02] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
+                }`}
+              >
                 <span className="text-sm font-medium text-light-text dark:text-dark-text block truncate">{option.label}</span>
-                <span className="text-xs text-light-text-muted dark:text-dark-text-muted">{option.body.split(',')[0]}</span>
+                <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted">{option.body.split(",")[0]}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-light-text dark:text-dark-text">Text Alignment</label>
-          <div className="flex gap-3">
+        <div className="space-y-2.5">
+          <label className="text-sm font-medium text-light-text dark:text-dark-text">Alignment</label>
+          <div className="flex gap-1.5">
             {alignmentOptions.map((option) => (
-              <button key={option.value} onClick={() => setTextAlignment(option.value as "left" | "justify" | "center")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-200 ${textAlignment === option.value ? "bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 text-white shadow-md" : "bg-light-card/50 dark:bg-dark-card/50 text-light-text-muted dark:text-dark-text-muted hover:bg-light-card dark:hover:bg-dark-card"}`}>
+              <button
+                key={option.value}
+                onClick={() => setTextAlignment(option.value as "left" | "justify" | "center")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all duration-150 ${
+                  textAlignment === option.value
+                    ? "bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 text-white"
+                    : "bg-black/[0.02] dark:bg-white/[0.02] text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
+                }`}
+              >
                 <option.icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{option.label}</span>
+                <span className="text-xs font-medium">{option.label}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <Toggle enabled={hyphenation} onChange={() => setHyphenation(!hyphenation)} label="Hyphenation" description="Enable automatic word hyphenation for justified text" />
-      </SectionCard>
+        <Toggle enabled={hyphenation} onChange={() => setHyphenation(!hyphenation)} label="Hyphenation" description="Auto word hyphenation" />
+      </Section>
 
-      {/* Layout */}
-      <SectionCard title="Layout" icon={Pilcrow}>
-        <Slider id="pageMargin" label="Page Margin" value={pageMargin} min={8} max={80} step={4} onChange={setPageMargin} unit="px" />
+      <Section title="Layout" icon={Pilcrow}>
+        <Slider id="pageMargin" label="Margin" value={pageMargin} min={8} max={80} step={4} onChange={setPageMargin} unit="px" />
         <Slider id="paragraphSpacing" label="Paragraph Spacing" value={paragraphSpacing} min={0} max={48} step={2} onChange={setParagraphSpacing} unit="px" />
-        <Toggle enabled={dropCaps} onChange={() => setDropCaps(!dropCaps)} label="Drop Caps" description="Decorative first letters for chapter openings" />
-      </SectionCard>
+        <Toggle enabled={dropCaps} onChange={() => setDropCaps(!dropCaps)} label="Drop Caps" description="Decorative first letters" />
+      </Section>
 
-      {/* Reading Mode */}
-      <SectionCard title="Reading Mode" icon={Eye}>
-        <Toggle enabled={immersiveMode} onChange={() => setImmersiveMode(!immersiveMode)} label="Immersive Mode" description="Auto-hide controls while reading. Tap or hover to show." />
-        <Toggle enabled={continuousMode} onChange={() => setContinuousMode(!continuousMode)} label="Continuous Scroll" description="Scroll vertically instead of paginated swipes" />
-      </SectionCard>
+      <Section title="Reading Mode" icon={Eye}>
+        <Toggle enabled={immersiveMode} onChange={() => setImmersiveMode(!immersiveMode)} label="Immersive Mode" description="Auto-hide controls" />
+        <Toggle enabled={continuousMode} onChange={() => setContinuousMode(!continuousMode)} label="Continuous Scroll" description="Scroll instead of pages" />
+      </Section>
 
-      {/* Reader Colors */}
-      <SectionCard title="Reader Colors" icon={Palette}>
-        <div className="grid grid-cols-3 gap-6">
-          <label className="space-y-3">
+      <Section title="Colors" icon={Palette}>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="space-y-1.5">
             <span className="text-sm font-medium text-light-text dark:text-dark-text">Text</span>
-            <input type="color" value={readerForeground} onChange={(e) => setReaderForeground(e.target.value)} className="w-full h-14 rounded-xl cursor-pointer border-2 border-light-card dark:border-dark-card" />
+            <input
+              type="color"
+              value={readerForeground}
+              onChange={(e) => setReaderForeground(e.target.value)}
+              className="w-full h-9 rounded-lg cursor-pointer border border-black/[0.06] dark:border-white/[0.06]"
+            />
           </label>
-          <label className="space-y-3">
+          <label className="space-y-1.5">
             <span className="text-sm font-medium text-light-text dark:text-dark-text">Background</span>
-            <input type="color" value={readerBackground === "transparent" ? "#FBF8F3" : readerBackground} onChange={(e) => setReaderBackground(e.target.value)} className="w-full h-14 rounded-xl cursor-pointer border-2 border-light-card dark:border-dark-card" />
+            <input
+              type="color"
+              value={readerBackground === "transparent" ? "#FBF8F3" : readerBackground}
+              onChange={(e) => setReaderBackground(e.target.value)}
+              className="w-full h-9 rounded-lg cursor-pointer border border-black/[0.06] dark:border-white/[0.06]"
+            />
           </label>
-          <label className="space-y-3">
+          <label className="space-y-1.5">
             <span className="text-sm font-medium text-light-text dark:text-dark-text">Accent</span>
-            <input type="color" value={readerAccent} onChange={(e) => setReaderAccent(e.target.value)} className="w-full h-14 rounded-xl cursor-pointer border-2 border-light-card dark:border-dark-card" />
+            <input
+              type="color"
+              value={readerAccent}
+              onChange={(e) => setReaderAccent(e.target.value)}
+              className="w-full h-9 rounded-lg cursor-pointer border border-black/[0.06] dark:border-white/[0.06]"
+            />
           </label>
         </div>
-        <button onClick={resetToDefaults} className="btn-ghost text-sm w-full justify-center mt-4">
-          <RotateCcw className="w-4 h-4" />Reset to defaults
+        <button
+          onClick={resetToDefaults}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset defaults
         </button>
-      </SectionCard>
+      </Section>
 
-      {/* Goals & Tracking */}
-      <SectionCard title="Goals & Tracking" icon={Target}>
-        <Slider id="dailyGoal" label="Daily Reading Goal" value={dailyGoal} min={5} max={120} step={5} onChange={setDailyGoal} unit=" pages" />
-        <Slider id="weeklyGoal" label="Weekly Reading Goal" value={weeklyGoal} min={30} max={500} step={10} onChange={setWeeklyGoal} unit=" min" />
-        <Toggle enabled={trackingEnabled} onChange={() => setTrackingEnabled(!trackingEnabled)} label="Enable Tracking" description="Track reading sessions and progress" />
-        <Toggle enabled={showStreakReminder} onChange={() => setShowStreakReminder(!showStreakReminder)} label="Streak Reminders" description="Get notified to maintain your reading streak" />
-      </SectionCard>
+      <Section title="Goals" icon={Target}>
+        <Slider id="dailyGoal" label="Daily Goal" value={dailyGoal} min={5} max={120} step={5} onChange={setDailyGoal} unit=" pages" />
+        <Slider id="weeklyGoal" label="Weekly Goal" value={weeklyGoal} min={30} max={500} step={10} onChange={setWeeklyGoal} unit=" min" />
+        <Toggle enabled={trackingEnabled} onChange={() => setTrackingEnabled(!trackingEnabled)} label="Tracking" description="Track reading sessions" />
+        <Toggle enabled={showStreakReminder} onChange={() => setShowStreakReminder(!showStreakReminder)} label="Reminders" description="Streak notifications" />
+      </Section>
 
-      {/* Accessibility */}
-      <SectionCard title="Accessibility" icon={Accessibility}>
-        <Toggle enabled={screenReaderMode} onChange={() => setScreenReaderMode(!screenReaderMode)} label="Screen Reader Mode" description="Optimize for screen readers with enhanced ARIA labels" />
-        <Toggle enabled={reduceMotion} onChange={() => setReduceMotion(!reduceMotion)} label="Reduce Motion" description="Minimize animations for accessibility" />
-        
-        <div className="p-5 rounded-xl bg-light-card/50 dark:bg-dark-card/50">
-          <div className="flex items-center gap-3 mb-4">
-            <Keyboard className="w-5 h-5 text-light-accent dark:text-dark-accent" />
-            <span className="text-sm font-medium text-light-text dark:text-dark-text">Keyboard Shortcuts</span>
+      <Section title="Accessibility" icon={Accessibility}>
+        <Toggle enabled={screenReaderMode} onChange={() => setScreenReaderMode(!screenReaderMode)} label="Screen Reader" description="Enhanced ARIA labels" />
+        <Toggle enabled={reduceMotion} onChange={() => setReduceMotion(!reduceMotion)} label="Reduce Motion" description="Minimize animations" />
+
+        <div className="p-3 rounded-lg bg-black/[0.02] dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2 mb-2">
+            <Keyboard className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
+            <span className="text-xs font-medium text-light-text dark:text-dark-text">Shortcuts</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm text-light-text-muted dark:text-dark-text-muted">
-            <div><kbd className="px-2 py-1 rounded bg-light-card dark:bg-dark-card text-xs">←/→</kbd> Navigate pages</div>
-            <div><kbd className="px-2 py-1 rounded bg-light-card dark:bg-dark-card text-xs">Space</kbd> Next page</div>
-            <div><kbd className="px-2 py-1 rounded bg-light-card dark:bg-dark-card text-xs">T</kbd> Table of contents</div>
-            <div><kbd className="px-2 py-1 rounded bg-light-card dark:bg-dark-card text-xs">B</kbd> Bookmarks</div>
-            <div><kbd className="px-2 py-1 rounded bg-light-card dark:bg-dark-card text-xs">?</kbd> Show shortcuts</div>
-            <div><kbd className="px-2 py-1 rounded bg-light-card dark:bg-dark-card text-xs">Esc</kbd> Show controls</div>
+          <div className="grid grid-cols-2 gap-1.5 text-[10px] text-light-text-muted dark:text-dark-text-muted">
+            <div className="flex items-center gap-1.5">
+              <kbd className="px-1 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] font-mono">Arrow</kbd>
+              <span>Navigate</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <kbd className="px-1 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] font-mono">Space</kbd>
+              <span>Next</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <kbd className="px-1 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] font-mono">Esc</kbd>
+              <span>Controls</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <kbd className="px-1 py-0.5 rounded bg-black/[0.04] dark:bg-white/[0.04] font-mono">F</kbd>
+              <span>Fullscreen</span>
+            </div>
           </div>
         </div>
-      </SectionCard>
+      </Section>
 
-      {/* Live Preview */}
-      <div className="card overflow-hidden">
-        <div className="px-8 py-5 border-b border-light-card/50 dark:border-dark-card/50 flex items-center gap-4">
-          <Eye className="w-6 h-6 text-light-accent dark:text-dark-accent" />
-          <h3 className="text-xl font-semibold text-light-text dark:text-dark-text">Live Preview</h3>
+      <div className="rounded-xl overflow-hidden border border-black/[0.04] dark:border-white/[0.04]">
+        <div className="px-5 py-3 border-b border-black/[0.04] dark:border-white/[0.04] bg-black/[0.02] dark:bg-white/[0.02] flex items-center gap-2">
+          <Eye className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+          <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">Preview</h3>
         </div>
-        <div className="transition-all duration-500" style={{ padding: `${pageMargin}px`, background: readerBackground === "transparent" ? "transparent" : readerBackground, color: readerForeground, maxWidth: `${maxTextWidth}ch`, margin: "0 auto" }}>
-          <h4 style={{ fontFamily: "Lora, serif", fontSize: `${fontSize + 6}px`, marginBottom: `${paragraphSpacing}px`, textAlign: textAlignment, color: readerForeground }} className="font-semibold">A Quiet Afternoon</h4>
-          <p className="clear-both" style={{ fontFamily: activePairing.body, fontSize: `${fontSize}px`, lineHeight, marginBottom: `${paragraphSpacing}px`, textAlign: textAlignment, color: readerForeground, hyphens: hyphenation ? "auto" : "none" }}>
-            {dropCaps && <span className="float-left mr-2 font-bold" style={{ fontFamily: "Lora, serif", fontSize: `${fontSize * 2.5}px`, lineHeight: 0.8, color: readerAccent }}>T</span>}
-            his is a live preview of your reading settings. Adjust the controls above to see changes in real-time as you craft your perfect reading experience.
+        <div
+          className="transition-all duration-300"
+          style={{
+            padding: `${pageMargin}px`,
+            background: readerBackground === "transparent" ? "transparent" : readerBackground,
+            color: readerForeground,
+            maxWidth: `${maxTextWidth}ch`,
+            margin: "0 auto",
+          }}
+        >
+          <h4
+            style={{ fontFamily: "Crimson Pro, serif", fontSize: `${fontSize + 4}px`, marginBottom: `${paragraphSpacing}px`, textAlign: textAlignment, color: readerForeground }}
+            className="font-semibold"
+          >
+            A Quiet Afternoon
+          </h4>
+          <p
+            className="clear-both"
+            style={{
+              fontFamily: activePairing.body,
+              fontSize: `${fontSize}px`,
+              lineHeight,
+              marginBottom: `${paragraphSpacing}px`,
+              textAlign: textAlignment,
+              color: readerForeground,
+              hyphens: hyphenation ? "auto" : "none",
+            }}
+          >
+            {dropCaps && (
+              <span
+                className="float-left mr-2 font-bold"
+                style={{ fontFamily: "Crimson Pro, serif", fontSize: `${fontSize * 2.5}px`, lineHeight: 0.8, color: readerAccent }}
+              >
+                T
+              </span>
+            )}
+            his is a live preview of your reading settings. Adjust the controls above to see changes in real-time.
           </p>
-          <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-semibold" style={{ color: readerAccent }}>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: readerAccent }} />Accent color
+          <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold" style={{ color: readerAccent }}>
+            <span className="h-1 w-1 rounded-full" style={{ background: readerAccent }} />
+            Accent
           </span>
         </div>
       </div>

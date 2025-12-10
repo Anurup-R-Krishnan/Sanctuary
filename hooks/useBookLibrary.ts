@@ -77,46 +77,81 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   const addBook = useCallback(async (file: File) => {
     let bookData: any;
     try {
+      // Read file as ArrayBuffer
       const epubArrayBuffer = await file.arrayBuffer();
-      bookData = ePub();
-      await bookData.open(epubArrayBuffer, "binary");
+      
+      // Create epub instance with ArrayBuffer directly (new API)
+      bookData = ePub(epubArrayBuffer);
       await bookData.ready;
+      
+      // Get metadata
       const metadata = await bookData.loaded.metadata;
       const title = metadata.title ?? "Untitled";
       const author = metadata.creator ?? "Unknown";
-      const coverHref = await bookData.coverUrl();
+      
+      // Get cover
       let coverBlob: Blob;
+      const coverHref = await bookData.coverUrl();
       if (coverHref) {
         const response = await fetch(coverHref);
         coverBlob = await response.blob();
         if (coverHref.startsWith("blob:")) try { URL.revokeObjectURL(coverHref); } catch {}
       } else {
+        // Generate placeholder cover
         const canvas = document.createElement("canvas");
-        canvas.width = 600; canvas.height = 900;
+        canvas.width = 400; canvas.height = 600;
         const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Could not create placeholder cover context");
-        ctx.fillStyle = "#2d3748"; ctx.fillRect(0, 0, 600, 900);
-        ctx.fillStyle = "white"; ctx.textAlign = "center";
-        ctx.font = "40px Lora"; ctx.fillText(title, 300, 400);
-        ctx.font = "24px Inter"; ctx.fillText(author, 300, 450);
-        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg"));
-        if (!blob) throw new Error("Could not generate placeholder cover");
+        if (!ctx) throw new Error("Could not create canvas");
+        ctx.fillStyle = "#4a5568"; ctx.fillRect(0, 0, 400, 600);
+        ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+        ctx.font = "bold 24px Georgia"; 
+        // Word wrap title
+        const words = title.split(" ");
+        let line = "";
+        let y = 280;
+        for (const word of words) {
+          const test = line + word + " ";
+          if (ctx.measureText(test).width > 360) {
+            ctx.fillText(line.trim(), 200, y);
+            line = word + " ";
+            y += 32;
+          } else {
+            line = test;
+          }
+        }
+        ctx.fillText(line.trim(), 200, y);
+        ctx.font = "16px Georgia";
+        ctx.fillStyle = "#cbd5e0";
+        ctx.fillText(author, 200, y + 50);
+        const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.9));
+        if (!blob) throw new Error("Could not generate cover");
         coverBlob = blob;
       }
+      
       const displayCoverUrl = registerObjectUrl(URL.createObjectURL(coverBlob));
+      
+      // Store the original file as blob for later reading
+      const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
+      
       const newBook: Book = {
-        id: uuidv4(), title, author, coverUrl: displayCoverUrl, epubBlob: file,
+        id: uuidv4(), title, author, coverUrl: displayCoverUrl, epubBlob,
         progress: 0, lastLocation: "", addedAt: new Date().toISOString(),
         lastOpenedAt: new Date().toISOString(), readingList: "to-read",
         highlights: [], bookmarks: [], locationHistory: [],
       };
+      
       setBooks((prev) => [...prev, newBook]);
+      
       if (persistent) {
         const bookToStore: StoredBook = { ...newBook, coverUrl: coverBlob };
         await db.addBook(bookToStore as unknown as Book);
       }
-    } catch (error) { console.error("Error adding book:", error); throw error; }
-    finally { bookData?.destroy?.(); }
+    } catch (error) { 
+      console.error("Error adding book:", error); 
+      throw error; 
+    } finally { 
+      bookData?.destroy?.(); 
+    }
   }, [persistent]);
 
   const updateBookProgress = useCallback(async (id: string, progress: number, lastLocation: string) => {
@@ -172,9 +207,14 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   }, [books, updateBook]);
 
   const deleteBook = useCallback(async (id: string) => {
+    const bookToDelete = books.find(b => b.id === id);
+    if (bookToDelete?.coverUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(bookToDelete.coverUrl);
+      objectUrlsRef.current.delete(bookToDelete.coverUrl);
+    }
     setBooks((prev) => prev.filter((b) => b.id !== id));
     if (persistent) try { await db.deleteBook(id); } catch (e) { console.error("Failed to delete book:", e); }
-  }, [persistent]);
+  }, [books, persistent]);
 
   const recentBooks = useMemo(() => 
     [...books].filter((b) => !b.isIncognito).sort((a, b) => 
