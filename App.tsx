@@ -18,66 +18,52 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
-  const { dailyGoal, weeklyGoal, setDailyGoal, setWeeklyGoal } = useSettings();
+  const { 
+    dailyGoal, 
+    weeklyGoal, 
+    setDailyGoal, 
+    setWeeklyGoal,
+    immersiveMode,
+    reduceMotion 
+  } = useSettings();
 
   useEffect(() => {
-    let isActive = true;
-    const bootstrapSession = async () => {
+    let active = true;
+    const init = async () => {
       try {
-        const {
-          data: { session: initialSession },
-        } = await supabase.auth.getSession();
-        if (!isActive) return;
-        if (initialSession) {
-          setSession(initialSession);
-          setIsGuest(false);
-        }
-      } catch (error) {
-        console.error("Failed to initialize session:", error);
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (!active) return;
+        if (s) { setSession(s); setIsGuest(false); }
+      } catch (e) {
+        console.error("Session init failed:", e);
       } finally {
-        if (isActive) setIsAuthLoading(false);
+        if (active) setIsAuthLoading(false);
       }
     };
-    bootstrapSession();
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isActive) return;
-      setSession(nextSession);
+    init();
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (!active) return;
+      setSession(s);
       setIsGuest(false);
       setIsAuthLoading(false);
     });
-    return () => {
-      isActive = false;
-      data.subscription.unsubscribe();
-    };
+    return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
 
   const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
   const [view, setView] = useState<View>(View.LIBRARY);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [isLibraryVisible, setIsLibraryVisible] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const libraryPersistenceEnabled = !isGuest && Boolean(session);
+  const persistent = !isGuest && Boolean(session);
   const {
-    books,
-    sortedBooks,
-    recentBooks,
-    favoriteBooks,
-    seriesGroups,
-    addBook,
-    updateBookProgress,
-    toggleFavorite,
-    addBookmark,
-    removeBookmark,
-    sortBy,
-    setSortBy,
-    filterBy,
-    setFilterBy,
-    isLoading: isLibraryLoading,
-  } = useBookLibrary({ persistent: libraryPersistenceEnabled });
+    books, sortedBooks, recentBooks, favoriteBooks, seriesGroups,
+    addBook, updateBookProgress, toggleFavorite, addBookmark, removeBookmark,
+    sortBy, setSortBy, filterBy, setFilterBy, isLoading: libLoading,
+  } = useBookLibrary({ persistent });
   const { stats, startSession, endSession } = useReadingStats(books);
 
-  const handleToggleGuestMode = useCallback(() => {
+  const handleGuestMode = useCallback(() => {
     setIsGuest(true);
     setSession(null);
     setIsAuthLoading(false);
@@ -90,126 +76,80 @@ const App: React.FC = () => {
 
   const handleSignOut = useCallback(async () => {
     setIsAuthLoading(true);
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Error during sign out:", error);
-    } finally {
-      setSession(null);
-      setIsGuest(false);
-      setIsAuthLoading(false);
-    }
+    try { await supabase.auth.signOut(); }
+    catch (e) { console.error("Sign out error:", e); }
+    finally { setSession(null); setIsGuest(false); setIsAuthLoading(false); }
   }, []);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    if (theme === Theme.DARK) {
-      root.classList.add("dark");
-      document.body.style.backgroundColor = "#141210";
-    } else {
-      root.classList.remove("dark");
-      document.body.style.backgroundColor = "#faf8f3";
-    }
-  }, [theme]);
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === Theme.DARK);
+    root.classList.toggle("reduce-motion", reduceMotion);
+    
+    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
+    document.body.style.backgroundColor = bgColor;
+    document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
+  }, [theme, reduceMotion]);
 
-  const toggleTheme = useCallback(
-    () => setTheme((prev) => (prev === Theme.LIGHT ? Theme.DARK : Theme.LIGHT)),
-    []
-  );
+  const toggleTheme = useCallback(() => setTheme(t => t === Theme.LIGHT ? Theme.DARK : Theme.LIGHT), []);
 
-  const handleSelectBook = (book: Book) => {
+  const handleSelectBook = useCallback((book: Book) => {
     setSelectedBook(book);
     setView(View.READER);
     startSession(book.id);
-  };
+  }, [startSession]);
 
-  const handleCloseReader = () => {
+  const handleCloseReader = useCallback(() => {
     endSession(0);
     setView(View.LIBRARY);
     setSelectedBook(null);
-  };
-
-  useEffect(() => {
-    if (view === View.LIBRARY) {
-      const timer = setTimeout(() => setIsLibraryVisible(true), 150);
-      return () => clearTimeout(timer);
-    }
-    setIsLibraryVisible(false);
-    return undefined;
-  }, [view]);
+  }, [endSession]);
 
   const filteredBooks = useMemo(() => {
     if (!searchTerm) return books;
-    const lowerTerm = searchTerm.toLowerCase();
-    return books.filter(
-      (book) =>
-        book.title.toLowerCase().includes(lowerTerm) || book.author.toLowerCase().includes(lowerTerm)
-    );
+    const term = searchTerm.toLowerCase();
+    return books.filter(b => b.title.toLowerCase().includes(term) || b.author.toLowerCase().includes(term));
   }, [books, searchTerm]);
 
-  const handleUpdateGoal = useCallback(
-    (daily: number, weekly: number) => {
-      setDailyGoal(daily);
-      setWeeklyGoal(weekly);
-    },
-    [setDailyGoal, setWeeklyGoal]
-  );
-
-  const renderView = () => {
-    switch (view) {
-      case View.READER:
-        return (
-          selectedBook && (
-            <ReaderView
-              book={selectedBook}
-              onClose={handleCloseReader}
-              onUpdateProgress={updateBookProgress}
-              onAddBookmark={addBookmark}
-              onRemoveBookmark={removeBookmark}
-            />
-          )
-        );
-      case View.SETTINGS:
-        return <SettingsView />;
-      case View.STATS:
-        return (
-          <StatsView
-            stats={stats}
-            dailyGoal={dailyGoal}
-            weeklyGoal={weeklyGoal}
-            onUpdateGoal={handleUpdateGoal}
-          />
-        );
-      case View.LIBRARY:
-      default:
-        return null;
-    }
-  };
+  const handleUpdateGoal = useCallback((d: number, w: number) => {
+    setDailyGoal(d);
+    setWeeklyGoal(w);
+  }, [setDailyGoal, setWeeklyGoal]);
 
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary gap-4">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-2xl blur-xl opacity-20 scale-150" />
-          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center shadow-lg glow-sm">
-            <BookOpen className="w-6 h-6 text-white animate-pulse-soft" strokeWidth={1.5} />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-gradient-to-br from-light-accent/20 to-amber-500/20 dark:from-dark-accent/20 dark:to-amber-400/20 rounded-3xl blur-3xl scale-150" />
+          <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center shadow-2xl">
+            <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
           </div>
         </div>
-        <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Loading...</p>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
+          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Preparing your reading sanctuary...</p>
+        </div>
       </div>
     );
   }
 
-  if (!session && !isGuest) return <Auth onContinueAsGuest={handleToggleGuestMode} />;
+  if (!session && !isGuest) return <Auth onContinueAsGuest={handleGuestMode} />;
+
+  const isReader = view === View.READER;
+  const layoutClasses = immersiveMode && isReader ? "immersive-layout" : "standard-layout";
 
   return (
-    <div className="min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300">
+    <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${layoutClasses}`}>
+      {/* Enhanced Background Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-light-accent/[0.03] dark:bg-dark-accent/[0.03] rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-500/[0.03] rounded-full blur-3xl" />
+        <div className="absolute -top-64 -right-64 w-[500px] h-[500px] bg-gradient-radial from-light-accent/[0.06] via-light-accent/[0.02] to-transparent dark:from-dark-accent/[0.08] dark:via-dark-accent/[0.03] rounded-full blur-3xl" />
+        <div className="absolute -bottom-64 -left-64 w-[600px] h-[600px] bg-gradient-radial from-amber-500/[0.04] via-amber-500/[0.01] to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-gradient-radial from-light-accent/[0.03] to-transparent dark:from-dark-accent/[0.04] rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] bg-gradient-radial from-amber-400/[0.02] to-transparent rounded-full blur-3xl" />
       </div>
 
-      {view !== View.READER && (
+      {/* Header */}
+      {!isReader && (
         <Header
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -221,44 +161,50 @@ const App: React.FC = () => {
         />
       )}
 
-      <main className={`relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto ${view === View.READER ? 'p-0' : 'pt-20 pb-28'}`}>
-        <div
-          className={`transition-all duration-300 ease-smooth ${
-            isLibraryVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-3 pointer-events-none absolute inset-x-0"
-          }`}
-        >
-          <LibraryGrid
-            books={filteredBooks}
-            sortedBooks={sortedBooks}
-            recentBooks={recentBooks}
-            favoriteBooks={favoriteBooks}
-            seriesGroups={seriesGroups}
-            onSelectBook={handleSelectBook}
-            addBook={addBook}
-            isLoading={isLibraryLoading}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            filterBy={filterBy}
-            setFilterBy={setFilterBy}
-            onToggleFavorite={toggleFavorite}
-            searchTerm={searchTerm}
-          />
-        </div>
-
-        <div
-          className={`transition-all duration-300 ease-smooth ${
-            !isLibraryVisible
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 -translate-y-3 pointer-events-none absolute inset-x-0"
-          }`}
-        >
-          {renderView()}
+      {/* Main Content Container */}
+      <main className={`relative ${isReader ? 'reader-main' : 'standard-main pt-20 pb-32 px-4 sm:px-6 lg:px-8'}`}>
+        <div className={`${isReader ? '' : 'max-w-7xl mx-auto animate-fadeIn'}`}>
+          {view === View.LIBRARY && (
+            <LibraryGrid
+              books={filteredBooks}
+              sortedBooks={sortedBooks}
+              recentBooks={recentBooks}
+              favoriteBooks={favoriteBooks}
+              seriesGroups={seriesGroups}
+              onSelectBook={handleSelectBook}
+              addBook={addBook}
+              isLoading={libLoading}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              filterBy={filterBy}
+              setFilterBy={setFilterBy}
+              onToggleFavorite={toggleFavorite}
+              searchTerm={searchTerm}
+            />
+          )}
+          {view === View.SETTINGS && <SettingsView />}
+          {view === View.STATS && (
+            <StatsView
+              stats={stats}
+              dailyGoal={dailyGoal}
+              weeklyGoal={weeklyGoal}
+              onUpdateGoal={handleUpdateGoal}
+            />
+          )}
+          {view === View.READER && selectedBook && (
+            <ReaderView
+              book={selectedBook}
+              onClose={handleCloseReader}
+              onUpdateProgress={updateBookProgress}
+              onAddBookmark={addBookmark}
+              onRemoveBookmark={removeBookmark}
+            />
+          )}
         </div>
       </main>
 
-      {view !== View.READER && (
+      {/* Navigation */}
+      {!isReader && (
         <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBook} />
       )}
     </div>
