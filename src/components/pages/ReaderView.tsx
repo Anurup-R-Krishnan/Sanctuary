@@ -184,30 +184,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         });
     }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, dropCaps, getFontFamily, continuous, grayscale, isDarkBackground]);
 
-    // Handle key events from within the iframe
-    const handleIframeKey = useCallback((e: KeyboardEvent) => {
-        if (keybinds.nextPage.includes(e.key)) {
-            e.preventDefault();
-            goToNextPage();
-        } else if (keybinds.prevPage.includes(e.key)) {
-            e.preventDefault();
-            goToPrevPage();
-        } else if (keybinds.close.includes(e.key)) {
-            if (showSettings || showControls) {
-                setShowSettings(false);
-                setShowControls(false);
-            } else {
-                onClose();
-            }
-        } else if (keybinds.toggleBookmark.includes(e.key)) {
-            toggleBookmark();
-        } else if (keybinds.toggleFullscreen.includes(e.key)) {
-            toggleFullscreen();
-        } else if (keybinds.toggleUI.includes(e.key)) {
-            setShowUI(prev => !prev);
-        }
-    }, [keybinds, goToNextPage, goToPrevPage, showSettings, showControls, onClose, toggleBookmark, toggleFullscreen]);
-
     // Navigation
     const goToNextPage = useCallback(() => {
         if (renditionRef.current && isReady) {
@@ -318,6 +294,30 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             console.error("Fullscreen error:", err);
         }
     }, []);
+
+    // Handle key events from within the iframe
+    const handleIframeKey = useCallback((e: KeyboardEvent) => {
+        if (keybinds.nextPage.includes(e.key)) {
+            e.preventDefault();
+            goToNextPage();
+        } else if (keybinds.prevPage.includes(e.key)) {
+            e.preventDefault();
+            goToPrevPage();
+        } else if (keybinds.close.includes(e.key)) {
+            if (showSettings || showControls) {
+                setShowSettings(false);
+                setShowControls(false);
+            } else {
+                onClose();
+            }
+        } else if (keybinds.toggleBookmark.includes(e.key)) {
+            toggleBookmark();
+        } else if (keybinds.toggleFullscreen.includes(e.key)) {
+            toggleFullscreen();
+        } else if (keybinds.toggleUI.includes(e.key)) {
+            setShowUI(prev => !prev);
+        }
+    }, [keybinds, goToNextPage, goToPrevPage, showSettings, showControls, onClose, toggleBookmark, toggleFullscreen]);
 
     // Initialize ePub
     useEffect(() => {
