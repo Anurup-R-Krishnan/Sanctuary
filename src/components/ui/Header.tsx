@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun, Sparkles } from "lucide-react";
+import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun } from "lucide-react";
 import { Theme } from "@/types";
 import { useSettings } from "@/context/SettingsContext";
 
@@ -160,9 +160,6 @@ const Header: React.FC<HeaderProps> = ({
               >
                 <LogIn className="w-4 h-4" strokeWidth={2} />
                 <span className="hidden sm:inline">Sign In</span>
-                {!reduceMotion && (
-                  <Sparkles className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200" strokeWidth={2} />
-                )}
               </button>
             ) : onSignOut ? (
               <button
