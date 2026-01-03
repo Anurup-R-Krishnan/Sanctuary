@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Book, SortOption, FilterOption, ViewMode } from "../types";
+import { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
-import BookCard from "./BookCard";
-import AddBookButton from "./AddBookButton";
+import BookCard from "../ui/BookCard";
+import AddBookButton from "../ui/AddBookButton";
 
 interface LibraryGridProps {
   books: Book[];

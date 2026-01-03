@@ -21,6 +21,15 @@ interface Settings {
   readerForeground: string;
   readerBackground: string;
   readerAccent: string;
+  // Keybinds
+  keybinds: {
+    nextPage: string[];
+    prevPage: string[];
+    toggleBookmark: string[];
+    toggleFullscreen: string[];
+    toggleUI: string[];
+    close: string[];
+  };
   // Stats Settings
   dailyGoal: number;
   weeklyGoal: number;
@@ -44,6 +53,7 @@ interface Settings {
   setReaderForeground: (v: string) => void;
   setReaderBackground: (v: string) => void;
   setReaderAccent: (v: string) => void;
+  setKeybinds: (v: Settings['keybinds']) => void;
   setDailyGoal: (v: number) => void;
   setWeeklyGoal: (v: number) => void;
   setShowStreakReminder: (v: boolean) => void;
@@ -71,6 +81,14 @@ const DEFAULTS = {
   readerForeground: "#1a1a1a",
   readerBackground: "#ffffff",
   readerAccent: "#8B7355",
+  keybinds: {
+    nextPage: ["ArrowRight", "ArrowDown", " "],
+    prevPage: ["ArrowLeft", "ArrowUp"],
+    toggleBookmark: ["b", "B"],
+    toggleFullscreen: ["f", "F"],
+    toggleUI: ["m", "M"],
+    close: ["Escape"],
+  },
   dailyGoal: 30,
   weeklyGoal: 150,
   showStreakReminder: true,
@@ -112,6 +130,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [readerForeground, setReaderForeground] = usePersisted("readerForeground", DEFAULTS.readerForeground);
   const [readerBackground, setReaderBackground] = usePersisted("readerBackground", DEFAULTS.readerBackground);
   const [readerAccent, setReaderAccent] = usePersisted("readerAccent", DEFAULTS.readerAccent);
+  const [keybinds, setKeybinds] = usePersisted("keybinds", DEFAULTS.keybinds);
   const [dailyGoal, setDailyGoal] = usePersisted("dailyGoal", DEFAULTS.dailyGoal);
   const [weeklyGoal, setWeeklyGoal] = usePersisted("weeklyGoal", DEFAULTS.weeklyGoal);
   const [showStreakReminder, setShowStreakReminder] = usePersisted("showStreakReminder", DEFAULTS.showStreakReminder);
@@ -134,31 +153,26 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     setReaderForeground(DEFAULTS.readerForeground);
     setReaderBackground(DEFAULTS.readerBackground);
     setReaderAccent(DEFAULTS.readerAccent);
+    setKeybinds(DEFAULTS.keybinds);
   };
 
   const applyPreset = (preset: "comfort" | "focus" | "night") => {
+    // Presets ONLY change colors, not typography
     if (preset === "comfort") {
-      setFontSize(18);
-      setLineHeight(1.8);
-      setReaderForeground("#2B2B2B");
-      setReaderBackground("#FBF8F3");
-      setPageMargin(32);
-      setParagraphSpacing(20);
+      // Warm sepia theme
+      setReaderForeground("#5C4B37");
+      setReaderBackground("#F4ECD8");
+      setReaderAccent("#8B7355");
     } else if (preset === "focus") {
-      setFontSize(20);
-      setLineHeight(2.0);
+      // Clean light theme
       setReaderForeground("#1a1a1a");
       setReaderBackground("#ffffff");
-      setPageMargin(48);
-      setParagraphSpacing(24);
-      setMaxTextWidth(55);
+      setReaderAccent("#8B7355");
     } else if (preset === "night") {
-      setFontSize(18);
-      setLineHeight(1.8);
+      // Dark theme
       setReaderForeground("#e8e6e3");
       setReaderBackground("#1a1a1a");
-      setPageMargin(32);
-      setParagraphSpacing(20);
+      setReaderAccent("#d4b58b");
     }
   };
 
@@ -179,6 +193,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
         readerAccent, setReaderAccent,
+        keybinds, setKeybinds,
         dailyGoal, setDailyGoal,
         weeklyGoal, setWeeklyGoal,
         showStreakReminder, setShowStreakReminder,

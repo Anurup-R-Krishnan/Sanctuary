@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import ePub from "epubjs";
 import { v4 as uuidv4 } from "uuid";
-import type { Book, Highlight, Bookmark, SortOption, FilterOption } from "../types";
-import * as db from "../db";
+import type { Book, Highlight, Bookmark, SortOption, FilterOption } from "@/types";
+import * as db from "../utils/db";
 
 type UseBookLibraryOptions = { persistent?: boolean };
 
