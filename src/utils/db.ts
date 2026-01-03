@@ -1,4 +1,4 @@
-import { Book, VocabWord } from "./types";
+import { Book, VocabWord } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
 const DB_VERSION = 2;

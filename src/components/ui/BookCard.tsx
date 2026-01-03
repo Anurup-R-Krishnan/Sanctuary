@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Book } from "../types";
+import { Book } from "@/types";
 import { Star, Clock, BookOpen, MoreVertical, Heart } from "lucide-react";
-import { useSettings } from "../context/SettingsContext";
+import { useSettings } from "@/context/SettingsContext";
 
 interface BookCardProps {
   book: Book;

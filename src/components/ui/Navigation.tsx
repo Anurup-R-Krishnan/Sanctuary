@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View } from "../types";
+import { View } from "@/types";
 import { Library, BookOpen, BarChart3, Settings, Sparkles } from "lucide-react";
-import { useSettings } from "../context/SettingsContext";
+import { useSettings } from "@/context/SettingsContext";
 
 interface NavigationProps {
   activeView: View;

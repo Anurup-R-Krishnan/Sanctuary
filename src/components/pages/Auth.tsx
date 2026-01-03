@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Mail, User, ArrowRight, Loader2, BookOpen } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 interface AuthProps {
   onContinueAsGuest?: () => void;

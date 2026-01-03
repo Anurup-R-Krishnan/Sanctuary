@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Theme, View, Book } from "./types";
+import { Theme, View, Book } from "@/types";
 import { useBookLibrary } from "./hooks/useBookLibrary";
 import { useReadingStats } from "./hooks/useReadingStats";
-import { useSettings } from "./context/SettingsContext";
-import Header from "./components/Header";
-import Navigation from "./components/Navigation";
-import LibraryGrid from "./components/LibraryGrid";
-import ReaderView from "./components/ReaderView";
-import SettingsView from "./components/SettingsView";
-import StatsView from "./components/StatsView";
-import Auth from "./components/Auth";
+import { useSettings } from "@/context/SettingsContext";
+import Header from "./components/ui/Header";
+import Navigation from "./components/ui/Navigation";
+import LibraryGrid from "./components/pages/LibraryGrid";
+import ReaderView from "./components/pages/ReaderView";
+import SettingsView from "./components/pages/SettingsView";
+import StatsView from "./components/pages/StatsView";
+import Auth from "./components/pages/Auth";
 import { supabase } from "./lib/supabase";
 import { BookOpen } from "lucide-react";
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ReadingStats, Badge } from "../types";
+import { ReadingStats, Badge } from "@/types";
 import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
 
 interface StatsViewProps {

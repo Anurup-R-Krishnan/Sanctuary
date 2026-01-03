@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ReadingStats, Badge, Book } from "../types";
+import { ReadingStats, Badge, Book } from "@/types";
 
 const STATS_KEY = "sanctuary_reading_stats";
 const SESSIONS_KEY = "sanctuary_reading_sessions";

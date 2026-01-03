@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun, Sparkles } from "lucide-react";
-import { Theme } from "../types";
-import { useSettings } from "../context/SettingsContext";
+import { Theme } from "@/types";
+import { useSettings } from "@/context/SettingsContext";
 
 interface HeaderProps {
   theme: Theme;
