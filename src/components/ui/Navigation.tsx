@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { View } from "@/types";
-import { Library, BookOpen, BarChart3, Settings, Sparkles } from "lucide-react";
+import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
 interface NavigationProps {
@@ -144,11 +144,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
                 >
                   {item.label}
                 </span>
-                
-                {/* Sparkle effect for active item */}
-                {isActive && !reduceMotion && (
-                  <Sparkles className="w-3 h-3 text-light-accent/60 dark:text-dark-accent/60 animate-pulse-soft" strokeWidth={2} />
-                )}
               </button>
 
               {/* Tooltip */}

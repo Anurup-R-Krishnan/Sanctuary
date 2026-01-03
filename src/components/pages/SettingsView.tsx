@@ -14,7 +14,6 @@ import {
     Zap,
     Coffee,
     Check,
-    Sparkles,
     WandSparkles,
     Eye,
     Accessibility,
@@ -125,7 +124,7 @@ const COLOR_PRESETS = [
     { id: "cream", label: "Ivory", fg: "#2B2B2B", bg: "#FBF8F3", accent: "#8B7355", icon: Coffee },
     { id: "sepia", label: "Sepia", fg: "#5C4B37", bg: "#F4ECD8", accent: "#8B7355", icon: Droplets },
     { id: "dark", label: "Ink", fg: "#e8e6e3", bg: "#1a1a1a", accent: "#d4b58b", icon: Moon },
-    { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Sparkles },
+    { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
 ];
 
 const SettingsView: React.FC = () => {
@@ -276,11 +275,6 @@ const SettingsView: React.FC = () => {
         >
             {/* Animated gradient background */}
             <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${gradient}`} />
-
-            {/* Sparkle effect on hover */}
-            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-12">
-                <Sparkles className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-            </div>
 
             <div className="relative flex items-start gap-4">
                 <div className="p-3 rounded-2xl bg-gradient-to-br from-light-accent/10 to-amber-500/5 dark:from-dark-accent/15 dark:to-amber-400/5 group-hover:from-light-accent/20 group-hover:to-amber-500/10 dark:group-hover:from-dark-accent/25 dark:group-hover:to-amber-400/10 transition-all duration-500">
