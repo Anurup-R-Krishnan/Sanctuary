@@ -225,38 +225,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         }
     }, [continuous, isReady]);
 
-    // Handle scroll events for continuous mode
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!continuous || !container || !isReady) return;
-
-        let scrollTimeout: ReturnType<typeof setTimeout>;
-        
-        const handleScroll = () => {
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                const { scrollTop, scrollHeight, clientHeight } = container;
-                
-                // Check if at bottom
-                if (scrollTop + clientHeight >= scrollHeight - 20) {
-                    // Debounce next chapter navigation
-                    renditionRef.current?.next().then(() => {
-                        container.scrollTo(0, 0);
-                    });
-                }
-                // Check if at top (optional, might be annoying if user just wants to see top of current chapter)
-                // else if (scrollTop <= 0) {
-                //    renditionRef.current?.prev();
-                // }
-            }, 200);
-        };
-
-        container.addEventListener('scroll', handleScroll);
-        return () => {
-            container.removeEventListener('scroll', handleScroll);
-            clearTimeout(scrollTimeout);
-        };
-    }, [continuous, isReady]);
 
     const navigateToChapter = useCallback((href: string, label: string) => {
         if (!renditionRef.current) return;
