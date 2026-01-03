@@ -25,7 +25,6 @@
   }
   
   body {
-    -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     letter-spacing: -0.01em;
     font-family: 'Inter', system-ui, sans-serif;
@@ -376,6 +375,15 @@
 
   .dark .book-cover-glow {
     box-shadow: 0 8px 32px rgba(var(--accent-dark), 0.12), 0 16px 64px rgba(var(--accent-dark), 0.06);
+  }
+
+  /* Scrollbar Utilities */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 

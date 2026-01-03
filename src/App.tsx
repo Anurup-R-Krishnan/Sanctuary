@@ -23,7 +23,6 @@ const App: React.FC = () => {
     weeklyGoal, 
     setDailyGoal, 
     setWeeklyGoal,
-    immersiveMode,
     reduceMotion 
   } = useSettings();
 
@@ -136,7 +135,7 @@ const App: React.FC = () => {
   if (!session && !isGuest) return <Auth onContinueAsGuest={handleGuestMode} />;
 
   const isReader = view === View.READER;
-  const layoutClasses = immersiveMode && isReader ? "immersive-layout" : "standard-layout";
+  const layoutClasses = isReader ? "immersive-layout" : "standard-layout";
 
   return (
     <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${layoutClasses}`}>
