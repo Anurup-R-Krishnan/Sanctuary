@@ -62,9 +62,9 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
 
     return (
         <header
-            className={`fixed top-0 left-0 right-0 z-50 pointer-eve1274mnts-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
+            className={`fixed top-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
         >
-            <div className="flex items-start justify-between p-6">
+            <div className="relative flex items-start justify-between p-6">
                 {/* Left: Back Button (Floating) */}
                 <button
                     onClick={(e) => { e.stopPropagation(); onClose(); }}
@@ -81,7 +81,7 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
 
                 {/* Center: Title (Floating Capsule) */}
                 <div 
-                    className="pointer-events-auto max-w-md px-6 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-all duration-200"
+                    className="absolute left-1/2 -translate-x-1/2 top-6 pointer-events-auto max-w-md px-6 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-all duration-200"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                 >
                     <h1 
