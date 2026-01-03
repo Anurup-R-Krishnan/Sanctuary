@@ -27,24 +27,46 @@ import { useSettings } from "@/context/SettingsContext";
 
 const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]; onChange: (keys: string[]) => void }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [tempKeys, setTempKeys] = useState<string[]>([]);
+
+    const startEditing = () => {
+        setTempKeys([...keys]);
+        setIsEditing(true);
+    };
+
+    const cancelEditing = () => {
+        setIsEditing(false);
+        setTempKeys([]);
+    };
+
+    const saveEditing = () => {
+        onChange(tempKeys);
+        setIsEditing(false);
+        setTempKeys([]);
+    };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         e.preventDefault();
         const key = e.key;
         if (key === "Escape") {
-            setIsEditing(false);
+            cancelEditing();
         } else if (key === "Enter") {
-            setIsEditing(false);
+            saveEditing();
         } else if (key === "Backspace") {
-            onChange([]);
-            setIsEditing(false);
-        } else if (!keys.includes(key)) {
-            onChange([...keys, key]);
+            if (tempKeys.length > 0) {
+                setTempKeys(tempKeys.slice(0, -1));
+            } else {
+                onChange([]);
+                cancelEditing();
+            }
+        } else if (!tempKeys.includes(key)) {
+            setTempKeys([...tempKeys, key]);
         }
     };
 
     const removeKey = (keyToRemove: string) => {
-        onChange(keys.filter(k => k !== keyToRemove));
+        const newKeys = keys.filter(k => k !== keyToRemove);
+        onChange(newKeys);
     };
 
     return (
@@ -53,11 +75,11 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
             <div className="flex items-center gap-2">
                 {isEditing ? (
                     <div
-                        className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[100px] text-center"
+                        className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[120px] text-center"
                         onKeyDown={handleKeyDown}
                         tabIndex={0}
                     >
-                        Press keys... (Esc to cancel)
+                        {tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
                     </div>
                 ) : (
                     <div className="flex items-center gap-1">
@@ -75,7 +97,7 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
                             </span>
                         ))}
                         <button
-                            onClick={() => setIsEditing(true)}
+                            onClick={startEditing}
                             className="px-2 py-1 text-xs bg-light-accent dark:bg-dark-accent text-white rounded hover:opacity-80 transition-opacity"
                         >
                             +
@@ -107,20 +129,9 @@ const COLOR_PRESETS = [
 ];
 
 const SettingsView: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<Tab>("typography");
+    const [activeTab, setActiveTab] = useState<Tab>("colors");
     const settings = useSettings();
     const {
-        fontSize, setFontSize,
-        lineHeight, setLineHeight,
-        textAlignment, setTextAlignment,
-        fontPairing, setFontPairing,
-        maxTextWidth, setMaxTextWidth,
-        hyphenation, setHyphenation,
-        pageMargin, setPageMargin,
-        paragraphSpacing, setParagraphSpacing,
-        dropCaps, setDropCaps,
-        immersiveMode, setImmersiveMode,
-        continuousMode, setContinuousMode,
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
         readerAccent, setReaderAccent,
@@ -129,16 +140,10 @@ const SettingsView: React.FC = () => {
         weeklyGoal, setWeeklyGoal,
         showStreakReminder, setShowStreakReminder,
         trackingEnabled, setTrackingEnabled,
-        screenReaderMode, setScreenReaderMode,
-        reduceMotion, setReduceMotion,
         resetToDefaults,
-        applyPreset,
     } = settings;
 
     const tabs = [
-        { id: "typography" as Tab, label: "Typography", icon: Type, description: "Fonts & Text" },
-        { id: "layout" as Tab, label: "Layout", icon: Layout, description: "Spacing" },
-        { id: "reading" as Tab, label: "Reading", icon: BookOpen, description: "Experience" },
         { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },
         { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
         { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
@@ -396,180 +401,6 @@ const SettingsView: React.FC = () => {
 
             {/* Tab Content */}
             <div className="space-y-6 animate-fadeIn" key={activeTab}>
-                {activeTab === "typography" && (
-                    <>
-                        {/* Live Preview */}
-                        <div className="relative overflow-hidden rounded-3xl shadow-2xl shadow-black/[0.08] dark:shadow-black/[0.3]">
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/5 dark:to-black/20 pointer-events-none z-10" />
-                            <div
-                                className="p-8 sm:p-12 transition-all duration-500"
-                                style={{
-                                    fontFamily: FONT_PAIRINGS.find((f) => f.id === fontPairing)?.family || "Georgia, serif",
-                                    fontSize: `${fontSize}px`,
-                                    lineHeight: lineHeight,
-                                    textAlign: textAlignment,
-                                    color: readerForeground,
-                                    backgroundColor: readerBackground,
-                                }}
-                            >
-                                <p className="leading-relaxed max-w-2xl mx-auto">
-                                    In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled with the ends of worms and an oozy smell, nor yet a dry, bare, sandy hole with nothing in it to sit down on or to eat: it was a hobbit-hole, and that means comfort.
-                                </p>
-                            </div>
-                            <div className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/40 backdrop-blur-xl rounded-lg text-white/80 text-xs font-medium z-20">
-                                Live Preview
-                            </div>
-                        </div>
-
-                        <div className="grid gap-6 lg:grid-cols-2">
-                            <Section title="Text Size" icon={Type}>
-                                <Slider
-                                    label="Font Size"
-                                    value={fontSize}
-                                    onChange={setFontSize}
-                                    min={14}
-                                    max={28}
-                                    displayValue={`${fontSize}px`}
-                                />
-                                <Slider
-                                    label="Line Height"
-                                    value={lineHeight}
-                                    onChange={setLineHeight}
-                                    min={1.4}
-                                    max={2.2}
-                                    step={0.05}
-                                    displayValue={lineHeight.toFixed(2)}
-                                />
-                                <Slider
-                                    label="Max Width"
-                                    value={maxTextWidth}
-                                    onChange={setMaxTextWidth}
-                                    min={40}
-                                    max={80}
-                                    displayValue={`${maxTextWidth}ch`}
-                                />
-                            </Section>
-
-                            <Section title="Font Family" icon={Type}>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {FONT_PAIRINGS.map((font) => (
-                                        <button
-                                            key={font.id}
-                                            onClick={() => setFontPairing(font.id)}
-                                            className={`group relative p-4 rounded-xl border text-left transition-all duration-300 hover:scale-[1.02] ${fontPairing === font.id
-                                                    ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/5 shadow-md"
-                                                    : "border-black/[0.05] dark:border-white/[0.05] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
-                                                }`}
-                                        >
-                                            <span
-                                                className="text-lg font-medium text-light-text dark:text-dark-text block mb-1"
-                                                style={{ fontFamily: font.family }}
-                                            >
-                                                {font.label}
-                                            </span>
-                                            <span className="text-xs text-light-text-muted dark:text-dark-text-muted">{font.style}</span>
-                                            {fontPairing === font.id && (
-                                                <div className="absolute top-2 right-2 w-4 h-4 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center">
-                                                    <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </Section>
-                        </div>
-
-                        <Section title="Text Alignment" icon={AlignJustify}>
-                            <div className="flex gap-3">
-                                {[
-                                    { id: "left", icon: AlignLeft, label: "Left" },
-                                    { id: "justify", icon: AlignJustify, label: "Justify" },
-                                    { id: "center", icon: AlignCenter, label: "Center" },
-                                ].map(({ id, icon: Icon, label }) => (
-                                    <button
-                                        key={id}
-                                        onClick={() => setTextAlignment(id as "left" | "justify" | "center")}
-                                        className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${textAlignment === id
-                                                ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/5 shadow-lg"
-                                                : "border-black/[0.05] dark:border-white/[0.05] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
-                                            }`}
-                                    >
-                                        <Icon className={`w-6 h-6 ${textAlignment === id ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted dark:text-dark-text-muted"}`} strokeWidth={1.5} />
-                                        <span className="text-xs font-medium text-light-text dark:text-dark-text">{label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </Section>
-                    </>
-                )}
-
-                {activeTab === "layout" && (
-                    <div className="grid gap-6 lg:grid-cols-2">
-                        <Section title="Spacing" icon={Move}>
-                            <Slider
-                                label="Page Margin"
-                                value={pageMargin}
-                                onChange={setPageMargin}
-                                min={16}
-                                max={64}
-                                displayValue={`${pageMargin}px`}
-                            />
-                            <Slider
-                                label="Paragraph Spacing"
-                                value={paragraphSpacing}
-                                onChange={setParagraphSpacing}
-                                min={8}
-                                max={32}
-                                displayValue={`${paragraphSpacing}px`}
-                            />
-                        </Section>
-
-                        <Section title="Typography Enhancement" icon={Type}>
-                            <Toggle checked={dropCaps} onChange={setDropCaps} label="Drop Caps" sublabel="Enlarged first letter at chapter starts" />
-                            <Toggle checked={hyphenation} onChange={setHyphenation} label="Hyphenation" sublabel="Automatic word breaking for justified text" />
-                        </Section>
-                    </div>
-                )}
-
-                {activeTab === "reading" && (
-                    <>
-                        <Section title="Reading Mode" icon={Eye}>
-                            <Toggle checked={immersiveMode} onChange={setImmersiveMode} label="Immersive Mode" sublabel="Hide navigation for distraction-free reading" />
-                            <Toggle checked={continuousMode} onChange={setContinuousMode} label="Continuous Scrolling" sublabel="Scroll instead of page-by-page navigation" />
-                        </Section>
-
-                        <div className="pt-2">
-                            <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-                                Quick Presets
-                            </h3>
-                            <div className="grid gap-4 sm:grid-cols-3">
-                                <PresetCard
-                                    icon={Coffee}
-                                    label="Comfort"
-                                    description="Warm, relaxed settings perfect for casual reading sessions"
-                                    onClick={() => applyPreset("comfort")}
-                                    gradient="bg-gradient-to-br from-amber-500/10 to-orange-500/5"
-                                />
-                                <PresetCard
-                                    icon={Zap}
-                                    label="Focus"
-                                    description="Clean, spacious layout designed for deep concentration"
-                                    onClick={() => applyPreset("focus")}
-                                    gradient="bg-gradient-to-br from-blue-500/10 to-indigo-500/5"
-                                />
-                                <PresetCard
-                                    icon={Moon}
-                                    label="Night"
-                                    description="Dark theme optimized for comfortable low-light reading"
-                                    onClick={() => applyPreset("night")}
-                                    gradient="bg-gradient-to-br from-violet-500/10 to-purple-500/5"
-                                />
-                            </div>
-                        </div>
-                    </>
-                )}
-
                 {activeTab === "colors" && (
                     <>
                         <div className="pt-2">
@@ -694,12 +525,49 @@ const SettingsView: React.FC = () => {
                                 <Toggle checked={trackingEnabled} onChange={setTrackingEnabled} label="Reading Analytics" sublabel="Track your reading time and progress" />
                                 <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Reminders" sublabel="Get notified to maintain your streak" />
                             </Section>
-
-                            <Section title="Accessibility" icon={Accessibility}>
-                                <Toggle checked={reduceMotion} onChange={setReduceMotion} label="Reduce Motion" sublabel="Minimize animations throughout the app" />
-                                <Toggle checked={screenReaderMode} onChange={setScreenReaderMode} label="Screen Reader" sublabel="Optimize for assistive technologies" />
-                            </Section>
                         </div>
+                    </>
+                )}
+
+                {activeTab === "shortcuts" && (
+                    <>
+                        <Section title="Reader Shortcuts" icon={Zap}>
+                            <div className="space-y-4">
+                                <ShortcutItem
+                                    label="Next Page"
+                                    keys={keybinds.nextPage}
+                                    onChange={(keys) => setKeybinds({ ...keybinds, nextPage: keys })}
+                                />
+                                <ShortcutItem
+                                    label="Previous Page"
+                                    keys={keybinds.prevPage}
+                                    onChange={(keys) => setKeybinds({ ...keybinds, prevPage: keys })}
+                                />
+                                <ShortcutItem
+                                    label="Toggle Bookmark"
+                                    keys={keybinds.toggleBookmark}
+                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleBookmark: keys })}
+                                />
+                                <ShortcutItem
+                                    label="Toggle Fullscreen"
+                                    keys={keybinds.toggleFullscreen}
+                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleFullscreen: keys })}
+                                />
+                                <ShortcutItem
+                                    label="Toggle UI"
+                                    keys={keybinds.toggleUI}
+                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleUI: keys })}
+                                />
+                                <ShortcutItem
+                                    label="Close Reader"
+                                    keys={keybinds.close}
+                                    onChange={(keys) => setKeybinds({ ...keybinds, close: keys })}
+                                />
+                            </div>
+                            <p className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-4">
+                                Click on a shortcut to edit. Press keys to set, Esc to cancel, Backspace to clear.
+                            </p>
+                        </Section>
                     </>
                 )}
             </div>
