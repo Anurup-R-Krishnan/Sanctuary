@@ -176,10 +176,37 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             },
             "img": {
                 "max-width": "100% !important",
+                "height": "auto !important",
                 "filter": grayscale ? "grayscale(1)" : "none",
+                "display": "block !important",
+                "margin": "1em auto !important",
             }
         });
     }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, dropCaps, getFontFamily, continuous, grayscale, isDarkBackground]);
+
+    // Handle key events from within the iframe
+    const handleIframeKey = useCallback((e: KeyboardEvent) => {
+        if (keybinds.nextPage.includes(e.key)) {
+            e.preventDefault();
+            goToNextPage();
+        } else if (keybinds.prevPage.includes(e.key)) {
+            e.preventDefault();
+            goToPrevPage();
+        } else if (keybinds.close.includes(e.key)) {
+            if (showSettings || showControls) {
+                setShowSettings(false);
+                setShowControls(false);
+            } else {
+                onClose();
+            }
+        } else if (keybinds.toggleBookmark.includes(e.key)) {
+            toggleBookmark();
+        } else if (keybinds.toggleFullscreen.includes(e.key)) {
+            toggleFullscreen();
+        } else if (keybinds.toggleUI.includes(e.key)) {
+            setShowUI(prev => !prev);
+        }
+    }, [keybinds, goToNextPage, goToPrevPage, showSettings, showControls, onClose, toggleBookmark, toggleFullscreen]);
 
     // Navigation
     const goToNextPage = useCallback(() => {
@@ -220,6 +247,39 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 renditionRef.current.prev();
             }
         }
+    }, [continuous, isReady]);
+
+    // Handle scroll events for continuous mode
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!continuous || !container || !isReady) return;
+
+        let scrollTimeout: ReturnType<typeof setTimeout>;
+        
+        const handleScroll = () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const { scrollTop, scrollHeight, clientHeight } = container;
+                
+                // Check if at bottom
+                if (scrollTop + clientHeight >= scrollHeight - 20) {
+                    // Debounce next chapter navigation
+                    renditionRef.current?.next().then(() => {
+                        container.scrollTo(0, 0);
+                    });
+                }
+                // Check if at top (optional, might be annoying if user just wants to see top of current chapter)
+                // else if (scrollTop <= 0) {
+                //    renditionRef.current?.prev();
+                // }
+            }, 200);
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            clearTimeout(scrollTimeout);
+        };
     }, [continuous, isReady]);
 
     const navigateToChapter = useCallback((href: string, label: string) => {
@@ -300,6 +360,9 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 // Hook to sanitize EPUB content CSS and add classes
                 renditionRef.current.hooks.content.register((content: any) => {
                     if (!content.document) return;
+                    
+                    // Add key listener to iframe document
+                    content.document.addEventListener('keydown', handleIframeKey);
                     
                     // Sanitize styles
                     const styles = content.document.querySelectorAll('style');
@@ -402,6 +465,10 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             // Re-register hooks on mode switch
             renditionRef.current.hooks.content.register((content: any) => {
                 if (!content.document) return;
+                
+                // Add key listener to iframe document
+                content.document.addEventListener('keydown', handleIframeKey);
+
                 const styles = content.document.querySelectorAll('style');
                 styles.forEach((style: any) => {
                     style.textContent = style.textContent
