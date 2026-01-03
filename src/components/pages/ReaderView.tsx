@@ -118,8 +118,13 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "padding-bottom": `${pageMargin}px !important`,
                 "padding-left": `${continuous ? pageMargin : 0}px !important`,
                 "padding-right": `${continuous ? pageMargin : 0}px !important`,
-                "max-width": `${maxTextWidth}ch !important`,
-                "margin": "0 auto !important",
+                ...(continuous ? {
+                    "max-width": `${maxTextWidth}ch !important`,
+                    "margin": "0 auto !important",
+                } : {
+                    "max-width": "none !important",
+                    "margin": "0 !important",
+                }),
             },
             "p": {
                 "font-family": "inherit !important",
@@ -133,7 +138,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "-webkit-hyphens": hyphenation ? "auto !important" : "none !important",
             },
             ...(dropCaps ? {
-                "p:first-of-type::first-letter": {
+                ".first-paragraph::first-letter": {
                     "font-size": "3.25em !important",
                     "line-height": "0.8 !important",
                     "font-weight": "bold !important",
@@ -144,7 +149,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     "font-family": `${fontFamily} !important`,
                     "text-transform": "uppercase !important",
                 },
-                "p:first-of-type": {
+                ".first-paragraph": {
                     "text-indent": "0 !important"
                 }
             } : {}),
@@ -292,16 +297,23 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     flow: continuous ? "scrolled-doc" : "paginated",
                 });
 
-                // Hook to sanitize EPUB content CSS
+                // Hook to sanitize EPUB content CSS and add classes
                 renditionRef.current.hooks.content.register((content: any) => {
                     if (!content.document) return;
+                    
+                    // Sanitize styles
                     const styles = content.document.querySelectorAll('style');
                     styles.forEach((style: any) => {
-                        // Basic sanitization
                         style.textContent = style.textContent
-                            .replace(/body\s*{[^}]*}/gi, '') // Remove body styles
-                            .replace(/html\s*{[^}]*}/gi, ''); // Remove html styles
+                            .replace(/body\s*{[^}]*}/gi, '')
+                            .replace(/html\s*{[^}]*}/gi, '');
                     });
+
+                    // Add class to first paragraph for drop caps
+                    const firstPara = content.document.querySelector('p');
+                    if (firstPara) {
+                        firstPara.classList.add('first-paragraph');
+                    }
                 });
 
                 applyStyles();
@@ -385,6 +397,21 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 height: continuous ? "auto" : "100%",
                 spread: continuous ? "none" : (spread ? "always" : "none"),
                 flow: continuous ? "scrolled-doc" : "paginated",
+            });
+
+            // Re-register hooks on mode switch
+            renditionRef.current.hooks.content.register((content: any) => {
+                if (!content.document) return;
+                const styles = content.document.querySelectorAll('style');
+                styles.forEach((style: any) => {
+                    style.textContent = style.textContent
+                        .replace(/body\s*{[^}]*}/gi, '')
+                        .replace(/html\s*{[^}]*}/gi, '');
+                });
+                const firstPara = content.document.querySelector('p');
+                if (firstPara) {
+                    firstPara.classList.add('first-paragraph');
+                }
             });
 
             applyStyles();
