@@ -21,6 +21,8 @@ import {
     ChartLine,
     Droplets,
     Move,
+    ChevronLeft,
+    X,
 } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
@@ -127,7 +129,14 @@ const COLOR_PRESETS = [
     { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
 ];
 
-const SettingsView: React.FC = () => {
+
+
+
+interface SettingsViewProps {
+    onBack?: () => void;
+}
+
+const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
     const settings = useSettings();
     const {
@@ -140,6 +149,9 @@ const SettingsView: React.FC = () => {
         showStreakReminder, setShowStreakReminder,
         trackingEnabled, setTrackingEnabled,
         resetToDefaults,
+        themeMode, setThemeMode,
+        customThemes, addCustomTheme, removeCustomTheme,
+        exportSettings, importSettings,
     } = settings;
 
     const tabs = [
@@ -148,30 +160,24 @@ const SettingsView: React.FC = () => {
         { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
     ];
 
-    // Premium Toggle Component
+    // Premium Toggle Component (Simplified)
     const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
-        <div className="group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-black/[0.02] to-transparent dark:from-white/[0.02] dark:to-transparent hover:from-black/[0.04] dark:hover:from-white/[0.04] transition-all duration-300 cursor-pointer" onClick={() => onChange(!checked)}>
+        <div className="group flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors cursor-pointer border border-transparent hover:border-black/[0.05] dark:hover:border-white/[0.05]" onClick={() => onChange(!checked)}>
             <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>
-                {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
+                {sublabel && <span className="text-xs text-light-text-muted dark:text-dark-text-muted mt-0.5 block">{sublabel}</span>}
             </div>
-            <div className={`relative w-14 h-8 rounded-full transition-all duration-500 ease-out ${checked
-                    ? "bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 shadow-lg shadow-light-accent/25 dark:shadow-dark-accent/20"
-                    : "bg-black/10 dark:bg-white/10"
+            <div className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${checked
+                ? "bg-light-accent dark:bg-dark-accent"
+                : "bg-black/10 dark:bg-white/10"
                 }`}>
-                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-500 ease-out ${checked ? "left-7 scale-110" : "left-1"
-                    }`}>
-                    {checked && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-light-accent dark:text-dark-accent" strokeWidth={3} />
-                        </div>
-                    )}
-                </div>
+                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-200 ${checked ? "left-6" : "left-1"
+                    }`} />
             </div>
         </div>
     );
 
-    // Premium Slider Component
+    // Premium Slider Component (Simplified)
     const Slider = ({
         value,
         onChange,
@@ -194,26 +200,26 @@ const SettingsView: React.FC = () => {
         const percentage = ((value - min) / (max - min)) * 100;
 
         return (
-            <div className="group p-4 rounded-2xl bg-gradient-to-r from-black/[0.02] to-transparent dark:from-white/[0.02] dark:to-transparent hover:from-black/[0.04] dark:hover:from-white/[0.04] transition-all duration-300">
+            <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] transition-colors">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         {Icon && (
-                            <div className="p-2 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                                <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+                            <div className="p-2 rounded-xl bg-black/[0.05] dark:bg-white/[0.1]">
+                                <Icon className="w-4 h-4 text-light-text dark:text-dark-text" strokeWidth={1.75} />
                             </div>
                         )}
                         <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
                     </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                        <span className="text-sm font-bold text-light-accent dark:text-dark-accent tabular-nums">
+                    <div className="px-3 py-1.5 rounded-xl bg-black/[0.05] dark:bg-white/[0.1]">
+                        <span className="text-sm font-bold text-light-text dark:text-dark-text tabular-nums">
                             {displayValue || value}
                         </span>
                     </div>
                 </div>
-                <div className="relative">
-                    <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="relative h-6 flex items-center">
+                    <div className="absolute inset-0 h-1.5 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-300"
+                            className="h-full bg-light-accent dark:bg-dark-accent rounded-full"
                             style={{ width: `${percentage}%` }}
                         />
                     </div>
@@ -227,25 +233,22 @@ const SettingsView: React.FC = () => {
                         className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
                     <div
-                        className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-dark-surface rounded-full shadow-lg border-2 border-light-accent dark:border-dark-accent transition-all duration-300 pointer-events-none"
-                        style={{ left: `calc(${percentage}% - 10px)` }}
+                        className="absolute w-4 h-4 bg-white dark:bg-dark-surface rounded-full shadow border-2 border-light-accent dark:border-dark-accent pointer-events-none"
+                        style={{ left: `calc(${percentage}% - 8px)` }}
                     />
                 </div>
             </div>
         );
     };
 
-    // Premium Section Component
-    const Section = ({ title, icon: Icon, children, gradient }: { title: string; icon?: React.ElementType; children: React.ReactNode; gradient?: string }) => (
-        <div className={`relative overflow-hidden rounded-3xl border border-black/[0.05] dark:border-white/[0.05] ${gradient || "bg-light-surface/50 dark:bg-dark-surface/50"}`}>
-            {/* Decorative gradient */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-light-accent/5 to-transparent dark:from-dark-accent/8 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-
-            <div className="relative p-6">
+    // Premium Section Component (Simplified)
+    const Section = ({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) => (
+        <div className="overflow-hidden rounded-3xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-black/20">
+            <div className="p-6">
                 <div className="flex items-center gap-3 mb-5">
                     {Icon && (
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-light-accent/15 to-amber-500/10 dark:from-dark-accent/20 dark:to-amber-400/10">
-                            <Icon className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+                        <div className="p-2 rounded-xl bg-black/[0.05] dark:bg-white/[0.1]">
+                            <Icon className="w-5 h-5 text-light-text dark:text-dark-text" strokeWidth={1.75} />
                         </div>
                     )}
                     <h3 className="text-base font-semibold text-light-text dark:text-dark-text">{title}</h3>
@@ -255,40 +258,7 @@ const SettingsView: React.FC = () => {
         </div>
     );
 
-    // Premium Preset Card
-    const PresetCard = ({
-        icon: Icon,
-        label,
-        description,
-        onClick,
-        gradient,
-    }: {
-        icon: React.ElementType;
-        label: string;
-        description: string;
-        onClick: () => void;
-        gradient: string;
-    }) => (
-        <button
-            onClick={onClick}
-            className="group relative overflow-hidden w-full p-5 rounded-2xl border border-black/[0.05] dark:border-white/[0.05] bg-light-surface/80 dark:bg-dark-surface/80 text-left transition-all duration-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-light-accent/10 dark:hover:shadow-dark-accent/10 hover:border-light-accent/20 dark:hover:border-dark-accent/20 active:scale-[0.98]"
-        >
-            {/* Animated gradient background */}
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${gradient}`} />
-
-            <div className="relative flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-light-accent/10 to-amber-500/5 dark:from-dark-accent/15 dark:to-amber-400/5 group-hover:from-light-accent/20 group-hover:to-amber-500/10 dark:group-hover:from-dark-accent/25 dark:group-hover:to-amber-400/10 transition-all duration-500">
-                    <Icon className="w-6 h-6 text-light-accent dark:text-dark-accent transition-transform duration-500 group-hover:scale-110" strokeWidth={1.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-light-text dark:text-dark-text group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-300">{label}</p>
-                    <p className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">{description}</p>
-                </div>
-            </div>
-        </button>
-    );
-
-    // Color Swatch
+    // Color Swatch (Simplified)
     const ColorSwatch = ({
         preset,
         isActive,
@@ -302,148 +272,178 @@ const SettingsView: React.FC = () => {
         return (
             <button
                 onClick={onClick}
-                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all duration-500 hover:scale-105 ${isActive
-                        ? "border-light-accent dark:border-dark-accent shadow-lg shadow-light-accent/15 dark:shadow-dark-accent/10 scale-105"
-                        : "border-black/[0.06] dark:border-white/[0.06] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
+                className={`group flex flex-col items-center p-4 rounded-2xl border transition-all hover:bg-black/[0.02] dark:hover:bg-white/[0.02] ${isActive
+                    ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/10"
+                    : "border-black/[0.08] dark:border-white/[0.08]"
                     }`}
             >
-                {/* Color preview */}
                 <div
-                    className="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110"
+                    className="w-12 h-12 rounded-xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-sm"
                     style={{ backgroundColor: preset.bg }}
                 >
-                    <span className="text-2xl font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
+                    <span className="text-xl font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
                 </div>
-
-                {/* Label */}
                 <div className="flex items-center gap-1.5">
-                    <Icon className="w-3.5 h-3.5 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
                     <span className="text-sm font-medium text-light-text dark:text-dark-text">{preset.label}</span>
                 </div>
-
-                {/* Active indicator */}
                 {isActive && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full flex items-center justify-center shadow-lg">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    </div>
+                    <div className="mt-2 w-1.5 h-1.5 rounded-full bg-light-accent dark:bg-dark-accent" />
                 )}
             </button>
         );
     };
 
-    const getActiveColorPreset = () => {
-        return COLOR_PRESETS.find(p => p.bg === readerBackground) || null;
-    };
-
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-16">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-light-accent/5 via-amber-500/3 to-transparent dark:from-dark-accent/8 dark:via-amber-400/4 p-8 border border-light-accent/10 dark:border-dark-accent/10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-light-accent/10 to-transparent dark:from-dark-accent/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-amber-500/8 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 shadow-lg shadow-light-accent/20 dark:shadow-dark-accent/15">
-                                <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
-                        </div>
-                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm max-w-md">
-                            Craft your perfect reading experience with personalized typography, colors, and layout preferences.
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={resetToDefaults}
-                        className="group flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] text-light-text-muted dark:text-dark-text-muted hover:text-light-accent dark:hover:text-dark-accent hover:border-light-accent/30 dark:hover:border-dark-accent/30 transition-all duration-300 shadow-sm hover:shadow-md"
-                    >
-                        <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
-                        <span className="text-sm font-medium">Reset All</span>
-                    </button>
+            {/* Simple Header */}
+            <div className="flex items-center gap-4 py-4">
+                <button
+                    onClick={onBack}
+                    className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-light-text dark:text-dark-text transition-colors"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
+                    <p className="text-light-text-muted dark:text-dark-text-muted text-sm">
+                        Customize your reading preferences
+                    </p>
                 </div>
+                <button
+                    onClick={resetToDefaults}
+                    className="px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-sm font-medium text-light-text dark:text-dark-text transition-colors"
+                >
+                    Reset Defaults
+                </button>
             </div>
 
-            {/* Premium Tab Navigation */}
-            <div className="relative p-1.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-2xl">
-                <div className="flex gap-1">
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-300 ${isActive
-                                        ? "text-light-accent dark:text-dark-accent"
-                                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-                                    }`}
-                            >
-                                {isActive && (
-                                    <div className="absolute inset-0 bg-white dark:bg-dark-surface rounded-xl shadow-lg shadow-black/[0.05] dark:shadow-black/[0.2]" />
-                                )}
-                                <div className="relative flex items-center gap-2">
-                                    <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.75} />
-                                    <span className="text-sm font-medium hidden sm:inline">{tab.label}</span>
-                                </div>
-                                <span className="relative text-[10px] opacity-60 hidden lg:block">{tab.description}</span>
-                            </button>
-                        );
-                    })}
-                </div>
+
+            {/* Tab Navigation */}
+            <div className="flex gap-2 p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl overflow-x-auto">
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg transition-all text-sm font-medium whitespace-nowrap ${isActive
+                                ? "bg-white dark:bg-black text-light-text dark:text-dark-text shadow-sm"
+                                : "text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                                }`}
+                        >
+                            <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.75} />
+                            <span>{tab.label}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Tab Content */}
             <div className="space-y-6 animate-fadeIn" key={activeTab}>
                 {activeTab === "colors" && (
                     <>
-                        <div className="pt-2">
-                            <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-                                <Palette className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-                                Color Themes
-                            </h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                                {COLOR_PRESETS.map((preset) => (
-                                    <ColorSwatch
-                                        key={preset.id}
-                                        preset={preset}
-                                        isActive={preset.bg === readerBackground}
-                                        onClick={() => {
-                                            setReaderForeground(preset.fg);
-                                            setReaderBackground(preset.bg);
-                                            setReaderAccent(preset.accent);
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
+                        <div className="space-y-6">
+                            <Section title="Theme Mode" icon={Layout}>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[
+                                        { value: 'light', label: 'Light', icon: Sun },
+                                        { value: 'dark', label: 'Dark', icon: Moon },
+                                        { value: 'system', label: 'System', icon: Layout },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => setThemeMode(option.value as any)}
+                                            className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${themeMode === option.value
+                                                ? "bg-black/[0.03] dark:bg-white/[0.1] border-black/20 dark:border-white/20 text-light-text dark:text-dark-text font-medium"
+                                                : "bg-transparent border-transparent hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-light-text-muted dark:text-dark-text-muted"
+                                                }`}
+                                        >
+                                            <option.icon className="w-5 h-5" />
+                                            <span className="text-sm">{option.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </Section>
 
-                        <Section title="Custom Colors" icon={Droplets}>
-                            <div className="grid gap-4 sm:grid-cols-3">
-                                {[
-                                    { label: "Text", value: readerForeground, onChange: setReaderForeground },
-                                    { label: "Background", value: readerBackground, onChange: setReaderBackground },
-                                    { label: "Accent", value: readerAccent, onChange: setReaderAccent },
-                                ].map(({ label, value, onChange }) => (
-                                    <label key={label} className="group relative flex items-center gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all cursor-pointer">
-                                        <input
-                                            type="color"
-                                            value={value}
-                                            onChange={(e) => onChange(e.target.value)}
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            <Section title="Reader Colors" icon={Palette}>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    {COLOR_PRESETS.map((preset) => (
+                                        <ColorSwatch
+                                            key={preset.id}
+                                            preset={preset}
+                                            isActive={preset.bg === readerBackground}
+                                            onClick={() => {
+                                                setReaderForeground(preset.fg);
+                                                setReaderBackground(preset.bg);
+                                                setReaderAccent(preset.accent);
+                                            }}
                                         />
-                                        <div
-                                            className="w-10 h-10 rounded-xl border-2 border-black/10 dark:border-white/10 shadow-inner transition-transform group-hover:scale-110"
-                                            style={{ backgroundColor: value }}
-                                        />
-                                        <div>
-                                            <p className="text-sm font-medium text-light-text dark:text-dark-text">{label}</p>
-                                            <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono uppercase">{value}</p>
+                                    ))}
+                                </div>
+
+                                {/* Custom Themes List would go here - simplifying for brevity */}
+                                {customThemes.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5">
+                                        <p className="text-xs font-semibold uppercase text-light-text-muted dark:text-dark-text-muted mb-3">Custom</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            {customThemes.map((theme) => (
+                                                <button
+                                                    key={theme.id}
+                                                    onClick={() => {
+                                                        setReaderForeground(theme.colors.fg);
+                                                        setReaderBackground(theme.colors.bg);
+                                                        setReaderAccent(theme.colors.accent);
+                                                    }}
+                                                    className="relative p-3 rounded-xl border border-black/10 dark:border-white/10 flex flex-col items-center gap-2"
+                                                >
+                                                    <div className="w-8 h-8 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: theme.colors.bg }} />
+                                                    <span className="text-xs font-medium text-light-text dark:text-dark-text truncate max-w-full">{theme.name}</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); removeCustomTheme(theme.id) }} className="absolute top-1 right-1 p-1 text-light-text-muted hover:text-red-500">
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </button>
+                                            ))}
                                         </div>
-                                    </label>
-                                ))}
-                            </div>
-                        </Section>
+                                    </div>
+                                )}
+                            </Section>
+
+                            <Section title="Customizer" icon={Droplets}>
+                                <div className="grid gap-4 sm:grid-cols-3">
+                                    {[
+                                        { label: "Text", value: readerForeground, onChange: setReaderForeground },
+                                        { label: "Background", value: readerBackground, onChange: setReaderBackground },
+                                        { label: "Accent", value: readerAccent, onChange: setReaderAccent },
+                                    ].map(({ label, value, onChange }) => (
+                                        <label key={label} className="flex items-center gap-3 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] cursor-pointer hover:bg-black/[0.04]">
+                                            <input
+                                                type="color"
+                                                value={value}
+                                                onChange={(e) => onChange(e.target.value)}
+                                                className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-light-text dark:text-dark-text">{label}</p>
+                                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono">{value}</p>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                    <button
+                                        onClick={() => {
+                                            const name = prompt("Enter a name for this theme:");
+                                            if (name) {
+                                                addCustomTheme(name, { fg: readerForeground, bg: readerBackground, accent: readerAccent });
+                                            }
+                                        }}
+                                        className="px-4 py-2 rounded-xl bg-light-text dark:bg-dark-text text-light-primary dark:text-dark-primary text-sm font-medium hover:opacity-90 transition-opacity"
+                                    >
+                                        Save Current as Preset
+                                    </button>
+                                </div>
+                            </Section>
+                        </div>
                     </>
                 )}
 
@@ -519,53 +519,34 @@ const SettingsView: React.FC = () => {
                                 <Toggle checked={trackingEnabled} onChange={setTrackingEnabled} label="Reading Analytics" sublabel="Track your reading time and progress" />
                                 <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Reminders" sublabel="Get notified to maintain your streak" />
                             </Section>
+                            <Section title="Data & Backup" icon={Accessibility}>
+                                <div className="space-y-4">
+                                    <button
+                                        onClick={exportSettings}
+                                        className="w-full flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                    >
+                                        <span className="text-sm font-medium text-light-text dark:text-dark-text">Export Settings</span>
+                                        <span className="text-xs text-light-text-muted dark:text-dark-text-muted">JSON</span>
+                                    </button>
+                                    <label className="w-full flex items-center justify-between p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer">
+                                        <span className="text-sm font-medium text-light-text dark:text-dark-text">Import Settings</span>
+                                        <input
+                                            type="file"
+                                            accept=".json"
+                                            onChange={(e) => {
+                                                if (e.target.files?.[0]) importSettings(e.target.files[0]);
+                                            }}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xs text-light-text-muted dark:text-dark-text-muted">Select File</span>
+                                    </label>
+                                </div>
+                            </Section>
                         </div>
                     </>
                 )}
-
-                {activeTab === "shortcuts" && (
-                    <>
-                        <Section title="Reader Shortcuts" icon={Zap}>
-                            <div className="space-y-4">
-                                <ShortcutItem
-                                    label="Next Page"
-                                    keys={keybinds.nextPage}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, nextPage: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Previous Page"
-                                    keys={keybinds.prevPage}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, prevPage: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Toggle Bookmark"
-                                    keys={keybinds.toggleBookmark}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleBookmark: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Toggle Fullscreen"
-                                    keys={keybinds.toggleFullscreen}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleFullscreen: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Toggle UI"
-                                    keys={keybinds.toggleUI}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleUI: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Close Reader"
-                                    keys={keybinds.close}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, close: keys })}
-                                />
-                            </div>
-                            <p className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-4">
-                                Click on a shortcut to edit. Press keys to set, Esc to cancel, Backspace to clear.
-                            </p>
-                        </Section>
-                    </>
-                )}
             </div>
-        </div>
+        </div >
     );
 };
 

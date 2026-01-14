@@ -3,7 +3,7 @@ import { ReadingStats, Badge, Book } from "@/types";
 
 const STATS_KEY = "sanctuary_reading_stats";
 const SESSIONS_KEY = "sanctuary_reading_sessions";
-const SETTINGS_KEY = "sanctuary_stats_settings";
+
 
 interface ReadingSession {
   id: string;
@@ -14,19 +14,7 @@ interface ReadingSession {
   pagesRead: number;
 }
 
-interface StatsSettings {
-  dailyGoal: number;
-  weeklyGoal: number;
-  themeColor: string;
-  showStreakReminder: boolean;
-}
 
-const defaultSettings: StatsSettings = {
-  dailyGoal: 30,
-  weeklyGoal: 150,
-  themeColor: "amber",
-  showStreakReminder: true,
-};
 
 const defaultBadges: Badge[] = [
   { id: "first_book", name: "First Steps", icon: "📖", description: "Complete your first book", unlocked: false, progress: 0, target: 1 },
@@ -43,29 +31,21 @@ const defaultBadges: Badge[] = [
   { id: "early_bird", name: "Early Bird", icon: "🌅", description: "Read before 6 AM", unlocked: false },
 ];
 
-export function useReadingStats(books: Book[]) {
+export function useReadingStats(books: Book[], dailyGoal: number = 30, weeklyGoal: number = 150) {
   const [sessions, setSessions] = useState<ReadingSession[]>([]);
-  const [settings, setSettings] = useState<StatsSettings>(defaultSettings);
   const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null);
   const [currentSessionBook, setCurrentSessionBook] = useState<string | null>(null);
 
   // Load from localStorage
   useEffect(() => {
     const savedSessions = localStorage.getItem(SESSIONS_KEY);
-    const savedSettings = localStorage.getItem(SETTINGS_KEY);
     if (savedSessions) setSessions(JSON.parse(savedSessions));
-    if (savedSettings) setSettings({ ...defaultSettings, ...JSON.parse(savedSettings) });
   }, []);
 
   // Save sessions
   useEffect(() => {
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
   }, [sessions]);
-
-  // Save settings
-  useEffect(() => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  }, [settings]);
 
   const startSession = useCallback((bookId: string) => {
     setCurrentSessionStart(Date.now());
@@ -74,9 +54,10 @@ export function useReadingStats(books: Book[]) {
 
   const endSession = useCallback((pagesRead: number) => {
     if (!currentSessionStart || !currentSessionBook) return;
-    
+
+    // Minimum 1 minute to count as a session
     const duration = Math.round((Date.now() - currentSessionStart) / 60000);
-    if (duration < 1) return;
+    if (duration < 1 && pagesRead === 0) return;
 
     const book = books.find(b => b.id === currentSessionBook);
     const newSession: ReadingSession = {
@@ -93,20 +74,16 @@ export function useReadingStats(books: Book[]) {
     setCurrentSessionBook(null);
   }, [currentSessionStart, currentSessionBook, books]);
 
-  const updateSettings = useCallback((newSettings: Partial<StatsSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, []);
-
   // Calculate stats
   const stats: ReadingStats = (() => {
     const today = new Date().toISOString().split("T")[0];
     const completedBooks = books.filter(b => b.progress >= 100);
-    
+
     // Streak calculation
     const uniqueDates = [...new Set(sessions.map(s => s.date))].sort().reverse();
     let currentStreak = 0;
     let checkDate = new Date();
-    
+
     for (let i = 0; i < 365; i++) {
       const dateStr = checkDate.toISOString().split("T")[0];
       if (uniqueDates.includes(dateStr)) {
@@ -234,20 +211,38 @@ export function useReadingStats(books: Book[]) {
     const avgSessionLength = sessions.length > 0 ? totalReadingTime / sessions.length : 0;
     let readingPersonality = "Explorer";
     let personalityDescription = "You're just getting started on your reading journey!";
-    
-    if (sessions.length >= 10) {
-      if (avgSessionLength > 45) {
-        readingPersonality = "Binge Reader";
-        personalityDescription = "You love diving deep, often reading for hours at a time.";
-      } else if (currentStreak >= 7) {
-        readingPersonality = "Consistent Reader";
-        personalityDescription = "You read regularly, building strong habits.";
-      } else if (totalPagesRead / Math.max(1, completedBooks.length) > 300) {
-        readingPersonality = "Epic Adventurer";
-        personalityDescription = "You prefer long, immersive stories.";
+
+    if (sessions.length >= 5) {
+      if (avgSessionLength > 60) {
+        readingPersonality = "The Devourer";
+        personalityDescription = "You vanish into worlds for hours, surfacing only when the book is done.";
+      } else if (currentStreak >= 14) {
+        readingPersonality = "The Ritualist";
+        personalityDescription = "Reading is as essential as breathing. Your consistency is legendary.";
+      } else if (totalPagesRead > 5000) {
+        readingPersonality = "The Grand Scholar";
+        personalityDescription = "You have traversed vast archival depths. Your library knowledge is immense.";
+      } else if (completedBooks.length / Math.max(1, (new Date().getTime() - new Date(sessions[0].date).getTime()) / (1000 * 60 * 60 * 24 * 30)) > 4) {
+        readingPersonality = "The Speedster";
+        personalityDescription = "You tear through books at an incredible pace.";
+      } else if (avgSessionLength < 15) {
+        readingPersonality = "The Snacker";
+        personalityDescription = "You steal moments of reading whenever you can, bit by bit.";
+      } else if (sessions.filter(s => {
+        const h = new Date(s.date).getHours();
+        return h >= 22 || h < 4;
+      }).length > sessions.length * 0.4) {
+        readingPersonality = "The Night Walker";
+        personalityDescription = "The quiet of the night is your sanctuary. You read when the world sleeps.";
+      } else if (sessions.filter(s => {
+        const h = new Date(s.date).getHours();
+        return h >= 5 && h < 9;
+      }).length > sessions.length * 0.4) {
+        readingPersonality = "The Sunrise Sage";
+        personalityDescription = "You start your day with wisdom, reading with the morning light.";
       } else {
-        readingPersonality = "Quick Reader";
-        personalityDescription = "You enjoy shorter, focused reading sessions.";
+        readingPersonality = "The Steady Voyager";
+        personalityDescription = "You are on a constant journey, moving through stories at your own reliable pace.";
       }
     }
 
@@ -259,7 +254,7 @@ export function useReadingStats(books: Book[]) {
       totalReadingTime,
       averageReadingSpeed: totalReadingTime > 0 ? Math.round(totalPagesRead / (totalReadingTime / 60)) : 0,
       dailyProgress,
-      dailyGoal: settings.dailyGoal,
+      dailyGoal: dailyGoal,
       booksCompletedThisMonth: monthlyData[5]?.books || 0,
       weeklyData,
       monthlyData,
@@ -288,8 +283,7 @@ export function useReadingStats(books: Book[]) {
 
   return {
     stats,
-    settings,
-    updateSettings,
+
     startSession,
     endSession,
     addManualSession,

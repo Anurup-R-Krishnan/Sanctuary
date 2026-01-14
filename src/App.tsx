@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Theme, View, Book } from "@/types";
+import { ClerkProvider } from "@clerk/clerk-react";
+import { View, Book } from "@/types";
 import { useBookLibrary } from "./hooks/useBookLibrary";
 import { useReadingStats } from "./hooks/useReadingStats";
+import { useCloudSync } from "./hooks/useCloudSync";
 import { useSettings } from "@/context/SettingsContext";
+import { ToastProvider } from "@/context/ToastContext";
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
 import LibraryGrid from "./components/pages/LibraryGrid";
@@ -11,6 +14,8 @@ import ReaderView from "./components/pages/ReaderView";
 import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
 import Auth from "./components/pages/Auth";
+import ScreenReaderAnnouncer from "./components/ui/ScreenReaderAnnouncer";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 import { supabase } from "./lib/supabase";
 import { BookOpen } from "lucide-react";
 
@@ -18,13 +23,20 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
-  const { 
-    dailyGoal, 
-    weeklyGoal, 
-    setDailyGoal, 
+  const {
+    dailyGoal,
+    weeklyGoal,
+    setDailyGoal,
+
     setWeeklyGoal,
-    reduceMotion 
+    reduceMotion,
+    computedTheme,
   } = useSettings();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", computedTheme === "dark");
+  }, [computedTheme]);
 
   useEffect(() => {
     let active = true;
@@ -49,7 +61,6 @@ const App: React.FC = () => {
     return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
 
-  const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
   const [view, setView] = useState<View>(View.LIBRARY);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,9 +69,25 @@ const App: React.FC = () => {
   const {
     books, sortedBooks, recentBooks, favoriteBooks, seriesGroups,
     addBook, updateBookProgress, toggleFavorite, addBookmark, removeBookmark,
-    sortBy, setSortBy, filterBy, setFilterBy, isLoading: libLoading,
+    deleteBook, sortBy, setSortBy, filterBy, setFilterBy, isLoading: libLoading,
+    syncBookFromCloud
   } = useBookLibrary({ persistent });
-  const { stats, startSession, endSession } = useReadingStats(books);
+  const { stats, startSession, endSession } = useReadingStats(books, dailyGoal, weeklyGoal);
+  const { syncProgress } = useCloudSync(books, syncBookFromCloud, session);
+
+  // Session tracking to calculate pages read
+  const sessionStartPage = React.useRef<number>(0);
+  const currentSessionPage = React.useRef<number>(0);
+
+  const handleUpdateProgress = useCallback((id: string, progress: number, location: string) => {
+    currentSessionPage.current = progress;
+    updateBookProgress(id, progress, location);
+    // Sync to cloud
+    const book = books.find(b => b.id === id);
+    if (book) {
+      syncProgress(id, progress, location, book);
+    }
+  }, [updateBookProgress, syncProgress, books]);
 
   const handleGuestMode = useCallback(() => {
     setIsGuest(true);
@@ -79,27 +106,38 @@ const App: React.FC = () => {
     catch (e) { console.error("Sign out error:", e); }
     finally { setSession(null); setIsGuest(false); setIsAuthLoading(false); }
   }, []);
-
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle("dark", theme === Theme.DARK);
     root.classList.toggle("reduce-motion", reduceMotion);
-    
-    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
+
+    const bgColor = computedTheme === 'dark' ? "#0f0e0d" : "#fefcf8";
     document.body.style.backgroundColor = bgColor;
     document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
-  }, [theme, reduceMotion]);
-
-  const toggleTheme = useCallback(() => setTheme(t => t === Theme.LIGHT ? Theme.DARK : Theme.LIGHT), []);
+  }, [computedTheme, reduceMotion]);
 
   const handleSelectBook = useCallback((book: Book) => {
     setSelectedBook(book);
     setView(View.READER);
+
+    // Initialize session tracking
+    // Note: book.progress might be a percentage or page number depending on context,
+    // but here we assume it maps to the location mechanism used in ReaderView.
+    // If it's pure percentage (0-100), we might need to rely on what ReaderView reports back.
+    // However, ReaderView initializes with book.progress.
+    // Let's assume it's the "current page" or "percentage location".
+    // We will update it as soon as the reader reports the first location.
+    sessionStartPage.current = book.progress || 0;
+    currentSessionPage.current = book.progress || 0;
+
     startSession(book.id);
   }, [startSession]);
 
   const handleCloseReader = useCallback(() => {
-    endSession(0);
+    // Calculate pages read this session
+    // Only count positive progress (reading forward)
+    const pagesRead = Math.max(0, currentSessionPage.current - sessionStartPage.current);
+
+    endSession(pagesRead);
     setView(View.LIBRARY);
     setSelectedBook(null);
   }, [endSession]);
@@ -118,15 +156,16 @@ const App: React.FC = () => {
   if (isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-light-accent/20 to-amber-500/20 dark:from-dark-accent/20 dark:to-amber-400/20 rounded-3xl blur-3xl scale-150" />
-          <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center shadow-2xl">
-            <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
+        <div className="relative mb-8">
+          {/* Subtle pulse ring */}
+          <div className="absolute inset-0 -m-3 rounded-2xl bg-light-accent/5 dark:bg-dark-accent/5 animate-pulse" />
+          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-light-surface to-light-secondary dark:from-dark-surface dark:to-dark-secondary border border-light-accent/10 dark:border-dark-accent/10 flex items-center justify-center shadow-lg shadow-light-accent/5 dark:shadow-dark-accent/5">
+            <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
           </div>
         </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Preparing your reading sanctuary...</p>
+        <div className="text-center space-y-3">
+          <h2 className="text-2xl font-serif font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
+          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Preparing your reading space...</p>
         </div>
       </div>
     );
@@ -139,29 +178,31 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${layoutClasses}`}>
-      {/* Enhanced Background Decorations */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-64 -right-64 w-[500px] h-[500px] bg-gradient-radial from-light-accent/[0.06] via-light-accent/[0.02] to-transparent dark:from-dark-accent/[0.08] dark:via-dark-accent/[0.03] rounded-full blur-3xl" />
-        <div className="absolute -bottom-64 -left-64 w-[600px] h-[600px] bg-gradient-radial from-amber-500/[0.04] via-amber-500/[0.01] to-transparent rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-gradient-radial from-light-accent/[0.03] to-transparent dark:from-dark-accent/[0.04] rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] bg-gradient-radial from-amber-400/[0.02] to-transparent rounded-full blur-3xl" />
-      </div>
+      {/* Background Decorations REMOVED */}
+
+      {/* Accessibility Skip Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-[60] px-4 py-2 bg-white dark:bg-black text-light-text dark:text-dark-text rounded-lg border border-black/10 dark:border-white/10 shadow-lg focus-ring font-medium"
+      >
+        Skip to content
+      </a>
+
+      <ScreenReaderAnnouncer view={view} />
 
       {/* Header */}
-      {!isReader && (
+      {view !== View.READER && (
         <Header
-          theme={theme}
-          onToggleTheme={toggleTheme}
           searchTerm={searchTerm}
           onSearch={setSearchTerm}
           isGuest={isGuest}
-          onShowLogin={isGuest ? handleShowLogin : undefined}
-          onSignOut={session ? handleSignOut : undefined}
+          onShowLogin={handleShowLogin}
+          onSignOut={persistent ? handleSignOut : undefined}
         />
       )}
 
       {/* Main Content Container */}
-      <main className={`relative ${isReader ? 'reader-main' : 'standard-main pt-20 pb-32 px-4 sm:px-6 lg:px-8'}`}>
+      <main id="main-content" className={`relative ${isReader ? 'reader-main' : 'standard-main pt-20 pb-32 px-4 sm:px-6 lg:px-8'}`}>
         <div className={`${isReader ? '' : 'max-w-7xl mx-auto animate-fadeIn'}`}>
           {view === View.LIBRARY && (
             <LibraryGrid
@@ -172,6 +213,7 @@ const App: React.FC = () => {
               seriesGroups={seriesGroups}
               onSelectBook={handleSelectBook}
               addBook={addBook}
+              onDeleteBook={deleteBook}
               isLoading={libLoading}
               sortBy={sortBy}
               setSortBy={setSortBy}
@@ -181,20 +223,21 @@ const App: React.FC = () => {
               searchTerm={searchTerm}
             />
           )}
-          {view === View.SETTINGS && <SettingsView />}
+          {view === View.SETTINGS && <SettingsView onBack={() => setView(View.LIBRARY)} />}
           {view === View.STATS && (
             <StatsView
               stats={stats}
               dailyGoal={dailyGoal}
               weeklyGoal={weeklyGoal}
               onUpdateGoal={handleUpdateGoal}
+              onBack={() => setView(View.LIBRARY)}
             />
           )}
           {view === View.READER && selectedBook && (
             <ReaderView
               book={selectedBook}
               onClose={handleCloseReader}
-              onUpdateProgress={updateBookProgress}
+              onUpdateProgress={handleUpdateProgress}
               onAddBookmark={addBookmark}
               onRemoveBookmark={removeBookmark}
             />
@@ -210,4 +253,25 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+const AppWithProviders: React.FC = () => {
+  const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+  const isValidClerkKey = clerkPubKey && !clerkPubKey.includes("placeholder");
+
+  return (
+    <ToastProvider>
+      {isValidClerkKey ? (
+        <ErrorBoundary>
+          <ClerkProvider publishableKey={clerkPubKey}>
+            <App />
+          </ClerkProvider>
+        </ErrorBoundary>
+      ) : (
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      )}
+    </ToastProvider>
+  );
+};
+
+export default AppWithProviders;

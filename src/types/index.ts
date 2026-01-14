@@ -27,15 +27,6 @@ export interface Bookmark {
   createdAt: string;
 }
 
-export interface VocabWord {
-  id: string;
-  word: string;
-  definition?: string;
-  context?: string;
-  bookId: string;
-  createdAt: string;
-}
-
 export interface Book {
   id: string;
   title: string;
@@ -57,7 +48,6 @@ export interface Book {
   highlights?: Highlight[];
   bookmarks?: Bookmark[];
   totalPages?: number;
-  locationHistory?: string[];
 }
 
 export interface Badge {

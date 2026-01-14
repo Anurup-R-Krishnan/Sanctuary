@@ -27,7 +27,6 @@ interface StoredBook {
   highlights?: Highlight[];
   bookmarks?: Bookmark[];
   totalPages?: number;
-  locationHistory?: string[];
 }
 
 const isStoredBookArray = (items: unknown[]): items is StoredBook[] =>
@@ -57,15 +56,15 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         cleanupObjectUrls();
         const hydrated: Book[] = Array.isArray(stored) && isStoredBookArray(stored)
           ? stored.map((s): Book => ({
-              id: s.id, title: s.title, author: s.author,
-              coverUrl: registerObjectUrl(URL.createObjectURL(s.coverUrl)),
-              epubBlob: s.epubBlob, progress: s.progress, lastLocation: s.lastLocation,
-              genre: s.genre, completedAt: s.completedAt, addedAt: s.addedAt,
-              lastOpenedAt: s.lastOpenedAt, isFavorite: s.isFavorite, isIncognito: s.isIncognito,
-              series: s.series, seriesIndex: s.seriesIndex, tags: s.tags,
-              readingList: s.readingList, highlights: s.highlights, bookmarks: s.bookmarks,
-              totalPages: s.totalPages, locationHistory: s.locationHistory,
-            }))
+            id: s.id, title: s.title, author: s.author,
+            coverUrl: registerObjectUrl(URL.createObjectURL(s.coverUrl)),
+            epubBlob: s.epubBlob, progress: s.progress, lastLocation: s.lastLocation,
+            genre: s.genre, completedAt: s.completedAt, addedAt: s.addedAt,
+            lastOpenedAt: s.lastOpenedAt, isFavorite: s.isFavorite, isIncognito: s.isIncognito,
+            series: s.series, seriesIndex: s.seriesIndex, tags: s.tags,
+            readingList: s.readingList, highlights: s.highlights, bookmarks: s.bookmarks,
+            totalPages: s.totalPages,
+          }))
           : [];
         setBooks(hydrated);
       } catch (error) { console.error("Failed to load books:", error); }
@@ -75,27 +74,46 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   }, [cleanupObjectUrls, persistent]);
 
   const addBook = useCallback(async (file: File) => {
+    // Validate file
+    const MAX_SIZE = 100 * 1024 * 1024; // 100MB
+    if (!file.name.toLowerCase().endsWith('.epub')) {
+      throw new Error('Only EPUB files are supported');
+    }
+    if (file.size > MAX_SIZE) {
+      throw new Error('File too large (max 100MB)');
+    }
+
     let bookData: any;
     try {
       // Read file as ArrayBuffer
       const epubArrayBuffer = await file.arrayBuffer();
-      
+
       // Create epub instance with ArrayBuffer directly (new API)
       bookData = ePub(epubArrayBuffer);
       await bookData.ready;
-      
+
       // Get metadata
       const metadata = await bookData.loaded.metadata;
-      const title = metadata.title ?? "Untitled";
-      const author = metadata.creator ?? "Unknown";
-      
+      const title = (metadata.title ?? "Untitled").trim();
+      const author = (metadata.creator ?? "Unknown").trim();
+
+      // Check for duplicates
+      const isDuplicate = books.some(b =>
+        b.title.toLowerCase() === title.toLowerCase() &&
+        b.author.toLowerCase() === author.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        throw new Error(`"${title}" is already in your library`);
+      }
+
       // Get cover
       let coverBlob: Blob;
       const coverHref = await bookData.coverUrl();
       if (coverHref) {
         const response = await fetch(coverHref);
         coverBlob = await response.blob();
-        if (coverHref.startsWith("blob:")) try { URL.revokeObjectURL(coverHref); } catch {}
+        if (coverHref.startsWith("blob:")) try { URL.revokeObjectURL(coverHref); } catch { }
       } else {
         // Generate placeholder cover
         const canvas = document.createElement("canvas");
@@ -104,7 +122,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         if (!ctx) throw new Error("Could not create canvas");
         ctx.fillStyle = "#4a5568"; ctx.fillRect(0, 0, 400, 600);
         ctx.fillStyle = "#fff"; ctx.textAlign = "center";
-        ctx.font = "bold 24px Georgia"; 
+        ctx.font = "bold 24px Georgia";
         // Word wrap title
         const words = title.split(" ");
         let line = "";
@@ -127,42 +145,37 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         if (!blob) throw new Error("Could not generate cover");
         coverBlob = blob;
       }
-      
+
       const displayCoverUrl = registerObjectUrl(URL.createObjectURL(coverBlob));
-      
+
       // Store the original file as blob for later reading
       const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
-      
+
       const newBook: Book = {
         id: uuidv4(), title, author, coverUrl: displayCoverUrl, epubBlob,
         progress: 0, lastLocation: "", addedAt: new Date().toISOString(),
         lastOpenedAt: new Date().toISOString(), readingList: "to-read",
-        highlights: [], bookmarks: [], locationHistory: [],
+        highlights: [], bookmarks: [],
       };
-      
+
       setBooks((prev) => [...prev, newBook]);
-      
+
       if (persistent) {
         const bookToStore: StoredBook = { ...newBook, coverUrl: coverBlob };
         await db.addBook(bookToStore as unknown as Book);
       }
-    } catch (error) { 
-      console.error("Error adding book:", error); 
-      throw error; 
-    } finally { 
-      bookData?.destroy?.(); 
+    } catch (error) {
+      console.error("Error adding book:", error);
+      throw error;
+    } finally {
+      bookData?.destroy?.();
     }
   }, [persistent]);
 
   const updateBookProgress = useCallback(async (id: string, progress: number, lastLocation: string) => {
     setBooks((prev) => prev.map((book) => {
       if (book.id !== id) return book;
-      const history = book.locationHistory || [];
-      if (book.lastLocation && book.lastLocation !== lastLocation) {
-        history.push(book.lastLocation);
-        if (history.length > 10) history.shift();
-      }
-      return { ...book, progress, lastLocation, lastOpenedAt: new Date().toISOString(), locationHistory: history };
+      return { ...book, progress, lastLocation, lastOpenedAt: new Date().toISOString() };
     }));
     if (persistent) try { await db.updateBookProgress(id, progress, lastLocation); } catch (e) { console.error("Failed to persist progress:", e); }
   }, [persistent]);
@@ -172,9 +185,9 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     if (persistent) try { await db.updateBook(id, updates); } catch (e) { console.error("Failed to update book:", e); }
   }, [persistent]);
 
-  const toggleFavorite = useCallback((id: string) => {
+  const toggleFavorite = useCallback(async (id: string) => {
     const book = books.find((b) => b.id === id);
-    if (book) updateBook(id, { isFavorite: !book.isFavorite });
+    if (book) await updateBook(id, { isFavorite: !book.isFavorite });
   }, [books, updateBook]);
 
   const toggleIncognito = useCallback((id: string) => {
@@ -216,8 +229,8 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     if (persistent) try { await db.deleteBook(id); } catch (e) { console.error("Failed to delete book:", e); }
   }, [books, persistent]);
 
-  const recentBooks = useMemo(() => 
-    [...books].filter((b) => !b.isIncognito).sort((a, b) => 
+  const recentBooks = useMemo(() =>
+    [...books].filter((b) => !b.isIncognito).sort((a, b) =>
       new Date(b.lastOpenedAt || 0).getTime() - new Date(a.lastOpenedAt || 0).getTime()
     ).slice(0, 10), [books]);
 
@@ -227,7 +240,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     let filtered = [...books];
     if (filterBy === "favorites") filtered = filtered.filter((b) => b.isFavorite);
     else if (filterBy !== "all") filtered = filtered.filter((b) => b.readingList === filterBy);
-    
+
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case "title": return a.title.localeCompare(b.title);
@@ -249,6 +262,20 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     return groups;
   }, [books]);
 
+  const syncBookFromCloud = useCallback((cloudBook: Partial<Book>) => {
+    setBooks(prev => {
+      const existing = prev.find(b => b.id === cloudBook.id);
+      if (existing) {
+        // Merge: prefer cloud if newer
+        if (new Date(cloudBook.lastOpenedAt || 0) > new Date(existing.lastOpenedAt || 0)) {
+          return prev.map(b => b.id === cloudBook.id ? { ...b, ...cloudBook } : b);
+        }
+        return prev;
+      }
+      return prev;
+    });
+  }, []);
+
   return {
     books, sortedBooks, recentBooks, favoriteBooks, seriesGroups,
     addBook, updateBookProgress, updateBook, deleteBook,
@@ -256,5 +283,6 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     addHighlight, removeHighlight, addBookmark, removeBookmark,
     sortBy, setSortBy, filterBy, setFilterBy,
     isLoading, isPersistent: persistent,
+    syncBookFromCloud
   };
 }

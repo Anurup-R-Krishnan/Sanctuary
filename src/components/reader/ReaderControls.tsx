@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { 
-    List, 
-    ArrowUp, 
-    ArrowDown, 
-    SkipForward, 
-    Book, 
-    Keyboard, 
-    HelpCircle, 
+import {
+    List,
+    ArrowUp,
+    ArrowDown,
+    SkipForward,
+    Book,
+    Keyboard,
+    HelpCircle,
     ChevronRight,
     ChevronDown,
     Search,
@@ -80,13 +80,13 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
 
         return (
             <div className="select-none">
-                <div 
+                <div
                     className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer ${isActive ? "bg-light-accent/10 dark:bg-dark-accent/10" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
                     style={{ paddingLeft: `${8 + depth * 12}px` }}
                     onClick={() => onNavigate(item.href, item.label)}
                 >
                     {hasSubs && (
-                        <button 
+                        <button
                             onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }}
                             className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
                             aria-label={isExpanded ? "Collapse" : "Expand"}
@@ -96,7 +96,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                         </button>
                     )}
                     {!hasSubs && <div className="w-4" />}
-                    <span 
+                    <span
                         className={`text-sm truncate flex-1 ${isActive ? "font-medium" : "opacity-80"}`}
                         style={{ color: isActive ? readerAccent : readerForeground }}
                     >
@@ -116,14 +116,14 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
         <div className="flex flex-col h-full pb-4">
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2 mb-6">
-                <button 
+                <button
                     onClick={onNextChapter}
                     className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                     <SkipForward className="w-4 h-4" />
                     <span className="text-sm font-medium">Next Chapter</span>
                 </button>
-                <button 
+                <button
                     className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors opacity-50 cursor-not-allowed"
                     title="Not implemented"
                     disabled
@@ -132,14 +132,14 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     <Book className="w-4 h-4" />
                     <span className="text-sm font-medium">Series</span>
                 </button>
-                <button 
+                <button
                     onClick={onJumpToTop}
                     className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                     <ArrowUp className="w-4 h-4" />
                     <span className="text-sm font-medium">Top</span>
                 </button>
-                <button 
+                <button
                     onClick={onJumpToBottom}
                     className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
@@ -167,8 +167,8 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
-                            ? "bg-white dark:bg-white/10 shadow-sm font-medium"
-                            : "opacity-60 hover:opacity-100"
+                        ? "bg-white dark:bg-white/10 shadow-sm font-medium"
+                        : "opacity-60 hover:opacity-100"
                         }`}
                     style={{ color: activeTab === "chapters" ? readerForeground : undefined }}
                 >
@@ -180,8 +180,8 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     role="tab"
                     aria-selected={activeTab === "bookmarks"}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
-                            ? "bg-white dark:bg-white/10 shadow-sm font-medium"
-                            : "opacity-60 hover:opacity-100"
+                        ? "bg-white dark:bg-white/10 shadow-sm font-medium"
+                        : "opacity-60 hover:opacity-100"
                         }`}
                     style={{ color: activeTab === "bookmarks" ? readerForeground : undefined }}
                 >
@@ -196,9 +196,9 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     <>
                         <div className="relative mb-4">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-                            <input 
-                                type="text" 
-                                placeholder="Search chapters..." 
+                            <input
+                                type="text"
+                                placeholder="Search chapters..."
                                 aria-label="Search chapters"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -218,15 +218,15 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                         {bookmarks.length > 0 ? (
                             bookmarks.map(bm => (
                                 <div key={bm.id} className="group flex items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                                    <button 
-                                        onClick={() => onNavigate(bm.cfi, bm.title)} 
+                                    <button
+                                        onClick={() => onNavigate(bm.cfi, bm.title)}
                                         className="flex-1 text-left"
                                     >
                                         <p className="text-sm font-medium" style={{ color: readerForeground }}>{bm.title}</p>
                                         <p className="text-xs opacity-60">{new Date(bm.createdAt).toLocaleDateString()}</p>
                                     </button>
-                                    <button 
-                                        onClick={() => onRemoveBookmark(bm.id)} 
+                                    <button
+                                        onClick={() => onRemoveBookmark(bm.id)}
                                         className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
                                         aria-label="Remove bookmark"
                                     >

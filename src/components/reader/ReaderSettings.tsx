@@ -5,11 +5,6 @@ import {
     AlignLeft,
     AlignJustify,
     AlignCenter,
-    Sun,
-    Moon,
-    Coffee,
-    Maximize,
-    EyeOff,
     Layout,
     Columns,
     Scroll,
@@ -19,7 +14,18 @@ import {
     Speech,
     ZapOff,
     RotateCcw,
+    Sun,
+    Moon,
+    Sunset,
 } from "lucide-react";
+
+// Beautiful reading theme presets
+const THEME_PRESETS = [
+    { id: "paper", name: "Paper", fg: "#2c2825", bg: "#faf8f5", accent: "#8B7355", icon: Sun },
+    { id: "sepia", name: "Sepia", fg: "#5c4b37", bg: "#f4ecd8", accent: "#a67c52", icon: Sunset },
+    { id: "night", name: "Night", fg: "#c9c5bd", bg: "#1a1918", accent: "#d4b58b", icon: Moon },
+    { id: "dark", name: "Dark", fg: "#e8e6e3", bg: "#0f0e0d", accent: "#b89b72", icon: Moon },
+];
 
 const ReaderSettings: React.FC = () => {
     const {
@@ -35,13 +41,14 @@ const ReaderSettings: React.FC = () => {
         continuous, setContinuous,
         spread, setSpread,
         brightness, setBrightness,
-        grayscale, setGrayscale,
         showScrollbar, setShowScrollbar,
         showPageCounter, setShowPageCounter,
         screenReaderMode, setScreenReaderMode,
         reduceMotion, setReduceMotion,
-        readerAccent,
-        readerBackground,
+        focusMode, setFocusMode,
+        readerAccent, setReaderAccent,
+        readerBackground, setReaderBackground,
+        readerForeground, setReaderForeground,
         resetToDefaults,
     } = useSettings();
 
@@ -118,8 +125,8 @@ const ReaderSettings: React.FC = () => {
             role="switch"
             aria-checked={checked}
             className={`flex items-center justify-between w-full p-3 rounded-xl border transition-all duration-200 ${checked
-                    ? "bg-light-accent/10 dark:bg-dark-accent/10 border-light-accent dark:border-dark-accent"
-                    : "bg-transparent border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+                ? "bg-light-accent/10 dark:bg-dark-accent/10 border-light-accent dark:border-dark-accent"
+                : "bg-transparent border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
         >
             <div className="flex items-center gap-3">
@@ -151,8 +158,8 @@ const ReaderSettings: React.FC = () => {
                     role="radio"
                     aria-checked={value === opt.value}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${value === opt.value
-                            ? "bg-white dark:bg-white/10 shadow-sm text-light-text dark:text-dark-text font-medium"
-                            : "text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                        ? "bg-white dark:bg-white/10 shadow-sm text-light-text dark:text-dark-text font-medium"
+                        : "text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
                         }`}
                 >
                     {opt.icon && <opt.icon className="w-4 h-4" />}
@@ -193,22 +200,42 @@ const ReaderSettings: React.FC = () => {
 
             {/* Theme & Brightness */}
             <section>
-                <SectionLabel>Theme & Appearance</SectionLabel>
+                <SectionLabel>Reading Theme</SectionLabel>
                 <div className="space-y-4">
+                    {/* Theme Presets */}
+                    <div className="grid grid-cols-4 gap-2">
+                        {THEME_PRESETS.map((theme) => {
+                            const isActive = readerBackground === theme.bg;
+                            const Icon = theme.icon;
+                            return (
+                                <button
+                                    key={theme.id}
+                                    onClick={() => {
+                                        setReaderForeground(theme.fg);
+                                        setReaderBackground(theme.bg);
+                                        setReaderAccent(theme.accent);
+                                    }}
+                                    className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${isActive
+                                        ? "border-light-accent dark:border-dark-accent"
+                                        : "border-transparent hover:border-black/10 dark:hover:border-white/10"
+                                        }`}
+                                    style={{ backgroundColor: theme.bg }}
+                                >
+                                    <Icon className="w-4 h-4" style={{ color: theme.fg }} />
+                                    <span className="text-[10px] font-medium" style={{ color: theme.fg }}>{theme.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
                     <div className="space-y-3 pt-2">
                         <Slider
                             label="Bright"
                             value={brightness}
-                            min={20}
-                            max={150}
+                            min={50}
+                            max={120}
                             onChange={setBrightness}
                             formatValue={(v) => `${Math.round(v)}%`}
-                        />
-                        <Toggle
-                            label="Grayscale Mode"
-                            checked={grayscale}
-                            onChange={setGrayscale}
-                            icon={EyeOff}
                         />
                     </div>
                 </div>
@@ -288,6 +315,12 @@ const ReaderSettings: React.FC = () => {
                 <SectionLabel>Reading Experience</SectionLabel>
                 <div className="space-y-2">
                     <Toggle
+                        label="Focus Mode"
+                        checked={focusMode}
+                        onChange={setFocusMode}
+                        icon={Type}
+                    />
+                    <Toggle
                         label="Screen Reader Mode"
                         checked={screenReaderMode}
                         onChange={setScreenReaderMode}
@@ -326,9 +359,10 @@ const ReaderSettings: React.FC = () => {
                         label="Spacing"
                         value={paragraphSpacing}
                         min={0}
-                        max={50}
+                        max={3}
+                        step={0.1}
                         onChange={setParagraphSpacing}
-                        formatValue={(v) => `${v}px`}
+                        formatValue={(v) => `${v.toFixed(1)}em`}
                     />
                 </div>
             </section>

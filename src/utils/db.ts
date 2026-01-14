@@ -1,9 +1,8 @@
-import { Book, VocabWord } from "@/types";
+import { Book } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
 const DB_VERSION = 2;
 const BOOKS_STORE = "books";
-const VOCAB_STORE = "vocabulary";
 
 let db: IDBDatabase;
 
@@ -17,9 +16,6 @@ function openDB(): Promise<IDBDatabase> {
       const database = (event.target as IDBOpenDBRequest).result;
       if (!database.objectStoreNames.contains(BOOKS_STORE)) {
         database.createObjectStore(BOOKS_STORE, { keyPath: "id" });
-      }
-      if (!database.objectStoreNames.contains(VOCAB_STORE)) {
-        database.createObjectStore(VOCAB_STORE, { keyPath: "id" });
       }
     };
   });
@@ -95,33 +91,4 @@ export async function deleteBook(id: string): Promise<void> {
   });
 }
 
-// Vocabulary
-export async function addVocabWord(word: VocabWord): Promise<void> {
-  const database = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = database.transaction(VOCAB_STORE, "readwrite");
-    const req = tx.objectStore(VOCAB_STORE).add(word);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(new Error("Failed to add word: " + req.error?.message));
-  });
-}
 
-export async function getVocabWords(): Promise<VocabWord[]> {
-  const database = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = database.transaction(VOCAB_STORE, "readonly");
-    const req = tx.objectStore(VOCAB_STORE).getAll();
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(new Error("Failed to get words: " + req.error?.message));
-  });
-}
-
-export async function deleteVocabWord(id: string): Promise<void> {
-  const database = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = database.transaction(VOCAB_STORE, "readwrite");
-    const req = tx.objectStore(VOCAB_STORE).delete(id);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(new Error("Failed to delete word: " + req.error?.message));
-  });
-}

@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { ReadingStats, Badge } from "@/types";
-import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
+import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users, ArrowLeft } from "lucide-react";
 
 interface StatsViewProps {
   stats: ReadingStats;
   dailyGoal: number;
   weeklyGoal: number;
-  onUpdateGoal: (daily: number, weekly: number) => void;
+  onUpdateGoal?: (daily: number, weekly: number) => void;
+  onBack?: () => void;
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -19,7 +20,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   target: Target,
 };
 
-const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) => {
+const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onBack }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
@@ -38,22 +39,19 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
     accent?: boolean;
   }) => (
     <div
-      className={`p-4 rounded-xl border transition-colors ${
-        accent
-          ? "bg-gradient-to-br from-light-accent/6 to-amber-500/6 dark:from-dark-accent/8 dark:to-amber-400/8 border-light-accent/15 dark:border-dark-accent/15"
-          : "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
-      }`}
+      className={`p-4 rounded-xl border transition-colors ${accent
+        ? "bg-light-accent/10 dark:bg-dark-accent/15 border-light-accent/20 dark:border-dark-accent/20"
+        : "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
+        }`}
     >
       <div className="flex items-start gap-3">
         <div
-          className={`p-2 rounded-lg ${
-            accent ? "bg-light-accent/12 dark:bg-dark-accent/12" : "bg-black/[0.04] dark:bg-white/[0.04]"
-          }`}
+          className={`p-2 rounded-lg ${accent ? "bg-light-accent/12 dark:bg-dark-accent/12" : "bg-black/[0.04] dark:bg-white/[0.04]"
+            }`}
         >
           <Icon
-            className={`w-4 h-4 ${
-              accent ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted dark:text-dark-text-muted"
-            }`}
+            className={`w-4 h-4 ${accent ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted dark:text-dark-text-muted"
+              }`}
             strokeWidth={1.75}
           />
         </div>
@@ -121,23 +119,20 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
     const IconComponent = ICON_MAP[badge.icon.toLowerCase()] || Award;
     return (
       <div
-        className={`p-4 rounded-xl border text-center transition-all ${
-          badge.unlocked
-            ? "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
-            : "opacity-35 bg-black/[0.01] dark:bg-white/[0.01] border-black/[0.03] dark:border-white/[0.03]"
-        }`}
+        className={`p-4 rounded-xl border text-center transition-all ${badge.unlocked
+          ? "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
+          : "opacity-35 bg-black/[0.01] dark:bg-white/[0.01] border-black/[0.03] dark:border-white/[0.03]"
+          }`}
       >
         <div
-          className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2.5 ${
-            badge.unlocked
-              ? "bg-gradient-to-br from-light-accent/15 to-amber-500/15 dark:from-dark-accent/15 dark:to-amber-400/15"
-              : "bg-black/[0.04] dark:bg-white/[0.04]"
-          }`}
+          className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2.5 ${badge.unlocked
+            ? "bg-light-accent/15 dark:bg-dark-accent/20"
+            : "bg-black/[0.04] dark:bg-white/[0.04]"
+            }`}
         >
           <IconComponent
-            className={`w-5 h-5 ${
-              badge.unlocked ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted/40 dark:text-dark-text-muted/40"
-            }`}
+            className={`w-5 h-5 ${badge.unlocked ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted/40 dark:text-dark-text-muted/40"
+              }`}
             strokeWidth={1.75}
           />
         </div>
@@ -169,7 +164,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
         <div key={i} className="flex-1 flex flex-col items-center gap-1">
           <div className="w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-t flex-1 flex items-end min-h-0">
             <div
-              className="w-full bg-gradient-to-t from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-t transition-all duration-500"
+              className="w-full bg-light-accent dark:bg-dark-accent rounded-t transition-all duration-500"
               style={{ height: `${maxValue > 0 ? (d.value / maxValue) * 100 : 0}%` }}
             />
           </div>
@@ -189,11 +184,18 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Stats</h2>
-          <p className="text-light-text-muted dark:text-dark-text-muted mt-1 text-sm">Track your reading</p>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button onClick={onBack} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+              <ArrowLeft className="w-5 h-5 text-light-text dark:text-dark-text" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Stats</h2>
+            <p className="text-light-text-muted dark:text-dark-text-muted mt-1 text-sm">Track your reading</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-orange-500/8 to-amber-500/8 dark:from-orange-500/10 dark:to-amber-500/10 border border-orange-500/15 dark:border-orange-500/10">
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-orange-500/10 dark:bg-orange-500/15 border border-orange-500/15 dark:border-orange-500/10">
           <Flame className="w-4 h-4 text-orange-500" strokeWidth={2} />
           <div className="flex items-baseline gap-1">
             <span className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.currentStreak}</span>
@@ -207,11 +209,10 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-md text-sm font-medium transition-all duration-150 ${
-              activeTab === tab.id
-                ? "bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text shadow-sm"
-                : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-            }`}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-md text-sm font-medium transition-all duration-150 ${activeTab === tab.id
+              ? "bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text shadow-sm"
+              : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
+              }`}
           >
             <tab.icon className="w-3.5 h-3.5" strokeWidth={1.75} />
             <span className="hidden sm:inline">{tab.label}</span>
@@ -264,7 +265,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
             />
           </div>
 
-          <div className="p-5 rounded-xl bg-gradient-to-br from-light-accent/4 to-amber-500/4 dark:from-dark-accent/6 dark:to-amber-400/6 border border-light-accent/10 dark:border-dark-accent/10">
+          <div className="p-5 rounded-xl bg-light-surface dark:bg-dark-surface border border-light-accent/10 dark:border-dark-accent/10">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-light-accent/12 dark:bg-dark-accent/12">
                 <Star className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
@@ -407,7 +408,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
                     <p className="text-sm font-medium text-light-text dark:text-dark-text">{item.title}</p>
                     <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">{item.desc}</p>
                   </div>
-                  <span className="text-base font-bold text-light-accent dark:text-dark-accent tabular-nums">{item.value}</span>
+                  <span className="text-base font-bold text-light-text dark:text-dark-text tabular-nums">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -437,7 +438,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
                       </div>
                       <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all"
+                          className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all"
                           style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }}
                         />
                       </div>
@@ -447,23 +448,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
             </div>
           </div>
 
-          <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/4 to-violet-500/4 dark:from-blue-500/6 dark:to-violet-500/6 border border-blue-500/8 dark:border-blue-500/10">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-3">Tips</h3>
-            <ul className="space-y-2 text-xs text-light-text-muted dark:text-dark-text-muted">
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Set a consistent reading time daily
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Start with shorter sessions
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Use immersive mode for focus
-              </li>
-            </ul>
-          </div>
+          {/* Tips section removed */}
         </div>
       )}
     </div>

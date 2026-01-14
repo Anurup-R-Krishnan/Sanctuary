@@ -34,15 +34,14 @@ const Auth: React.FC<AuthProps> = ({ onContinueAsGuest }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-light-primary dark:bg-dark-primary relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-light-primary dark:bg-dark-primary bg-texture relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-light-accent/[0.04] via-transparent to-transparent dark:from-dark-accent/[0.03]" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-light-accent/10 dark:via-dark-accent/10 to-transparent" />
+        {/* Removed geometric decorations for cleaner look */}
       </div>
 
       <div className="relative w-full max-w-sm mx-4 animate-fadeInUp">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 mb-5 shadow-lg glow-sm">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-light-accent dark:bg-dark-accent mb-5 shadow-lg">
             <BookOpen className="w-7 h-7 text-white" strokeWidth={1.5} />
           </div>
           <h1 className="text-3xl font-bold text-light-text dark:text-dark-text">Sanctuary</h1>
@@ -118,11 +117,10 @@ const Auth: React.FC<AuthProps> = ({ onContinueAsGuest }) => {
 
           {(message || error) && (
             <div
-              className={`mt-5 rounded-xl px-4 py-3 text-sm ${
-                error
-                  ? "bg-red-500/8 text-red-600 dark:text-red-400 border border-red-500/15"
-                  : "bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15"
-              }`}
+              className={`mt-5 rounded-xl px-4 py-3 text-sm ${error
+                ? "bg-red-500/8 text-red-600 dark:text-red-400 border border-red-500/15"
+                : "bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 border border-emerald-500/15"
+                }`}
             >
               {error || message}
             </div>
