@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun } from "lucide-react";
-import { Theme } from "@/types";
 import { useSettings } from "@/context/SettingsContext";
 
 interface HeaderProps {
@@ -21,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({
   const [searchFocused, setSearchFocused] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { reduceMotion, themeMode, setThemeMode, computedTheme } = useSettings();
+  const { reduceMotion, setThemeMode, computedTheme } = useSettings();
 
   const handleToggleTheme = () => {
     setThemeMode(computedTheme === 'light' ? 'dark' : 'light');

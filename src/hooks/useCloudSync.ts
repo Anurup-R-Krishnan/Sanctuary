@@ -4,7 +4,6 @@ import { Book } from '@/types';
 import type { Session } from '@supabase/supabase-js';
 
 export function useCloudSync(
-  books: Book[],
   syncBookFromCloud: (book: Partial<Book>) => void,
   session: Session | null
 ) {

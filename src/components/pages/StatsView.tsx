@@ -5,7 +5,6 @@ import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart
 interface StatsViewProps {
   stats: ReadingStats;
   dailyGoal: number;
-  weeklyGoal: number;
   onUpdateGoal?: (daily: number, weekly: number) => void;
   onBack?: () => void;
 }
@@ -20,7 +19,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   target: Target,
 };
 
-const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onBack }) => {
+const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, onBack }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);

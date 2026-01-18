@@ -15,7 +15,6 @@ interface ReaderViewProps {
     onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
     onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
     onAddHighlight?: (bookId: string, highlight: Omit<Highlight, "id" | "createdAt">) => void;
-    onRemoveHighlight?: (bookId: string, highlightId: string) => void;
 }
 
 interface TocItem {
@@ -32,11 +31,6 @@ interface SelectionMenu {
     text: string;
 }
 
-const HIGHLIGHT_COLORS: Highlight["color"][] = ["yellow", "green", "blue", "pink", "purple"];
-
-// Average reading speed (words per minute)
-const WPM = 250;
-
 
 const ReaderView: React.FC<ReaderViewProps> = ({
     book,
@@ -45,9 +39,8 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     onAddBookmark,
     onRemoveBookmark,
     onAddHighlight,
-    onRemoveHighlight,
 }) => {
-    // UI State
+    
     const [showUI, setShowUI] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showControls, setShowControls] = useState(false);
@@ -59,7 +52,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     const [searchResults, setSearchResults] = useState<{ cfi: string; excerpt: string }[]>([]);
     const [showSearch, setShowSearch] = useState(false);
 
-    // Book State
+    
     const [currentPage, setCurrentPage] = useState(book.progress || 1);
     const [totalPages, setTotalPages] = useState(book.totalPages || 100);
     const [chapterTitle, setChapterTitle] = useState("");
@@ -68,13 +61,12 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     const [readingTime, setReadingTime] = useState(0);
     const [tocItems, setTocItems] = useState<TocItem[]>([]);
 
-    // Refs
+    
     const renditionRef = useRef<any>(null);
     const bookRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const lastMouseMoveRef = useRef<number>(Date.now());
 
-    // Settings
+    
     const {
         fontSize,
         lineHeight,
@@ -96,7 +88,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         focusMode,
     } = useSettings();
 
-    // Get font family string
+    
     const getFontFamily = useCallback(() => {
         const fonts: Record<string, string> = {
             "merriweather-georgia": "'Merriweather', Georgia, serif",
@@ -109,21 +101,9 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         return fonts[fontPairing] || fonts["merriweather-georgia"];
     }, [fontPairing]);
 
-    // Helper to determine if background is dark
-    const isDarkBackground = useCallback((color: string) => {
-        if (!color.startsWith('#')) return false;
-        const hex = color.replace('#', '');
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        // YIQ equation
-        return ((r * 299) + (g * 587) + (b * 114)) / 1000 < 128;
-    }, []);
-
-    // Selection Handler
     const handleSelection = useCallback((cfiRange: string, content: any) => {
-        // Clear previous menu first
-        // setSelectionMenu(null); // Warning: this might cause flashing if we replace it immediately
+        
+        
 
         if (!content) return;
 
@@ -136,15 +116,15 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
 
-        // Get absolute position relative to the viewing container
-        // Note: 'rect' is inside the iframe. We need to add iframe offset.
-        // BUT, since we are using full screen iframe usually, it might be close.
-        // A safer bet for this MVP is to center it or place it at the touch coordinates if available.
-        // For now, let's try to use the rect from the iframe + container offset.
+        
+        
+        
+        
+        
 
-        // However, 'rect' coordinates are relative to the viewport of the iframe.
-        // If the iframe is fixed/full size, it matches our window.
-        // Let's assume full size for now.
+        
+        
+        
 
         const text = selection.toString();
         if (text.length > 0) {
@@ -158,7 +138,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     }, []);
 
 
-    // Apply current settings to rendition
+    
     const applyStyles = useCallback(() => {
         if (!renditionRef.current) return;
 
@@ -168,101 +148,37 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
         renditionRef.current.themes.default({
             "body": {
-                "font-family": `${fontFamily} !important`,
-                "font-size": `${fontSize}px !important`,
-                "line-height": `${lineHeight} !important`,
-                "color": `${readerForeground} !important`,
-                "background-color": `${readerBackground} !important`,
-                "padding": `${marginRem}rem !important`,
-                ...(continuous ? {
-                    "max-width": `${maxTextWidth}ch !important`,
-                    "margin": "0 auto !important",
-                } : {}),
+                "font-family": `${fontFamily}`,
+                "font-size": `${fontSize}px`,
+                "line-height": `${lineHeight}`,
+                "color": `${readerForeground}`,
+                "background-color": `${readerBackground}`,
+                "padding": `${marginRem}rem`,
+                "margin": "0 auto",
+                "max-width": `${maxTextWidth}ch`,
             },
             "p": {
-                "font-family": "inherit !important",
-                "font-size": "inherit !important",
-                "line-height": "inherit !important",
-                "color": "inherit !important",
-                "text-align": `${textAlignment} !important`,
-                "margin": `0 0 ${paragraphSpacing}em 0 !important`,
-                "hyphens": hyphenation ? "auto !important" : "none !important",
-                "-webkit-hyphens": hyphenation ? "auto !important" : "none !important",
-            },
-            "p + p": {
-                "text-indent": "1.5em !important",
-            },
-            ...(dropCaps ? {
-                ".first-paragraph::first-letter": {
-                    "font-size": "3.2em !important",
-                    "font-family": `${fontFamily} !important`,
-                    "font-weight": "600 !important",
-                    "line-height": "1 !important",
-                    "float": "left !important",
-                    "margin-right": "0.08em !important",
-                    "color": `${dropCapColor} !important`,
-                },
-                ".first-paragraph": {
-                    "text-indent": "0 !important"
-                }
-            } : {}),
-            "div, span": {
-                "font-family": "inherit !important",
-                "line-height": "inherit !important",
-                "color": "inherit !important",
-            },
-            "li": {
-                "font-family": "inherit !important",
-                "line-height": "inherit !important",
-                "color": "inherit !important",
-                "margin-bottom": "0.5em !important",
-            },
-            "blockquote": {
-                "font-family": "inherit !important",
-                "font-style": "italic !important",
-                "margin": "1.5em 2em !important",
-                "padding-left": "1em !important",
-                "border-left": `3px solid ${readerAccent}40 !important`,
-                "color": "inherit !important",
+                "text-align": `${textAlignment}`,
+                "margin-bottom": `${paragraphSpacing}em`,
+                "hyphens": hyphenation ? "auto" : "none",
             },
             "h1, h2, h3, h4, h5, h6": {
-                "font-family": `${fontFamily} !important`,
-                "color": `${readerForeground} !important`,
-                "margin": "1.5em 0 0.75em 0 !important",
-                "font-weight": "600 !important",
-                "line-height": "1.3 !important",
+                "font-family": `${fontFamily}`,
+                "color": `${readerForeground}`,
+                "margin": "1.5em 0 0.75em 0",
+                "font-weight": "600",
+                "line-height": "1.3",
             },
             "a": {
-                "color": `${readerAccent} !important`,
-                "text-decoration": "underline !important",
-                "text-decoration-color": `${readerAccent}60 !important`,
+                "color": `${readerAccent}`,
+                "text-decoration": "underline",
             },
-            "img": {
-                "max-width": "100% !important",
-                "height": "auto !important",
-                "display": "block !important",
-                "margin": "1.5em auto !important",
-            },
-            ...(focusMode ? {
-                "p:not(:hover)": {
-                    "opacity": "0.35 !important",
-                    "transition": "opacity 0.15s ease !important",
-                },
-                "p:hover": {
-                    "opacity": "1 !important",
-                    "transition": "opacity 0.15s ease !important",
-                },
-            } : {}),
         });
 
-        // Force re-application of the default theme
         renditionRef.current.themes.select("default");
+    }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, getFontFamily]);
 
-        // Explicitly set font size to ensure it propagates
-        renditionRef.current.themes.fontSize(`${fontSize}px !important`);
-    }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, dropCaps, getFontFamily, continuous, focusMode]);
-
-    // Navigation
+    
     const goToNextPage = useCallback(() => {
         if (renditionRef.current && isReady) {
             setLastPageTurn(Date.now());
@@ -312,7 +228,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         });
     }, []);
 
-    // Toggle bookmark
+    
     const toggleBookmark = useCallback(() => {
         if (!currentCfi) return;
         if (isBookmarked) {
@@ -325,7 +241,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         setIsBookmarked(!isBookmarked);
     }, [currentCfi, isBookmarked, book.id, book.bookmarks, currentPage, chapterTitle, onAddBookmark, onRemoveBookmark]);
 
-    // Handle Search
+    
     const handleSearch = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (!searchQuery.trim() || !bookRef.current) return;
@@ -348,7 +264,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         renditionRef.current.annotations.add("highlight", cfi);
     }, []);
 
-    // Toggle fullscreen
+    
     const toggleFullscreen = useCallback(async () => {
         try {
             if (!document.fullscreenElement) {
@@ -363,31 +279,31 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         }
     }, []);
 
-    // Handle key events from within the iframe
+    
     const handleIframeKey = useCallback((e: KeyboardEvent) => {
-        if (keybinds.nextPage.includes(e.key)) {
+        if (keybinds.nextPage.includes(e.code)) {
             e.preventDefault();
             goToNextPage();
-        } else if (keybinds.prevPage.includes(e.key)) {
+        } else if (keybinds.prevPage.includes(e.code)) {
             e.preventDefault();
             goToPrevPage();
-        } else if (keybinds.close.includes(e.key)) {
+        } else if (keybinds.close.includes(e.code)) {
             if (showSettings || showControls) {
                 setShowSettings(false);
                 setShowControls(false);
             } else {
                 onClose();
             }
-        } else if (keybinds.toggleBookmark.includes(e.key)) {
+        } else if (keybinds.toggleBookmark.includes(e.code)) {
             toggleBookmark();
-        } else if (keybinds.toggleFullscreen.includes(e.key)) {
+        } else if (keybinds.toggleFullscreen.includes(e.code)) {
             toggleFullscreen();
-        } else if (keybinds.toggleUI.includes(e.key)) {
+        } else if (keybinds.toggleUI.includes(e.code)) {
             setShowUI(prev => !prev);
         }
     }, [keybinds, goToNextPage, goToPrevPage, showSettings, showControls, onClose, toggleBookmark, toggleFullscreen]);
 
-    // Initialize ePub
+    
     useEffect(() => {
         let mounted = true;
 
@@ -403,7 +319,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 const arrayBuffer = await book.epubBlob.arrayBuffer();
                 bookRef.current = ePub(arrayBuffer);
 
-                // Extract TOC
+                
                 const navigation = await bookRef.current.loaded.navigation;
                 if (navigation?.toc) {
                     const parseToc = (items: any[]): TocItem[] => {
@@ -417,7 +333,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     setTocItems(parseToc(navigation.toc));
                 }
 
-                // Create rendition
+                
                 renditionRef.current = bookRef.current.renderTo(containerRef.current, {
                     width: "100%",
                     height: continuous ? "auto" : "100%",
@@ -426,17 +342,17 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     gap: pageMargin,
                 });
 
-                // Hook to sanitize EPUB content CSS and add classes
+                
                 renditionRef.current.hooks.content.register((content: any) => {
                     if (!content.document) return;
 
                     const doc = content.document;
                     const win = content.window;
 
-                    // Add key listener to iframe document
+                    
                     doc.addEventListener('keydown', handleIframeKey);
 
-                    // Add touch listeners for swiping (inside the iframe)
+                    
                     let startX = 0;
                     let startY = 0;
                     let startTime = 0;
@@ -451,61 +367,51 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     doc.addEventListener('touchend', (e: TouchEvent) => {
                         const touch = e.changedTouches[0];
                         const deltaX = touch.clientX - startX;
-                        const deltaY = touch.clientY - startY;
                         const deltaTime = Date.now() - startTime;
 
-                        // Identify horizontal swipe
-                        if (deltaTime < 300 && Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+                        if (deltaTime < 300 && Math.abs(deltaX) > 50) {
                             if (deltaX > 0) goToPrevPage();
                             else goToNextPage();
-                        } else {
-                            // Tap handling (center vs edges) is tricky inside iframe due to text selection conflicts.
-                            // We typically want to let the user select text.
-                            // If it was a quick tap and NO selection occurred, we could treat as navigation/toggle.
-                            const selection = win.getSelection();
-                            if ((!selection || selection.isCollapsed) && deltaTime < 200 && Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
-                                // It was a tap.
-                                // Map coordinates to screen width percentage
-                                const width = win.innerWidth;
-                                if (touch.clientX < width * 0.25) goToPrevPage();
-                                else if (touch.clientX > width * 0.75) goToNextPage();
-                                else {
-                                    setShowUI(prev => !prev);
-                                }
-                            }
+                        } else if (deltaTime < 200 && Math.abs(deltaX) < 10) {
+                            const width = win.innerWidth;
+                            if (touch.clientX < width * 0.25) goToPrevPage();
+                            else if (touch.clientX > width * 0.75) goToNextPage();
+                            else setShowUI(prev => !prev);
                         }
                     });
 
-                    // Add selection listener
+                    
                     renditionRef.current.on("selected", (cfiRange: string, contents: any) => {
                         handleSelection(cfiRange, contents);
-                        // Add highlight capability here later
-                        // Example:
-                        // renditionRef.current.annotations.add("highlight", cfiRange, {}, (e: any) => {
-                        //     console.log("highlight clicked", e.target);
-                        // });
+                        
+                        
+                        
+                        
+                        
                     });
 
-                    // Keep all book styles - only inject our overrides via themes
-                    // No CSS sanitization needed since epub.js themes take precedence
-
-                    // Add class to first paragraph for drop caps
                     const firstPara = doc.querySelector('p');
-                    if (firstPara) {
+                    if (firstPara && dropCaps) {
                         firstPara.classList.add('first-paragraph');
+                    }
+
+                    if (body) {
+                        body.style.maxWidth = `${maxTextWidth}ch`;
+                        body.style.margin = '0 auto';
+                        body.style.padding = `${pageMargin / 16}rem`;
                     }
                 });
 
                 applyStyles();
 
-                // Display book
+                
                 if (book.lastLocation) {
                     await renditionRef.current.display(book.lastLocation);
                 } else {
                     await renditionRef.current.display();
                 }
 
-                // Handle location changes
+                
                 renditionRef.current.on("relocated", (location: any) => {
                     if (!mounted) return;
                     const cfi = location.start.cfi;
@@ -521,7 +427,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     setIsBookmarked(book.bookmarks?.some((b) => b.cfi === cfi) ?? false);
                 });
 
-                // Handle chapter changes
+                
                 renditionRef.current.on("rendered", (section: any) => {
                     if (!mounted) return;
                     const findChapter = (items: TocItem[]): string | null => {
@@ -540,7 +446,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     if (chapter) setChapterTitle(chapter);
                 });
 
-                // Generate locations in background
+                
                 bookRef.current.locations.generate(1024).then(() => {
                     if (mounted) {
                         setTotalPages(Math.max(1, bookRef.current.locations.length()));
@@ -564,116 +470,17 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         };
     }, [book.epubBlob, book.id]);
 
-    // Re-render on mode change (only for major structural changes)
+    
     useEffect(() => {
-        if (!isReady || !renditionRef.current || !bookRef.current) return;
+        if (!isReady) applyStyles();
+    }, [continuous, spread, pageMargin, isReady, applyStyles]);
 
-        // Check if flow/spread actually changed before destroying
-        // Note: simple destroy/create is robust but slow.
-        // We can try to just update options if epubjs supports it well, 
-        // but typically flow changes require re-rendering.
-
-        const switchMode = async () => {
-            const cfi = currentCfi; // Persist location
-
-            // Note: We are deliberately keeping the destroy/re-create for 'continuous'/'spread' changes
-            // because these fundamentally change the epubjs internal view managers (Iframe vs Default).
-            // However, we ensure this ONLY happens when these specific props change, not others.
-
-            renditionRef.current.destroy();
-
-            renditionRef.current = bookRef.current.renderTo(containerRef.current, {
-                width: "100%",
-                height: continuous ? "auto" : "100%",
-                spread: continuous ? "none" : (spread ? "always" : "none"),
-                flow: continuous ? "scrolled-doc" : "paginated",
-                gap: pageMargin,
-                manager: continuous ? "continuous" : "default",
-            });
-
-            // Re-register hooks on mode switch
-            renditionRef.current.hooks.content.register((content: any) => {
-                if (!content.document) return;
-
-                const doc = content.document;
-                const win = content.window;
-
-                // Add key listener to iframe document
-                doc.addEventListener('keydown', handleIframeKey);
-
-                // Add touch listeners for swiping (inside the iframe)
-                let startX = 0;
-                let startY = 0;
-                let startTime = 0;
-
-                doc.addEventListener('touchstart', (e: TouchEvent) => {
-                    const touch = e.touches[0];
-                    startX = touch.clientX;
-                    startY = touch.clientY;
-                    startTime = Date.now();
-                }, { passive: true });
-
-                doc.addEventListener('touchend', (e: TouchEvent) => {
-                    const touch = e.changedTouches[0];
-                    const deltaX = touch.clientX - startX;
-                    const deltaY = touch.clientY - startY;
-                    const deltaTime = Date.now() - startTime;
-
-                    if (deltaTime < 300 && Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-                        if (deltaX > 0) goToPrevPage();
-                        else goToNextPage();
-                    } else {
-                        const selection = win.getSelection();
-                        if ((!selection || selection.isCollapsed) && deltaTime < 200 && Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
-                            const width = win.innerWidth;
-                            if (touch.clientX < width * 0.2) goToPrevPage();
-                            else if (touch.clientX > width * 0.8) goToNextPage();
-                            else {
-                                setShowUI(prev => !prev);
-                            }
-                        }
-                    }
-                });
-
-                // Add selection listener
-                renditionRef.current.on("selected", (cfiRange: string, contents: any) => {
-                    handleSelection(cfiRange, contents);
-                });
-
-                const firstPara = doc.querySelector('p');
-                if (firstPara) {
-                    firstPara.classList.add('first-paragraph');
-                }
-            });
-
-            applyStyles();
-
-            if (cfi) {
-                await renditionRef.current.display(cfi);
-            } else {
-                await renditionRef.current.display();
-            }
-
-            renditionRef.current.on("relocated", (location: any) => {
-                setCurrentCfi(location.start.cfi);
-                if (bookRef.current?.locations?.length()) {
-                    // Use locations if ready
-                    const percent = bookRef.current.locations.percentageFromCfi(location.start.cfi);
-                    const page = Math.max(1, Math.ceil(percent * totalPages));
-                    setCurrentPage(page);
-                }
-            });
-        };
-
-        switchMode();
-    }, [continuous, spread, pageMargin, isReady]);
-
-    // Apply styles when settings change
+    
     useEffect(() => {
         if (isReady) applyStyles();
     }, [isReady, applyStyles]);
 
-    // Handle Scroll for Continuous Mode
+    
     useEffect(() => {
         if (!continuous || !isReady || !renditionRef.current) return;
         const container = containerRef.current;
@@ -683,11 +490,11 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         const handleScroll = () => {
             if (timeout) clearTimeout(timeout);
             timeout = setTimeout(() => {
-                // Try to force location update 
-                // Note: rendition.location might not update automatically if manager doesn't fire.
-                // We can try: rendition.reportLocation() or similar if available, 
-                // but checking visible range is hard without internals.
-                // However, getting the current location from epubjs might trigger the event.
+                
+                
+                
+                
+                
                 try {
                     const flow = renditionRef.current.location?.start;
                     if (flow) {
@@ -704,54 +511,39 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         };
     }, [continuous, isReady]);
 
-    // Calculate reading time
+    
     useEffect(() => {
-        if (!bookRef.current) return;
-
-        // Try to get word count from metadata or estimate
-        // Use locations to estimate remaining percentage
-        if (totalPages > 0) {
-            const remainingPages = Math.max(0, totalPages - currentPage);
-            // Estimate 300 words per page average for standard books? 
-            // Better: If we have locations, we have a total count.
-            // Let's assume ~1 min per page as a safer default if we don't have word count.
-            // But let's try to find real word count if possible.
-
-            // For now, refining the page estimate to be 1.5 min per page
-            setReadingTime(Math.ceil(remainingPages * 1.5));
-        }
+        if (!bookRef.current || totalPages <= 0) return;
+        const remainingPages = Math.max(0, totalPages - currentPage);
+        setReadingTime(Math.ceil(remainingPages * 1.5));
     }, [currentPage, totalPages]);
 
-    // UI visibility - only auto-hide during active page turns
+    
     const [lastPageTurn, setLastPageTurn] = useState(0);
 
-    useEffect(() => {
-        // Auto-hide disabled for manual control
-    }, [showUI, showSettings, showControls, lastPageTurn]);
-
-    // Keyboard shortcuts
+    
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLInputElement) return;
 
-            if (keybinds.nextPage.includes(e.key)) {
+            if (keybinds.nextPage.includes(e.code)) {
                 e.preventDefault();
                 goToNextPage();
-            } else if (keybinds.prevPage.includes(e.key)) {
+            } else if (keybinds.prevPage.includes(e.code)) {
                 e.preventDefault();
                 goToPrevPage();
-            } else if (keybinds.close.includes(e.key)) {
+            } else if (keybinds.close.includes(e.code)) {
                 if (showSettings || showControls) {
                     setShowSettings(false);
                     setShowControls(false);
                 } else {
                     onClose();
                 }
-            } else if (keybinds.toggleBookmark.includes(e.key)) {
+            } else if (keybinds.toggleBookmark.includes(e.code)) {
                 toggleBookmark();
-            } else if (keybinds.toggleFullscreen.includes(e.key)) {
+            } else if (keybinds.toggleFullscreen.includes(e.code)) {
                 toggleFullscreen();
-            } else if (keybinds.toggleUI.includes(e.key)) {
+            } else if (keybinds.toggleUI.includes(e.code)) {
                 setShowUI(prev => !prev);
             }
         };
@@ -760,10 +552,8 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         return () => window.removeEventListener("keydown", handleKey);
     }, [goToNextPage, goToPrevPage, toggleBookmark, toggleFullscreen, showSettings, showControls, onClose, keybinds]);
 
-    // Touch/Swipe gestures
+    
     const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-    const lastTapRef = useRef<{ time: number; x: number } | null>(null);
-    const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
         const touch = e.touches[0];
@@ -775,47 +565,24 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
         const touch = e.changedTouches[0];
         const deltaX = touch.clientX - touchStartRef.current.x;
-        const deltaY = touch.clientY - touchStartRef.current.y;
         const deltaTime = Date.now() - touchStartRef.current.time;
 
-        // Swipe detection
-        const isSwipe = deltaTime < 300 && Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5;
-
-        if (isSwipe) {
+        if (deltaTime < 300 && Math.abs(deltaX) > 50) {
             if (deltaX > 0) goToPrevPage();
             else goToNextPage();
-            touchStartRef.current = null;
-            return;
-        }
-
-        // Tap detection (not a swipe, minimal movement)
-        if (deltaTime < 200 && Math.abs(deltaX) < 15 && Math.abs(deltaY) < 15) {
+        } else if (deltaTime < 200 && Math.abs(deltaX) < 15) {
             const x = touch.clientX;
             const width = window.innerWidth;
-            const now = Date.now();
-
-            // Double-tap check
-            if (lastTapRef.current && now - lastTapRef.current.time < 300 && Math.abs(x - lastTapRef.current.x) < 50) {
-                if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
-                lastTapRef.current = null;
-                toggleFullscreen();
-            } else {
-                lastTapRef.current = { time: now, x };
-                // Delay single tap to wait for potential double-tap
-                if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
-                tapTimeoutRef.current = setTimeout(() => {
-                    if (x < width * 0.33) goToPrevPage();
-                    else if (x > width * 0.67) goToNextPage();
-                    else setShowUI(prev => !prev);
-                    lastTapRef.current = null;
-                }, 250);
-            }
+            
+            if (x < width * 0.25) goToPrevPage();
+            else if (x > width * 0.75) goToNextPage();
+            else setShowUI(prev => !prev);
         }
 
         touchStartRef.current = null;
-    }, [goToNextPage, goToPrevPage, showSettings, showControls, toggleFullscreen]);
+    }, [goToNextPage, goToPrevPage, showSettings, showControls]);
 
-    // Click handler for desktop (mouse)
+    
     const handleClick = useCallback((e: React.MouseEvent) => {
         if ((e.target as HTMLElement).closest('button, a, [role="button"]')) return;
         if (showSettings || showControls) return;
@@ -823,21 +590,19 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         const { clientX } = e;
         const width = window.innerWidth;
 
-        // Wider tap zones: 33% each side
-        if (clientX < width * 0.33) {
+        if (clientX < width * 0.25) {
             goToPrevPage();
-        } else if (clientX > width * 0.67) {
+        } else if (clientX > width * 0.75) {
             goToNextPage();
         } else {
             setShowUI(prev => !prev);
         }
     }, [goToNextPage, goToPrevPage, showSettings, showControls]);
 
-    // Double-click for fullscreen (desktop)
+    
     const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('button, a, [role="button"]')) return;
-        toggleFullscreen();
-    }, [toggleFullscreen]);
+        e.preventDefault();
+    }, []);
 
     return (
         <div
@@ -884,7 +649,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 <div
                     className="absolute z-[60] flex items-center gap-2 p-2 rounded-lg shadow-lg animate-in fade-in zoom-in duration-200"
                     style={{
-                        top: selectionMenu.y - 60, // Position above
+                        top: selectionMenu.y - 60, 
                         left: selectionMenu.x,
                         backgroundColor: readerBackground,
                         color: readerForeground,
@@ -894,7 +659,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 >
                     <button
                         onClick={() => {
-                            // Copy
+                            
                             navigator.clipboard.writeText(selectionMenu.text);
                             setSelectionMenu(null);
                         }}
@@ -905,7 +670,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     </button>
                     <button
                         onClick={() => {
-                            // Highlight (Mock)
+                            
                             console.log("Highlighting", selectionMenu.cfi);
                             if (onAddHighlight) {
                                 onAddHighlight(book.id, {
@@ -1008,8 +773,8 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     currentChapter={chapterTitle}
                     onNavigate={navigateToChapter}
                     onNextChapter={() => {
-                        // Find current chapter index and go to next
-                        // Simplified: just go next page for now, or implement real chapter skip
+                        
+                        
                         renditionRef.current?.next();
                     }}
                     onJumpToTop={() => {
@@ -1017,7 +782,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                         containerRef.current?.scrollTo(0, 0);
                     }}
                     onJumpToBottom={() => {
-                        // Approximate bottom
+                        
                         renditionRef.current?.display(bookRef.current.locations.length() - 1);
                     }}
                     onRemoveBookmark={(id) => onRemoveBookmark(book.id, id)}

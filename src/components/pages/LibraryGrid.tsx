@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Book, SortOption, FilterOption, ViewMode } from "@/types";
-import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen, Trash2, X, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronLeft, ChevronDown, Search, BookOpen, Trash2, X } from "lucide-react";
 import BookCard from "../ui/BookCard";
 import AddBookButton from "../ui/AddBookButton";
 

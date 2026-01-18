@@ -25,9 +25,7 @@ const App: React.FC = () => {
   const [isGuest, setIsGuest] = useState(false);
   const {
     dailyGoal,
-    weeklyGoal,
     setDailyGoal,
-
     setWeeklyGoal,
     reduceMotion,
     computedTheme,
@@ -72,8 +70,8 @@ const App: React.FC = () => {
     deleteBook, sortBy, setSortBy, filterBy, setFilterBy, isLoading: libLoading,
     syncBookFromCloud
   } = useBookLibrary({ persistent });
-  const { stats, startSession, endSession } = useReadingStats(books, dailyGoal, weeklyGoal);
-  const { syncProgress } = useCloudSync(books, syncBookFromCloud, session);
+  const { stats, startSession, endSession } = useReadingStats(books, dailyGoal);
+  const { syncProgress } = useCloudSync(syncBookFromCloud, session);
 
   // Session tracking to calculate pages read
   const sessionStartPage = React.useRef<number>(0);
@@ -228,7 +226,6 @@ const App: React.FC = () => {
             <StatsView
               stats={stats}
               dailyGoal={dailyGoal}
-              weeklyGoal={weeklyGoal}
               onUpdateGoal={handleUpdateGoal}
               onBack={() => setView(View.LIBRARY)}
             />

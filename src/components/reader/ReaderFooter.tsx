@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Layers, Scroll, ChevronLeft, ChevronRight } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
 interface ReaderFooterProps {
@@ -27,8 +27,7 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
         readerAccent, 
         continuous, 
         showPageCounter,
-        progressBarType,
-        barPosition
+        progressBarType
     } = useSettings();
 
     const progressPercent = Math.round((currentPage / totalPages) * 100) || 0;

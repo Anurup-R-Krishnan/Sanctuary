@@ -1,26 +1,16 @@
 import React, { useState } from "react";
 import {
-    Type,
     Layout,
-    BookOpen,
     Palette,
     Target,
-    RotateCcw,
-    AlignLeft,
-    AlignCenter,
-    AlignJustify,
     Moon,
     Sun,
     Zap,
     Coffee,
-    Check,
-    WandSparkles,
-    Eye,
     Accessibility,
     Bell,
     ChartLine,
     Droplets,
-    Move,
     ChevronLeft,
     X,
 } from "lucide-react";
@@ -48,7 +38,7 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         e.preventDefault();
-        const key = e.key;
+        const key = e.code;
         if (key === "Escape") {
             cancelEditing();
         } else if (key === "Enter") {
@@ -80,14 +70,14 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
                         onKeyDown={handleKeyDown}
                         tabIndex={0}
                     >
-                        {tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
+                        {tempKeys.length === 0 ? "Press keys..." : tempKeys.map(k => k === "Space" ? "Space" : k.replace("Arrow", "").replace("Key", "")).join(" + ")}
                     </div>
                 ) : (
                     <div className="flex items-center gap-1">
                         {keys.map((key, index) => (
                             <span key={index} className="relative group">
                                 <kbd className="px-2 py-1 text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded font-mono">
-                                    {key === " " ? "Space" : key}
+                                    {key === "Space" ? "Space" : key.replace("Arrow", "").replace("Key", "")}
                                 </kbd>
                                 <button
                                     onClick={() => removeKey(key)}
@@ -111,15 +101,6 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
 };
 
 type Tab = "typography" | "layout" | "reading" | "colors" | "shortcuts" | "goals";
-
-const FONT_PAIRINGS = [
-    { id: "merriweather-georgia", label: "Merriweather", family: "'Merriweather', Georgia, serif", style: "Classic Serif" },
-    { id: "crimson-pro", label: "Crimson Pro", family: "'Crimson Pro', Georgia, serif", style: "Elegant" },
-    { id: "libre-baskerville", label: "Libre Baskerville", family: "'Libre Baskerville', Georgia, serif", style: "Traditional" },
-    { id: "lora", label: "Lora", family: "'Lora', Georgia, serif", style: "Contemporary" },
-    { id: "source-serif", label: "Source Serif", family: "'Source Serif Pro', Georgia, serif", style: "Modern" },
-    { id: "inter", label: "Inter", family: "'Inter', system-ui, sans-serif", style: "Sans-Serif" },
-];
 
 const COLOR_PRESETS = [
     { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
@@ -160,7 +141,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
     ];
 
-    // Premium Toggle Component (Simplified)
+    
     const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
         <div className="group flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors cursor-pointer border border-transparent hover:border-black/[0.05] dark:hover:border-white/[0.05]" onClick={() => onChange(!checked)}>
             <div className="flex-1 min-w-0">
@@ -177,7 +158,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         </div>
     );
 
-    // Premium Slider Component (Simplified)
+    
     const Slider = ({
         value,
         onChange,
@@ -241,7 +222,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         );
     };
 
-    // Premium Section Component (Simplified)
+    
     const Section = ({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) => (
         <div className="overflow-hidden rounded-3xl border border-black/[0.06] dark:border-white/[0.06] bg-white dark:bg-black/20">
             <div className="p-6">
@@ -258,7 +239,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         </div>
     );
 
-    // Color Swatch (Simplified)
+    
     const ColorSwatch = ({
         preset,
         isActive,
@@ -268,7 +249,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
         isActive: boolean;
         onClick: () => void;
     }) => {
-        const Icon = preset.icon;
         return (
             <button
                 onClick={onClick}

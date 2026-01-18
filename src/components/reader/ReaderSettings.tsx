@@ -48,7 +48,7 @@ const ReaderSettings: React.FC = () => {
         focusMode, setFocusMode,
         readerAccent, setReaderAccent,
         readerBackground, setReaderBackground,
-        readerForeground, setReaderForeground,
+        setReaderForeground,
         resetToDefaults,
     } = useSettings();
 

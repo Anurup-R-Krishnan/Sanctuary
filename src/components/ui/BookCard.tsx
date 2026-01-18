@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Book } from "@/types";
-import { Star, Clock, BookOpen, Heart, Loader2 } from "lucide-react";
+import { Star, Clock, BookOpen, Heart } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 import { useToast } from "@/context/ToastContext";
 

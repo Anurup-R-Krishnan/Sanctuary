@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { ReadingStats, Badge, Book } from "@/types";
 
-const STATS_KEY = "sanctuary_reading_stats";
 const SESSIONS_KEY = "sanctuary_reading_sessions";
 
 
@@ -31,7 +30,7 @@ const defaultBadges: Badge[] = [
   { id: "early_bird", name: "Early Bird", icon: "🌅", description: "Read before 6 AM", unlocked: false },
 ];
 
-export function useReadingStats(books: Book[], dailyGoal: number = 30, weeklyGoal: number = 150) {
+export function useReadingStats(books: Book[], dailyGoal: number = 30) {
   const [sessions, setSessions] = useState<ReadingSession[]>([]);
   const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null);
   const [currentSessionBook, setCurrentSessionBook] = useState<string | null>(null);

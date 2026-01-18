@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View } from "@/types";
 import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
 
 interface NavigationProps {
   activeView: View;
