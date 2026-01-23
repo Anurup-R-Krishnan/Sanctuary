@@ -179,6 +179,14 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, getFontFamily]);
 
     
+    const debouncedApplyStyles = useCallback(() => {
+        const timeoutId = setTimeout(() => {
+            applyStyles();
+        }, 150);
+        return () => clearTimeout(timeoutId);
+    }, [applyStyles]);
+
+    
     const goToNextPage = useCallback(() => {
         if (renditionRef.current && isReady) {
             setLastPageTurn(Date.now());
@@ -237,7 +245,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         } else {
             onAddBookmark(book.id, { cfi: currentCfi, title: chapterTitle || `Page ${currentPage}` });
         }
-        setIsBookmarked(!isBookmarked);
         setIsBookmarked(!isBookmarked);
     }, [currentCfi, isBookmarked, book.id, book.bookmarks, currentPage, chapterTitle, onAddBookmark, onRemoveBookmark]);
 
@@ -347,47 +354,13 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     if (!content.document) return;
 
                     const doc = content.document;
-                    const win = content.window;
 
                     
                     doc.addEventListener('keydown', handleIframeKey);
 
                     
-                    let startX = 0;
-                    let startY = 0;
-                    let startTime = 0;
-
-                    doc.addEventListener('touchstart', (e: TouchEvent) => {
-                        const touch = e.touches[0];
-                        startX = touch.clientX;
-                        startY = touch.clientY;
-                        startTime = Date.now();
-                    }, { passive: true });
-
-                    doc.addEventListener('touchend', (e: TouchEvent) => {
-                        const touch = e.changedTouches[0];
-                        const deltaX = touch.clientX - startX;
-                        const deltaTime = Date.now() - startTime;
-
-                        if (deltaTime < 300 && Math.abs(deltaX) > 50) {
-                            if (deltaX > 0) goToPrevPage();
-                            else goToNextPage();
-                        } else if (deltaTime < 200 && Math.abs(deltaX) < 10) {
-                            const width = win.innerWidth;
-                            if (touch.clientX < width * 0.25) goToPrevPage();
-                            else if (touch.clientX > width * 0.75) goToNextPage();
-                            else setShowUI(prev => !prev);
-                        }
-                    });
-
-                    
                     renditionRef.current.on("selected", (cfiRange: string, contents: any) => {
                         handleSelection(cfiRange, contents);
-                        
-                        
-                        
-                        
-                        
                     });
 
                     const firstPara = doc.querySelector('p');
@@ -395,10 +368,10 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                         firstPara.classList.add('first-paragraph');
                     }
 
-                    if (body) {
-                        body.style.maxWidth = `${maxTextWidth}ch`;
-                        body.style.margin = '0 auto';
-                        body.style.padding = `${pageMargin / 16}rem`;
+                    if (doc.body) {
+                        doc.body.style.maxWidth = `${maxTextWidth}ch`;
+                        doc.body.style.margin = '0 auto';
+                        doc.body.style.padding = `${pageMargin / 16}rem`;
                     }
                 });
 
@@ -477,8 +450,10 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
     
     useEffect(() => {
-        if (isReady) applyStyles();
-    }, [isReady, applyStyles]);
+        if (!isReady) return;
+        const cleanup = debouncedApplyStyles();
+        return cleanup;
+    }, [isReady, debouncedApplyStyles]);
 
     
     useEffect(() => {
@@ -599,17 +574,13 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         }
     }, [goToNextPage, goToPrevPage, showSettings, showControls]);
 
-    
-    const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-    }, []);
+
 
     return (
         <div
             className="fixed inset-0 z-50 flex flex-col overflow-hidden"
             style={{ backgroundColor: readerBackground }}
             onClick={handleClick}
-            onDoubleClick={handleDoubleClick}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >

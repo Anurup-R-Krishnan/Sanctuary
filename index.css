@@ -575,11 +575,11 @@
 }
 
 .animate-shimmer {
-  /* animation: shimmer 2.5s infinite; REMOVED */
+  animation: shimmer 2.5s infinite;
 }
 
 .animate-float {
-  /* animation: float 6s ease-in-out infinite; REMOVED */
+  animation: float 6s ease-in-out infinite;
 }
 
 .animate-pulse-soft {
@@ -587,7 +587,7 @@
 }
 
 .animate-bounce-gentle {
-  /* animation: bounce-gentle 2s ease-in-out infinite; REMOVED */
+  animation: bounce-gentle 2s ease-in-out infinite;
 }
 
 /* Stagger Delays */
