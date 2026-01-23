@@ -132,8 +132,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "line-height": "inherit !important",
                 "color": "inherit !important",
                 "text-align": `${textAlignment} !important`,
-                "margin-bottom": `${paragraphSpacing}px !important`,
-                "text-indent": "1.5em",
                 "hyphens": hyphenation ? "auto !important" : "none !important",
                 "-webkit-hyphens": hyphenation ? "auto !important" : "none !important",
             },
@@ -149,9 +147,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     "font-family": `${fontFamily} !important`,
                     "text-transform": "uppercase !important",
                 },
-                ".first-paragraph": {
-                    "text-indent": "0 !important"
-                }
             } : {}),
             "div, span, li, blockquote": {
                 "font-family": "inherit !important",
