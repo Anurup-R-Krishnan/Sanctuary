@@ -143,9 +143,9 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         if (!renditionRef.current) return;
 
         const fontFamily = getFontFamily();
+        const dropCapColor = readerAccent;
         const marginRem = pageMargin / 16;
 
-        // Apply gentle styling that respects EPUB author's intentions
         renditionRef.current.themes.default({
             "body": {
                 "font-family": `${fontFamily}`,
@@ -158,18 +158,20 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "max-width": `${maxTextWidth}ch`,
             },
             "p": {
-                // Only apply text-align if justify is selected, otherwise preserve EPUB style
-                ...(textAlignment === "justify" && { "text-align": "justify" }),
+                "text-align": `${textAlignment}`,
                 "margin-bottom": `${paragraphSpacing}em`,
-                "hyphens": hyphenation ? "auto" : "manual",
-                "-webkit-hyphens": hyphenation ? "auto" : "manual",
+                "hyphens": hyphenation ? "auto" : "none",
             },
             "h1, h2, h3, h4, h5, h6": {
-                // Only override color, preserve other heading styles from EPUB
+                "font-family": `${fontFamily}`,
                 "color": `${readerForeground}`,
+                "margin": "1.5em 0 0.75em 0",
+                "font-weight": "600",
+                "line-height": "1.3",
             },
             "a": {
                 "color": `${readerAccent}`,
+                "text-decoration": "underline",
             },
         });
 
