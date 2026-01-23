@@ -177,14 +177,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, getFontFamily]);
 
     
-    const debouncedApplyStyles = useCallback(() => {
-        const timeoutId = setTimeout(() => {
-            applyStyles();
-        }, 150);
-        return () => clearTimeout(timeoutId);
-    }, [applyStyles]);
-
-    
     const goToNextPage = useCallback(() => {
         if (renditionRef.current && isReady) {
             setLastPageTurn(Date.now());
@@ -449,9 +441,14 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     
     useEffect(() => {
         if (!isReady) return;
-        const cleanup = debouncedApplyStyles();
-        return cleanup;
-    }, [isReady, debouncedApplyStyles]);
+        
+        // Debounce style application to improve performance
+        const timeoutId = setTimeout(() => {
+            applyStyles();
+        }, 150);
+        
+        return () => clearTimeout(timeoutId);
+    }, [isReady, applyStyles]);
 
     
     useEffect(() => {
