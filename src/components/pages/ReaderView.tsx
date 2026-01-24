@@ -115,6 +115,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "line-height": `${lineHeight} !important`,
                 "color": `${readerForeground} !important`,
                 "background-color": `${readerBackground} !important`,
+                "filter": `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0}) !important`,
                 "padding-top": `${pageMargin}px !important`,
                 "padding-bottom": `${pageMargin}px !important`,                "padding-left": `${continuous ? pageMargin : 0}px !important`,
                 "padding-right": `${continuous ? pageMargin : 0}px !important`,
@@ -182,7 +183,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "margin": "1em auto !important",
             }
         });
-    }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, dropCaps, getFontFamily, continuous, grayscale, isDarkBackground]);
+    }, [fontSize, lineHeight, fontPairing, textAlignment, readerForeground, readerBackground, readerAccent, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, dropCaps, getFontFamily, continuous, grayscale, brightness, isDarkBackground]);
 
     // Navigation
     const goToNextPage = useCallback(() => {
@@ -493,6 +494,15 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         if (isReady) applyStyles();
     }, [isReady, applyStyles]);
 
+    // Apply global UI filter so header/footer/panels also follow brightness/grayscale
+    useEffect(() => {
+        const prev = document.body.style.filter || "";
+        document.body.style.filter = `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})`;
+        return () => {
+            document.body.style.filter = prev;
+        };
+    }, [brightness, grayscale]);
+
     // Calculate reading time
     useEffect(() => {
         const remaining = Math.max(0, totalPages - currentPage);
@@ -590,9 +600,8 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 ref={containerRef} 
                 className={`flex-1 w-full h-full ${continuous ? "overflow-y-auto" : "overflow-hidden"}`}
                 style={{ 
-                    filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})`,
-                    scrollbarWidth: showScrollbar ? 'auto' : 'none',
-                }}
+                        scrollbarWidth: showScrollbar ? 'auto' : 'none',
+                    }}
             />
 
             <ReaderFooter
