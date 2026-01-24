@@ -82,14 +82,14 @@ const SettingsContext = createContext<Settings | undefined>(undefined);
 
 const DEFAULTS = {
   fontSize: 19,
-  lineHeight: 1.85,
+  lineHeight: 1.65,
   textAlignment: "justify" as TextAlignment,
   fontPairing: "merriweather-georgia",
-  maxTextWidth: 60,
+  maxTextWidth: 150,
   hyphenation: true,
   pageMargin: 40,
-  paragraphSpacing: 18,
-  dropCaps: true,
+  paragraphSpacing: 17,
+  dropCaps: false,
   continuous: false,
   spread: false,
   direction: "ltr" as "ltr" | "rtl",

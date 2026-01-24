@@ -1,3 +1,4 @@
+// original 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Book, Bookmark } from "@/types";
 import { useSettings } from "@/context/SettingsContext";
@@ -115,15 +116,17 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "color": `${readerForeground} !important`,
                 "background-color": `${readerBackground} !important`,
                 "padding-top": `${pageMargin}px !important`,
-                "padding-bottom": `${pageMargin}px !important`,
-                "padding-left": `${continuous ? pageMargin : 0}px !important`,
+                "padding-bottom": `${pageMargin}px !important`,                "padding-left": `${continuous ? pageMargin : 0}px !important`,
                 "padding-right": `${continuous ? pageMargin : 0}px !important`,
                 ...(continuous ? {
                     "max-width": `${maxTextWidth}ch !important`,
                     "margin": "0 auto !important",
+                    "padding-bottom": "2em !important", 
+
                 } : {
                     "max-width": "none !important",
                     "margin": "0 !important",
+                    "padding-bottom": "2em !important", 
                 }),
             },
             "p": {
@@ -131,6 +134,8 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 "font-size": "inherit !important",
                 "line-height": "inherit !important",
                 "color": "inherit !important",
+                "text-indent": "0 !important",
+                "margin-bottom": `${paragraphSpacing}px !important`,
                 "text-align": `${textAlignment} !important`,
                 "hyphens": hyphenation ? "auto !important" : "none !important",
                 "-webkit-hyphens": hyphenation ? "auto !important" : "none !important",
@@ -442,6 +447,24 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 if (firstPara) {
                     firstPara.classList.add('first-paragraph');
                 }
+
+                const body = content.document.body;
+
+                if (continuous) {
+                    const lastElement = body.lastElementChild;
+                    if (lastElement && !lastElement.classList.contains('chapter-end-spacer')) {
+                        const spacer = content.document.createElement('div');
+                        spacer.className = 'chapter-end-spacer';
+                        spacer.style.cssText = `
+                            height: 2em; 
+                            width: 100%;
+                            pointer-events: none;
+                        `;
+                        body.appendChild(spacer);
+                    }
+                }
+
+
             });
 
             applyStyles();

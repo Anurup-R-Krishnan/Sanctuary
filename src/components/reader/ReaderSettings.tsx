@@ -310,7 +310,7 @@ const ReaderSettings: React.FC = () => {
                         label="Width"
                         value={maxTextWidth}
                         min={30}
-                        max={100}
+                        max={150}
                         onChange={setMaxTextWidth}
                         formatValue={(v) => `${v}ch`}
                     />
