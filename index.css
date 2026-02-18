@@ -136,18 +136,18 @@
 
   /* Glass Effects */
   .glass {
-    @apply bg-white/75 dark:bg-dark-surface/75 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.06];
-    box-shadow: var(--shadow-elevation-low);
+    @apply bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08];
+    box-shadow: 0 2px 10px rgba(var(--shadow-color), 0.08);
   }
 
   .glass-strong {
-    @apply bg-white/90 dark:bg-dark-surface/90 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.08];
-    box-shadow: var(--shadow-elevation-medium);
+    @apply bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08];
+    box-shadow: 0 6px 18px rgba(var(--shadow-color), 0.12);
   }
 
   .glass-ultra {
-    @apply bg-white/95 dark:bg-dark-surface/95 backdrop-blur-3xl border border-black/[0.1] dark:border-white/[0.1];
-    box-shadow: var(--shadow-elevation-high);
+    @apply bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08];
+    box-shadow: 0 8px 24px rgba(var(--shadow-color), 0.14);
   }
 
   /* Text Effects */
@@ -227,14 +227,14 @@
 
   /* Card Components */
   .card {
-    @apply bg-light-surface/95 dark:bg-dark-surface/95 rounded-3xl border border-black/[0.06] dark:border-white/[0.06] transition-all duration-300 ease-out;
-    box-shadow: var(--shadow-elevation-low);
+    @apply bg-light-surface dark:bg-dark-surface rounded-2xl border border-black/[0.08] dark:border-white/[0.08] transition-colors duration-200;
+    box-shadow: 0 2px 10px rgba(var(--shadow-color), 0.08);
   }
 
   .card-hover:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: var(--shadow-elevation-high);
-    border-color: rgba(var(--accent), 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(var(--shadow-color), 0.14);
+    border-color: rgba(var(--accent), 0.35);
   }
 
   .dark .card-hover:hover {
@@ -246,7 +246,7 @@
   }
 
   .card-interactive:active {
-    transform: translateY(-2px) scale(1.005);
+    transform: translateY(0);
     transition-duration: 100ms;
   }
 
