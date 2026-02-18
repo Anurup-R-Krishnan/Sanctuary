@@ -16,6 +16,7 @@
   --shadow-elevation-high: 0 8px 16px rgba(var(--shadow-color), 0.1), 0 16px 32px rgba(var(--shadow-color), 0.08);
   --page-max-width: 84rem;
   --page-gutter: clamp(1rem, 3vw, 2rem);
+  --page-gutter-tight: clamp(0.75rem, 2vw, 1.25rem);
 }
 
 .dark {
@@ -109,6 +110,7 @@
     @apply transition-all duration-300 ease-out;
     padding-top: clamp(5.25rem, 8vw, 6rem);
     padding-bottom: clamp(7rem, 10vw, 8.5rem);
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
   }
 
   .reader-main {
@@ -122,7 +124,9 @@
   }
 
   .page-narrow {
-    @apply max-w-4xl mx-auto;
+    width: min(100%, 56rem);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter-tight);
   }
 
   .page-stack {
