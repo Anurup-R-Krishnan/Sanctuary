@@ -6,12 +6,16 @@
 
 :root {
   --accent: 184 149 108;
+  /* #b8956c - Antique Gold */
   --accent-dark: 212 181 139;
+  /* #d4b58b - Parchment Gold */
   --radius: 16px;
-  --shadow-color: 0 0 0;
-  --shadow-elevation-low: 0 1px 2px rgba(var(--shadow-color), 0.04), 0 2px 4px rgba(var(--shadow-color), 0.02);
-  --shadow-elevation-medium: 0 4px 8px rgba(var(--shadow-color), 0.06), 0 8px 16px rgba(var(--shadow-color), 0.03);
-  --shadow-elevation-high: 0 8px 16px rgba(var(--shadow-color), 0.08), 0 16px 32px rgba(var(--shadow-color), 0.04);
+  --shadow-color: 28 24 20;
+  --shadow-elevation-low: 0 1px 2px rgba(var(--shadow-color), 0.06), 0 2px 4px rgba(var(--shadow-color), 0.04);
+  --shadow-elevation-medium: 0 4px 8px rgba(var(--shadow-color), 0.08), 0 8px 16px rgba(var(--shadow-color), 0.06);
+  --shadow-elevation-high: 0 8px 16px rgba(var(--shadow-color), 0.1), 0 16px 32px rgba(var(--shadow-color), 0.08);
+  --page-max-width: 84rem;
+  --page-gutter: clamp(1rem, 3vw, 2rem);
 }
 
 .dark {
@@ -22,24 +26,33 @@
   html {
     scroll-behavior: smooth;
     font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
+
   body {
     overflow-x: hidden;
     letter-spacing: -0.01em;
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    /* Grainy texture overlay logic handled in main app wrapper for better performance */
   }
 
   ::selection {
-    background-color: rgba(184, 149, 108, 0.25);
+    background-color: rgba(184, 149, 108, 0.3);
+    color: inherit;
   }
 
   .dark ::selection {
-    background-color: rgba(212, 181, 139, 0.25);
+    background-color: rgba(212, 181, 139, 0.3);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Crimson Pro', Georgia, serif;
     letter-spacing: -0.025em;
     font-weight: 600;
@@ -52,8 +65,8 @@
   }
 
   *::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   *::-webkit-scrollbar-track {
@@ -62,17 +75,18 @@
 
   *::-webkit-scrollbar-thumb {
     background-color: rgba(var(--accent), 0.2);
-    border-radius: 4px;
-    border: 2px solid transparent;
+    border-radius: 99px;
+    border: 1px solid transparent;
     background-clip: content-box;
+    transition: background-color 0.2s;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(var(--accent), 0.35);
+    background-color: rgba(var(--accent), 0.4);
   }
 
   .dark *::-webkit-scrollbar-thumb {
-    background-color: rgba(var(--accent-dark), 0.25);
+    background-color: rgba(var(--accent-dark), 0.2);
   }
 
   .dark *::-webkit-scrollbar-thumb:hover {
@@ -81,6 +95,7 @@
 }
 
 @layer components {
+
   /* Layout Classes */
   .standard-layout {
     @apply transition-all duration-300 ease-out;
@@ -92,10 +107,18 @@
 
   .standard-main {
     @apply transition-all duration-300 ease-out;
+    padding-top: clamp(5.25rem, 8vw, 6rem);
+    padding-bottom: clamp(7rem, 10vw, 8.5rem);
   }
 
   .reader-main {
     @apply transition-all duration-500 ease-out;
+  }
+
+  .page-shell {
+    width: min(100%, var(--page-max-width));
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
   }
 
   /* Glass Effects */
@@ -150,12 +173,12 @@
   .btn-primary {
     @apply relative inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white overflow-hidden transition-all duration-200 ease-out;
     background: linear-gradient(135deg, rgb(var(--accent)) 0%, #d97706 100%);
-    box-shadow: 0 4px 16px rgba(var(--accent), 0.3), 0 8px 32px rgba(var(--accent), 0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 4px 16px rgba(var(--accent), 0.3), 0 8px 32px rgba(var(--accent), 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(var(--accent), 0.4), 0 16px 48px rgba(var(--accent), 0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 8px 24px rgba(var(--accent), 0.4), 0 16px 48px rgba(var(--accent), 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 
   .btn-primary:active {
@@ -165,11 +188,11 @@
 
   .dark .btn-primary {
     background: linear-gradient(135deg, rgb(var(--accent-dark)) 0%, #f59e0b 100%);
-    box-shadow: 0 4px 16px rgba(var(--accent-dark), 0.25), 0 8px 32px rgba(var(--accent-dark), 0.12), inset 0 1px 0 rgba(255,255,255,0.15);
+    box-shadow: 0 4px 16px rgba(var(--accent-dark), 0.25), 0 8px 32px rgba(var(--accent-dark), 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .dark .btn-primary:hover {
-    box-shadow: 0 8px 24px rgba(var(--accent-dark), 0.35), 0 16px 48px rgba(var(--accent-dark), 0.18), inset 0 1px 0 rgba(255,255,255,0.15);
+    box-shadow: 0 8px 24px rgba(var(--accent-dark), 0.35), 0 16px 48px rgba(var(--accent-dark), 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 
   .btn-secondary {
@@ -252,7 +275,7 @@
   .toggle-thumb {
     @apply absolute w-5 h-5 rounded-full bg-white shadow-lg transition-all duration-300 ease-out;
     left: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 
   .toggle.active .toggle-thumb {
@@ -260,7 +283,7 @@
   }
 
   .dark .toggle-thumb {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   /* Range Input Styling */
@@ -310,25 +333,30 @@
 }
 
 @layer utilities {
+
   /* Layout Utilities */
   .container-fluid {
-    @apply w-full max-w-none px-4 sm:px-6 lg:px-8;
+    @apply w-full max-w-none;
+    padding-inline: var(--page-gutter);
   }
 
   .container-narrow {
-    @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-4xl mx-auto;
+    padding-inline: var(--page-gutter);
   }
 
   .container-wide {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply mx-auto;
+    width: min(100%, var(--page-max-width));
+    padding-inline: var(--page-gutter);
   }
 
   /* Spacing Utilities */
-  .space-y-fluid > * + * {
+  .space-y-fluid>*+* {
     margin-top: clamp(1rem, 2.5vw, 2rem);
   }
 
-  .space-x-fluid > * + * {
+  .space-x-fluid>*+* {
     margin-left: clamp(0.5rem, 1.5vw, 1rem);
   }
 
@@ -366,7 +394,7 @@
 
   /* Book-specific utilities */
   .book-spine-shadow {
-    box-shadow: inset -8px 0 16px -8px rgba(0,0,0,0.4);
+    box-shadow: inset -8px 0 16px -8px rgba(0, 0, 0, 0.4);
   }
 
   .book-cover-glow {
@@ -379,9 +407,12 @@
 
   /* Scrollbar Utilities */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -389,128 +420,229 @@
 
 /* Enhanced Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes fadeInUp {
-  from { 
-    opacity: 0; 
-    transform: translateY(24px); 
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes fadeInDown {
-  from { 
-    opacity: 0; 
-    transform: translateY(-24px); 
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes scaleIn {
-  from { 
-    opacity: 0; 
-    transform: scale(0.95); 
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-  to { 
-    opacity: 1; 
-    transform: scale(1); 
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 @keyframes slideInLeft {
-  from { 
-    opacity: 0; 
-    transform: translateX(-32px); 
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateX(0); 
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
 @keyframes slideInRight {
-  from { 
-    opacity: 0; 
-    transform: translateX(32px); 
+  from {
+    opacity: 0;
+    transform: translateX(32px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateX(0); 
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(1deg); }
-  66% { transform: translateY(-5px) rotate(-1deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+
+  66% {
+    transform: translateY(-5px) rotate(-1deg);
+  }
 }
 
 @keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @keyframes bounce-gentle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 /* Animation Classes */
-.animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
-.animate-fadeOut { animation: fadeOut 0.3s ease-out forwards; }
-.animate-fadeInUp { animation: fadeInUp 0.5s ease-out forwards; }
-.animate-fadeInDown { animation: fadeInDown 0.5s ease-out forwards; }
-.animate-scaleIn { animation: scaleIn 0.3s ease-out forwards; }
-.animate-slideInLeft { animation: slideInLeft 0.4s ease-out forwards; }
-.animate-slideInRight { animation: slideInRight 0.4s ease-out forwards; }
-.animate-shimmer { animation: shimmer 2.5s infinite; }
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-pulse-soft { animation: pulse-soft 2.5s ease-in-out infinite; }
-.animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.5s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.4s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
 
 /* Stagger Delays */
-.stagger-1 { animation-delay: 100ms; }
-.stagger-2 { animation-delay: 200ms; }
-.stagger-3 { animation-delay: 300ms; }
-.stagger-4 { animation-delay: 400ms; }
-.stagger-5 { animation-delay: 500ms; }
-.stagger-6 { animation-delay: 600ms; }
+.stagger-1 {
+  animation-delay: 100ms;
+}
+
+.stagger-2 {
+  animation-delay: 200ms;
+}
+
+.stagger-3 {
+  animation-delay: 300ms;
+}
+
+.stagger-4 {
+  animation-delay: 400ms;
+}
+
+.stagger-5 {
+  animation-delay: 500ms;
+}
+
+.stagger-6 {
+  animation-delay: 600ms;
+}
 
 /* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-  .reduce-motion *, 
-  .reduce-motion *::before, 
+
+  .reduce-motion *,
+  .reduce-motion *::before,
   .reduce-motion *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  
+
   .reduce-motion .animate-float,
   .reduce-motion .animate-bounce-gentle,
   .reduce-motion .animate-pulse-soft {
@@ -523,11 +655,11 @@
   .card {
     @apply border-2 border-black/20 dark:border-white/20;
   }
-  
+
   .btn-primary {
     @apply border-2 border-black/20;
   }
-  
+
   .input {
     @apply border-2 border-black/20 dark:border-white/20;
   }
@@ -538,7 +670,7 @@
   .no-print {
     display: none !important;
   }
-  
+
   * {
     background: white !important;
     color: black !important;

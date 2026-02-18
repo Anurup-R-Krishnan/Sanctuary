@@ -1,108 +1,91 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { Theme, View, Book } from "@/types";
+import React, { useEffect, useCallback, useMemo } from "react";
+import { useUser, useAuth } from "@/hooks/useAuth";
 import { useBookLibrary } from "./hooks/useBookLibrary";
 import { useReadingStats } from "./hooks/useReadingStats";
 import { useSettings } from "@/context/SettingsContext";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
+import { Theme, View, Book } from "@/types";
+import { BookOpen } from "lucide-react";
+
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
 import LibraryGrid from "./components/pages/LibraryGrid";
 import ReaderView from "./components/pages/ReaderView";
 import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
-import Auth from "./components/pages/Auth";
-import { supabase } from "./lib/supabase";
-import { BookOpen } from "lucide-react";
+import ClerkAuth from "./components/auth/ClerkAuth";
+
+const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 
 const App: React.FC = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(false);
-  const { 
-    dailyGoal, 
-    weeklyGoal, 
-    setDailyGoal, 
+  // Global Stores
+  const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
+  const { theme, view, selectedBook, searchTerm, setView, setSelectedBook, setSearchTerm, toggleTheme } = useUIStore();
+
+  // Clerk Hooks
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useAuth();
+
+  // Settings Context
+  const {
+    dailyGoal,
+    weeklyGoal,
+    setDailyGoal,
     setWeeklyGoal,
-    reduceMotion 
+    reduceMotion
   } = useSettings();
 
-  useEffect(() => {
-    let active = true;
-    const init = async () => {
-      try {
-        const { data: { session: s } } = await supabase.auth.getSession();
-        if (!active) return;
-        if (s) { setSession(s); setIsGuest(false); }
-      } catch (e) {
-        console.error("Session init failed:", e);
-      } finally {
-        if (active) setIsAuthLoading(false);
-      }
-    };
-    init();
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (!active) return;
-      setSession(s);
-      setIsGuest(false);
-      setIsAuthLoading(false);
-    });
-    return () => { active = false; data.subscription.unsubscribe(); };
-  }, []);
+  // Library & Stats Hooks
+  // When auth is disabled, always treat as persistent (local storage mode)
+  const persistent = DISABLE_AUTH ? true : (isSignedIn && !isGuest);
 
-  const [theme, setTheme] = useState<Theme>(Theme.LIGHT);
-  const [view, setView] = useState<View>(View.LIBRARY);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const persistent = !isGuest && Boolean(session);
   const {
     books, sortedBooks, recentBooks, favoriteBooks, seriesGroups,
     addBook, updateBookProgress, toggleFavorite, addBookmark, removeBookmark,
     sortBy, setSortBy, filterBy, setFilterBy, isLoading: libLoading,
+    reloadBooks
   } = useBookLibrary({ persistent });
+
   const { stats, startSession, endSession } = useReadingStats(books);
 
+  // Handlers
   const handleGuestMode = useCallback(() => {
     setIsGuest(true);
-    setSession(null);
-    setIsAuthLoading(false);
-  }, []);
+  }, [setIsGuest]);
 
   const handleShowLogin = useCallback(() => {
     setIsGuest(false);
-    setSession(null);
-  }, []);
+    // Clerk handles the rest (redirects to sign in if we render logic correctly)
+  }, [setIsGuest]);
 
   const handleSignOut = useCallback(async () => {
-    setIsAuthLoading(true);
-    try { await supabase.auth.signOut(); }
-    catch (e) { console.error("Sign out error:", e); }
-    finally { setSession(null); setIsGuest(false); setIsAuthLoading(false); }
-  }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("dark", theme === Theme.DARK);
-    root.classList.toggle("reduce-motion", reduceMotion);
-    
-    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
-    document.body.style.backgroundColor = bgColor;
-    document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
-  }, [theme, reduceMotion]);
-
-  const toggleTheme = useCallback(() => setTheme(t => t === Theme.LIGHT ? Theme.DARK : Theme.LIGHT), []);
+    if (isGuest) {
+      setIsGuest(false);
+      resetSession();
+    } else {
+      await signOut();
+      resetSession();
+    }
+  }, [isGuest, setIsGuest, resetSession, signOut]);
 
   const handleSelectBook = useCallback((book: Book) => {
     setSelectedBook(book);
     setView(View.READER);
     startSession(book.id);
-  }, [startSession]);
+  }, [setSelectedBook, setView, startSession]);
 
   const handleCloseReader = useCallback(() => {
     endSession(0);
     setView(View.LIBRARY);
     setSelectedBook(null);
-  }, [endSession]);
+    reloadBooks();
+  }, [endSession, setView, setSelectedBook, reloadBooks]);
+
+  const handleUpdateGoal = useCallback((d: number, w: number) => {
+    setDailyGoal(d);
+    setWeeklyGoal(w);
+  }, [setDailyGoal, setWeeklyGoal]);
 
   const filteredBooks = useMemo(() => {
     if (!searchTerm) return books;
@@ -110,12 +93,19 @@ const App: React.FC = () => {
     return books.filter(b => b.title.toLowerCase().includes(term) || b.author.toLowerCase().includes(term));
   }, [books, searchTerm]);
 
-  const handleUpdateGoal = useCallback((d: number, w: number) => {
-    setDailyGoal(d);
-    setWeeklyGoal(w);
-  }, [setDailyGoal, setWeeklyGoal]);
+  // Theme Effect
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === Theme.DARK);
+    root.classList.toggle("reduce-motion", reduceMotion);
 
-  if (isAuthLoading) {
+    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
+    document.body.style.backgroundColor = bgColor;
+    document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
+  }, [theme, reduceMotion]);
+
+  // Render - Loading State (Clerk)
+  if (!DISABLE_AUTH && !isLoaded) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
         <div className="relative mb-6">
@@ -132,14 +122,17 @@ const App: React.FC = () => {
     );
   }
 
-  if (!session && !isGuest) return <Auth onContinueAsGuest={handleGuestMode} />;
+  // Render - Auth (skip entirely when auth is disabled)
+  if (!DISABLE_AUTH && !isSignedIn && !isGuest) {
+    return <ClerkAuth />;
+  }
 
   const isReader = view === View.READER;
-  const layoutClasses = isReader ? "immersive-layout" : "standard-layout";
 
+  // Render - App
   return (
-    <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${layoutClasses}`}>
-      {/* Enhanced Background Decorations */}
+    <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
+      {/* Background Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-64 -right-64 w-[500px] h-[500px] bg-gradient-radial from-light-accent/[0.06] via-light-accent/[0.02] to-transparent dark:from-dark-accent/[0.08] dark:via-dark-accent/[0.03] rounded-full blur-3xl" />
         <div className="absolute -bottom-64 -left-64 w-[600px] h-[600px] bg-gradient-radial from-amber-500/[0.04] via-amber-500/[0.01] to-transparent rounded-full blur-3xl" />
@@ -156,13 +149,15 @@ const App: React.FC = () => {
           onSearch={setSearchTerm}
           isGuest={isGuest}
           onShowLogin={isGuest ? handleShowLogin : undefined}
-          onSignOut={session ? handleSignOut : undefined}
+          onSignOut={isSignedIn ? handleSignOut : undefined}
+          userEmail={user?.primaryEmailAddress?.emailAddress}
+          userImage={user?.imageUrl}
         />
       )}
 
-      {/* Main Content Container */}
-      <main className={`relative ${isReader ? 'reader-main' : 'standard-main pt-20 pb-32 px-4 sm:px-6 lg:px-8'}`}>
-        <div className={`${isReader ? '' : 'max-w-7xl mx-auto animate-fadeIn'}`}>
+      {/* Main Content */}
+      <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
+        <div className={`${isReader ? "" : "page-shell animate-fadeIn"}`}>
           {view === View.LIBRARY && (
             <LibraryGrid
               books={filteredBooks}
