@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 .env.local
 .env
+
+# V2 workspaces
+apps/mobile/.expo
+apps/mobile/.expo-shared
+apps/mobile/web-build
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen

@@ -1,0 +1,27 @@
+name: V2 Mirror Guard
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  mirror-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run V2 mirror guard
+        env:
+          MIRROR_BASE_REF: origin/${{ github.base_ref }}
+        run: npm run v2:mirror:check

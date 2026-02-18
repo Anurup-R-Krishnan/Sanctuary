@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Sanctuary V2",
+    "slug": "sanctuary-v2",
+    "scheme": "sanctuary",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["android", "web"],
+    "android": {
+      "package": "com.sanctuary.reader",
+      "adaptiveIcon": {
+        "backgroundColor": "#1D1A17"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
