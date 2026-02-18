@@ -93,7 +93,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-8 animate-fadeIn">
+      <div className="page-stack animate-fadeIn">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="h-8 w-40 rounded-lg bg-black/[0.04] dark:bg-white/[0.04]" />
@@ -151,10 +151,10 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   );
 
   const HorizontalScroll = ({ books: scrollBooks }: { books: Book[] }) => (
-    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2">
+    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
       {scrollBooks.map((book) => (
         <div key={book.id} className="flex-shrink-0 w-[140px] sm:w-[160px]">
-          <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} compact />
+          <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} variant="compact" />
         </div>
       ))}
     </div>
@@ -182,11 +182,10 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
               onSelect(opt.value);
               onClose();
             }}
-            className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-              value === opt.value
+            className={`w-full text-left px-3 py-2 text-sm transition-colors ${value === opt.value
                 ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
                 : "text-light-text dark:text-dark-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-            }`}
+              }`}
           >
             {opt.label}
           </button>
@@ -195,7 +194,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     ) : null;
 
   return (
-    <div className="space-y-8">
+    <div className="page-stack">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Library</h2>
@@ -207,22 +206,20 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
           <div className="flex items-center p-0.5 rounded-lg bg-black/[0.03] dark:bg-white/[0.03]">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-all duration-150 ${
-                viewMode === "grid"
+              className={`p-2 rounded-md transition-all duration-150 ${viewMode === "grid"
                   ? "bg-light-surface dark:bg-dark-surface shadow-sm text-light-text dark:text-dark-text"
                   : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
-              }`}
+                }`}
               aria-label="Grid view"
             >
               <Grid3X3 className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-all duration-150 ${
-                viewMode === "list"
+              className={`p-2 rounded-md transition-all duration-150 ${viewMode === "list"
                   ? "bg-light-surface dark:bg-dark-surface shadow-sm text-light-text dark:text-dark-text"
                   : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
-              }`}
+                }`}
               aria-label="List view"
             >
               <List className="w-4 h-4" />
@@ -321,9 +318,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
             {displayBooks.map((book, index) => (
               <div
                 key={book.id}
-                className={`transition-all duration-500 ease-smooth ${
-                  isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-                }`}
+                className={`transition-all duration-500 ease-smooth ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+                  }`}
                 style={{ transitionDelay: `${Math.min(index * 30, 250)}ms` }}
               >
                 <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} />
@@ -365,11 +361,10 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                     e.stopPropagation();
                     onToggleFavorite(book.id);
                   }}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    book.isFavorite
+                  className={`p-1.5 rounded-lg transition-colors ${book.isFavorite
                       ? "text-amber-500"
                       : "text-light-text-muted/30 dark:text-dark-text-muted/30 hover:text-amber-500"
-                  }`}
+                    }`}
                 >
                   <Star className={`w-4 h-4 ${book.isFavorite ? "fill-current" : ""}`} />
                 </button>

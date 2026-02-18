@@ -187,7 +187,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
   ] as const;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="page-narrow page-stack">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Stats</h2>
