@@ -1,4 +1,6 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
+import type { ReactNode } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
+import { settingsService } from "@/services/settingsService";
 
 type TextAlignment = "left" | "justify" | "center";
 
@@ -13,7 +15,6 @@ interface Settings {
   // Layout
   pageMargin: number;
   paragraphSpacing: number;
-  dropCaps: boolean;
   // Reading Mode
   continuous: boolean;
   spread: boolean;
@@ -25,6 +26,7 @@ interface Settings {
   showPageCounter: boolean;
   progressBarType: "bar" | "none";
   barPosition: "top" | "bottom";
+  showFloatingCapsule: boolean;
   // Colors
   readerForeground: string;
   readerBackground: string;
@@ -55,7 +57,6 @@ interface Settings {
   setHyphenation: (v: boolean) => void;
   setPageMargin: (v: number) => void;
   setParagraphSpacing: (v: number) => void;
-  setDropCaps: (v: boolean) => void;
   setContinuous: (v: boolean) => void;
   setSpread: (v: boolean) => void;
   setDirection: (v: "ltr" | "rtl") => void;
@@ -65,6 +66,7 @@ interface Settings {
   setShowPageCounter: (v: boolean) => void;
   setProgressBarType: (v: "bar" | "none") => void;
   setBarPosition: (v: "top" | "bottom") => void;
+  setShowFloatingCapsule: (v: boolean) => void;
   setReaderForeground: (v: string) => void;
   setReaderBackground: (v: string) => void;
   setReaderAccent: (v: string) => void;
@@ -89,7 +91,6 @@ const DEFAULTS = {
   hyphenation: true,
   pageMargin: 40,
   paragraphSpacing: 17,
-  dropCaps: false,
   continuous: false,
   spread: false,
   direction: "ltr" as "ltr" | "rtl",
@@ -99,6 +100,7 @@ const DEFAULTS = {
   showPageCounter: true,
   progressBarType: "bar" as "bar" | "none",
   barPosition: "bottom" as "top" | "bottom",
+  showFloatingCapsule: true,
   readerForeground: "#1a1a1a",
   readerBackground: "#ffffff",
   readerAccent: "#8B7355",
@@ -118,20 +120,44 @@ const DEFAULTS = {
   reduceMotion: false,
 };
 
-const usePersisted = <T,>(key: string, defaultValue: T): [T, (v: T) => void] => {
-  const [value, setValue] = useState<T>(() => {
-    const saved = localStorage.getItem(`sanctuary-${key}`);
-    if (saved === null) return defaultValue;
-    try {
-      return JSON.parse(saved) as T;
-    } catch {
-      return saved as unknown as T;
-    }
-  });
 
+
+import { useAuth } from "@/hooks/useAuth";
+
+// ...
+
+const usePersisted = <T,>(key: string, defaultValue: T): [T, (v: T) => void] => {
+  const [value, setValue] = useState<T>(defaultValue);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const { getToken } = useAuth();
+
+  // Load initial value
   useEffect(() => {
-    localStorage.setItem(`sanctuary-${key}`, JSON.stringify(value));
-  }, [key, value]);
+    let mounted = true;
+    const load = async () => {
+      // Get token (might be null if signed out, but service handles it)
+      const token = await getToken();
+      const saved = await settingsService.getItem<T>(key, token || undefined);
+      if (mounted && saved !== null) {
+        setValue(saved);
+      }
+      if (mounted) setIsLoaded(true);
+    };
+    load();
+    return () => { mounted = false; };
+  }, [key, getToken]);
+
+  // Save value
+  useEffect(() => {
+    if (isLoaded) {
+      // Async wrapper to get token
+      const save = async () => {
+        const token = await getToken();
+        settingsService.setItem(key, value, token || undefined).catch(console.error);
+      };
+      save();
+    }
+  }, [key, value, isLoaded, getToken]);
 
   return [value, setValue];
 };
@@ -145,7 +171,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [hyphenation, setHyphenation] = usePersisted("hyphenation", DEFAULTS.hyphenation);
   const [pageMargin, setPageMargin] = usePersisted("pageMargin", DEFAULTS.pageMargin);
   const [paragraphSpacing, setParagraphSpacing] = usePersisted("paragraphSpacing", DEFAULTS.paragraphSpacing);
-  const [dropCaps, setDropCaps] = usePersisted("dropCaps", DEFAULTS.dropCaps);
   const [continuous, setContinuous] = usePersisted("continuous", DEFAULTS.continuous);
   const [spread, setSpread] = usePersisted("spread", DEFAULTS.spread);
   const [direction, setDirection] = usePersisted("direction", DEFAULTS.direction);
@@ -155,6 +180,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showPageCounter, setShowPageCounter] = usePersisted("showPageCounter", DEFAULTS.showPageCounter);
   const [progressBarType, setProgressBarType] = usePersisted("progressBarType", DEFAULTS.progressBarType);
   const [barPosition, setBarPosition] = usePersisted("barPosition", DEFAULTS.barPosition);
+  const [showFloatingCapsule, setShowFloatingCapsule] = usePersisted("showFloatingCapsule", DEFAULTS.showFloatingCapsule);
   const [readerForeground, setReaderForeground] = usePersisted("readerForeground", DEFAULTS.readerForeground);
   const [readerBackground, setReaderBackground] = usePersisted("readerBackground", DEFAULTS.readerBackground);
   const [readerAccent, setReaderAccent] = usePersisted("readerAccent", DEFAULTS.readerAccent);
@@ -175,7 +201,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     setHyphenation(DEFAULTS.hyphenation);
     setPageMargin(DEFAULTS.pageMargin);
     setParagraphSpacing(DEFAULTS.paragraphSpacing);
-    setDropCaps(DEFAULTS.dropCaps);
     setContinuous(DEFAULTS.continuous);
     setSpread(DEFAULTS.spread);
     setDirection(DEFAULTS.direction);
@@ -185,10 +210,17 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     setShowPageCounter(DEFAULTS.showPageCounter);
     setProgressBarType(DEFAULTS.progressBarType);
     setBarPosition(DEFAULTS.barPosition);
+    setShowFloatingCapsule(DEFAULTS.showFloatingCapsule);
     setReaderForeground(DEFAULTS.readerForeground);
     setReaderBackground(DEFAULTS.readerBackground);
     setReaderAccent(DEFAULTS.readerAccent);
     setKeybinds(DEFAULTS.keybinds);
+    setDailyGoal(DEFAULTS.dailyGoal);
+    setWeeklyGoal(DEFAULTS.weeklyGoal);
+    setShowStreakReminder(DEFAULTS.showStreakReminder);
+    setTrackingEnabled(DEFAULTS.trackingEnabled);
+    setScreenReaderMode(DEFAULTS.screenReaderMode);
+    setReduceMotion(DEFAULTS.reduceMotion);
   };
 
   return (
@@ -202,7 +234,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         hyphenation, setHyphenation,
         pageMargin, setPageMargin,
         paragraphSpacing, setParagraphSpacing,
-        dropCaps, setDropCaps,
         continuous, setContinuous,
         spread, setSpread,
         direction, setDirection,
@@ -212,6 +243,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         showPageCounter, setShowPageCounter,
         progressBarType, setProgressBarType,
         barPosition, setBarPosition,
+        showFloatingCapsule, setShowFloatingCapsule,
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
         readerAccent, setReaderAccent,
