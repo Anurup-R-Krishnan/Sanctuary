@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { View } from "@/types";
 import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
@@ -12,12 +12,12 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReaderActive }) => {
   const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const navRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const lastScrollYRef = useRef(0);
   const { reduceMotion } = useSettings();
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { 
       view: View.LIBRARY, 
       label: "Library", 
@@ -43,24 +43,24 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
       icon: Settings,
       description: "Customize your experience" 
     },
-  ];
+  ], [isReaderActive]);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      if (currentScrollY < lastScrollY || currentScrollY < 100) {
+      if (currentScrollY < lastScrollYRef.current || currentScrollY < 100) {
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      } else if (currentScrollY > lastScrollYRef.current && currentScrollY > 100) {
         setIsVisible(false);
       }
       
-      setLastScrollY(currentScrollY);
+      lastScrollYRef.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   useEffect(() => {
     const idx = navItems.findIndex((item) => item.view === activeView);
@@ -76,7 +76,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
         opacity: 1,
       });
     }
-  }, [activeView, isReaderActive]);
+  }, [activeView, isReaderActive, navItems]);
 
   return (
     <nav className={`fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${

@@ -14,6 +14,15 @@ const Panel: React.FC<PanelProps> = ({ isOpen, onClose, title, children, side = 
         <div
             className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             onClick={onClose}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onClose();
+                }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Close panel overlay"
         />
         <div
             className={`fixed top-0 ${side === "left" ? "left-0" : "right-0"} h-full w-80 max-w-[85vw] z-[60] bg-light-surface dark:bg-dark-surface shadow-2xl transition-transform duration-300 ${isOpen ? "translate-x-0" : side === "left" ? "-translate-x-full" : "translate-x-full"

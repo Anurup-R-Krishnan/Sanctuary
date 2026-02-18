@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ReadingStats, Badge } from "@/types";
+import type { ReadingStats, Badge } from "@/types";
 import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
 
 interface StatsViewProps {
@@ -19,7 +19,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   target: Target,
 };
 
-const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) => {
+const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onUpdateGoal }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
@@ -262,6 +262,27 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal }) =
               data={stats.weeklyData.map((d) => ({ label: d.day, value: d.minutes }))}
               maxValue={Math.max(...stats.weeklyData.map((d) => d.minutes), 1)}
             />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                Weekly goal: <span className="font-semibold tabular-nums">{weeklyGoal} pages</span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onUpdateGoal(Math.max(5, dailyGoal - 5), Math.max(20, weeklyGoal - 20))}
+                  className="px-2.5 py-1 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                >
+                  Easier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUpdateGoal(dailyGoal + 5, weeklyGoal + 20)}
+                  className="px-2.5 py-1 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                >
+                  Harder
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="p-5 rounded-xl bg-gradient-to-br from-light-accent/4 to-amber-500/4 dark:from-dark-accent/6 dark:to-amber-400/6 border border-light-accent/10 dark:border-dark-accent/10">

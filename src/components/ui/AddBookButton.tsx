@@ -75,19 +75,15 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
         onChange={handleChange}
       />
 
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        className={`fixed bottom-24 right-6 z-40 transition-transform duration-200 ${
-          isDragging ? "scale-110" : ""
-        }`}
-      >
+      <div className={`fixed bottom-24 right-6 z-40 transition-transform duration-200 ${isDragging ? "scale-110" : ""}`}>
         <button
           onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
           disabled={isLoading}
           className={`group flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-200 ${
             isDragging
