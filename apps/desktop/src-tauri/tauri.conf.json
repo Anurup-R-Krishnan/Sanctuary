@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Sanctuary V2",
+  "version": "0.1.0",
+  "identifier": "com.sanctuary.desktop",
+  "build": {
+    "beforeDevCommand": "npm --workspace @sanctuary/mobile run web",
+    "beforeBuildCommand": "npm --workspace @sanctuary/mobile run build:web",
+    "frontendDist": "../../mobile/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Sanctuary V2",
+        "width": 1440,
+        "height": 900,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": []
+  }
+}

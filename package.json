@@ -1,8 +1,12 @@
 {
   "name": "sanctuary-book-reader",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "bash -lc 'npm run dev:frontend:guest & npm run dev:backend:guest; wait -n; kill 0'",
     "dev:strict": "bash -lc 'npm run dev:frontend:strict & npm run dev:backend:strict; wait -n; kill 0'",
@@ -13,11 +17,18 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "v2:mobile": "npm --workspace @sanctuary/mobile run start",
+    "v2:mobile:web": "npm --workspace @sanctuary/mobile run web",
+    "v2:mobile:android": "npm --workspace @sanctuary/mobile run android",
+    "v2:desktop:dev": "npm --workspace @sanctuary/desktop run tauri:dev",
+    "v2:desktop:build": "npm --workspace @sanctuary/desktop run tauri:build",
+    "v2:mirror:check": "node scripts/check-v2-mirror.mjs"
   },
   "dependencies": {
     "@clerk/backend": "^2.31.1",
     "@clerk/clerk-react": "^5.60.2",
+    "@supabase/supabase-js": "^2.57.4",
     "epubjs": "^0.3.93",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.555.0",
