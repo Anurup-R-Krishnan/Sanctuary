@@ -121,6 +121,15 @@
     padding-inline: var(--page-gutter);
   }
 
+  .page-narrow {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .page-stack {
+    @apply space-y-8;
+    padding-bottom: clamp(3rem, 8vw, 4.5rem);
+  }
+
   /* Glass Effects */
   .glass {
     @apply bg-white/75 dark:bg-dark-surface/75 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.06];

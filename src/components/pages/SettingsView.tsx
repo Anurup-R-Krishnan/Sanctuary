@@ -139,6 +139,7 @@ const SettingsView: React.FC = () => {
         weeklyGoal, setWeeklyGoal,
         showStreakReminder, setShowStreakReminder,
         trackingEnabled, setTrackingEnabled,
+        showFloatingCapsule, setShowFloatingCapsule,
         resetToDefaults,
     } = settings;
 
@@ -336,7 +337,7 @@ const SettingsView: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 pb-16">
+        <div className="page-narrow page-stack">
             {/* Hero Header */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-light-accent/5 via-amber-500/3 to-transparent dark:from-dark-accent/8 dark:via-amber-400/4 p-8 border border-light-accent/10 dark:border-dark-accent/10">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-light-accent/10 to-transparent dark:from-dark-accent/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -391,6 +392,16 @@ const SettingsView: React.FC = () => {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Global Interface Toggles */}
+            <div className="mt-4">
+                <Toggle
+                    checked={showFloatingCapsule}
+                    onChange={setShowFloatingCapsule}
+                    label="Floating Capsule (bottom-right)"
+                    sublabel="Show page/time capsule in reader"
+                />
             </div>
 
             {/* Tab Content */}
@@ -523,47 +534,6 @@ const SettingsView: React.FC = () => {
                     </>
                 )}
 
-                {activeTab === "shortcuts" && (
-                    <>
-                        <Section title="Reader Shortcuts" icon={Zap}>
-                            <div className="space-y-4">
-                                <ShortcutItem
-                                    label="Next Page"
-                                    keys={keybinds.nextPage}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, nextPage: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Previous Page"
-                                    keys={keybinds.prevPage}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, prevPage: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Toggle Bookmark"
-                                    keys={keybinds.toggleBookmark}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleBookmark: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Toggle Fullscreen"
-                                    keys={keybinds.toggleFullscreen}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleFullscreen: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Toggle UI"
-                                    keys={keybinds.toggleUI}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, toggleUI: keys })}
-                                />
-                                <ShortcutItem
-                                    label="Close Reader"
-                                    keys={keybinds.close}
-                                    onChange={(keys) => setKeybinds({ ...keybinds, close: keys })}
-                                />
-                            </div>
-                            <p className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-4">
-                                Click on a shortcut to edit. Press keys to set, Esc to cancel, Backspace to clear.
-                            </p>
-                        </Section>
-                    </>
-                )}
             </div>
         </div>
     );
