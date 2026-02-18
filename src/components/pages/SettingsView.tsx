@@ -136,15 +136,15 @@ const SettingsView: React.FC = () => {
     const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
         <button
             type="button"
-            className="group w-full text-left flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-black/[0.02] to-transparent dark:from-white/[0.02] dark:to-transparent hover:from-black/[0.04] dark:hover:from-white/[0.04] transition-all duration-300 cursor-pointer"
+            className="group w-full text-left flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200 cursor-pointer"
             onClick={() => onChange(!checked)}
         >
             <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>
                 {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
             </div>
-            <div className={`relative w-14 h-8 rounded-full transition-all duration-500 ease-out ${checked
-                    ? "bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 shadow-lg shadow-light-accent/25 dark:shadow-dark-accent/20"
+            <div className={`relative w-14 h-8 rounded-full transition-all duration-300 ease-out ${checked
+                    ? "bg-light-accent dark:bg-dark-accent"
                     : "bg-black/10 dark:bg-white/10"
                 }`}>
                 <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-500 ease-out ${checked ? "left-7 scale-110" : "left-1"
@@ -182,7 +182,7 @@ const SettingsView: React.FC = () => {
         const percentage = ((value - min) / (max - min)) * 100;
 
         return (
-            <div className="group p-4 rounded-2xl bg-gradient-to-r from-black/[0.02] to-transparent dark:from-white/[0.02] dark:to-transparent hover:from-black/[0.04] dark:hover:from-white/[0.04] transition-all duration-300">
+            <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         {Icon && (
@@ -201,7 +201,7 @@ const SettingsView: React.FC = () => {
                 <div className="relative">
                     <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-300"
+                            className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
                             style={{ width: `${percentage}%` }}
                         />
                     </div>
@@ -224,15 +224,12 @@ const SettingsView: React.FC = () => {
     };
 
     // Premium Section Component
-    const Section = ({ title, icon: Icon, children, gradient }: { title: string; icon?: React.ElementType; children: React.ReactNode; gradient?: string }) => (
-        <div className={`relative overflow-hidden rounded-3xl border border-black/[0.05] dark:border-white/[0.05] ${gradient || "bg-light-surface/50 dark:bg-dark-surface/50"}`}>
-            {/* Decorative gradient */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-light-accent/5 to-transparent dark:from-dark-accent/8 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-
+    const Section = ({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) => (
+        <div className="rounded-3xl border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/80 dark:bg-dark-surface/80">
             <div className="relative p-6">
                 <div className="flex items-center gap-3 mb-5">
                     {Icon && (
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-light-accent/15 to-amber-500/10 dark:from-dark-accent/20 dark:to-amber-400/10">
+                        <div className="p-2.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/15">
                             <Icon className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
                         </div>
                     )}
@@ -257,14 +254,14 @@ const SettingsView: React.FC = () => {
         return (
             <button
                 onClick={onClick}
-                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all duration-500 hover:scale-105 ${isActive
-                        ? "border-light-accent dark:border-dark-accent shadow-lg shadow-light-accent/15 dark:shadow-dark-accent/10 scale-105"
+                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all duration-200 ${isActive
+                        ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/10"
                         : "border-black/[0.06] dark:border-white/[0.06] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
                     }`}
             >
                 {/* Color preview */}
                 <div
-                    className="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110"
+                    className="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-inner"
                     style={{ backgroundColor: preset.bg }}
                 >
                     <span className="text-2xl font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
@@ -278,7 +275,7 @@ const SettingsView: React.FC = () => {
 
                 {/* Active indicator */}
                 {isActive && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full flex items-center justify-center shadow-lg">
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center shadow-sm">
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                     </div>
                 )}
@@ -289,14 +286,11 @@ const SettingsView: React.FC = () => {
     return (
         <div className="page-narrow page-stack">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-light-accent/5 via-amber-500/3 to-transparent dark:from-dark-accent/8 dark:via-amber-400/4 p-8 border border-light-accent/10 dark:border-dark-accent/10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-light-accent/10 to-transparent dark:from-dark-accent/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-amber-500/8 to-transparent rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
+            <div className="rounded-3xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 shadow-lg shadow-light-accent/20 dark:shadow-dark-accent/15">
+                            <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
                                 <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
                             </div>
                             <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>

@@ -129,14 +129,6 @@ const App: React.FC = () => {
   // Render - App
   return (
     <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
-      {/* Background Decorations */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-64 -right-64 w-[500px] h-[500px] bg-gradient-radial from-light-accent/[0.06] via-light-accent/[0.02] to-transparent dark:from-dark-accent/[0.08] dark:via-dark-accent/[0.03] rounded-full blur-3xl" />
-        <div className="absolute -bottom-64 -left-64 w-[600px] h-[600px] bg-gradient-radial from-amber-500/[0.04] via-amber-500/[0.01] to-transparent rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-gradient-radial from-light-accent/[0.03] to-transparent dark:from-dark-accent/[0.04] rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] bg-gradient-radial from-amber-400/[0.02] to-transparent rounded-full blur-3xl" />
-      </div>
-
       {/* Header */}
       {!isReader && (
         <Header

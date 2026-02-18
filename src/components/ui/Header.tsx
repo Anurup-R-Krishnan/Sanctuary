@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun } from "lucide-react";
 import { Theme } from "@/types";
-import { useSettings } from "@/context/SettingsContext";
 
 interface HeaderProps {
   theme: Theme;
@@ -29,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
   const [searchFocused, setSearchFocused] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { reduceMotion } = useSettings();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,38 +56,30 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-3'}`}>
-      {/* Enhanced Background with Blur */}
       <div className={`absolute inset-0 transition-all duration-300 ${isScrolled
-        ? 'bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-2xl'
-        : 'bg-light-primary/85 dark:bg-dark-primary/85 backdrop-blur-xl'
+        ? 'bg-light-primary/96 dark:bg-dark-primary/96 backdrop-blur-xl'
+        : 'bg-light-primary/92 dark:bg-dark-primary/92 backdrop-blur-md'
         }`} />
 
-      {/* Gradient Border */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-light-accent/20 dark:via-dark-accent/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-black/[0.06] dark:bg-white/[0.08]" />
 
       <div className="relative container-wide">
         <div className="flex items-center justify-between gap-6">
 
           {/* Logo Section */}
           <div className="flex items-center gap-3">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-light-accent/20 to-amber-500/20 dark:from-dark-accent/20 dark:to-amber-400/20 rounded-2xl blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center shadow-lg glow-sm group-hover:glow-md transition-all duration-300">
-                <BookOpen className="w-5 h-5 text-white" strokeWidth={2} />
+            <div className="relative w-11 h-11 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center shadow-sm">
+              <BookOpen className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={2} />
               </div>
-            </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold gradient-text">Sanctuary</h1>
+              <h1 className="text-xl font-bold text-light-text dark:text-dark-text">Sanctuary</h1>
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted -mt-0.5">Your Reading Haven</p>
             </div>
           </div>
 
           {/* Search Section */}
           <div className="flex-1 max-w-md mx-4">
-            <div className={`relative group transition-all duration-300 ${searchFocused ? 'scale-105' : 'hover:scale-102'
-              }`}>
-              <div className="absolute inset-0 bg-gradient-to-r from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-
+            <div className="relative group">
               <div className="relative flex items-center">
                 <Search className={`absolute left-4 w-4 h-4 transition-colors duration-200 ${searchFocused
                   ? 'text-light-accent dark:text-dark-accent'
@@ -104,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({
                   onChange={(e) => onSearch(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  className="w-full pl-11 pr-12 py-3 bg-white/60 dark:bg-dark-surface/60 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-2xl text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 dark:placeholder:text-dark-text-muted/60 focus:outline-none focus:bg-white dark:focus:bg-dark-surface focus:border-light-accent/50 dark:focus:border-dark-accent/50 focus:shadow-lg transition-all duration-200"
+                  className="w-full pl-11 pr-12 py-3 bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] rounded-2xl text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 dark:placeholder:text-dark-text-muted/60 focus:outline-none focus:border-light-accent/40 dark:focus:border-dark-accent/40 transition-all duration-200"
                 />
 
                 {searchTerm && (
@@ -132,7 +122,7 @@ const Header: React.FC<HeaderProps> = ({
             {/* Theme Toggle */}
             <button
               onClick={onToggleTheme}
-              className="relative p-3 rounded-2xl bg-white/60 dark:bg-dark-surface/60 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] hover:bg-white dark:hover:bg-dark-surface hover:border-black/[0.12] dark:hover:border-white/[0.12] transition-all duration-200 group"
+              className="relative p-3 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] hover:border-black/[0.12] dark:hover:border-white/[0.12] transition-all duration-200"
               aria-label="Toggle theme"
             >
               <div className="relative w-5 h-5">
@@ -146,16 +136,13 @@ const Header: React.FC<HeaderProps> = ({
                   }`} strokeWidth={2} />
               </div>
 
-              {!reduceMotion && (
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-500/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              )}
             </button>
 
             {/* Auth Actions */}
             {isGuest ? (
               <button
                 onClick={onShowLogin}
-                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 text-white font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 group"
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-light-accent dark:bg-dark-accent text-white font-semibold hover:opacity-90 transition-all duration-200"
               >
                 <LogIn className="w-4 h-4" strokeWidth={2} />
                 <span className="hidden sm:inline">Sign In</span>
@@ -172,7 +159,7 @@ const Header: React.FC<HeaderProps> = ({
                 )}
                 <button
                   onClick={onSignOut}
-                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/60 dark:bg-dark-surface/60 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] text-light-text dark:text-dark-text hover:bg-white dark:hover:bg-dark-surface hover:border-red-200 dark:hover:border-red-800 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 group"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] text-light-text dark:text-dark-text hover:border-red-200 dark:hover:border-red-800 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200"
                 >
                   <LogOut className="w-4 h-4" strokeWidth={2} />
                   <span className="hidden sm:inline">Sign Out</span>

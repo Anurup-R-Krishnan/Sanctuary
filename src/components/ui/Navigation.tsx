@@ -84,21 +84,12 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
     }`}>
       <div
         ref={navRef}
-        className="relative flex items-center gap-1 p-2 rounded-3xl glass-ultra shadow-2xl shadow-black/[0.15] dark:shadow-black/[0.3] border border-black/[0.08] dark:border-white/[0.08]"
+        className="relative flex items-center gap-1 p-2 rounded-3xl bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-lg shadow-lg border border-black/[0.08] dark:border-white/[0.08]"
       >
-        {/* Enhanced Active Indicator */}
         <div
-          className="absolute top-2 left-0 h-[calc(100%-16px)] rounded-2xl bg-gradient-to-b from-light-accent/20 via-light-accent/15 to-light-accent/10 dark:from-dark-accent/25 dark:via-dark-accent/20 dark:to-dark-accent/15 transition-all duration-300 ease-out"
+          className="absolute top-2 left-0 h-[calc(100%-16px)] rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] transition-all duration-300 ease-out"
           style={indicatorStyle}
         />
-        
-        {/* Glow effect for active indicator */}
-        {!reduceMotion && (
-          <div
-            className="absolute top-2 left-0 h-[calc(100%-16px)] rounded-2xl bg-gradient-to-b from-light-accent/10 to-transparent dark:from-dark-accent/15 dark:to-transparent blur-lg transition-all duration-300 ease-out"
-            style={indicatorStyle}
-          />
-        )}
 
         {navItems.map((item, index) => {
           const isActive = activeView === item.view;
@@ -116,7 +107,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
                     : item.disabled
                       ? "text-light-text-muted/30 dark:text-dark-text-muted/30 cursor-not-allowed"
                       : "text-light-text-muted/70 dark:text-dark-text-muted/70 hover:text-light-text dark:hover:text-dark-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-                } ${!item.disabled && !isActive ? 'hover:scale-105' : ''}`}
+                }`}
                 aria-label={item.description}
               >
                 <div className="relative">
@@ -127,11 +118,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   
-                  {/* Active indicator dot */}
                   {isActive && !reduceMotion && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full animate-pulse-soft">
-                      <div className="absolute inset-0 bg-gradient-to-br from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full blur-sm opacity-60" />
-                    </div>
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-light-accent dark:bg-dark-accent rounded-full" />
                   )}
                 </div>
                 
@@ -146,11 +134,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
                 </span>
               </button>
 
-              {/* Tooltip */}
               {!isActive && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-dark-surface/95 dark:bg-light-surface/95 text-dark-text dark:text-light-text text-xs font-medium rounded-xl backdrop-blur-xl border border-white/[0.1] dark:border-black/[0.1] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text text-xs font-medium rounded-xl border border-black/[0.08] dark:border-white/[0.08] opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap">
                   {item.description}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-dark-surface/95 dark:bg-light-surface/95 border-r border-b border-white/[0.1] dark:border-black/[0.1] rotate-45 -mt-1" />
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-light-surface dark:bg-dark-surface border-r border-b border-black/[0.08] dark:border-white/[0.08] rotate-45 -mt-1" />
                 </div>
               )}
             </div>
@@ -158,10 +145,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
         })}
       </div>
 
-      {/* Floating action hint */}
-      {!reduceMotion && (
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full opacity-60 animate-bounce-gentle" />
-      )}
+      {!reduceMotion && null}
     </nav>
   );
 };
