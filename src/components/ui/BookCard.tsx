@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Book } from "@/types";
-import { Star, Clock, BookOpen, MoreVertical, Heart } from "lucide-react";
+import type { Book } from "@/types";
+import { Star, Clock, BookOpen, Heart } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
 interface BookCardProps {
@@ -10,18 +10,18 @@ interface BookCardProps {
   variant?: "default" | "compact" | "featured";
 }
 
-const BookCard: React.FC<BookCardProps> = ({ 
-  book, 
-  onSelect, 
+const BookCard: React.FC<BookCardProps> = ({
+  book,
+  onSelect,
   onToggleFavorite,
-  variant = "default" 
+  variant = "default"
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const { reduceMotion } = useSettings();
 
   const progressPercentage = Math.round((book.progress / book.totalPages) * 100);
-  const isRecent = book.lastRead && Date.now() - book.lastRead < 7 * 24 * 60 * 60 * 1000;
+  const isRecent = book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
   const isCompleted = progressPercentage >= 100;
 
   const handleImageLoad = () => setImageLoaded(true);
@@ -31,11 +31,20 @@ const BookCard: React.FC<BookCardProps> = ({
     e.stopPropagation();
     onToggleFavorite?.(book.id);
   };
+  const handleCardKeyDown = (e: React.KeyboardEvent, selectedBook: Book) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelect(selectedBook);
+    }
+  };
 
   if (variant === "compact") {
     return (
-      <div 
+      <div
         onClick={() => onSelect(book)}
+        onKeyDown={(e) => handleCardKeyDown(e, book)}
+        role="button"
+        tabIndex={0}
         className="group flex items-center gap-4 p-4 rounded-2xl card card-hover card-interactive cursor-pointer"
       >
         <div className="relative flex-shrink-0">
@@ -44,9 +53,8 @@ const BookCard: React.FC<BookCardProps> = ({
               <img
                 src={book.coverUrl}
                 alt={book.title}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
@@ -86,8 +94,11 @@ const BookCard: React.FC<BookCardProps> = ({
 
   if (variant === "featured") {
     return (
-      <div 
+      <div
         onClick={() => onSelect(book)}
+        onKeyDown={(e) => handleCardKeyDown(e, book)}
+        role="button"
+        tabIndex={0}
         className="group relative overflow-hidden rounded-3xl card card-hover card-interactive cursor-pointer p-6"
       >
         <div className="flex items-start gap-6">
@@ -97,9 +108,8 @@ const BookCard: React.FC<BookCardProps> = ({
                 <img
                   src={book.coverUrl}
                   alt={book.title}
-                  className={`w-full h-full object-cover transition-all duration-500 ${
-                    imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-                  } group-hover:scale-105`}
+                  className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+                    } group-hover:scale-105`}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
@@ -109,7 +119,7 @@ const BookCard: React.FC<BookCardProps> = ({
                 </div>
               )}
             </div>
-            
+
             {!reduceMotion && (
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             )}
@@ -125,14 +135,13 @@ const BookCard: React.FC<BookCardProps> = ({
                   {book.author}
                 </p>
               </div>
-              
+
               <button
                 onClick={handleFavoriteClick}
-                className={`p-2 rounded-xl transition-all duration-200 ${
-                  book.isFavorite
+                className={`p-2 rounded-xl transition-all duration-200 ${book.isFavorite
                     ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
                     : 'text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
-                }`}
+                  }`}
               >
                 <Heart className={`w-5 h-5 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
               </button>
@@ -146,7 +155,7 @@ const BookCard: React.FC<BookCardProps> = ({
                     <span className="font-semibold text-light-accent dark:text-dark-accent">{progressPercentage}%</span>
                   </div>
                   <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-500"
                       style={{ width: `${progressPercentage}%` }}
                     />
@@ -177,8 +186,11 @@ const BookCard: React.FC<BookCardProps> = ({
 
   // Default variant
   return (
-    <div 
+    <div
       onClick={() => onSelect(book)}
+      onKeyDown={(e) => handleCardKeyDown(e, book)}
+      role="button"
+      tabIndex={0}
       className="group relative overflow-hidden rounded-3xl card card-hover card-interactive cursor-pointer"
     >
       {/* Book Cover */}
@@ -187,9 +199,8 @@ const BookCard: React.FC<BookCardProps> = ({
           <img
             src={book.coverUrl}
             alt={book.title}
-            className={`w-full h-full object-cover transition-all duration-500 ${
-              imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-            } group-hover:scale-105`}
+            className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+              } group-hover:scale-105`}
             onLoad={handleImageLoad}
             onError={handleImageError}
           />
@@ -198,7 +209,7 @@ const BookCard: React.FC<BookCardProps> = ({
             <BookOpen className="w-12 h-12 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
           </div>
         )}
-        
+
         {/* Overlay */}
         {!reduceMotion && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -207,11 +218,10 @@ const BookCard: React.FC<BookCardProps> = ({
         {/* Favorite Button */}
         <button
           onClick={handleFavoriteClick}
-          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 ${
-            book.isFavorite
+          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 ${book.isFavorite
               ? 'bg-red-500/90 text-white'
               : 'bg-black/20 text-white hover:bg-red-500/90'
-          } opacity-0 group-hover:opacity-100`}
+            } opacity-0 group-hover:opacity-100`}
         >
           <Heart className={`w-4 h-4 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
         </button>
@@ -219,7 +229,7 @@ const BookCard: React.FC<BookCardProps> = ({
         {/* Progress Indicator */}
         {progressPercentage > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}
             />
@@ -249,7 +259,7 @@ const BookCard: React.FC<BookCardProps> = ({
         <p className="text-sm text-light-text-muted dark:text-dark-text-muted line-clamp-1">
           {book.author}
         </p>
-        
+
         {progressPercentage > 0 && (
           <div className="flex items-center justify-between text-xs">
             <span className="text-light-text-muted dark:text-dark-text-muted">

@@ -5,7 +5,8 @@ import { useReadingStats } from "./hooks/useReadingStats";
 import { useSettings } from "@/context/SettingsContext";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { Theme, View, Book } from "@/types";
+import type { Book } from "@/types";
+import { Theme, View } from "@/types";
 import { BookOpen } from "lucide-react";
 
 import Header from "./components/ui/Header";
@@ -50,10 +51,6 @@ const App: React.FC = () => {
   const { stats, startSession, endSession } = useReadingStats(books);
 
   // Handlers
-  const handleGuestMode = useCallback(() => {
-    setIsGuest(true);
-  }, [setIsGuest]);
-
   const handleShowLogin = useCallback(() => {
     setIsGuest(false);
     // Clerk handles the rest (redirects to sign in if we render logic correctly)

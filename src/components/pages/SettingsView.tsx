@@ -1,26 +1,17 @@
 import React, { useState } from "react";
 import {
-    Type,
-    Layout,
-    BookOpen,
     Palette,
     Target,
     RotateCcw,
-    AlignLeft,
-    AlignCenter,
-    AlignJustify,
     Moon,
     Sun,
     Zap,
     Coffee,
     Check,
     WandSparkles,
-    Eye,
-    Accessibility,
     Bell,
     ChartLine,
     Droplets,
-    Move,
 } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
@@ -73,13 +64,14 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
             <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
             <div className="flex items-center gap-2">
                 {isEditing ? (
-                    <div
+                    <input
+                        type="text"
+                        readOnly
+                        aria-label={`${label} shortcut editor`}
                         className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[120px] text-center"
                         onKeyDown={handleKeyDown}
-                        tabIndex={0}
-                    >
-                        {tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
-                    </div>
+                        value={tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
+                    />
                 ) : (
                     <div className="flex items-center gap-1">
                         {keys.map((key, index) => (
@@ -109,15 +101,6 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
 };
 
 type Tab = "typography" | "layout" | "reading" | "colors" | "shortcuts" | "goals";
-
-const FONT_PAIRINGS = [
-    { id: "merriweather-georgia", label: "Merriweather", family: "'Merriweather', Georgia, serif", style: "Classic Serif" },
-    { id: "crimson-pro", label: "Crimson Pro", family: "'Crimson Pro', Georgia, serif", style: "Elegant" },
-    { id: "libre-baskerville", label: "Libre Baskerville", family: "'Libre Baskerville', Georgia, serif", style: "Traditional" },
-    { id: "lora", label: "Lora", family: "'Lora', Georgia, serif", style: "Contemporary" },
-    { id: "source-serif", label: "Source Serif", family: "'Source Serif Pro', Georgia, serif", style: "Modern" },
-    { id: "inter", label: "Inter", family: "'Inter', system-ui, sans-serif", style: "Sans-Serif" },
-];
 
 const COLOR_PRESETS = [
     { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
@@ -151,7 +134,11 @@ const SettingsView: React.FC = () => {
 
     // Premium Toggle Component
     const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
-        <div className="group flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-black/[0.02] to-transparent dark:from-white/[0.02] dark:to-transparent hover:from-black/[0.04] dark:hover:from-white/[0.04] transition-all duration-300 cursor-pointer" onClick={() => onChange(!checked)}>
+        <button
+            type="button"
+            className="group w-full text-left flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-black/[0.02] to-transparent dark:from-white/[0.02] dark:to-transparent hover:from-black/[0.04] dark:hover:from-white/[0.04] transition-all duration-300 cursor-pointer"
+            onClick={() => onChange(!checked)}
+        >
             <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>
                 {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
@@ -169,7 +156,7 @@ const SettingsView: React.FC = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </button>
     );
 
     // Premium Slider Component
@@ -256,39 +243,6 @@ const SettingsView: React.FC = () => {
         </div>
     );
 
-    // Premium Preset Card
-    const PresetCard = ({
-        icon: Icon,
-        label,
-        description,
-        onClick,
-        gradient,
-    }: {
-        icon: React.ElementType;
-        label: string;
-        description: string;
-        onClick: () => void;
-        gradient: string;
-    }) => (
-        <button
-            onClick={onClick}
-            className="group relative overflow-hidden w-full p-5 rounded-2xl border border-black/[0.05] dark:border-white/[0.05] bg-light-surface/80 dark:bg-dark-surface/80 text-left transition-all duration-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-light-accent/10 dark:hover:shadow-dark-accent/10 hover:border-light-accent/20 dark:hover:border-dark-accent/20 active:scale-[0.98]"
-        >
-            {/* Animated gradient background */}
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${gradient}`} />
-
-            <div className="relative flex items-start gap-4">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-light-accent/10 to-amber-500/5 dark:from-dark-accent/15 dark:to-amber-400/5 group-hover:from-light-accent/20 group-hover:to-amber-500/10 dark:group-hover:from-dark-accent/25 dark:group-hover:to-amber-400/10 transition-all duration-500">
-                    <Icon className="w-6 h-6 text-light-accent dark:text-dark-accent transition-transform duration-500 group-hover:scale-110" strokeWidth={1.5} />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-light-text dark:text-dark-text group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-300">{label}</p>
-                    <p className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">{description}</p>
-                </div>
-            </div>
-        </button>
-    );
-
     // Color Swatch
     const ColorSwatch = ({
         preset,
@@ -330,10 +284,6 @@ const SettingsView: React.FC = () => {
                 )}
             </button>
         );
-    };
-
-    const getActiveColorPreset = () => {
-        return COLOR_PRESETS.find(p => p.bg === readerBackground) || null;
     };
 
     return (

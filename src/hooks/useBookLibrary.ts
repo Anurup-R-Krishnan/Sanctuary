@@ -1,40 +1,17 @@
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import ePub from "epubjs";
 import { v4 as uuidv4 } from "uuid";
 import type { Book, Highlight, Bookmark, SortOption, FilterOption } from "@/types";
-import * as db from "../utils/db";
+import { bookService } from "@/services/bookService";
+import { useAuth } from "@/hooks/useAuth";
+import { logErrorOnce } from "@/services/http";
 
 type UseBookLibraryOptions = { persistent?: boolean };
 
-interface StoredBook {
-  id: string;
-  title: string;
-  author: string;
-  coverUrl: Blob;
-  epubBlob: Blob;
-  progress: number;
-  lastLocation: string;
-  genre?: string;
-  completedAt?: string;
-  addedAt?: string;
-  lastOpenedAt?: string;
-  isFavorite?: boolean;
-  isIncognito?: boolean;
-  series?: string;
-  seriesIndex?: number;
-  tags?: string[];
-  readingList?: "to-read" | "reading" | "finished";
-  highlights?: Highlight[];
-  bookmarks?: Bookmark[];
-  totalPages?: number;
-  locationHistory?: string[];
-}
-
-const isStoredBookArray = (items: unknown[]): items is StoredBook[] =>
-  items.every((item) => typeof item === "object" && item !== null && "coverUrl" in item && (item as StoredBook).coverUrl instanceof Blob);
-
 export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   const { persistent = true } = options;
+  const { getToken } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(persistent);
   const [sortBy, setSortBy] = useState<SortOption>("recent");
@@ -46,66 +23,59 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
 
   useEffect(() => cleanupObjectUrls, [cleanupObjectUrls]);
 
-  useEffect(() => {
+  const loadBooks = useCallback(async () => {
     if (!persistent) { cleanupObjectUrls(); setBooks([]); setIsLoading(false); return; }
-    let isActive = true;
-    (async () => {
-      setIsLoading(true);
-      try {
-        const stored = await db.getBooks();
-        if (!isActive) return;
-        cleanupObjectUrls();
-        const hydrated: Book[] = Array.isArray(stored) && isStoredBookArray(stored)
-          ? stored.map((s): Book => ({
-              id: s.id, title: s.title, author: s.author,
-              coverUrl: registerObjectUrl(URL.createObjectURL(s.coverUrl)),
-              epubBlob: s.epubBlob, progress: s.progress, lastLocation: s.lastLocation,
-              genre: s.genre, completedAt: s.completedAt, addedAt: s.addedAt,
-              lastOpenedAt: s.lastOpenedAt, isFavorite: s.isFavorite, isIncognito: s.isIncognito,
-              series: s.series, seriesIndex: s.seriesIndex, tags: s.tags,
-              readingList: s.readingList, highlights: s.highlights, bookmarks: s.bookmarks,
-              totalPages: s.totalPages, locationHistory: s.locationHistory,
-            }))
-          : [];
-        setBooks(hydrated);
-      } catch (error) { console.error("Failed to load books:", error); }
-      finally { if (isActive) setIsLoading(false); }
-    })();
-    return () => { isActive = false; };
-  }, [cleanupObjectUrls, persistent]);
+    setIsLoading(true);
+    try {
+      const token = await getToken();
+      const stored = await bookService.getBooks(token || undefined);
+      cleanupObjectUrls();
+      const hydrated: Book[] = stored.map((s): Book => ({
+        ...s,
+        coverUrl: s.coverUrl,
+        epubBlob: null
+      }));
+      setBooks(hydrated);
+    } catch (error) { logErrorOnce("books-load", "Failed to load books:", error); }
+    finally { setIsLoading(false); }
+  }, [cleanupObjectUrls, persistent, getToken]);
+
+  useEffect(() => {
+    loadBooks();
+  }, [loadBooks]);
 
   const addBook = useCallback(async (file: File) => {
     let bookData: any;
     try {
-      // Read file as ArrayBuffer
       const epubArrayBuffer = await file.arrayBuffer();
-      
-      // Create epub instance with ArrayBuffer directly (new API)
       bookData = ePub(epubArrayBuffer);
       await bookData.ready;
-      
-      // Get metadata
+
       const metadata = await bookData.loaded.metadata;
       const title = metadata.title ?? "Untitled";
       const author = metadata.creator ?? "Unknown";
-      
-      // Get cover
-      let coverBlob: Blob;
-      const coverHref = await bookData.coverUrl();
+
+      let coverBlob: Blob | null = null;
+      let coverHref: string | null = null;
+      try {
+        coverHref = await bookData.coverUrl();
+      } catch (e) {
+        console.warn("Could not extract EPUB cover. Using generated fallback cover.", e);
+      }
       if (coverHref) {
         const response = await fetch(coverHref);
         coverBlob = await response.blob();
-        if (coverHref.startsWith("blob:")) try { URL.revokeObjectURL(coverHref); } catch {}
+        if (coverHref.startsWith("blob:")) {
+          try { URL.revokeObjectURL(coverHref); } catch (error) { console.debug("Failed to revoke EPUB cover URL", error); }
+        }
       } else {
-        // Generate placeholder cover
         const canvas = document.createElement("canvas");
         canvas.width = 400; canvas.height = 600;
         const ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("Could not create canvas");
         ctx.fillStyle = "#4a5568"; ctx.fillRect(0, 0, 400, 600);
         ctx.fillStyle = "#fff"; ctx.textAlign = "center";
-        ctx.font = "bold 24px Georgia"; 
-        // Word wrap title
+        ctx.font = "bold 24px Georgia";
         const words = title.split(" ");
         let line = "";
         let y = 280;
@@ -127,32 +97,36 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         if (!blob) throw new Error("Could not generate cover");
         coverBlob = blob;
       }
-      
-      const displayCoverUrl = registerObjectUrl(URL.createObjectURL(coverBlob));
-      
-      // Store the original file as blob for later reading
+
+      const displayCoverUrl = coverBlob ? registerObjectUrl(URL.createObjectURL(coverBlob)) : "";
       const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
-      
+
       const newBook: Book = {
         id: uuidv4(), title, author, coverUrl: displayCoverUrl, epubBlob,
         progress: 0, lastLocation: "", addedAt: new Date().toISOString(),
         lastOpenedAt: new Date().toISOString(), readingList: "to-read",
         highlights: [], bookmarks: [], locationHistory: [],
       };
-      
+
       setBooks((prev) => [...prev, newBook]);
-      
+
       if (persistent) {
-        const bookToStore: StoredBook = { ...newBook, coverUrl: coverBlob };
-        await db.addBook(bookToStore as unknown as Book);
+        try {
+          const token = await getToken();
+          await bookService.addBook(file, coverBlob, newBook, token || undefined);
+        } catch (err) {
+          console.error("Backend upload failed:", err);
+          setBooks(prev => prev.filter(b => b.id !== newBook.id));
+          throw err;
+        }
       }
-    } catch (error) { 
-      console.error("Error adding book:", error); 
-      throw error; 
-    } finally { 
-      bookData?.destroy?.(); 
+    } catch (error) {
+      console.error("Error adding book:", error);
+      throw error;
+    } finally {
+      bookData?.destroy?.();
     }
-  }, [persistent]);
+  }, [persistent, getToken]);
 
   const updateBookProgress = useCallback(async (id: string, progress: number, lastLocation: string) => {
     setBooks((prev) => prev.map((book) => {
@@ -164,13 +138,19 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       }
       return { ...book, progress, lastLocation, lastOpenedAt: new Date().toISOString(), locationHistory: history };
     }));
-    if (persistent) try { await db.updateBookProgress(id, progress, lastLocation); } catch (e) { console.error("Failed to persist progress:", e); }
-  }, [persistent]);
+    if (persistent) try {
+      const token = await getToken();
+      await bookService.updateBookProgress(id, progress, lastLocation, token || undefined);
+    } catch (e) { console.error("Failed to persist progress:", e); }
+  }, [persistent, getToken]);
 
   const updateBook = useCallback(async (id: string, updates: Partial<Book>) => {
     setBooks((prev) => prev.map((book) => book.id === id ? { ...book, ...updates } : book));
-    if (persistent) try { await db.updateBook(id, updates); } catch (e) { console.error("Failed to update book:", e); }
-  }, [persistent]);
+    if (persistent) try {
+      const token = await getToken();
+      await bookService.updateBook(id, updates, token || undefined);
+    } catch (e) { console.error("Failed to update book:", e); }
+  }, [persistent, getToken]);
 
   const toggleFavorite = useCallback((id: string) => {
     const book = books.find((b) => b.id === id);
@@ -213,11 +193,14 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       objectUrlsRef.current.delete(bookToDelete.coverUrl);
     }
     setBooks((prev) => prev.filter((b) => b.id !== id));
-    if (persistent) try { await db.deleteBook(id); } catch (e) { console.error("Failed to delete book:", e); }
-  }, [books, persistent]);
+    if (persistent) try {
+      const token = await getToken();
+      await bookService.deleteBook(id, token || undefined);
+    } catch (e) { console.error("Failed to delete book:", e); }
+  }, [books, persistent, getToken]);
 
-  const recentBooks = useMemo(() => 
-    [...books].filter((b) => !b.isIncognito).sort((a, b) => 
+  const recentBooks = useMemo(() =>
+    [...books].filter((b) => !b.isIncognito).sort((a, b) =>
       new Date(b.lastOpenedAt || 0).getTime() - new Date(a.lastOpenedAt || 0).getTime()
     ).slice(0, 10), [books]);
 
@@ -227,7 +210,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     let filtered = [...books];
     if (filterBy === "favorites") filtered = filtered.filter((b) => b.isFavorite);
     else if (filterBy !== "all") filtered = filtered.filter((b) => b.readingList === filterBy);
-    
+
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case "title": return a.title.localeCompare(b.title);
@@ -256,5 +239,6 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     addHighlight, removeHighlight, addBookmark, removeBookmark,
     sortBy, setSortBy, filterBy, setFilterBy,
     isLoading, isPersistent: persistent,
+    reloadBooks: loadBooks,
   };
 }

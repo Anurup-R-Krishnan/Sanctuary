@@ -5,17 +5,12 @@ import {
     AlignLeft,
     AlignJustify,
     AlignCenter,
-    Sun,
-    Moon,
-    Coffee,
-    Maximize,
     EyeOff,
     Layout,
     Columns,
     Scroll,
     MoveVertical,
     WrapText,
-    Pilcrow,
     Speech,
     ZapOff,
     RotateCcw,
@@ -31,7 +26,6 @@ const ReaderSettings: React.FC = () => {
         pageMargin, setPageMargin,
         paragraphSpacing, setParagraphSpacing,
         hyphenation, setHyphenation,
-        dropCaps, setDropCaps,
         continuous, setContinuous,
         spread, setSpread,
         brightness, setBrightness,
@@ -41,7 +35,6 @@ const ReaderSettings: React.FC = () => {
         screenReaderMode, setScreenReaderMode,
         reduceMotion, setReduceMotion,
         readerAccent,
-        readerBackground,
         resetToDefaults,
     } = useSettings();
 
@@ -273,12 +266,7 @@ const ReaderSettings: React.FC = () => {
                             onChange={setHyphenation}
                             icon={WrapText}
                         />
-                        <Toggle
-                            label="Drop Caps"
-                            checked={dropCaps}
-                            onChange={setDropCaps}
-                            icon={Pilcrow}
-                        />
+                        {/* Drop Caps removed */}
                     </div>
                 </div>
             </section>
