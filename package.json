@@ -4,12 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "bash -lc 'npm run dev:frontend:guest & npm run dev:backend:guest; wait -n; kill 0'",
+    "dev:strict": "bash -lc 'npm run dev:frontend:strict & npm run dev:backend:strict; wait -n; kill 0'",
+    "dev:frontend:guest": "VITE_DISABLE_AUTH=true vite --host 127.0.0.1 --port 5173",
+    "dev:frontend:strict": "VITE_DISABLE_AUTH=false vite --host 127.0.0.1 --port 5173",
+    "dev:backend:guest": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true",
+    "dev:backend:strict": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=false",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.86.0",
+    "@clerk/backend": "^2.31.1",
+    "@clerk/clerk-react": "^5.60.2",
     "epubjs": "^0.3.93",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.555.0",
@@ -20,15 +28,25 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@cloudflare/workers-types": "^4.20260131.0",
+    "@types/bun": "^1.3.6",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.21.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.13",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.25.0",
     "vite": "^6.2.0",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "wrangler": "^4.61.1"
   }
 }
