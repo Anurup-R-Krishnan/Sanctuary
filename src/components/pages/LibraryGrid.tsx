@@ -22,7 +22,7 @@ interface LibraryGridProps {
 }
 
 const SkeletonCard: React.FC = () => (
-  <div className="w-full h-[260px] sm:h-[300px] rounded-xl bg-black/[0.03] dark:bg-white/[0.03] overflow-hidden relative">
+  <div className="w-full h-[260px] sm:h-[300px] rounded-xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] overflow-hidden relative">
     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent animate-shimmer" />
   </div>
 );
@@ -96,8 +96,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
       <div className="page-stack animate-fadeIn">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <div className="h-8 w-40 rounded-lg bg-black/[0.04] dark:bg-white/[0.04]" />
-            <div className="h-4 w-28 rounded bg-black/[0.03] dark:bg-white/[0.03]" />
+            <div className="h-8 w-40 rounded-lg bg-black/[0.05] dark:bg-white/[0.08]" />
+            <div className="h-4 w-28 rounded bg-black/[0.04] dark:bg-white/[0.06]" />
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
@@ -111,7 +111,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
 
   if (books.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fadeInUp">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fadeInUp rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface">
         <div className="mb-8 flex items-center justify-center w-20 h-20 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08]">
           <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
         </div>
@@ -138,7 +138,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   }) => (
     <div className="flex items-center gap-2 mb-4">
       {Icon && <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />}
-      <h3 className="text-sm font-semibold text-light-text dark:text-dark-text uppercase tracking-wide">{title}</h3>
+      <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">{title}</h3>
       {count !== undefined && (
         <span className="px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.04] text-[10px] font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
           {count}
@@ -171,7 +171,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     onClose: () => void;
   }) =>
     show ? (
-      <div className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl glass-strong shadow-xl border border-black/[0.04] dark:border-white/[0.04] z-20 animate-scaleIn origin-top-right">
+      <div className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-20 animate-scaleIn origin-top-right">
         {options.map((opt) => (
           <button
             key={opt.value}
@@ -200,11 +200,11 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="flex items-center p-0.5 rounded-lg bg-black/[0.03] dark:bg-white/[0.03]">
+          <div className="flex items-center p-0.5 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface">
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-md transition-all duration-150 ${viewMode === "grid"
-                  ? "bg-light-surface dark:bg-dark-surface shadow-sm text-light-text dark:text-dark-text"
+                  ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
                   : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
                 }`}
               aria-label="Grid view"
@@ -214,7 +214,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
             <button
               onClick={() => setViewMode("list")}
               className={`p-2 rounded-md transition-all duration-150 ${viewMode === "list"
-                  ? "bg-light-surface dark:bg-dark-surface shadow-sm text-light-text dark:text-dark-text"
+                  ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
                   : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
                 }`}
               aria-label="List view"
@@ -229,7 +229,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                 setShowSortMenu(!showSortMenu);
                 setShowFilterMenu(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.03] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
             >
               <SortAsc className="w-4 h-4" />
               <span className="hidden sm:inline">{sortOptions.find((o) => o.value === sortBy)?.label}</span>
@@ -250,7 +250,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                 setShowFilterMenu(!showFilterMenu);
                 setShowSortMenu(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.03] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
             >
               <Filter className="w-4 h-4" />
               <span className="hidden sm:inline">{filterOptions.find((o) => o.value === filterBy)?.label}</span>

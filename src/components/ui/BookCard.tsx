@@ -45,7 +45,7 @@ const BookCard: React.FC<BookCardProps> = ({
         onKeyDown={(e) => handleCardKeyDown(e, book)}
         role="button"
         tabIndex={0}
-        className="group flex items-center gap-4 p-4 rounded-2xl card card-hover card-interactive cursor-pointer"
+        className="group flex items-center gap-4 p-3 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer"
       >
         <div className="relative flex-shrink-0">
           <div className="w-12 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10">
@@ -94,12 +94,12 @@ const BookCard: React.FC<BookCardProps> = ({
 
   if (variant === "featured") {
     return (
-      <div
+      <article
         onClick={() => onSelect(book)}
         onKeyDown={(e) => handleCardKeyDown(e, book)}
         role="button"
         tabIndex={0}
-        className="group relative overflow-hidden rounded-3xl card card-hover card-interactive cursor-pointer p-6"
+        className="group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer p-5"
       >
         <div className="flex items-start gap-6">
           <div className="relative flex-shrink-0">
@@ -180,21 +180,21 @@ const BookCard: React.FC<BookCardProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </article>
     );
   }
 
   // Default variant
   return (
-    <div
+    <article
       onClick={() => onSelect(book)}
       onKeyDown={(e) => handleCardKeyDown(e, book)}
       role="button"
       tabIndex={0}
-      className="group relative overflow-hidden rounded-3xl card card-hover card-interactive cursor-pointer"
+      className="group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/35 dark:hover:border-dark-accent/35 transition-colors cursor-pointer"
     >
       {/* Book Cover */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10">
+      <div className="relative aspect-[3/4] overflow-hidden bg-black/[0.03] dark:bg-white/[0.05]">
         {book.coverUrl && !imageError ? (
           <img
             src={book.coverUrl}
@@ -211,9 +211,7 @@ const BookCard: React.FC<BookCardProps> = ({
         )}
 
         {/* Overlay */}
-        {!reduceMotion && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        )}
+        {!reduceMotion && <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />}
 
         {/* Favorite Button */}
         <button
@@ -271,7 +269,7 @@ const BookCard: React.FC<BookCardProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 
