@@ -79,7 +79,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
   }, [activeView, isReaderActive]);
 
   return (
-    <nav className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${
+    <nav className={`fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${
       isVisible ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'
     }`}>
       <div
