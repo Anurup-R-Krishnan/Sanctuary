@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Book, SortOption, FilterOption, ViewMode } from "@/types";
+import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
 import BookCard from "../ui/BookCard";
 import AddBookButton from "../ui/AddBookButton";
@@ -112,11 +112,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   if (books.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fadeInUp">
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-br from-light-accent/15 to-amber-500/15 dark:from-dark-accent/10 dark:to-amber-400/10 rounded-3xl blur-2xl scale-150" />
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/15 dark:to-amber-400/15 border border-light-accent/15 dark:border-dark-accent/15">
-            <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-          </div>
+        <div className="mb-8 flex items-center justify-center w-20 h-20 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08]">
+          <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
         </div>
         <h2 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">Your Library Awaits</h2>
         <p className="text-light-text-muted dark:text-dark-text-muted max-w-sm mx-auto mb-7 text-sm leading-relaxed">
