@@ -1,502 +1,228 @@
-import React, { useState } from "react";
-import {
-    Palette,
-    Target,
-    RotateCcw,
-    Moon,
-    Sun,
-    Zap,
-    Coffee,
-    Check,
-    WandSparkles,
-    Bell,
-    ChartLine,
-    Droplets,
-} from "lucide-react";
+import React from "react";
 import { useSettingsShallow } from "@/context/SettingsContext";
-
-const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]; onChange: (keys: string[]) => void }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [tempKeys, setTempKeys] = useState<string[]>([]);
-
-    const startEditing = () => {
-        setTempKeys([...keys]);
-        setIsEditing(true);
-    };
-
-    const cancelEditing = () => {
-        setIsEditing(false);
-        setTempKeys([]);
-    };
-
-    const saveEditing = () => {
-        onChange(tempKeys);
-        setIsEditing(false);
-        setTempKeys([]);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        e.preventDefault();
-        const key = e.key;
-        if (key === "Escape") {
-            cancelEditing();
-        } else if (key === "Enter") {
-            saveEditing();
-        } else if (key === "Backspace") {
-            if (tempKeys.length > 0) {
-                setTempKeys(tempKeys.slice(0, -1));
-            } else {
-                onChange([]);
-                cancelEditing();
-            }
-        } else if (!tempKeys.includes(key)) {
-            setTempKeys([...tempKeys, key]);
-        }
-    };
-
-    const removeKey = (keyToRemove: string) => {
-        const newKeys = keys.filter(k => k !== keyToRemove);
-        onChange(newKeys);
-    };
-
-    return (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all">
-            <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
-            <div className="flex items-center gap-2">
-                {isEditing ? (
-                    <input
-                        type="text"
-                        readOnly
-                        aria-label={`${label} shortcut editor`}
-                        className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[120px] text-center"
-                        onKeyDown={handleKeyDown}
-                        value={tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
-                    />
-                ) : (
-                    <div className="flex items-center gap-1">
-                        {keys.map((key, index) => (
-                            <span key={index} className="relative group">
-                                <kbd className="px-2 py-1 text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded font-mono">
-                                    {key === " " ? "Space" : key}
-                                </kbd>
-                                <button
-                                    onClick={() => removeKey(key)}
-                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                >
-                                    ×
-                                </button>
-                            </span>
-                        ))}
-                        <button
-                            onClick={startEditing}
-                            className="px-2 py-1 text-xs bg-light-accent dark:bg-dark-accent text-white rounded hover:opacity-80 transition-opacity"
-                        >
-                            +
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-type Tab = "typography" | "layout" | "reading" | "colors" | "shortcuts" | "goals";
-
-const COLOR_PRESETS = [
-    { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
-    { id: "cream", label: "Ivory", fg: "#2B2B2B", bg: "#FBF8F3", accent: "#8B7355", icon: Coffee },
-    { id: "sepia", label: "Sepia", fg: "#5C4B37", bg: "#F4ECD8", accent: "#8B7355", icon: Droplets },
-    { id: "dark", label: "Ink", fg: "#e8e6e3", bg: "#1a1a1a", accent: "#d4b58b", icon: Moon },
-    { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
-];
+import { Folder, Volume2, Moon, Sun, Type, Monitor, Sparkles, Brain, Save } from "lucide-react";
+import { Theme } from "@/types";
+import { useUIStore } from "@/store/useUIStore";
+import { motion } from "framer-motion";
 
 const SettingsView: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<Tab>("colors");
     const {
-        readerForeground, setReaderForeground,
-        readerBackground, setReaderBackground,
-        readerAccent, setReaderAccent,
-        keybinds, setKeybinds,
-        dailyGoal, setDailyGoal,
-        weeklyGoal, setWeeklyGoal,
-        showStreakReminder, setShowStreakReminder,
-        trackingEnabled, setTrackingEnabled,
-        showFloatingCapsule, setShowFloatingCapsule,
-        resetToDefaults,
+        theme,
+        toggleTheme
+    } = useUIStore();
+
+    const {
+        fontSize,
+        lineHeight,
+        fontFamily,
+        textAlign,
+        reduceMotion,
+        setFontSize,
+        setLineHeight,
+        setFontFamily,
+        setTextAlign,
+        setReduceMotion,
     } = useSettingsShallow((state) => ({
-        readerForeground: state.readerForeground,
-        setReaderForeground: state.setReaderForeground,
-        readerBackground: state.readerBackground,
-        setReaderBackground: state.setReaderBackground,
-        readerAccent: state.readerAccent,
-        setReaderAccent: state.setReaderAccent,
-        keybinds: state.keybinds,
-        setKeybinds: state.setKeybinds,
-        dailyGoal: state.dailyGoal,
-        setDailyGoal: state.setDailyGoal,
-        weeklyGoal: state.weeklyGoal,
-        setWeeklyGoal: state.setWeeklyGoal,
-        showStreakReminder: state.showStreakReminder,
-        setShowStreakReminder: state.setShowStreakReminder,
-        trackingEnabled: state.trackingEnabled,
-        setTrackingEnabled: state.setTrackingEnabled,
-        showFloatingCapsule: state.showFloatingCapsule,
-        setShowFloatingCapsule: state.setShowFloatingCapsule,
-        resetToDefaults: state.resetToDefaults,
+        fontSize: state.fontSize,
+        lineHeight: state.lineHeight,
+        fontFamily: state.fontFamily,
+        textAlign: state.textAlign,
+        reduceMotion: state.reduceMotion,
+        setFontSize: state.setFontSize,
+        setLineHeight: state.setLineHeight,
+        setFontFamily: state.setFontFamily,
+        setTextAlign: state.setTextAlign,
+        setReduceMotion: state.setReduceMotion,
     }));
 
-    const tabs = [
-        { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },
-        { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
-        { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
-    ];
+    // Mock state for new "Organizer" features
+    const [cozyMode, setCozyMode] = React.useState(true);
+    const [aiAssistant, setAiAssistant] = React.useState(false); // Default off/hidden
 
-    // Premium Toggle Component
-    const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
+    const tabs = [
+        { id: "general", label: "General", icon: Folder },
+        { id: "reading", label: "Reading", icon: Type },
+        { id: "advanced", label: "Advanced", icon: Brain },
+    ];
+    const [activeTab, setActiveTab] = React.useState("general");
+
+    const TabButton = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
         <button
-            type="button"
-            className="group w-full text-left flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200 cursor-pointer"
-            onClick={() => onChange(!checked)}
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl border-t-2 border-x-2 transition-all relative -mb-[2px] z-10
+            ${activeTab === id
+                    ? "bg-[rgb(var(--paper-cream))] border-[rgb(var(--ink-navy))] text-[rgb(var(--ink-navy))] font-bold"
+                    : "bg-[rgb(var(--aged-paper))] border-transparent text-[rgb(var(--sepia-brown))] hover:bg-black/5"
+                }`}
         >
-            <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>
-                {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
-            </div>
-            <div className={`relative w-14 h-8 rounded-full transition-all duration-300 ease-out ${checked
-                    ? "bg-light-accent dark:bg-dark-accent"
-                    : "bg-black/10 dark:bg-white/10"
-                }`}>
-                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-500 ease-out ${checked ? "left-7 scale-110" : "left-1"
-                    }`}>
-                    {checked && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-light-accent dark:text-dark-accent" strokeWidth={3} />
-                        </div>
-                    )}
-                </div>
-            </div>
+            <Icon className="w-4 h-4" />
+            <span className="font-pixel text-xs uppercase tracking-wider">{label}</span>
         </button>
     );
 
-    // Premium Slider Component
-    const Slider = ({
-        value,
-        onChange,
-        min,
-        max,
-        step = 1,
-        label,
-        displayValue,
-        icon: Icon,
-    }: {
-        value: number;
-        onChange: (v: number) => void;
-        min: number;
-        max: number;
-        step?: number;
-        label: string;
-        displayValue?: string;
-        icon?: React.ElementType;
-    }) => {
-        const percentage = ((value - min) / (max - min)) * 100;
-
-        return (
-            <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        {Icon && (
-                            <div className="p-2 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                                <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-                            </div>
-                        )}
-                        <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                        <span className="text-sm font-bold text-light-accent dark:text-dark-accent tabular-nums">
-                            {displayValue || value}
-                        </span>
-                    </div>
-                </div>
-                <div className="relative">
-                    <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
-                            style={{ width: `${percentage}%` }}
-                        />
-                    </div>
-                    <input
-                        type="range"
-                        min={min}
-                        max={max}
-                        step={step}
-                        value={value}
-                        onChange={(e) => onChange(parseFloat(e.target.value))}
-                        className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                    />
-                    <div
-                        className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-dark-surface rounded-full shadow-lg border-2 border-light-accent dark:border-dark-accent transition-all duration-300 pointer-events-none"
-                        style={{ left: `calc(${percentage}% - 10px)` }}
-                    />
-                </div>
-            </div>
-        );
-    };
-
-    // Premium Section Component
-    const Section = ({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) => (
-        <div className="rounded-3xl border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/80 dark:bg-dark-surface/80">
-            <div className="relative p-6">
-                <div className="flex items-center gap-3 mb-5">
-                    {Icon && (
-                        <div className="p-2.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/15">
-                            <Icon className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-                        </div>
-                    )}
-                    <h3 className="text-base font-semibold text-light-text dark:text-dark-text">{title}</h3>
-                </div>
-                <div className="space-y-3">{children}</div>
-            </div>
-        </div>
-    );
-
-    // Color Swatch
-    const ColorSwatch = ({
-        preset,
-        isActive,
-        onClick,
-    }: {
-        preset: typeof COLOR_PRESETS[0];
-        isActive: boolean;
-        onClick: () => void;
-    }) => {
-        const Icon = preset.icon;
-        return (
-            <button
-                onClick={onClick}
-                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all duration-200 ${isActive
-                        ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/10"
-                        : "border-black/[0.06] dark:border-white/[0.06] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
-                    }`}
-            >
-                {/* Color preview */}
-                <div
-                    className="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-inner"
-                    style={{ backgroundColor: preset.bg }}
-                >
-                    <span className="text-2xl font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
-                </div>
-
-                {/* Label */}
-                <div className="flex items-center gap-1.5">
-                    <Icon className="w-3.5 h-3.5 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
-                    <span className="text-sm font-medium text-light-text dark:text-dark-text">{preset.label}</span>
-                </div>
-
-                {/* Active indicator */}
-                {isActive && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center shadow-sm">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    </div>
-                )}
-            </button>
-        );
-    };
-
     return (
-        <div className="page-narrow page-stack">
-            {/* Hero Header */}
-            <div className="rounded-3xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
-                                <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
-                        </div>
-                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm max-w-md">
-                            Craft your perfect reading experience with personalized typography, colors, and layout preferences.
-                        </p>
-                    </div>
+        <div className="page-stack max-w-3xl mx-auto pb-20">
+            <h1 className="text-4xl font-serif font-bold text-[rgb(var(--ink-navy))] mb-8 text-center">Settings Organizer</h1>
 
-                    <button
-                        onClick={resetToDefaults}
-                        className="group flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] text-light-text-muted dark:text-dark-text-muted hover:text-light-accent dark:hover:text-dark-accent hover:border-light-accent/30 dark:hover:border-dark-accent/30 transition-all duration-300 shadow-sm hover:shadow-md"
+            {/* Folder Tabs */}
+            <div className="flex gap-2 border-b-2 border-[rgb(var(--ink-navy))] px-4">
+                {tabs.map(tab => <TabButton key={tab.id} {...tab} />)}
+            </div>
+
+            {/* Folder Content Area */}
+            <div className="bg-[rgb(var(--paper-cream))] border-x-2 border-b-2 border-[rgb(var(--ink-navy))] rounded-b-xl shadow-pixel p-8 min-h-[400px]">
+
+                {activeTab === "general" && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-8"
                     >
-                        <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
-                        <span className="text-sm font-medium">Reset All</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Premium Tab Navigation */}
-            <div className="relative p-1.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-2xl">
-                <div className="flex gap-1">
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-300 ${isActive
-                                        ? "text-light-accent dark:text-dark-accent"
-                                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-                                    }`}
-                            >
-                                {isActive && (
-                                    <div className="absolute inset-0 bg-white dark:bg-dark-surface rounded-xl shadow-lg shadow-black/[0.05] dark:shadow-black/[0.2]" />
-                                )}
-                                <div className="relative flex items-center gap-2">
-                                    <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.75} />
-                                    <span className="text-sm font-medium hidden sm:inline">{tab.label}</span>
+                        {/* Theme Section */}
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-serif font-bold text-[rgb(var(--ink-navy))] flex items-center gap-2">
+                                <Sun className="w-5 h-5" /> Appearance
+                            </h2>
+                            <div className="flex items-center justify-between p-4 rounded-xl border border-[rgb(var(--aged-paper))] bg-white">
+                                <div>
+                                    <h3 className="font-bold text-[rgb(var(--ink-navy))]">Lighting</h3>
+                                    <p className="text-sm text-[rgb(var(--sepia-brown))]">Adjust for day or night reading</p>
                                 </div>
-                                <span className="relative text-[10px] opacity-60 hidden lg:block">{tab.description}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
+                                <button
+                                    onClick={toggleTheme}
+                                    className="btn-cozy gap-2 shadow-pixel-sm active:translate-y-0.5 active:shadow-none transition-all"
+                                >
+                                    {theme === Theme.DARK ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                                    <span>{theme === Theme.DARK ? "Night Mode" : "Day Mode"}</span>
+                                </button>
+                            </div>
+                        </section>
 
-            {/* Global Interface Toggles */}
-            <div className="mt-4">
-                <Toggle
-                    checked={showFloatingCapsule}
-                    onChange={setShowFloatingCapsule}
-                    label="Floating Capsule (bottom-right)"
-                    sublabel="Show page/time capsule in reader"
-                />
-            </div>
+                        {/* Cozy Mode */}
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-serif font-bold text-[rgb(var(--ink-navy))] flex items-center gap-2">
+                                <Sparkles className="w-5 h-5" /> Atmosphere
+                            </h2>
+                            <div className="flex items-center justify-between p-4 rounded-xl border border-[rgb(var(--aged-paper))] bg-white">
+                                <div>
+                                    <h3 className="font-bold text-[rgb(var(--ink-navy))]">Cozy Mode</h3>
+                                    <p className="text-sm text-[rgb(var(--sepia-brown))]">Enable page turn sounds and gentle animations</p>
+                                </div>
+                                <button
+                                    onClick={() => setCozyMode(!cozyMode)}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors border-2 border-[rgb(var(--ink-navy))] ${cozyMode ? "bg-[rgb(var(--sage-green))]" : "bg-[rgb(var(--aged-paper))]"}`}
+                                >
+                                    <div className={`w-3.5 h-3.5 rounded-full bg-[rgb(var(--ink-navy))] transition-transform ${cozyMode ? "translate-x-6" : "translate-x-0"}`} />
+                                </button>
+                            </div>
 
-            {/* Tab Content */}
-            <div className="space-y-6 animate-fadeIn" key={activeTab}>
-                {activeTab === "colors" && (
-                    <>
-                        <div className="pt-2">
-                            <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-                                <Palette className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-                                Color Themes
-                            </h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                                {COLOR_PRESETS.map((preset) => (
-                                    <ColorSwatch
-                                        key={preset.id}
-                                        preset={preset}
-                                        isActive={preset.bg === readerBackground}
-                                        onClick={() => {
-                                            setReaderForeground(preset.fg);
-                                            setReaderBackground(preset.bg);
-                                            setReaderAccent(preset.accent);
-                                        }}
-                                    />
+                             <div className="flex items-center justify-between p-4 rounded-xl border border-[rgb(var(--aged-paper))] bg-white">
+                                <div>
+                                    <h3 className="font-bold text-[rgb(var(--ink-navy))]">Reduce Motion</h3>
+                                    <p className="text-sm text-[rgb(var(--sepia-brown))]">Minimize animations for accessibility</p>
+                                </div>
+                                <button
+                                    onClick={() => setReduceMotion(!reduceMotion)}
+                                    className={`w-12 h-6 rounded-full p-1 transition-colors border-2 border-[rgb(var(--ink-navy))] ${reduceMotion ? "bg-[rgb(var(--sage-green))]" : "bg-[rgb(var(--aged-paper))]"}`}
+                                >
+                                    <div className={`w-3.5 h-3.5 rounded-full bg-[rgb(var(--ink-navy))] transition-transform ${reduceMotion ? "translate-x-6" : "translate-x-0"}`} />
+                                </button>
+                            </div>
+                        </section>
+                    </motion.div>
+                )}
+
+                {activeTab === "reading" && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-8"
+                    >
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-serif font-bold text-[rgb(var(--ink-navy))] flex items-center gap-2">
+                                <Type className="w-5 h-5" /> Typography
+                            </h2>
+
+                            {/* Font Family */}
+                            <div className="grid grid-cols-2 gap-4">
+                                {["Serif", "Sans", "Mono"].map((font) => (
+                                    <button
+                                        key={font}
+                                        onClick={() => setFontFamily(font.toLowerCase() as any)}
+                                        className={`p-4 rounded-xl border-2 transition-all ${fontFamily === font.toLowerCase()
+                                                ? "border-[rgb(var(--ink-navy))] bg-[rgb(var(--woodstock-gold))]"
+                                                : "border-[rgb(var(--aged-paper))] bg-white hover:border-[rgb(var(--ink-navy))]"
+                                            }`}
+                                    >
+                                        <span className={`text-lg ${font === "Serif" ? "font-serif" : font === "Mono" ? "font-mono" : "font-sans"}`}>
+                                            {font}
+                                        </span>
+                                    </button>
                                 ))}
                             </div>
-                        </div>
 
-                        <Section title="Custom Colors" icon={Droplets}>
-                            <div className="grid gap-4 sm:grid-cols-3">
-                                {[
-                                    { label: "Text", value: readerForeground, onChange: setReaderForeground },
-                                    { label: "Background", value: readerBackground, onChange: setReaderBackground },
-                                    { label: "Accent", value: readerAccent, onChange: setReaderAccent },
-                                ].map(({ label, value, onChange }) => (
-                                    <label key={label} className="group relative flex items-center gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all cursor-pointer">
-                                        <input
-                                            type="color"
-                                            value={value}
-                                            onChange={(e) => onChange(e.target.value)}
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
-                                        />
-                                        <div
-                                            className="w-10 h-10 rounded-xl border-2 border-black/10 dark:border-white/10 shadow-inner transition-transform group-hover:scale-110"
-                                            style={{ backgroundColor: value }}
-                                        />
-                                        <div>
-                                            <p className="text-sm font-medium text-light-text dark:text-dark-text">{label}</p>
-                                            <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono uppercase">{value}</p>
-                                        </div>
-                                    </label>
-                                ))}
+                            {/* Font Size Slider */}
+                            <div className="p-4 rounded-xl border border-[rgb(var(--aged-paper))] bg-white space-y-2">
+                                <div className="flex justify-between">
+                                    <span className="font-bold text-[rgb(var(--ink-navy))]">Font Size</span>
+                                    <span className="font-mono text-sm">{fontSize}px</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="12"
+                                    max="32"
+                                    value={fontSize}
+                                    onChange={(e) => setFontSize(Number(e.target.value))}
+                                    className="w-full h-2 bg-[rgb(var(--aged-paper))] rounded-lg appearance-none cursor-pointer accent-[rgb(var(--ink-navy))]"
+                                />
                             </div>
-                        </Section>
-                    </>
+                        </section>
+                    </motion.div>
                 )}
 
-                {activeTab === "shortcuts" && (
-                    <>
-                        <Section title="Keyboard Shortcuts" icon={Zap}>
-                            <div className="space-y-4">
-                                <div className="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">
-                                    Customize keyboard shortcuts for reading navigation.
+                {activeTab === "advanced" && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-8"
+                    >
+                         <section className="space-y-4">
+                            <h2 className="text-xl font-serif font-bold text-[rgb(var(--ink-navy))] flex items-center gap-2">
+                                <Brain className="w-5 h-5" /> Intelligence
+                            </h2>
+
+                            <div className="bg-[rgb(var(--aged-paper))] p-4 rounded-xl border border-[rgb(var(--ink-navy))] flex gap-4">
+                                <div className="shrink-0 p-2 bg-[rgb(var(--ink-navy))] rounded-lg">
+                                    <Sparkles className="w-6 h-6 text-[rgb(var(--woodstock-gold))]" />
                                 </div>
-                                <div className="space-y-3">
-                                    <ShortcutItem
-                                        label="Next Page"
-                                        keys={keybinds.nextPage}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, nextPage: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Previous Page"
-                                        keys={keybinds.prevPage}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, prevPage: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Toggle Bookmark"
-                                        keys={keybinds.toggleBookmark}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, toggleBookmark: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Toggle Fullscreen"
-                                        keys={keybinds.toggleFullscreen}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, toggleFullscreen: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Toggle UI"
-                                        keys={keybinds.toggleUI}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, toggleUI: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Close/Exit"
-                                        keys={keybinds.close}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, close: keys })}
-                                    />
+                                <div>
+                                    <h3 className="font-bold text-[rgb(var(--ink-navy))]">AI Assistant</h3>
+                                    <p className="text-sm text-[rgb(var(--sepia-brown))] mb-3">
+                                        The AI is currently hiding in the stacks. It helps with definitions and summaries when asked.
+                                    </p>
+                                    <button
+                                        onClick={() => setAiAssistant(!aiAssistant)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors border-2 border-[rgb(var(--ink-navy))] ${
+                                            aiAssistant
+                                            ? "bg-[rgb(var(--sage-green))] text-white"
+                                            : "bg-white text-[rgb(var(--ink-navy))]"
+                                        }`}
+                                    >
+                                        {aiAssistant ? "Enabled (Passive)" : "Disabled (Hidden)"}
+                                    </button>
                                 </div>
                             </div>
-                        </Section>
-                    </>
+
+                            <div className="p-4 rounded-xl border-2 border-dashed border-[rgb(var(--ink-navy))] opacity-60">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Save className="w-4 h-4" />
+                                    <h3 className="font-bold">Data Management</h3>
+                                </div>
+                                <p className="text-xs">Your library is stored locally on this device. Sync features coming soon.</p>
+                            </div>
+                        </section>
+                    </motion.div>
                 )}
-
-                {activeTab === "goals" && (
-                    <>
-                        <Section title="Reading Goals" icon={ChartLine}>
-                            <Slider
-                                label="Daily Goal"
-                                value={dailyGoal}
-                                onChange={setDailyGoal}
-                                min={5}
-                                max={120}
-                                step={5}
-                                displayValue={`${dailyGoal} pages`}
-                            />
-                            <Slider
-                                label="Weekly Goal"
-                                value={weeklyGoal}
-                                onChange={setWeeklyGoal}
-                                min={20}
-                                max={500}
-                                step={10}
-                                displayValue={`${weeklyGoal} pages`}
-                            />
-                        </Section>
-
-                        <div className="grid gap-6 lg:grid-cols-2">
-                            <Section title="Tracking" icon={Bell}>
-                                <Toggle checked={trackingEnabled} onChange={setTrackingEnabled} label="Reading Analytics" sublabel="Track your reading time and progress" />
-                                <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Reminders" sublabel="Get notified to maintain your streak" />
-                            </Section>
-                        </div>
-                    </>
-                )}
-
             </div>
         </div>
     );

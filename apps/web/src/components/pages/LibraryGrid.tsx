@@ -3,6 +3,7 @@ import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
 import BookCard from "../ui/BookCard";
 import AddBookButton from "../ui/AddBookButton";
+import BunniesPick from "../ui/BunniesPick";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useShallow } from "zustand/react/shallow";
@@ -164,7 +165,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   );
 
   const HorizontalScroll = ({ books: scrollBooks }: { books: Book[] }) => (
-    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex gap-4 overflow-x-auto pb-6 pt-2 scrollbar-hide px-1">
       {scrollBooks.map((book) => (
         <div key={book.id} className="flex-shrink-0 w-[140px] sm:w-[160px]">
           <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} variant="compact" />
@@ -217,6 +218,11 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
 
   return (
     <div className="page-stack">
+      {/* Bunnies' Pick Feature - Only show when filtering "All" and no search term */}
+      {filterBy === "all" && !searchTerm && books.length > 0 && (
+        <BunniesPick books={books} onSelectBook={onSelectBook} />
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Library</h2>

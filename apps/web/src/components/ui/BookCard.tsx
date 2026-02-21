@@ -1,275 +1,202 @@
 import React, { useState } from "react";
 import type { Book } from "@/types";
-import { Star, Clock, BookOpen, Heart } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { Star, BookOpen, Trash2, Clock } from "lucide-react";
+import { useBookStore } from "@/store/useBookStore";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface BookCardProps {
   book: Book;
   onSelect: (book: Book) => void;
-  onToggleFavorite?: (id: string) => void;
-  variant?: "default" | "compact" | "featured";
+  onToggleFavorite: (id: string) => void;
+  variant?: "standard" | "compact";
 }
 
 const BookCard: React.FC<BookCardProps> = ({
   book,
   onSelect,
   onToggleFavorite,
-  variant = "default"
+  variant = "standard",
 }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const removeBook = useBookStore((state) => state.removeBook);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const reduceMotion = useSettings((state) => state.reduceMotion);
 
-  const progressPercentage = Math.round((book.progress / book.totalPages) * 100);
-  const isRecent = book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
-  const isCompleted = progressPercentage >= 100;
-
-  const handleImageLoad = () => setImageLoaded(true);
-  const handleImageError = () => setImageError(true);
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onToggleFavorite?.(book.id);
+    setShowConfirmDelete(true);
   };
-  const handleCardKeyDown = (e: React.KeyboardEvent, selectedBook: Book) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onSelect(selectedBook);
-    }
+
+  const confirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeBook(book.id);
+  };
+
+  const cancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowConfirmDelete(false);
   };
 
   if (variant === "compact") {
+    // Compact variant for horizontal scrolls (keep simpler but consistent)
     return (
-      <div
+      <motion.div
+        className="group relative flex-shrink-0 w-full cursor-pointer"
         onClick={() => onSelect(book)}
-        onKeyDown={(e) => handleCardKeyDown(e, book)}
-        role="button"
-        tabIndex={0}
-        className="group flex items-center gap-4 p-3 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer"
+        whileHover={{ y: -4 }}
       >
-        <div className="relative flex-shrink-0">
-          <div className="w-12 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10">
-            {book.coverUrl && !imageError ? (
-              <img
-                src={book.coverUrl}
-                alt={book.title}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
+        <div className="aspect-[2/3] w-full rounded-md border-2 border-[rgb(var(--ink-navy))] bg-[rgb(var(--paper-cream))] shadow-pixel-sm overflow-hidden mb-2 relative">
+          {!imageError ? (
+            <img
+              src={book.coverUrl}
+              alt={book.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+             <div className="flex h-full w-full items-center justify-center bg-[rgb(var(--aged-paper))] p-4 text-center">
+              <span className="font-serif text-sm font-semibold text-[rgb(var(--ink-navy))] line-clamp-3 leading-tight">
+                {book.title}
+              </span>
+            </div>
+          )}
+          {/* Progress Bar Overlay */}
+          {book.progress > 0 && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-[rgb(var(--ink-navy))]/10">
+              <div
+                className="h-full bg-[rgb(var(--woodstock-gold))]"
+                style={{ width: `${book.progress}%` }}
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-              </div>
-            )}
-          </div>
-          {progressPercentage > 0 && (
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-light-accent dark:bg-dark-accent flex items-center justify-center">
-              <span className="text-[8px] font-bold text-white">{progressPercentage}%</span>
             </div>
           )}
         </div>
-
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-light-text dark:text-dark-text line-clamp-1 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
-            {book.title}
-          </h3>
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted line-clamp-1">
-            {book.author}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {book.isFavorite && (
-            <Heart className="w-4 h-4 text-red-500 fill-current" strokeWidth={1.5} />
-          )}
-          {isRecent && (
-            <Clock className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-          )}
-        </div>
-      </div>
+        <h4 className="truncate text-xs font-bold text-[rgb(var(--ink-navy))] font-serif">{book.title}</h4>
+      </motion.div>
     );
   }
 
-  if (variant === "featured") {
-    return (
-      <article
-        onClick={() => onSelect(book)}
-        onKeyDown={(e) => handleCardKeyDown(e, book)}
-        role="button"
-        tabIndex={0}
-        className="group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer p-5"
-      >
-        <div className="flex items-start gap-6">
-          <div className="relative flex-shrink-0">
-            <div className="w-20 h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10 book-spine-shadow">
-              {book.coverUrl && !imageError ? (
-                <img
-                  src={book.coverUrl}
-                  alt={book.title}
-                  className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-                    } group-hover:scale-105`}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <BookOpen className="w-8 h-8 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-                </div>
-              )}
-            </div>
-
-            {!reduceMotion && (
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div>
-                <h3 className="text-xl font-bold text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
-                  {book.title}
-                </h3>
-                <p className="text-light-text-muted dark:text-dark-text-muted font-medium">
-                  {book.author}
-                </p>
-              </div>
-
+  // Standard 3D Book Card
+  return (
+    <div className="group relative perspective">
+      <AnimatePresence>
+        {showConfirmDelete && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-xl bg-[rgb(var(--paper-cream))] p-4 text-center border-2 border-[rgb(var(--ink-navy))] shadow-pixel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="mb-3 text-sm font-medium text-[rgb(var(--ink-navy))]">Delete book?</p>
+            <div className="flex gap-2">
               <button
-                onClick={handleFavoriteClick}
-                className={`p-2 rounded-xl transition-all duration-200 ${book.isFavorite
-                    ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
-                    : 'text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
-                  }`}
+                onClick={confirmDelete}
+                className="rounded-md bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-pixel-sm hover:translate-y-0.5 hover:shadow-none transition-all border border-black/20"
               >
-                <Heart className={`w-5 h-5 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
+                Yes
+              </button>
+              <button
+                onClick={cancelDelete}
+                className="rounded-md bg-[rgb(var(--aged-paper))] px-3 py-1 text-xs font-bold text-[rgb(var(--ink-navy))] shadow-pixel-sm hover:translate-y-0.5 hover:shadow-none transition-all border border-[rgb(var(--ink-navy))]"
+              >
+                No
               </button>
             </div>
-
-            <div className="space-y-3">
-              {progressPercentage > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-light-text-muted dark:text-dark-text-muted">Progress</span>
-                    <span className="font-semibold text-light-accent dark:text-dark-accent">{progressPercentage}%</span>
-                  </div>
-                  <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-500"
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-4 text-sm text-light-text-muted dark:text-dark-text-muted">
-                {isRecent && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" strokeWidth={1.5} />
-                    <span>Recently read</span>
-                  </div>
-                )}
-                {isCompleted && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-amber-500 fill-current" strokeWidth={1.5} />
-                    <span>Completed</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </article>
-    );
-  }
-
-  // Default variant
-  return (
-    <article
-      onClick={() => onSelect(book)}
-      onKeyDown={(e) => handleCardKeyDown(e, book)}
-      role="button"
-      tabIndex={0}
-      className="group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/35 dark:hover:border-dark-accent/35 transition-colors cursor-pointer"
-    >
-      {/* Book Cover */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-black/[0.03] dark:bg-white/[0.05]">
-        {book.coverUrl && !imageError ? (
-          <img
-            src={book.coverUrl}
-            alt={book.title}
-            className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-              } group-hover:scale-105`}
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <BookOpen className="w-12 h-12 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        {/* Overlay */}
-        {!reduceMotion && <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />}
+      <motion.div
+        onClick={() => onSelect(book)}
+        className="cursor-pointer relative transform-style-3d transition-transform duration-300 group-hover:-translate-y-2 group-hover:rotate-y-[-5deg]"
+      >
+        {/* Book Spine (Fake 3D) */}
+        <div
+          className="absolute left-0 top-1 bottom-1 w-4 bg-[rgb(var(--ink-navy))] rounded-l-sm origin-right transform -translate-x-full translate-z-[-2px] rotate-y-[-90deg] brightness-75 z-0"
+          style={{ transform: "translateX(-4px) translateZ(-1px) rotateY(-90deg)" }} // Manual tweak for visual alignment
+        />
 
-        {/* Favorite Button */}
-        <button
-          onClick={handleFavoriteClick}
-          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 ${book.isFavorite
-              ? 'bg-red-500/90 text-white'
-              : 'bg-black/20 text-white hover:bg-red-500/90'
-            } opacity-0 group-hover:opacity-100`}
-        >
-          <Heart className={`w-4 h-4 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
-        </button>
-
-        {/* Progress Indicator */}
-        {progressPercentage > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-            <div
-              className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
-              style={{ width: `${progressPercentage}%` }}
+        {/* Main Cover */}
+        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-r-md rounded-l-sm border-2 border-[rgb(var(--ink-navy))] bg-[rgb(var(--paper-cream))] shadow-md z-10">
+          {!imageError ? (
+            <img
+              src={book.coverUrl}
+              alt={book.title}
+              className="h-full w-full object-cover transition-transform duration-500"
+              onError={() => setImageError(true)}
             />
-          </div>
-        )}
-
-        {/* Status Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
-          {isRecent && (
-            <div className="px-2 py-1 bg-light-accent/90 dark:bg-dark-accent/90 text-white text-xs font-semibold rounded-lg backdrop-blur-xl">
-              Recent
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-[rgb(var(--aged-paper))] p-4 text-center">
+              <div className="mb-2 rounded-full bg-[rgb(var(--woodstock-gold))] p-3 border-2 border-[rgb(var(--ink-navy))]">
+                <BookOpen className="h-6 w-6 text-[rgb(var(--ink-navy))]" />
+              </div>
+              <span className="font-serif font-bold text-[rgb(var(--ink-navy))] line-clamp-3">
+                {book.title}
+              </span>
+              <span className="mt-1 text-xs text-[rgb(var(--sepia-brown))] line-clamp-1">
+                {book.author}
+              </span>
             </div>
           )}
-          {isCompleted && (
-            <div className="px-2 py-1 bg-amber-500/90 text-white text-xs font-semibold rounded-lg backdrop-blur-xl">
-              Complete
+
+          {/* Shine/Texture Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none mix-blend-overlay" />
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-black/10 pointer-events-none" /> {/* Spine crease */}
+
+          {/* Badges */}
+          <div className="absolute top-2 right-2 flex flex-col gap-2">
+            {book.isFavorite && (
+              <div className="bg-[rgb(var(--woodstock-gold))] text-[rgb(var(--ink-navy))] p-1.5 rounded-md border border-[rgb(var(--ink-navy))] shadow-pixel-sm">
+                <Star className="w-3 h-3 fill-current" />
+              </div>
+            )}
+             {book.progress > 0 && book.progress < 100 && (
+              <div className="bg-[rgb(var(--sage-green))] text-white p-1.5 rounded-md border border-[rgb(var(--ink-navy))] shadow-pixel-sm" title={`${book.progress}%`}>
+                <Clock className="w-3 h-3" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Shadow (Bottom) */}
+        <div className="absolute -bottom-4 left-4 right-4 h-4 bg-black/20 blur-md rounded-[100%] transition-all duration-300 group-hover:bg-black/10 group-hover:scale-90" />
+
+        {/* Info (Below Book) */}
+        <div className="mt-3 space-y-1 pl-1">
+          <h3 className="truncate font-serif font-bold text-[rgb(var(--ink-navy))] group-hover:text-[rgb(var(--clay-red))] transition-colors">
+            {book.title}
+          </h3>
+          <p className="truncate text-xs text-[rgb(var(--sepia-brown))] font-medium">
+            {book.author}
+          </p>
+
+          {/* Progress Bar (Visible on hover or if active) */}
+           {book.progress > 0 && (
+            <div className="mt-1.5 h-1.5 w-full rounded-full bg-[rgb(var(--ink-navy))]/10 overflow-hidden border border-[rgb(var(--ink-navy))]/20">
+              <div
+                className="h-full bg-[rgb(var(--sage-green))]"
+                style={{ width: `${book.progress}%` }}
+              />
             </div>
           )}
         </div>
-      </div>
 
-      {/* Book Info */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
-          {book.title}
-        </h3>
-        <p className="text-sm text-light-text-muted dark:text-dark-text-muted line-clamp-1">
-          {book.author}
-        </p>
-
-        {progressPercentage > 0 && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-light-text-muted dark:text-dark-text-muted">
-              {book.progress} / {book.totalPages} pages
-            </span>
-            <span className="font-semibold text-light-accent dark:text-dark-accent">
-              {progressPercentage}%
-            </span>
-          </div>
-        )}
-      </div>
-    </article>
+        {/* Hover Actions */}
+        <div className="absolute bottom-16 right-2 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 z-20">
+           <button
+            onClick={onToggleFavorite ? (e) => { e.stopPropagation(); onToggleFavorite(book.id); } : undefined}
+            className="p-2 rounded-full bg-[rgb(var(--paper-cream))] text-[rgb(var(--ink-navy))] border-2 border-[rgb(var(--ink-navy))] shadow-pixel-sm hover:scale-110 active:scale-95 transition-transform"
+          >
+             <Star className={`w-4 h-4 ${book.isFavorite ? "fill-[rgb(var(--woodstock-gold))] text-[rgb(var(--woodstock-gold))]" : ""}`} />
+          </button>
+          <button
+            onClick={handleDelete}
+            className="p-2 rounded-full bg-[rgb(var(--paper-cream))] text-red-500 border-2 border-[rgb(var(--ink-navy))] shadow-pixel-sm hover:scale-110 active:scale-95 transition-transform"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 

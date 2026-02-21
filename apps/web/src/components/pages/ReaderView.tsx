@@ -239,22 +239,28 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         <div
             ref={rootRef}
             tabIndex={-1}
-            className="fixed inset-0 z-50 bg-white dark:bg-black font-sans overflow-hidden"
+            className="fixed inset-0 z-50 bg-[rgb(var(--paper-cream))] text-[rgb(var(--ink-navy))] font-serif overflow-hidden"
         >
+            {/* Ambient Background Noise/Texture */}
+            <div className="absolute inset-0 pointer-events-none opacity-50 bg-repeat z-0"
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")` }}
+            />
+
             {bookmarkError && (
-                <div className="absolute left-1/2 top-20 z-[70] -translate-x-1/2 rounded-lg border border-red-300/50 bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:border-red-700/50 dark:bg-red-950/40 dark:text-red-300">
+                <div className="absolute left-1/2 top-20 z-[70] -translate-x-1/2 rounded-lg border border-red-300/50 bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:border-red-700/50 dark:bg-red-950/40 dark:text-red-300 font-sans">
                     {bookmarkError}
                 </div>
             )}
             {contentError && !isLoading && (
                 <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
-                    <div className="max-w-md rounded-xl bg-white p-5 text-center shadow-xl dark:bg-neutral-900">
-                        <p className="text-sm text-light-text dark:text-dark-text">{contentError}</p>
+                    <div className="max-w-md rounded-xl bg-white p-5 text-center shadow-xl dark:bg-neutral-900 border border-[rgb(var(--aged-paper))]">
+                        <p className="text-sm text-[rgb(var(--ink-navy))] font-serif">{contentError}</p>
                     </div>
                 </div>
             )}
+
             <div
-                className="absolute inset-0"
+                className="absolute inset-0 z-10"
                 style={{ filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }}
             >
                 <ReaderContent
