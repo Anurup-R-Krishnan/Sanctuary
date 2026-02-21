@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-P5KUeC/checked-fetch.js
+// .wrangler/tmp/bundle-bn9TFt/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -27,7 +27,7 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
   }
 });
 
-// .wrangler/tmp/pages-NZEO3F/functionsWorker-0.45083409233887484.mjs
+// .wrangler/tmp/pages-uBpT8s/functionsWorker-0.21486968437983367.mjs
 var __defProp2 = Object.defineProperty;
 var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
 var urls2 = /* @__PURE__ */ new Set();
@@ -100,6 +100,27 @@ async function ensureSettingsSchema(db) {
       accent TEXT NOT NULL DEFAULT '#B37A4C'
     )`
   ).run();
+  const requiredColumns = [
+    { name: "daily_goal", sql: "ALTER TABLE user_settings ADD COLUMN daily_goal INTEGER NOT NULL DEFAULT 30" },
+    { name: "weekly_goal", sql: "ALTER TABLE user_settings ADD COLUMN weekly_goal INTEGER NOT NULL DEFAULT 150" },
+    { name: "theme_preset", sql: "ALTER TABLE user_settings ADD COLUMN theme_preset TEXT NOT NULL DEFAULT 'paper'" },
+    { name: "font_scale", sql: "ALTER TABLE user_settings ADD COLUMN font_scale INTEGER NOT NULL DEFAULT 100" },
+    { name: "line_height", sql: "ALTER TABLE user_settings ADD COLUMN line_height REAL NOT NULL DEFAULT 1.6" },
+    { name: "text_width", sql: "ALTER TABLE user_settings ADD COLUMN text_width INTEGER NOT NULL DEFAULT 70" },
+    { name: "motion", sql: "ALTER TABLE user_settings ADD COLUMN motion TEXT NOT NULL DEFAULT 'full'" },
+    { name: "tap_zones", sql: "ALTER TABLE user_settings ADD COLUMN tap_zones INTEGER NOT NULL DEFAULT 1" },
+    { name: "swipe_nav", sql: "ALTER TABLE user_settings ADD COLUMN swipe_nav INTEGER NOT NULL DEFAULT 1" },
+    { name: "auto_hide_ms", sql: "ALTER TABLE user_settings ADD COLUMN auto_hide_ms INTEGER NOT NULL DEFAULT 4500" },
+    { name: "show_progress", sql: "ALTER TABLE user_settings ADD COLUMN show_progress INTEGER NOT NULL DEFAULT 1" },
+    { name: "show_page_meta", sql: "ALTER TABLE user_settings ADD COLUMN show_page_meta INTEGER NOT NULL DEFAULT 1" },
+    { name: "accent", sql: "ALTER TABLE user_settings ADD COLUMN accent TEXT NOT NULL DEFAULT '#B37A4C'" }
+  ];
+  for (const column of requiredColumns) {
+    const exists = await hasColumn(db, "user_settings", column.name);
+    if (!exists) {
+      await db.prepare(column.sql).run();
+    }
+  }
 }
 __name(ensureSettingsSchema, "ensureSettingsSchema");
 __name2(ensureSettingsSchema, "ensureSettingsSchema");
@@ -270,6 +291,11 @@ function toIntWithin(value, fallback, min, max) {
 }
 __name(toIntWithin, "toIntWithin");
 __name2(toIntWithin, "toIntWithin");
+function getBookContentKey(userId, bookId) {
+  return `users/${userId}/books/${bookId}.epub`;
+}
+__name(getBookContentKey, "getBookContentKey");
+__name2(getBookContentKey, "getBookContentKey");
 function normalizeBookmarks(input) {
   if (!Array.isArray(input)) return null;
   const out = [];
@@ -329,7 +355,7 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
     const formData = await request.formData();
     const file = formData.get("file");
     const metadataRaw = formData.get("metadata");
-    if (!(file instanceof File)) {
+    if (!file || typeof file !== "object" || typeof file.arrayBuffer !== "function") {
       return new Response("Missing file", { status: 400 });
     }
     if (typeof metadataRaw !== "string") {
@@ -348,9 +374,14 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
     const author = typeof body.author === "string" && body.author.trim().length > 0 ? body.author.trim() : "Unknown";
     const bookmarks = normalizeBookmarks(body.bookmarks) || [];
     const bookmarksJson = JSON.stringify(bookmarks);
-    const bytes = await file.arrayBuffer();
+    const typedFile = file;
+    const bytes = await typedFile.arrayBuffer();
     if (bytes.byteLength === 0) return new Response("Empty file", { status: 400 });
-    const blobContentType = file.type || "application/epub+zip";
+    const blobContentType = typedFile.type || "application/epub+zip";
+    const contentKey = getBookContentKey(userId, id);
+    await env.SANCTUARY_BUCKET.put(contentKey, bytes, {
+      httpMetadata: { contentType: blobContentType }
+    });
     const updateResult = await env.SANCTUARY_DB.prepare(
       `UPDATE books SET
           title = ?,
@@ -360,7 +391,7 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
           last_location = ?,
           bookmarks_json = ?,
           is_favorite = ?,
-          content_blob = ?,
+          content_blob = NULL,
           content_type = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND user_id = ?`
@@ -372,7 +403,6 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
       lastLocation,
       bookmarksJson,
       favorite,
-      bytes,
       blobContentType,
       id,
       userId
@@ -382,15 +412,14 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
       try {
         await env.SANCTUARY_DB.prepare(
           `INSERT INTO books (
-              id, user_id, title, author, cover_url, content_blob, content_type,
+              id, user_id, title, author, cover_url, content_type,
               progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
-            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
         ).bind(
           id,
           userId,
           title,
           author,
-          bytes,
           blobContentType,
           progress,
           totalPages,
@@ -463,7 +492,9 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
   if (request.method === "DELETE") {
     const id = new URL(request.url).searchParams.get("id");
     if (!id) return new Response("Missing id", { status: 400 });
+    const contentKey = getBookContentKey(userId, id);
     const result = await env.SANCTUARY_DB.prepare("DELETE FROM books WHERE id = ? AND user_id = ?").bind(id, userId).run();
+    await env.SANCTUARY_BUCKET.delete(contentKey);
     return jsonResponse({
       success: true,
       deleted: Number(result.meta?.changes || 0) > 0
@@ -604,6 +635,11 @@ function notFound() {
 }
 __name(notFound, "notFound");
 __name2(notFound, "notFound");
+function getBookContentKey2(userId, bookId) {
+  return `users/${userId}/books/${bookId}.epub`;
+}
+__name(getBookContentKey2, "getBookContentKey2");
+__name2(getBookContentKey2, "getBookContentKey");
 var onRequest5 = /* @__PURE__ */ __name2(async ({ request, env, params }) => {
   const userId = await getUserId(request, env);
   if (!userId) return new Response("Unauthorized", { status: 401 });
@@ -611,11 +647,29 @@ var onRequest5 = /* @__PURE__ */ __name2(async ({ request, env, params }) => {
   const rawId = params.id;
   const id = typeof rawId === "string" ? rawId.trim() : "";
   if (!id) return badRequest("Missing id");
+  const contentKey = getBookContentKey2(userId, id);
   if (request.method === "GET") {
-    const row = await env.SANCTUARY_DB.prepare("SELECT content_blob, content_type FROM books WHERE id = ? AND user_id = ?").bind(id, userId).first();
-    if (!row?.content_blob) return notFound();
-    const contentType = row.content_type || "application/epub+zip";
-    return new Response(row.content_blob, {
+    const row = await env.SANCTUARY_DB.prepare("SELECT id, content_type, content_blob FROM books WHERE id = ? AND user_id = ?").bind(id, userId).first();
+    if (!row?.id) return notFound();
+    const object = await env.SANCTUARY_BUCKET.get(contentKey);
+    if (!object) {
+      if (!row.content_blob) return notFound();
+      const contentType2 = row.content_type || "application/epub+zip";
+      if (row.content_blob instanceof ArrayBuffer || ArrayBuffer.isView(row.content_blob)) {
+        await env.SANCTUARY_BUCKET.put(contentKey, row.content_blob, {
+          httpMetadata: { contentType: contentType2 }
+        });
+      }
+      return new Response(row.content_blob, {
+        status: 200,
+        headers: {
+          "Content-Type": contentType2,
+          "Cache-Control": "private, max-age=60"
+        }
+      });
+    }
+    const contentType = object.httpMetadata?.contentType || row.content_type || "application/epub+zip";
+    return new Response(object.body, {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -627,16 +681,19 @@ var onRequest5 = /* @__PURE__ */ __name2(async ({ request, env, params }) => {
     const contentType = request.headers.get("content-type") || "application/epub+zip";
     const bytes = await request.arrayBuffer();
     if (bytes.byteLength === 0) return badRequest("Empty content body");
+    await env.SANCTUARY_BUCKET.put(contentKey, bytes, {
+      httpMetadata: { contentType }
+    });
     const result = await env.SANCTUARY_DB.prepare(
-      `UPDATE books SET content_blob = ?, content_type = ?, updated_at = CURRENT_TIMESTAMP
+      `UPDATE books SET content_blob = NULL, content_type = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND user_id = ?`
-    ).bind(bytes, contentType, id, userId).run();
+    ).bind(contentType, id, userId).run();
     if (Number(result.meta?.changes || 0) === 0) {
       await env.SANCTUARY_DB.prepare(
         `INSERT INTO books (
-            id, user_id, title, author, content_blob, content_type, progress, total_pages, bookmarks_json, is_favorite, updated_at
-          ) VALUES (?, ?, 'Untitled', 'Unknown', ?, ?, 0, 100, '[]', 0, CURRENT_TIMESTAMP)`
-      ).bind(id, userId, bytes, contentType).run();
+            id, user_id, title, author, content_type, progress, total_pages, bookmarks_json, is_favorite, updated_at
+          ) VALUES (?, ?, 'Untitled', 'Unknown', ?, 0, 100, '[]', 0, CURRENT_TIMESTAMP)`
+      ).bind(id, userId, contentType).run();
     }
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -644,6 +701,7 @@ var onRequest5 = /* @__PURE__ */ __name2(async ({ request, env, params }) => {
     });
   }
   if (request.method === "DELETE") {
+    await env.SANCTUARY_BUCKET.delete(contentKey);
     await env.SANCTUARY_DB.prepare("UPDATE books SET content_blob = NULL, content_type = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?").bind(id, userId).run();
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -1361,7 +1419,7 @@ var jsonError2 = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default2 = jsonError2;
 
-// .wrangler/tmp/bundle-P5KUeC/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-bn9TFt/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__2 = [
   middleware_ensure_req_body_drained_default2,
   middleware_miniflare3_json_error_default2
@@ -1393,7 +1451,7 @@ function __facade_invoke__2(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__2, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-P5KUeC/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-bn9TFt/middleware-loader.entry.ts
 var __Facade_ScheduledController__2 = class ___Facade_ScheduledController__2 {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
@@ -1493,4 +1551,4 @@ export {
   __INTERNAL_WRANGLER_MIDDLEWARE__2 as __INTERNAL_WRANGLER_MIDDLEWARE__,
   middleware_loader_entry_default2 as default
 };
-//# sourceMappingURL=functionsWorker-0.45083409233887484.js.map
+//# sourceMappingURL=functionsWorker-0.21486968437983367.js.map

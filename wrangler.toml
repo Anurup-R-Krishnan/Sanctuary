@@ -9,3 +9,8 @@ binding = "SANCTUARY_DB"
 database_name = "sanctuary_db"
 database_id = "8135deaf-e4f9-44e5-9b37-8a04af9f3019"
 preview_database_id = "8135deaf-e4f9-44e5-9b37-8a04af9f3019"
+
+[[r2_buckets]]
+binding = "SANCTUARY_BUCKET"
+bucket_name = "sanctuary"
+preview_bucket_name = "sanctuary"

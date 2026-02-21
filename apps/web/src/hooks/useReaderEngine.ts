@@ -1,13 +1,63 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { RefObject } from "react";
 import type { Book } from "@/types";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/context/SettingsContext";
 
 interface UseReaderEngineProps {
     book: Book;
     containerRef: RefObject<HTMLDivElement | null>;
     onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
+
+type TocItem = {
+    id?: string;
+    href: string;
+    label: string;
+    subitems?: TocItem[];
+};
+
+type EpubLocation = {
+    start: {
+        cfi: string;
+    };
+};
+
+type EpubNavigation = {
+    toc?: TocItem[];
+};
+
+type EpubLocations = {
+    generate: (chars: number) => Promise<void>;
+    length: () => number;
+    percentageFromCfi: (cfi: string) => number;
+    cfiFromPercentage: (percentage: number) => string | undefined;
+};
+
+type EpubRendition = {
+    display: (target?: string) => Promise<void> | void;
+    next: () => void;
+    prev: () => void;
+    on: (event: "relocated", cb: (location: EpubLocation) => void) => void;
+    destroy: () => void;
+    themes: {
+        default: (styles: Record<string, Record<string, string>>) => void;
+    };
+};
+
+type EpubBookHandle = {
+    loaded: {
+        navigation: Promise<EpubNavigation>;
+    };
+    renderTo: (container: HTMLDivElement, options: Record<string, unknown>) => EpubRendition;
+    locations: EpubLocations;
+    destroy: () => void;
+};
+
+const READER_THEME = {
+    textWidthCh: 96,
+    pageMarginPx: 28,
+    paragraphSpacingPx: 14,
+} as const;
 
 export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
     const activeBookId = book.id;
@@ -17,22 +67,29 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const [currentCfi, setCurrentCfi] = useState<string>("");
     const [totalPages, setTotalPages] = useState(book.totalPages || 100);
     const [currentPage, setCurrentPage] = useState(book.progress || 1);
-    const [tocItems, setTocItems] = useState<any[]>([]);
+    const [tocItems, setTocItems] = useState<TocItem[]>([]);
 
-    const renditionRef = useRef<any>(null);
-    const bookRef = useRef<any>(null);
+    const renditionRef = useRef<EpubRendition | null>(null);
+    const bookRef = useRef<EpubBookHandle | null>(null);
     const onUpdateProgressRef = useRef(onUpdateProgress);
     const startLocationRef = useRef(book.lastLocation);
 
     const {
         fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
         readerForeground, readerBackground,
-        continuous, spread, brightness, grayscale, reduceMotion
-    } = useSettings();
-
-    const cozyTextWidth = 96;
-    const cozyPageMargin = 28;
-    const cozyParagraphSpacing = 14;
+        continuous, spread, reduceMotion
+    } = useSettingsShallow((state) => ({
+        fontSize: state.fontSize,
+        lineHeight: state.lineHeight,
+        fontPairing: state.fontPairing,
+        textAlignment: state.textAlignment,
+        hyphenation: state.hyphenation,
+        readerForeground: state.readerForeground,
+        readerBackground: state.readerBackground,
+        continuous: state.continuous,
+        spread: state.spread,
+        reduceMotion: state.reduceMotion
+    }));
 
     useEffect(() => {
         onUpdateProgressRef.current = onUpdateProgress;
@@ -60,7 +117,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 if (!containerRef.current || !mounted) return;
 
                 const arrayBuffer = await activeBlob.arrayBuffer();
-                bookRef.current = ePub(arrayBuffer);
+                bookRef.current = ePub(arrayBuffer) as unknown as EpubBookHandle;
 
                 // Extract TOC
                 const navigation = await bookRef.current.loaded.navigation;
@@ -84,7 +141,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 }
 
                 // Handle location changes
-                renditionRef.current.on("relocated", (location: any) => {
+                renditionRef.current.on("relocated", (location: EpubLocation) => {
                     if (!mounted) return;
                     const cfi = location.start.cfi;
                     setCurrentCfi(cfi);
@@ -103,7 +160,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     if (mounted) {
                         setTotalPages(Math.max(1, bookRef.current.locations.length()));
                     }
-                }).catch((err: any) => console.warn("Location generation failed:", err));
+                }).catch((err: unknown) => console.warn("Location generation failed:", err));
 
                 setIsLoading(false);
             } catch (err) {
@@ -131,7 +188,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             const { scrollTop, scrollHeight, clientHeight } = container;
             if (scrollTop + clientHeight >= scrollHeight - 50) {
                 renditionRef.current.next();
-                setTimeout(() => container.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' } as any), 100);
             } else {
                 container.scrollBy({ top: window.innerHeight * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' });
             }
@@ -187,37 +243,36 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
         renditionRef.current.themes.default({
             "body": {
-                "font-family": `${fontFamily} !important`,
-                "font-size": `${fontSize}px !important`,
-                "line-height": `${lineHeight} !important`,
-                "color": `${readerForeground} !important`,
-                "background-color": `${readerBackground} !important`,
-                "filter": `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0}) !important`,
-                "padding-top": `${cozyPageMargin}px !important`,
-                "padding-bottom": `${cozyPageMargin}px !important`,
-                "padding-left": `${continuous ? cozyPageMargin : 0}px !important`,
-                "padding-right": `${continuous ? cozyPageMargin : 0}px !important`,
+                "font-family": fontFamily,
+                "font-size": `${fontSize}px`,
+                "line-height": `${lineHeight}`,
+                "color": readerForeground,
+                "background-color": readerBackground,
+                "padding-top": `${READER_THEME.pageMarginPx}px`,
+                "padding-bottom": `${READER_THEME.pageMarginPx}px`,
+                "padding-left": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
+                "padding-right": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
                 ...(continuous ? {
-                    "max-width": `${cozyTextWidth}ch !important`,
-                    "margin": "0 auto !important",
-                    "padding-bottom": "2em !important",
+                    "max-width": `${READER_THEME.textWidthCh}ch`,
+                    "margin": "0 auto",
+                    "padding-bottom": "2em",
                 } : {
-                    "max-width": "none !important",
-                    "margin": "0 !important",
-                    "padding-bottom": "2em !important",
+                    "max-width": "none",
+                    "margin": "0",
+                    "padding-bottom": "2em",
                 }),
             },
             "p": {
-                "font-family": "inherit !important",
-                "font-size": "inherit !important",
-                "line-height": "inherit !important",
-                "color": "inherit !important",
-                "margin-bottom": `${cozyParagraphSpacing}px !important`,
-                "text-align": `${textAlignment} !important`,
-                "hyphens": hyphenation ? "auto !important" : "none !important",
+                "font-family": "inherit",
+                "font-size": "inherit",
+                "line-height": "inherit",
+                "color": "inherit",
+                "margin-bottom": `${READER_THEME.paragraphSpacingPx}px`,
+                "text-align": textAlignment,
+                "hyphens": hyphenation ? "auto" : "none",
             },
         });
-    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous, grayscale, brightness]);
+    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous]);
 
     // Apply styles when settings change
     useEffect(() => {

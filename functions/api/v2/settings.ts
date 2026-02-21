@@ -21,7 +21,9 @@ interface UserSettingsRow {
   accent: string;
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+type RequestContext = { request: Request; env: Env };
+
+export const onRequest = async ({ request, env }: RequestContext): Promise<Response> => {
   const userId = await getUserId(request, env);
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -55,9 +57,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   if (request.method === "PUT") {
-    const body: Record<string, unknown> = await request
-      .json<Record<string, unknown>>()
-      .catch(() => ({} as Record<string, unknown>));
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const payload = {
       ...defaults,
       ...body,

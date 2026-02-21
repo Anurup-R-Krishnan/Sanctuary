@@ -3,22 +3,12 @@ import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
 import BookCard from "../ui/BookCard";
 import AddBookButton from "../ui/AddBookButton";
+import { useBookStore } from "@/store/useBookStore";
+import { useUIStore } from "@/store/useUIStore";
+import { useShallow } from "zustand/react/shallow";
 
 interface LibraryGridProps {
-  books: Book[];
-  sortedBooks: Book[];
-  recentBooks: Book[];
-  favoriteBooks: Book[];
-  seriesGroups: Record<string, Book[]>;
   onSelectBook: (book: Book) => void;
-  addBook: (file: File) => Promise<void>;
-  isLoading: boolean;
-  sortBy: SortOption;
-  setSortBy: (s: SortOption) => void;
-  filterBy: FilterOption;
-  setFilterBy: (f: FilterOption) => void;
-  onToggleFavorite: (id: string) => void;
-  searchTerm?: string;
 }
 
 const SkeletonCard: React.FC = () => (
@@ -28,32 +18,46 @@ const SkeletonCard: React.FC = () => (
 );
 
 const LibraryGrid: React.FC<LibraryGridProps> = ({
-  books,
-  sortedBooks,
-  recentBooks,
-  favoriteBooks,
-  seriesGroups,
   onSelectBook,
-  addBook,
-  isLoading,
-  sortBy,
-  setSortBy,
-  filterBy,
-  setFilterBy,
-  onToggleFavorite,
-  searchTerm,
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
+  const { searchTerm } = useUIStore(useShallow((state) => ({
+    searchTerm: state.searchTerm,
+  })));
+  const {
+    books,
+    sortedBooks,
+    recentBooks,
+    favoriteBooks,
+    seriesGroups,
+    addBook,
+    isLoading,
+    sortBy,
+    setSortBy,
+    filterBy,
+    setFilterBy,
+    toggleFavorite: onToggleFavorite,
+  } = useBookStore(useShallow((state) => ({
+    books: state.books,
+    sortedBooks: state.sortedBooks,
+    recentBooks: state.recentBooks,
+    favoriteBooks: state.favoriteBooks,
+    seriesGroups: state.seriesGroups,
+    addBook: state.addBook,
+    isLoading: state.isLoading,
+    sortBy: state.sortBy,
+    setSortBy: state.setSortBy,
+    filterBy: state.filterBy,
+    setFilterBy: state.setFilterBy,
+    toggleFavorite: state.toggleFavorite,
+  })));
+
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setIsMounted(true), 50);
-    return () => clearTimeout(t);
-  }, []);
+  const sortMenuId = "library-sort-menu";
+  const filterMenuId = "library-filter-menu";
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -87,7 +91,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
       (b) =>
         b.title.toLowerCase().includes(term) ||
         b.author.toLowerCase().includes(term) ||
-        b.tags?.some((t) => t.toLowerCase().includes(term))
+        (b.tags ?? []).some((t) => t.toLowerCase().includes(term))
     );
   }, [sortedBooks, searchTerm]);
 
@@ -158,12 +162,14 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   );
 
   const DropdownMenu = ({
+    id,
     show,
     options,
     value,
     onSelect,
     onClose,
   }: {
+    id: string;
     show: boolean;
     options: { value: string; label: string }[];
     value: string;
@@ -171,17 +177,24 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     onClose: () => void;
   }) =>
     show ? (
-      <div className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-20 animate-scaleIn origin-top-right">
+      <div
+        id={id}
+        role="menu"
+        aria-orientation="vertical"
+        className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-20 animate-scaleIn origin-top-right"
+      >
         {options.map((opt) => (
           <button
             key={opt.value}
+            role="menuitemradio"
+            aria-checked={value === opt.value}
             onClick={() => {
               onSelect(opt.value);
               onClose();
             }}
             className={`w-full text-left px-3 py-2 text-sm transition-colors ${value === opt.value
-                ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
-                : "text-light-text dark:text-dark-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
+              ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
+              : "text-light-text dark:text-dark-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
               }`}
           >
             {opt.label}
@@ -204,8 +217,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-md transition-all duration-150 ${viewMode === "grid"
-                  ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
-                  : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
+                ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
+                : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
                 }`}
               aria-label="Grid view"
             >
@@ -214,8 +227,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
             <button
               onClick={() => setViewMode("list")}
               className={`p-2 rounded-md transition-all duration-150 ${viewMode === "list"
-                  ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
-                  : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
+                ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
+                : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
                 }`}
               aria-label="List view"
             >
@@ -229,6 +242,10 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                 setShowSortMenu(!showSortMenu);
                 setShowFilterMenu(false);
               }}
+              aria-label={`Sort by: ${sortOptions.find((o) => o.value === sortBy)?.label}`}
+              aria-haspopup="menu"
+              aria-expanded={showSortMenu}
+              aria-controls={showSortMenu ? sortMenuId : undefined}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
             >
               <SortAsc className="w-4 h-4" />
@@ -236,6 +253,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
               <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
             </button>
             <DropdownMenu
+              id={sortMenuId}
               show={showSortMenu}
               options={sortOptions as { value: string; label: string }[]}
               value={sortBy}
@@ -250,6 +268,10 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                 setShowFilterMenu(!showFilterMenu);
                 setShowSortMenu(false);
               }}
+              aria-label={`Filter by: ${filterOptions.find((o) => o.value === filterBy)?.label}`}
+              aria-haspopup="menu"
+              aria-expanded={showFilterMenu}
+              aria-controls={showFilterMenu ? filterMenuId : undefined}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
             >
               <Filter className="w-4 h-4" />
@@ -257,6 +279,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
               <ChevronDown className={`w-3 h-3 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
             </button>
             <DropdownMenu
+              id={filterMenuId}
               show={showFilterMenu}
               options={filterOptions as { value: string; label: string }[]}
               value={filterBy}
@@ -306,19 +329,19 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
           count={displayBooks.length}
           icon={searchTerm ? Search : undefined}
         />
+        {searchTerm && (
+          <p className="mb-4 text-xs text-light-text-muted dark:text-dark-text-muted">
+            Showing matches for "{searchTerm}". Curated sections are hidden while searching.
+          </p>
+        )}
         {displayBooks.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-light-text-muted dark:text-dark-text-muted text-sm">No books found</p>
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {displayBooks.map((book, index) => (
-              <div
-                key={book.id}
-                className={`transition-all duration-500 ease-smooth ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-                  }`}
-                style={{ transitionDelay: `${Math.min(index * 30, 250)}ms` }}
-              >
+            {displayBooks.map((book) => (
+              <div key={book.id}>
                 <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} />
               </div>
             ))}
@@ -335,6 +358,11 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                   src={book.coverUrl}
                   alt={book.title}
                   className="w-10 h-14 object-cover rounded-lg shadow-sm"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    img.onerror = null;
+                    img.style.visibility = "hidden";
+                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-sm text-light-text dark:text-dark-text truncate group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors">
@@ -359,8 +387,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                     onToggleFavorite(book.id);
                   }}
                   className={`p-1.5 rounded-lg transition-colors ${book.isFavorite
-                      ? "text-amber-500"
-                      : "text-light-text-muted/30 dark:text-dark-text-muted/30 hover:text-amber-500"
+                    ? "text-amber-500"
+                    : "text-light-text-muted/30 dark:text-dark-text-muted/30 hover:text-amber-500"
                     }`}
                 >
                   <Star className={`w-4 h-4 ${book.isFavorite ? "fill-current" : ""}`} />

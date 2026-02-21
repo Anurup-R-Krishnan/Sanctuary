@@ -37,16 +37,24 @@ interface ReaderOverlayProps {
 }
 
 const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
-  const mappedToc = props.toc.map((item, index) => ({
-    id: item.id || `${index}-${item.href || item.label}`,
-    href: item.href,
-    label: item.label,
-    subitems: item.subitems?.map((sub, subIndex) => ({
-      id: sub.id || `${index}-${subIndex}-${sub.href || sub.label}`,
-      href: sub.href,
-      label: sub.label
-    }))
-  }));
+  const tocId = (parentKey: string, id?: string, href?: string, label?: string) => {
+    const stablePart = id || href || label || "item";
+    return `${parentKey}:${encodeURIComponent(stablePart)}`;
+  };
+
+  const mappedToc = props.toc.map((item) => {
+    const itemId = tocId("toc", item.id, item.href, item.label);
+    return {
+      id: itemId,
+      href: item.href,
+      label: item.label,
+      subitems: item.subitems?.map((sub) => ({
+        id: tocId(itemId, sub.id, sub.href, sub.label),
+        href: sub.href,
+        label: sub.label
+      }))
+    };
+  });
 
   return (
     <>

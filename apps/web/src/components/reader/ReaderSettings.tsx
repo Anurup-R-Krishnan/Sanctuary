@@ -1,5 +1,5 @@
 import React from "react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/context/SettingsContext";
 import { Layout, Scroll, EyeOff, Speech, ZapOff, RotateCcw } from "lucide-react";
 
 const ReaderSettings: React.FC = () => {
@@ -22,7 +22,26 @@ const ReaderSettings: React.FC = () => {
     setReduceMotion,
     readerAccent,
     resetToDefaults,
-  } = useSettings();
+  } = useSettingsShallow((state) => ({
+    fontSize: state.fontSize,
+    setFontSize: state.setFontSize,
+    lineHeight: state.lineHeight,
+    setLineHeight: state.setLineHeight,
+    fontPairing: state.fontPairing,
+    setFontPairing: state.setFontPairing,
+    continuous: state.continuous,
+    setContinuous: state.setContinuous,
+    brightness: state.brightness,
+    setBrightness: state.setBrightness,
+    grayscale: state.grayscale,
+    setGrayscale: state.setGrayscale,
+    screenReaderMode: state.screenReaderMode,
+    setScreenReaderMode: state.setScreenReaderMode,
+    reduceMotion: state.reduceMotion,
+    setReduceMotion: state.setReduceMotion,
+    readerAccent: state.readerAccent,
+    resetToDefaults: state.resetToDefaults,
+  }));
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
@@ -179,4 +198,3 @@ const ReaderSettings: React.FC = () => {
 };
 
 export default ReaderSettings;
-

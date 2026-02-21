@@ -13,6 +13,9 @@ export async function readJsonSafely<T>(res: Response, fallbackMessage: string):
     try {
       parsed = JSON.parse(text);
     } catch {
+      if (res.ok) {
+        throw new Error(`${fallbackMessage}: invalid JSON response`);
+      }
       parsed = null;
     }
   }
@@ -22,5 +25,5 @@ export async function readJsonSafely<T>(res: Response, fallbackMessage: string):
       : `${fallbackMessage} (${res.status})`;
     throw new Error(errMessage);
   }
-  return (parsed || {}) as T;
+  return parsed as T;
 }

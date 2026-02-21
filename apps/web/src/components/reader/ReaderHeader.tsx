@@ -37,7 +37,8 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
     onToggleControls,
     onToggleFullscreen,
 }) => {
-    const { readerForeground, readerBackground } = useSettings();
+    const readerForeground = useSettings((state) => state.readerForeground);
+    const readerBackground = useSettings((state) => state.readerBackground);
 
     const ActionBtn = ({ icon: Icon, label, onClick, active }: {
         icon: React.ElementType;

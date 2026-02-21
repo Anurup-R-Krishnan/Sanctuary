@@ -1,30 +1,33 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { ReadingStats, Badge, Book } from "@/types";
+import { useSettingsShallow } from "@/context/SettingsContext";
+import { settingsService } from "@/services/settingsService";
+import { useAuth } from "@/hooks/useAuth";
+import { useStatsStore } from "@/store/useStatsStore";
 
 const SESSIONS_KEY = "sanctuary_reading_sessions";
-const SETTINGS_KEY = "sanctuary_stats_settings";
+const REMOTE_SESSIONS_KEY = "readingSessions";
 
 interface ReadingSession {
   id: string;
   bookId: string;
   bookTitle: string;
   date: string;
+  startTime?: string;
+  localStartHour?: number;
   duration: number;
   pagesRead: number;
 }
 
-interface StatsSettings {
-  dailyGoal: number;
-  weeklyGoal: number;
-  themeColor: string;
-  showStreakReminder: boolean;
-}
-
-const defaultSettings: StatsSettings = {
-  dailyGoal: 30,
-  weeklyGoal: 150,
-  themeColor: "amber",
-  showStreakReminder: true,
+type SessionAggregates = {
+  totalReadingTime: number;
+  totalPagesRead: number;
+  nightOwlUnlocked: boolean;
+  earlyBirdUnlocked: boolean;
+  sessionDates: Set<string>;
+  dayTotals: Map<string, { pages: number; minutes: number }>;
+  monthMinutes: Map<string, number>;
+  sessionCount: number;
 };
 
 const defaultBadges: Badge[] = [
@@ -42,206 +45,461 @@ const defaultBadges: Badge[] = [
   { id: "early_bird", name: "Early Bird", icon: "🌅", description: "Read before 6 AM", unlocked: false },
 ];
 
-export function useReadingStats(books: Book[]) {
-  const [sessions, setSessions] = useState<ReadingSession[]>([]);
-  const [settings, setSettings] = useState<StatsSettings>(defaultSettings);
-  const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null);
-  const [currentSessionBook, setCurrentSessionBook] = useState<string | null>(null);
+const toLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-  // Load from localStorage
-  useEffect(() => {
-    const savedSessions = localStorage.getItem(SESSIONS_KEY);
-    const savedSettings = localStorage.getItem(SETTINGS_KEY);
-    if (savedSessions) setSessions(JSON.parse(savedSessions));
-    if (savedSettings) setSettings({ ...defaultSettings, ...JSON.parse(savedSettings) });
+const toLocalMonthKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};
+
+const dateKeyToEpochDay = (dateKey: string): number | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+};
+
+const createEmptyAggregates = (): SessionAggregates => ({
+  totalReadingTime: 0,
+  totalPagesRead: 0,
+  nightOwlUnlocked: false,
+  earlyBirdUnlocked: false,
+  sessionDates: new Set<string>(),
+  dayTotals: new Map<string, { pages: number; minutes: number }>(),
+  monthMinutes: new Map<string, number>(),
+  sessionCount: 0,
+});
+
+const applySessionToAggregates = (aggregates: SessionAggregates, session: ReadingSession) => {
+  aggregates.totalReadingTime += session.duration;
+  aggregates.totalPagesRead += session.pagesRead;
+  aggregates.sessionCount += 1;
+
+  aggregates.sessionDates.add(session.date);
+
+  const dayAgg = aggregates.dayTotals.get(session.date) || { pages: 0, minutes: 0 };
+  dayAgg.pages += session.pagesRead;
+  dayAgg.minutes += session.duration;
+  aggregates.dayTotals.set(session.date, dayAgg);
+
+  const sessionHour = typeof session.localStartHour === "number"
+    ? session.localStartHour
+    : (typeof session.startTime === "string" ? new Date(session.startTime).getHours() : NaN);
+
+  if (!Number.isNaN(sessionHour)) {
+    if (sessionHour >= 0 && sessionHour < 5) aggregates.nightOwlUnlocked = true;
+    if (sessionHour >= 5 && sessionHour < 7) aggregates.earlyBirdUnlocked = true;
+  }
+
+  const monthKey = session.date.slice(0, 7);
+  aggregates.monthMinutes.set(monthKey, (aggregates.monthMinutes.get(monthKey) || 0) + session.duration);
+};
+
+type UseReadingStatsOptions = {
+  compute?: boolean;
+};
+
+const emptyStats = (dailyGoal: number): ReadingStats => ({
+  currentStreak: 0,
+  longestStreak: 0,
+  totalBooksRead: 0,
+  totalBooksInLibrary: 0,
+  totalPagesRead: 0,
+  totalReadingTime: 0,
+  averageReadingSpeed: 0,
+  dailyProgress: 0,
+  dailyGoal,
+  booksCompletedThisMonth: 0,
+  weeklyData: [
+    { day: "Mon", pages: 0, minutes: 0 },
+    { day: "Tue", pages: 0, minutes: 0 },
+    { day: "Wed", pages: 0, minutes: 0 },
+    { day: "Thu", pages: 0, minutes: 0 },
+    { day: "Fri", pages: 0, minutes: 0 },
+    { day: "Sat", pages: 0, minutes: 0 },
+    { day: "Sun", pages: 0, minutes: 0 },
+  ],
+  monthlyData: [],
+  heatmapData: [],
+  genreDistribution: [],
+  authorNetwork: [],
+  badges: defaultBadges,
+  readingPersonality: "Explorer",
+  personalityDescription: "You're just getting started on your reading journey!",
+});
+
+export function useReadingStats(books: Book[], persistent = true, options: UseReadingStatsOptions = {}) {
+  const [sessions, setSessions] = useState<ReadingSession[]>([]);
+  const [currentSessionStart, setCurrentSessionStart] = useState<number | null>(null);
+  const [currentSessionStartTime, setCurrentSessionStartTime] = useState<string | null>(null);
+  const [currentSessionBook, setCurrentSessionBook] = useState<string | null>(null);
+  const [currentSessionStartProgress, setCurrentSessionStartProgress] = useState<number>(0);
+  const [aggregateVersion, setAggregateVersion] = useState(0);
+  const { getToken } = useAuth();
+  const aggregateRef = useRef<SessionAggregates>(createEmptyAggregates());
+  const sessionIndexRef = useRef<Map<string, ReadingSession>>(new Map());
+
+  const { dailyGoal } = useSettingsShallow((state) => ({
+    dailyGoal: state.dailyGoal,
+  }));
+  const shouldCompute = options.compute ?? true;
+  const cachedStatsRef = useRef<ReadingStats>(emptyStats(dailyGoal));
+  const setStatsSnapshot = useStatsStore((state) => state.setStats);
+
+  const normalizeSessions = useCallback((input: unknown): ReadingSession[] => {
+    if (!Array.isArray(input)) return [];
+
+    return input
+      .filter((item): item is Partial<ReadingSession> & Record<string, unknown> => !!item && typeof item === "object")
+      .map((row) => {
+        if (
+          typeof row.id !== "string" ||
+          typeof row.bookId !== "string" ||
+          typeof row.bookTitle !== "string" ||
+          typeof row.date !== "string" ||
+          typeof row.duration !== "number" ||
+          typeof row.pagesRead !== "number"
+        ) {
+          return null;
+        }
+
+        const normalized: ReadingSession = {
+          id: row.id,
+          bookId: row.bookId,
+          bookTitle: row.bookTitle,
+          date: row.date,
+          startTime: typeof row.startTime === "string" ? row.startTime : undefined,
+          localStartHour: typeof row.localStartHour === "number" ? row.localStartHour : undefined,
+          duration: row.duration,
+          pagesRead: row.pagesRead,
+        };
+        return normalized;
+      })
+      .filter((row): row is ReadingSession => row !== null);
   }, []);
 
-  // Save sessions
+  useEffect(() => {
+    if (shouldCompute) return;
+    cachedStatsRef.current = {
+      ...cachedStatsRef.current,
+      dailyGoal,
+    };
+  }, [dailyGoal, shouldCompute]);
+
+  useEffect(() => {
+    const savedSessions = localStorage.getItem(SESSIONS_KEY);
+    const localSessions = savedSessions ? normalizeSessions(JSON.parse(savedSessions)) : [];
+    if (localSessions.length > 0) {
+      setSessions(localSessions);
+    }
+
+    if (!persistent) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const token = await getToken();
+        const remote = await settingsService.getItem<ReadingSession[]>(REMOTE_SESSIONS_KEY, token || undefined);
+        if (cancelled || !Array.isArray(remote)) return;
+        const remoteSessions = normalizeSessions(remote);
+        // Remote is authoritative when available, including empty array deletions.
+        setSessions(remoteSessions);
+      } catch (error) {
+        console.warn("Failed to hydrate remote reading sessions", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken, normalizeSessions, persistent]);
+
   useEffect(() => {
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
   }, [sessions]);
 
-  // Save settings
   useEffect(() => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  }, [settings]);
+    const previousIndex = sessionIndexRef.current;
+    const currentIndex = new Map<string, ReadingSession>(sessions.map((session) => [session.id, session]));
 
-  const startSession = useCallback((bookId: string) => {
-    setCurrentSessionStart(Date.now());
+    const addedIds: string[] = [];
+    const removedIds: string[] = [];
+    for (const id of currentIndex.keys()) {
+      if (!previousIndex.has(id)) addedIds.push(id);
+    }
+    for (const id of previousIndex.keys()) {
+      if (!currentIndex.has(id)) removedIds.push(id);
+    }
+
+    const isPureAppend = removedIds.length === 0 && addedIds.length === 1 && currentIndex.size === previousIndex.size + 1;
+
+    if (isPureAppend) {
+      const addedSession = currentIndex.get(addedIds[0]);
+      if (addedSession) {
+        const next = aggregateRef.current;
+        applySessionToAggregates(next, addedSession);
+        aggregateRef.current = next;
+      }
+    } else {
+      const rebuilt = createEmptyAggregates();
+      for (const session of sessions) {
+        applySessionToAggregates(rebuilt, session);
+      }
+      aggregateRef.current = rebuilt;
+    }
+
+    sessionIndexRef.current = currentIndex;
+    setAggregateVersion((v) => v + 1);
+  }, [sessions]);
+
+  useEffect(() => {
+    if (!persistent || sessions.length === 0) return;
+    void (async () => {
+      try {
+        const token = await getToken();
+        await settingsService.setItem(REMOTE_SESSIONS_KEY, sessions, token || undefined);
+      } catch (error) {
+        console.warn("Failed to persist remote reading sessions", error);
+      }
+    })();
+  }, [sessions, getToken, persistent]);
+
+  const startSession = useCallback((bookId: string, startProgress = 0) => {
+    const now = Date.now();
+    setCurrentSessionStart(now);
+    setCurrentSessionStartTime(new Date(now).toISOString());
     setCurrentSessionBook(bookId);
+    setCurrentSessionStartProgress(Math.max(0, startProgress));
   }, []);
 
-  const endSession = useCallback((pagesRead: number) => {
+  const endSession = useCallback((endProgressOverride?: number) => {
     if (!currentSessionStart || !currentSessionBook) return;
 
     const duration = Math.round((Date.now() - currentSessionStart) / 60000);
+    const book = books.find((item) => item.id === currentSessionBook);
+    const endProgressSource = endProgressOverride ?? book?.progress ?? 0;
+    const endProgress = Math.max(0, endProgressSource);
+    const pagesRead = Math.max(0, endProgress - currentSessionStartProgress);
+
+    const sessionStartTime = currentSessionStartTime || new Date(currentSessionStart).toISOString();
+    const localStartHour = new Date(currentSessionStart).getHours();
+
+    setCurrentSessionStart(null);
+    setCurrentSessionStartTime(null);
+    setCurrentSessionBook(null);
+    setCurrentSessionStartProgress(0);
+
     if (duration < 1) return;
 
-    const book = books.find(b => b.id === currentSessionBook);
     const newSession: ReadingSession = {
       id: crypto.randomUUID(),
       bookId: currentSessionBook,
       bookTitle: book?.title || "Unknown",
-      date: new Date().toISOString().split("T")[0],
+      date: toLocalDateKey(new Date(sessionStartTime)),
+      startTime: sessionStartTime,
+      localStartHour,
       duration,
       pagesRead,
     };
 
-    setSessions(prev => [...prev, newSession]);
-    setCurrentSessionStart(null);
-    setCurrentSessionBook(null);
-  }, [currentSessionStart, currentSessionBook, books]);
+    setSessions((prev) => [...prev, newSession]);
+  }, [currentSessionStart, currentSessionStartTime, currentSessionBook, currentSessionStartProgress, books]);
 
-  const updateSettings = useCallback((newSettings: Partial<StatsSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, []);
-
-  // Calculate stats
   const stats: ReadingStats = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const completedBooks = books.filter(b => b.progress >= 100);
+    if (!shouldCompute) {
+      return cachedStatsRef.current;
+    }
 
-    // Streak calculation
-    const uniqueDates = [...new Set(sessions.map(s => s.date))].sort().reverse();
+    void aggregateVersion;
+    const now = new Date();
+    const today = toLocalDateKey(now);
+    let completedBooksCount = 0;
+    const completedBooksByMonth = new Map<string, number>();
+    const genreMap = new Map<string, number>();
+    const authorMap = new Map<string, number>();
+
+    for (const book of books) {
+      const genre = book.genre || "Uncategorized";
+      genreMap.set(genre, (genreMap.get(genre) || 0) + 1);
+      authorMap.set(book.author, (authorMap.get(book.author) || 0) + 1);
+
+      if (book.progress >= 100) {
+        completedBooksCount++;
+        if (book.completedAt) {
+          const completedDate = new Date(book.completedAt);
+          if (!Number.isNaN(completedDate.getTime())) {
+            const key = toLocalMonthKey(completedDate);
+            completedBooksByMonth.set(key, (completedBooksByMonth.get(key) || 0) + 1);
+          }
+        }
+      }
+    }
+    const aggregates = aggregateRef.current;
+    const sessionDates = aggregates.sessionDates;
+    const dayTotals = aggregates.dayTotals;
+    const monthMinutes = aggregates.monthMinutes;
+    const totalReadingTime = aggregates.totalReadingTime;
+    const totalPagesRead = aggregates.totalPagesRead;
+    const dailyProgress = dayTotals.get(today)?.pages || 0;
+    const nightOwlUnlocked = aggregates.nightOwlUnlocked;
+    const earlyBirdUnlocked = aggregates.earlyBirdUnlocked;
+
+    const uniqueDates = Array.from(sessionDates).sort().reverse();
+
     let currentStreak = 0;
-    const checkDate = new Date();
-
+    const streakProbe = new Date(now);
     for (let i = 0; i < 365; i++) {
-      const dateStr = checkDate.toISOString().split("T")[0];
-      if (uniqueDates.includes(dateStr)) {
+      const dateStr = toLocalDateKey(streakProbe);
+      if (sessionDates.has(dateStr)) {
         currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
+        streakProbe.setDate(streakProbe.getDate() - 1);
       } else if (i === 0) {
-        checkDate.setDate(checkDate.getDate() - 1);
+        streakProbe.setDate(streakProbe.getDate() - 1);
       } else {
         break;
       }
     }
 
-    // Longest streak
     let longestStreak = 0;
     let tempStreak = 0;
-    const sortedDates = [...uniqueDates].sort();
-    for (let i = 0; i < sortedDates.length; i++) {
+    const sortedDatesAsc = [...uniqueDates].sort();
+    for (let i = 0; i < sortedDatesAsc.length; i++) {
       if (i === 0) {
         tempStreak = 1;
       } else {
-        const prev = new Date(sortedDates[i - 1]);
-        const curr = new Date(sortedDates[i]);
-        const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-        tempStreak = diff === 1 ? tempStreak + 1 : 1;
+        const prevDay = dateKeyToEpochDay(sortedDatesAsc[i - 1]);
+        const currDay = dateKeyToEpochDay(sortedDatesAsc[i]);
+        const diffDays = prevDay !== null && currDay !== null ? currDay - prevDay : 0;
+        tempStreak = diffDays === 1 ? tempStreak + 1 : 1;
       }
       longestStreak = Math.max(longestStreak, tempStreak);
     }
 
-    const totalReadingTime = sessions.reduce((a, s) => a + s.duration, 0);
-    const totalPagesRead = sessions.reduce((a, s) => a + s.pagesRead, 0);
-    const todaySessions = sessions.filter(s => s.date === today);
-    const dailyProgress = todaySessions.reduce((a, s) => a + s.pagesRead, 0);
-
-    // Weekly data
     const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const weeklyData = weekDays.map((day, i) => {
-      const d = new Date();
-      const currentDay = (d.getDay() + 6) % 7;
-      d.setDate(d.getDate() - (currentDay - i));
-      const dateStr = d.toISOString().split("T")[0];
-      const daySessions = sessions.filter(s => s.date === dateStr);
+      const date = new Date(now);
+      const currentDay = (date.getDay() + 6) % 7;
+      date.setDate(date.getDate() - (currentDay - i));
+      const dateStr = toLocalDateKey(date);
+      const totals = dayTotals.get(dateStr) || { pages: 0, minutes: 0 };
       return {
         day,
-        pages: daySessions.reduce((a, s) => a + s.pagesRead, 0),
-        minutes: daySessions.reduce((a, s) => a + s.duration, 0),
+        pages: totals.pages,
+        minutes: totals.minutes,
       };
     });
 
-    // Monthly data (last 6 months)
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthlyData = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - (5 - i));
-      const month = d.getMonth();
-      const year = d.getFullYear();
-      const monthSessions = sessions.filter(s => {
-        const sd = new Date(s.date);
-        return sd.getMonth() === month && sd.getFullYear() === year;
-      });
+      const date = new Date(now);
+      date.setMonth(date.getMonth() - (5 - i));
+      const monthKey = toLocalMonthKey(date);
       return {
-        month: monthNames[month],
-        hours: Math.round(monthSessions.reduce((a, s) => a + s.duration, 0) / 60),
-        books: completedBooks.filter(b => {
-          if (!b.completedAt) return false;
-          const cd = new Date(b.completedAt);
-          return cd.getMonth() === month && cd.getFullYear() === year;
-        }).length,
+        month: monthNames[date.getMonth()],
+        hours: Math.round((monthMinutes.get(monthKey) || 0) / 60),
+        books: completedBooksByMonth.get(monthKey) || 0,
       };
     });
 
-    // Heatmap (14 weeks)
     const heatmapData: number[][] = [];
-    for (let w = 13; w >= 0; w--) {
-      const week: number[] = [];
-      for (let d = 0; d < 7; d++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (w * 7 + (6 - d)));
-        const dateStr = date.toISOString().split("T")[0];
-        const dayMins = sessions.filter(s => s.date === dateStr).reduce((a, s) => a + s.duration, 0);
-        week.push(dayMins === 0 ? 0 : dayMins < 15 ? 1 : dayMins < 30 ? 2 : 3);
+    for (let week = 13; week >= 0; week--) {
+      const row: number[] = [];
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - (week * 7 + (6 - day)));
+        const dateStr = toLocalDateKey(date);
+        const dayMinutes = dayTotals.get(dateStr)?.minutes || 0;
+        row.push(dayMinutes === 0 ? 0 : dayMinutes < 15 ? 1 : dayMinutes < 30 ? 2 : 3);
       }
-      heatmapData.push(week);
+      heatmapData.push(row);
     }
 
-    // Genre distribution
-    const genreMap = new Map<string, number>();
-    books.forEach(b => {
-      const genre = b.genre || "Uncategorized";
-      genreMap.set(genre, (genreMap.get(genre) || 0) + 1);
-    });
     const colors = ["#c7a77b", "#8b7355", "#d4b58b", "#a08060", "#e8d5b7", "#6b5344"];
     const genreDistribution = Array.from(genreMap.entries()).map(([genre, count], i) => ({
-      genre, count, color: colors[i % colors.length],
+      genre,
+      count,
+      color: colors[i % colors.length],
     }));
 
-    // Author network
-    const authorMap = new Map<string, number>();
-    books.forEach(b => authorMap.set(b.author, (authorMap.get(b.author) || 0) + 1));
     const authorNetwork = Array.from(authorMap.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([author, booksCount]) => ({ author, books: booksCount }));
 
-    // Badges
-    const badges = defaultBadges.map(badge => {
-      const b = { ...badge };
+    const badges = defaultBadges.map((badge) => {
+      const updatedBadge = { ...badge };
       switch (badge.id) {
-        case "first_book": b.progress = completedBooks.length; b.unlocked = completedBooks.length >= 1; break;
-        case "bookworm": b.progress = completedBooks.length; b.unlocked = completedBooks.length >= 5; break;
-        case "librarian": b.progress = completedBooks.length; b.unlocked = completedBooks.length >= 25; break;
-        case "streak_3": b.progress = currentStreak; b.unlocked = longestStreak >= 3; break;
-        case "streak_7": b.progress = currentStreak; b.unlocked = longestStreak >= 7; break;
-        case "streak_30": b.progress = currentStreak; b.unlocked = longestStreak >= 30; break;
-        case "hour_1": b.progress = totalReadingTime; b.unlocked = totalReadingTime >= 60; break;
-        case "hour_10": b.progress = totalReadingTime; b.unlocked = totalReadingTime >= 600; break;
-        case "pages_100": b.progress = totalPagesRead; b.unlocked = totalPagesRead >= 100; break;
-        case "pages_1000": b.progress = totalPagesRead; b.unlocked = totalPagesRead >= 1000; break;
-        case "night_owl": b.unlocked = sessions.some(s => { const h = new Date(s.date).getHours(); return h >= 0 && h < 5; }); break;
-        case "early_bird": b.unlocked = sessions.some(s => { const h = new Date(s.date).getHours(); return h >= 5 && h < 7; }); break;
+        case "first_book":
+          updatedBadge.progress = completedBooksCount;
+          updatedBadge.unlocked = completedBooksCount >= 1;
+          break;
+        case "bookworm":
+          updatedBadge.progress = completedBooksCount;
+          updatedBadge.unlocked = completedBooksCount >= 5;
+          break;
+        case "librarian":
+          updatedBadge.progress = completedBooksCount;
+          updatedBadge.unlocked = completedBooksCount >= 25;
+          break;
+        case "streak_3":
+          updatedBadge.progress = currentStreak;
+          updatedBadge.unlocked = longestStreak >= 3;
+          break;
+        case "streak_7":
+          updatedBadge.progress = currentStreak;
+          updatedBadge.unlocked = longestStreak >= 7;
+          break;
+        case "streak_30":
+          updatedBadge.progress = currentStreak;
+          updatedBadge.unlocked = longestStreak >= 30;
+          break;
+        case "hour_1":
+          updatedBadge.progress = totalReadingTime;
+          updatedBadge.unlocked = totalReadingTime >= 60;
+          break;
+        case "hour_10":
+          updatedBadge.progress = totalReadingTime;
+          updatedBadge.unlocked = totalReadingTime >= 600;
+          break;
+        case "pages_100":
+          updatedBadge.progress = totalPagesRead;
+          updatedBadge.unlocked = totalPagesRead >= 100;
+          break;
+        case "pages_1000":
+          updatedBadge.progress = totalPagesRead;
+          updatedBadge.unlocked = totalPagesRead >= 1000;
+          break;
+        case "night_owl":
+          updatedBadge.unlocked = nightOwlUnlocked;
+          break;
+        case "early_bird":
+          updatedBadge.unlocked = earlyBirdUnlocked;
+          break;
       }
-      return b;
+      return updatedBadge;
     });
 
-    // Reading personality
-    const avgSessionLength = sessions.length > 0 ? totalReadingTime / sessions.length : 0;
+    const avgSessionLength = aggregates.sessionCount > 0 ? totalReadingTime / aggregates.sessionCount : 0;
     let readingPersonality = "Explorer";
     let personalityDescription = "You're just getting started on your reading journey!";
 
-    if (sessions.length >= 10) {
+    if (aggregates.sessionCount >= 10) {
       if (avgSessionLength > 45) {
         readingPersonality = "Binge Reader";
         personalityDescription = "You love diving deep, often reading for hours at a time.";
       } else if (currentStreak >= 7) {
         readingPersonality = "Consistent Reader";
         personalityDescription = "You read regularly, building strong habits.";
-      } else if (totalPagesRead / Math.max(1, completedBooks.length) > 300) {
+      } else if (totalPagesRead / Math.max(1, completedBooksCount) > 300) {
         readingPersonality = "Epic Adventurer";
         personalityDescription = "You prefer long, immersive stories.";
       } else {
@@ -250,15 +508,16 @@ export function useReadingStats(books: Book[]) {
       }
     }
 
-    return {
+    const nextStats: ReadingStats = {
       currentStreak,
       longestStreak,
-      totalBooksRead: completedBooks.length,
+      totalBooksRead: completedBooksCount,
+      totalBooksInLibrary: books.length,
       totalPagesRead,
       totalReadingTime,
       averageReadingSpeed: totalReadingTime > 0 ? Math.round(totalPagesRead / (totalReadingTime / 60)) : 0,
       dailyProgress,
-      dailyGoal: settings.dailyGoal,
+      dailyGoal,
       booksCompletedThisMonth: monthlyData[5]?.books || 0,
       weeklyData,
       monthlyData,
@@ -269,30 +528,17 @@ export function useReadingStats(books: Book[]) {
       readingPersonality,
       personalityDescription,
     };
-  }, [books, sessions, settings.dailyGoal]);
+    cachedStatsRef.current = nextStats;
+    return nextStats;
+  }, [books, dailyGoal, aggregateVersion, shouldCompute]);
 
-  // Add manual session (for testing/manual entry)
-  const addManualSession = useCallback((bookId: string, date: string, duration: number, pagesRead: number) => {
-    const book = books.find(b => b.id === bookId);
-    const newSession: ReadingSession = {
-      id: crypto.randomUUID(),
-      bookId,
-      bookTitle: book?.title || "Unknown",
-      date,
-      duration,
-      pagesRead,
-    };
-    setSessions(prev => [...prev, newSession]);
-  }, [books]);
+  useEffect(() => {
+    setStatsSnapshot(stats);
+  }, [stats, setStatsSnapshot]);
 
   return {
     stats,
-    settings,
-    updateSettings,
     startSession,
     endSession,
-    addManualSession,
-    currentSessionStart,
-    sessions,
   };
 }
