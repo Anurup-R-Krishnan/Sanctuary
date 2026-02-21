@@ -32,20 +32,29 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
     const containerRef = useRef<HTMLDivElement>(null);
     const lastMouseMoveRef = useRef<number>(Date.now());
+    const latestBookRef = useRef(book);
 
     // Local hydrated book state (for lazy loading content)
     const [hydratedBook, setHydratedBook] = useState<Book>(book);
     const [isFetchingContent, setIsFetchingContent] = useState(false);
     const [contentError, setContentError] = useState<string | null>(null);
 
+    useEffect(() => {
+        latestBookRef.current = book;
+    }, [book]);
+
     // Sync prop to local state and fetch content if missing
     useEffect(() => {
         let isMounted = true;
-        setHydratedBook(book);
+        const activeBook = latestBookRef.current;
+        setHydratedBook((prev) => ({
+            ...activeBook,
+            epubBlob: activeBook.epubBlob || (prev.id === activeBook.id ? prev.epubBlob : null),
+        }));
         setContentError(null);
-        if (!book.epubBlob) {
+        if (!activeBook.epubBlob) {
             setIsFetchingContent(true);
-            bookService.getBookContent(book.id)
+            bookService.getBookContent(activeBook.id)
                 .then(blob => {
                     if (isMounted) {
                         setHydratedBook(prev => ({ ...prev, epubBlob: blob }));
@@ -65,7 +74,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [book]);
+    }, [book.id, book.epubBlob]);
 
     // Settings
     const {
@@ -81,13 +90,10 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         totalPages,
         currentPage,
         tocItems,
-        chapterTitle,
         nextPage,
         prevPage,
         display,
         goToPage,
-        nextChapter,
-        prevChapter
     } = useReaderEngine({ book: hydratedBook, containerRef, onUpdateProgress });
 
     const isLoading = engineLoading || isFetchingContent;
@@ -104,10 +110,10 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             const bookmark = book.bookmarks?.find((b) => b.cfi === currentCfi);
             if (bookmark) onRemoveBookmark(book.id, bookmark.id);
         } else {
-            onAddBookmark(book.id, { cfi: currentCfi, title: chapterTitle || `Page ${currentPage}` });
+            onAddBookmark(book.id, { cfi: currentCfi, title: `Page ${currentPage}` });
         }
         setIsBookmarked(!isBookmarked);
-    }, [currentCfi, isBookmarked, book.id, book.bookmarks, chapterTitle, currentPage, onAddBookmark, onRemoveBookmark]);
+    }, [currentCfi, isBookmarked, book.id, book.bookmarks, currentPage, onAddBookmark, onRemoveBookmark]);
 
     const handleToggleFullscreen = useCallback(async () => {
         try {
@@ -161,7 +167,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
     // UI Visibility Auto-hide
     useEffect(() => {
-        let timeout: ReturnType<typeof setTimeout>;
         const handleMove = () => {
             lastMouseMoveRef.current = Date.now();
             if (!showUI) setShowUI(true);
@@ -182,7 +187,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         document.addEventListener("touchstart", handleMove);
         return () => {
             clearInterval(interval);
-            clearTimeout(timeout);
             document.removeEventListener("mousemove", handleMove);
             document.removeEventListener("touchstart", handleMove);
         };
@@ -208,7 +212,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 showSettings={showSettings}
                 showControls={showControls}
                 isLoading={isLoading}
-                chapterTitle={chapterTitle}
                 currentPage={currentPage} // Engine provides 1-based page
                 totalPages={totalPages}
                 readingTime={readingTime}
@@ -230,8 +233,6 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 onNavigate={handleNavigate}
                 onJumpToTop={() => { display("0"); }} // Jump to start
                 onJumpToBottom={() => { goToPage(totalPages); }}
-                onPrevChapter={prevChapter}
-                onNextChapter={nextChapter}
                 onPageChange={handlePageChange}
 
                 onRemoveBookmark={onRemoveBookmark}

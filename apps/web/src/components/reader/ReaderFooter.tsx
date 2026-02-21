@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, ChevronLeft, ChevronRight, SkipBack, SkipForward } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSettings } from "@/context/SettingsContext";
 
 interface ReaderFooterProps {
@@ -9,8 +9,6 @@ interface ReaderFooterProps {
     showUI: boolean;
     onNextPage: () => void;
     onPrevPage: () => void;
-    onNextChapter?: () => void;
-    onPrevChapter?: () => void;
     onPageChange: (page: number) => void;
 }
 
@@ -21,19 +19,9 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
     showUI,
     onNextPage,
     onPrevPage,
-    onNextChapter,
-    onPrevChapter,
     onPageChange,
 }) => {
-    const { 
-        readerForeground, 
-        readerBackground, 
-        readerAccent, 
-        continuous, 
-        showPageCounter,
-        progressBarType,
-        showFloatingCapsule
-    } = useSettings();
+    const { readerForeground, readerBackground, readerAccent, continuous } = useSettings();
 
     const progressPercent = Math.round((currentPage / totalPages) * 100) || 0;
 
@@ -65,63 +53,27 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
             <footer
                 className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
             >
-                {/* Progress Line (Always visible if enabled, but we hide it with UI for now) */}
-                {progressBarType === "bar" && (
-                    <button
-                        type="button"
-                        className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group"
-                        onClick={(e) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const percent = x / rect.width;
-                            onPageChange(Math.ceil(percent * totalPages));
-                        }}
-                        aria-label="Jump to reading progress position"
-                    >
-                        <div 
-                            className="h-full transition-all duration-150"
-                            style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }}
-                        />
-                        {/* Hover Preview */}
-                        <div 
-                            className="absolute bottom-2 -translate-x-1/2 px-2 py-1 rounded bg-black/80 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                            style={{ left: `${progressPercent}%` }}
-                        >
-                            {Math.round(progressPercent)}%
-                        </div>
-                    </button>
-                )}
-
-                {/* Floating Page Info (bottom-right) */}
-                {showFloatingCapsule && (
-                    <div className="absolute bottom-6 right-6 pointer-events-auto">
-                        <div 
-                            className="flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-colors duration-300"
-                            style={{ backgroundColor: `${readerBackground}E6` }}
-                        >
-                            {showPageCounter && (
-                                <span className="text-xs font-medium tabular-nums opacity-80" style={{ color: readerForeground }}>
-                                    {currentPage} <span className="opacity-40">/</span> {totalPages}
-                                </span>
-                            )}
-                            
-                            <div className="w-px h-3 bg-black/10 dark:bg-white/10" />
-                            
-                            <div className="flex items-center gap-1.5 text-[10px] font-medium opacity-60" style={{ color: readerForeground }}>
-                                <Clock className="w-3 h-3" />
-                                <span>{readingTime}m</span>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <button
+                    type="button"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group"
+                    onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const percent = x / rect.width;
+                        onPageChange(Math.ceil(percent * totalPages));
+                    }}
+                    aria-label="Jump to reading progress position"
+                >
+                    <div
+                        className="h-full transition-all duration-150"
+                        style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }}
+                    />
+                </button>
 
                 {/* Centered Bottom Bar */}
                 <div className={`fixed left-1/2 -translate-x-1/2 bottom-6 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
                     <div className="w-[min(880px,92vw)] px-4 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-4" style={{ backgroundColor: `${readerBackground}E8` }}>
                         <div className="flex items-center gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); onPrevChapter?.(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-                                <SkipBack className="w-5 h-5" />
-                            </button>
                             <button onClick={(e) => { e.stopPropagation(); onPrevPage(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
@@ -156,9 +108,6 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
                         <div className="flex items-center gap-2">
                             <button onClick={(e) => { e.stopPropagation(); onNextPage(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
                                 <ChevronRight className="w-5 h-5" />
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); onNextChapter?.(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-                                <SkipForward className="w-5 h-5" />
                             </button>
                         </div>
                     </div>

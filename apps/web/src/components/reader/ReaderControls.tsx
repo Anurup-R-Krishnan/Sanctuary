@@ -3,10 +3,6 @@ import {
     List,
     ArrowUp,
     ArrowDown,
-    SkipBack,
-    SkipForward,
-    Keyboard,
-    HelpCircle,
     ChevronRight,
     ChevronDown,
     Search,
@@ -26,10 +22,7 @@ interface TocItem {
 interface ReaderControlsProps {
     toc: TocItem[];
     bookmarks: Bookmark[];
-    currentChapter: string;
-    onNavigate: (href: string, label: string) => void;
-    onPrevChapter: () => void;
-    onNextChapter: () => void;
+    onNavigate: (href: string) => void;
     onJumpToTop: () => void;
     onJumpToBottom: () => void;
     onRemoveBookmark: (id: string) => void;
@@ -38,15 +31,12 @@ interface ReaderControlsProps {
 const ReaderControls: React.FC<ReaderControlsProps> = ({
     toc,
     bookmarks,
-    currentChapter,
     onNavigate,
-    onPrevChapter,
-    onNextChapter,
     onJumpToTop,
     onJumpToBottom,
     onRemoveBookmark,
 }) => {
-    const { readerAccent, readerForeground } = useSettings();
+    const { readerForeground } = useSettings();
     const [searchQuery, setSearchQuery] = useState("");
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<"chapters" | "bookmarks">("chapters");
@@ -78,18 +68,17 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
     const TocEntry = ({ item, depth = 0 }: { item: TocItem; depth?: number }) => {
         const hasSubs = item.subitems && item.subitems.length > 0;
         const isExpanded = expandedItems.has(item.id);
-        const isActive = currentChapter === item.label;
 
         return (
             <div className="select-none">
                 <div
-                    className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer ${isActive ? "bg-light-accent/10 dark:bg-dark-accent/10" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
                     style={{ paddingLeft: `${8 + depth * 12}px` }}
-                    onClick={() => onNavigate(item.href, item.label)}
+                    onClick={() => onNavigate(item.href)}
                     onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            onNavigate(item.href, item.label);
+                            onNavigate(item.href);
                         }
                     }}
                     role="button"
@@ -107,8 +96,8 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     )}
                     {!hasSubs && <div className="w-4" />}
                     <span
-                        className={`text-sm truncate flex-1 ${isActive ? "font-medium" : "opacity-80"}`}
-                        style={{ color: isActive ? readerAccent : readerForeground }}
+                        className="text-sm truncate flex-1 opacity-80"
+                        style={{ color: readerForeground }}
                     >
                         {item.label}
                     </span>
@@ -127,20 +116,6 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2 mb-6">
                 <button
-                    onClick={onPrevChapter}
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                >
-                    <SkipBack className="w-4 h-4" />
-                    <span className="text-sm font-medium">Prev Chapter</span>
-                </button>
-                <button
-                    onClick={onNextChapter}
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                >
-                    <SkipForward className="w-4 h-4" />
-                    <span className="text-sm font-medium">Next Chapter</span>
-                </button>
-                <button
                     onClick={onJumpToTop}
                     className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
@@ -153,18 +128,6 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                 >
                     <ArrowDown className="w-4 h-4" />
                     <span className="text-sm font-medium">Bottom</span>
-                </button>
-            </div>
-
-            {/* Utilities */}
-            <div className="flex gap-2 mb-6 pb-6 border-b border-black/10 dark:border-white/10">
-                <button className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <Keyboard className="w-4 h-4 opacity-70" />
-                    <span className="text-xs font-medium">Shortcuts</span>
-                </button>
-                <button className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <HelpCircle className="w-4 h-4 opacity-70" />
-                    <span className="text-xs font-medium">Help</span>
                 </button>
             </div>
 
@@ -227,7 +190,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                             bookmarks.map(bm => (
                                 <div key={bm.id} className="group flex items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                     <button
-                                        onClick={() => onNavigate(bm.cfi, bm.title)}
+                                        onClick={() => onNavigate(bm.cfi)}
                                         className="flex-1 text-left"
                                     >
                                         <p className="text-sm font-medium" style={{ color: readerForeground }}>{bm.title}</p>

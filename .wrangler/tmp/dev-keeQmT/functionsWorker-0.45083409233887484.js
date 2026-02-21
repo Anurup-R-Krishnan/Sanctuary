@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// .wrangler/tmp/bundle-mqszPm/checked-fetch.js
+// .wrangler/tmp/bundle-P5KUeC/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -27,7 +27,7 @@ globalThis.fetch = new Proxy(globalThis.fetch, {
   }
 });
 
-// .wrangler/tmp/pages-SC2BJM/functionsWorker-0.6620790257608384.mjs
+// .wrangler/tmp/pages-NZEO3F/functionsWorker-0.45083409233887484.mjs
 var __defProp2 = Object.defineProperty;
 var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
 var urls2 = /* @__PURE__ */ new Set();
@@ -320,6 +320,89 @@ var onRequest2 = /* @__PURE__ */ __name2(async ({ request, env }) => {
       updatedAt: b.updated_at
     }));
     return jsonResponse(items);
+  }
+  if (request.method === "POST") {
+    const contentType = request.headers.get("content-type") || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return new Response("Expected multipart/form-data", { status: 400 });
+    }
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const metadataRaw = formData.get("metadata");
+    if (!(file instanceof File)) {
+      return new Response("Missing file", { status: 400 });
+    }
+    if (typeof metadataRaw !== "string") {
+      return new Response("Missing metadata", { status: 400 });
+    }
+    const body = JSON.parse(metadataRaw);
+    const id = typeof body.id === "string" && body.id.trim().length > 0 ? body.id.trim() : null;
+    if (!id) return new Response("Missing id", { status: 400 });
+    const progressRaw = toFiniteNumber(body.progress);
+    const totalPagesRaw = toFiniteNumber(body.totalPages);
+    const totalPages = totalPagesRaw === null ? 100 : Math.max(1, Math.round(totalPagesRaw));
+    const progress = progressRaw === null ? 0 : clamp(Math.round(progressRaw), 0, totalPages);
+    const favorite = body.favorite ? 1 : 0;
+    const lastLocation = typeof body.lastLocation === "string" && body.lastLocation.length > 0 ? body.lastLocation : null;
+    const title = typeof body.title === "string" && body.title.trim().length > 0 ? body.title.trim() : "Untitled";
+    const author = typeof body.author === "string" && body.author.trim().length > 0 ? body.author.trim() : "Unknown";
+    const bookmarks = normalizeBookmarks(body.bookmarks) || [];
+    const bookmarksJson = JSON.stringify(bookmarks);
+    const bytes = await file.arrayBuffer();
+    if (bytes.byteLength === 0) return new Response("Empty file", { status: 400 });
+    const blobContentType = file.type || "application/epub+zip";
+    const updateResult = await env.SANCTUARY_DB.prepare(
+      `UPDATE books SET
+          title = ?,
+          author = ?,
+          progress = ?,
+          total_pages = ?,
+          last_location = ?,
+          bookmarks_json = ?,
+          is_favorite = ?,
+          content_blob = ?,
+          content_type = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ?`
+    ).bind(
+      title,
+      author,
+      progress,
+      totalPages,
+      lastLocation,
+      bookmarksJson,
+      favorite,
+      bytes,
+      blobContentType,
+      id,
+      userId
+    ).run();
+    const changes = Number(updateResult.meta?.changes || 0);
+    if (changes === 0) {
+      try {
+        await env.SANCTUARY_DB.prepare(
+          `INSERT INTO books (
+              id, user_id, title, author, cover_url, content_blob, content_type,
+              progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
+            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+        ).bind(
+          id,
+          userId,
+          title,
+          author,
+          bytes,
+          blobContentType,
+          progress,
+          totalPages,
+          lastLocation,
+          bookmarksJson,
+          favorite
+        ).run();
+      } catch {
+        return new Response("Book id conflict", { status: 409 });
+      }
+    }
+    return jsonResponse({ success: true, upserted: changes === 0 });
   }
   if (request.method === "PATCH") {
     const id = new URL(request.url).searchParams.get("id");
@@ -1278,7 +1361,7 @@ var jsonError2 = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx
 }, "jsonError");
 var middleware_miniflare3_json_error_default2 = jsonError2;
 
-// .wrangler/tmp/bundle-mqszPm/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-P5KUeC/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__2 = [
   middleware_ensure_req_body_drained_default2,
   middleware_miniflare3_json_error_default2
@@ -1310,7 +1393,7 @@ function __facade_invoke__2(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__2, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-mqszPm/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-P5KUeC/middleware-loader.entry.ts
 var __Facade_ScheduledController__2 = class ___Facade_ScheduledController__2 {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;
@@ -1410,4 +1493,4 @@ export {
   __INTERNAL_WRANGLER_MIDDLEWARE__2 as __INTERNAL_WRANGLER_MIDDLEWARE__,
   middleware_loader_entry_default2 as default
 };
-//# sourceMappingURL=functionsWorker-0.6620790257608384.js.map
+//# sourceMappingURL=functionsWorker-0.45083409233887484.js.map

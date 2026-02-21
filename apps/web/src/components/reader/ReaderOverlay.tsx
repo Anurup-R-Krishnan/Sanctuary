@@ -11,7 +11,6 @@ interface ReaderOverlayProps {
   showSettings: boolean;
   showControls: boolean;
   isLoading: boolean;
-  chapterTitle: string;
   currentPage: number;
   totalPages: number;
   readingTime: number;
@@ -31,8 +30,6 @@ interface ReaderOverlayProps {
   onNavigate: (href: string) => void;
   onJumpToTop: () => void;
   onJumpToBottom: () => void;
-  onPrevChapter: () => void;
-  onNextChapter: () => void;
   onPageChange: (page: number) => void;
   onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
   onCloseSettings: () => void;
@@ -55,7 +52,6 @@ const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
     <>
       <ReaderHeader
         book={props.book}
-        chapterTitle={props.chapterTitle}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
         showUI={props.showUI}
@@ -74,8 +70,6 @@ const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
         showUI={props.showUI}
         onNextPage={props.onNextPage}
         onPrevPage={props.onPrevPage}
-        onNextChapter={props.onNextChapter}
-        onPrevChapter={props.onPrevChapter}
         onPageChange={props.onPageChange}
       />
 
@@ -84,10 +78,7 @@ const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
           <ReaderControls
             toc={mappedToc}
             bookmarks={props.bookmarks}
-            currentChapter={props.chapterTitle}
             onNavigate={(href) => props.onNavigate(href)}
-            onPrevChapter={props.onPrevChapter}
-            onNextChapter={props.onNextChapter}
             onJumpToTop={props.onJumpToTop}
             onJumpToBottom={props.onJumpToBottom}
             onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}

@@ -18,6 +18,7 @@ interface BookRow {
 }
 
 interface LibraryPatchPayload {
+  id?: string;
   title?: string;
   author?: string;
   progress?: number;
@@ -82,6 +83,102 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     }));
 
     return jsonResponse(items);
+  }
+
+  if (request.method === "POST") {
+    const contentType = request.headers.get("content-type") || "";
+    if (!contentType.includes("multipart/form-data")) {
+      return new Response("Expected multipart/form-data", { status: 400 });
+    }
+
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const metadataRaw = formData.get("metadata");
+    if (!(file instanceof File)) {
+      return new Response("Missing file", { status: 400 });
+    }
+    if (typeof metadataRaw !== "string") {
+      return new Response("Missing metadata", { status: 400 });
+    }
+
+    const body = JSON.parse(metadataRaw) as LibraryPatchPayload;
+    const id = typeof body.id === "string" && body.id.trim().length > 0 ? body.id.trim() : null;
+    if (!id) return new Response("Missing id", { status: 400 });
+
+    const progressRaw = toFiniteNumber(body.progress);
+    const totalPagesRaw = toFiniteNumber(body.totalPages);
+    const totalPages = totalPagesRaw === null ? 100 : Math.max(1, Math.round(totalPagesRaw));
+    const progress = progressRaw === null ? 0 : clamp(Math.round(progressRaw), 0, totalPages);
+    const favorite = body.favorite ? 1 : 0;
+    const lastLocation = typeof body.lastLocation === "string" && body.lastLocation.length > 0 ? body.lastLocation : null;
+    const title = typeof body.title === "string" && body.title.trim().length > 0 ? body.title.trim() : "Untitled";
+    const author = typeof body.author === "string" && body.author.trim().length > 0 ? body.author.trim() : "Unknown";
+    const bookmarks = normalizeBookmarks(body.bookmarks) || [];
+    const bookmarksJson = JSON.stringify(bookmarks);
+    const bytes = await file.arrayBuffer();
+    if (bytes.byteLength === 0) return new Response("Empty file", { status: 400 });
+    const blobContentType = file.type || "application/epub+zip";
+
+    const updateResult = await env.SANCTUARY_DB
+      .prepare(
+        `UPDATE books SET
+          title = ?,
+          author = ?,
+          progress = ?,
+          total_pages = ?,
+          last_location = ?,
+          bookmarks_json = ?,
+          is_favorite = ?,
+          content_blob = ?,
+          content_type = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ?`
+      )
+      .bind(
+        title,
+        author,
+        progress,
+        totalPages,
+        lastLocation,
+        bookmarksJson,
+        favorite,
+        bytes,
+        blobContentType,
+        id,
+        userId
+      )
+      .run();
+
+    const changes = Number(updateResult.meta?.changes || 0);
+    if (changes === 0) {
+      try {
+        await env.SANCTUARY_DB
+          .prepare(
+            `INSERT INTO books (
+              id, user_id, title, author, cover_url, content_blob, content_type,
+              progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
+            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+          )
+          .bind(
+            id,
+            userId,
+            title,
+            author,
+            bytes,
+            blobContentType,
+            progress,
+            totalPages,
+            lastLocation,
+            bookmarksJson,
+            favorite
+          )
+          .run();
+      } catch {
+        return new Response("Book id conflict", { status: 409 });
+      }
+    }
+
+    return jsonResponse({ success: true, upserted: changes === 0 });
   }
 
   if (request.method === "PATCH") {
