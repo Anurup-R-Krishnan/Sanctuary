@@ -1,26 +1,32 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
-export default defineConfig({
-  envDir: path.resolve(__dirname, "../.."),
-  server: {
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8788",
-        changeOrigin: true
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, path.resolve(__dirname, "../.."), "");
+  const apiTarget = process.env.VITE_API_PROXY_TARGET || env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8788";
+  // Visible at dev startup so proxy target confusion is obvious.
+  console.log(`[vite] API proxy target: ${apiTarget}`);
+
+  return {
+    envDir: path.resolve(__dirname, "../.."),
+    server: {
+      proxy: {
+        "/api": {
+          target: apiTarget,
+          changeOrigin: true
+        }
       }
-    }
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
-  },
-  plugins: [
-    react(),
-    VitePWA({
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src')
+      }
+    },
+    plugins: [
+      react(),
+      VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
@@ -51,17 +57,18 @@ export default defineConfig({
           }
         ]
       }
-    })
-  ],
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-epub': ['epubjs'],
-          'vendor-ui': ['framer-motion', 'lucide-react'],
+      })
+    ],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-epub': ['epubjs'],
+            'vendor-ui': ['framer-motion', 'lucide-react'],
+          }
         }
       }
     }
-  }
+  };
 })

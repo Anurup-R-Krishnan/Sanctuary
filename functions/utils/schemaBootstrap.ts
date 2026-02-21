@@ -1,4 +1,4 @@
-import { hasColumn } from "./dbSchema";
+import { getTableInfo, hasColumn, listColumns } from "./dbSchema";
 
 export async function ensureSettingsSchema(db: D1Database): Promise<void> {
   await db.prepare(
@@ -67,6 +67,7 @@ export async function ensureBooksSchema(db: D1Database): Promise<void> {
       title TEXT NOT NULL,
       author TEXT NOT NULL,
       cover_url TEXT,
+      content_hash TEXT,
       content_blob BLOB,
       content_type TEXT,
       progress INTEGER NOT NULL DEFAULT 0,
@@ -78,18 +79,143 @@ export async function ensureBooksSchema(db: D1Database): Promise<void> {
     )`
   ).run();
 
-  const hasBookmarksJson = await hasColumn(db, "books", "bookmarks_json");
-  if (!hasBookmarksJson) {
-    await db.prepare(`ALTER TABLE books ADD COLUMN bookmarks_json TEXT NOT NULL DEFAULT '[]'`).run();
+  const requiredColumns: Array<{ name: string; sql: string }> = [
+    { name: "id", sql: "ALTER TABLE books ADD COLUMN id TEXT" },
+    { name: "user_id", sql: "ALTER TABLE books ADD COLUMN user_id TEXT NOT NULL DEFAULT ''" },
+    { name: "title", sql: "ALTER TABLE books ADD COLUMN title TEXT NOT NULL DEFAULT 'Untitled'" },
+    { name: "author", sql: "ALTER TABLE books ADD COLUMN author TEXT NOT NULL DEFAULT 'Unknown'" },
+    { name: "cover_url", sql: "ALTER TABLE books ADD COLUMN cover_url TEXT" },
+    { name: "content_hash", sql: "ALTER TABLE books ADD COLUMN content_hash TEXT" },
+    { name: "content_blob", sql: "ALTER TABLE books ADD COLUMN content_blob BLOB" },
+    { name: "content_type", sql: "ALTER TABLE books ADD COLUMN content_type TEXT" },
+    { name: "progress", sql: "ALTER TABLE books ADD COLUMN progress INTEGER NOT NULL DEFAULT 0" },
+    { name: "total_pages", sql: "ALTER TABLE books ADD COLUMN total_pages INTEGER NOT NULL DEFAULT 100" },
+    { name: "last_location", sql: "ALTER TABLE books ADD COLUMN last_location TEXT" },
+    { name: "bookmarks_json", sql: "ALTER TABLE books ADD COLUMN bookmarks_json TEXT NOT NULL DEFAULT '[]'" },
+    { name: "is_favorite", sql: "ALTER TABLE books ADD COLUMN is_favorite INTEGER NOT NULL DEFAULT 0" },
+    { name: "updated_at", sql: "ALTER TABLE books ADD COLUMN updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+  ];
+
+  const existingColumns = new Set(await listColumns(db, "books"));
+  for (const column of requiredColumns) {
+    if (!existingColumns.has(column.name)) {
+      await db.prepare(column.sql).run();
+    }
   }
 
-  const hasContentBlob = await hasColumn(db, "books", "content_blob");
-  if (!hasContentBlob) {
-    await db.prepare(`ALTER TABLE books ADD COLUMN content_blob BLOB`).run();
+  const tableInfo = await getTableInfo(db, "books");
+  const idColumn = tableInfo.find((c) => c.name === "id");
+  const needsCanonicalRebuild = !idColumn || Number(idColumn.pk || 0) !== 1;
+
+  if (needsCanonicalRebuild) {
+    await rebuildBooksTableCanonical(db);
   }
 
-  const hasContentType = await hasColumn(db, "books", "content_type");
-  if (!hasContentType) {
-    await db.prepare(`ALTER TABLE books ADD COLUMN content_type TEXT`).run();
+  const hasBooksUserIdIdx = await hasColumn(db, "books", "user_id");
+  if (hasBooksUserIdIdx) {
+    await db.prepare("CREATE INDEX IF NOT EXISTS idx_books_user_updated ON books(user_id, updated_at DESC)").run();
+    await db.prepare("CREATE INDEX IF NOT EXISTS idx_books_user_content_hash ON books(user_id, content_hash)").run();
   }
+}
+
+function createFallbackId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `book-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function toNonEmptyText(value: unknown, fallback: string): string {
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return fallback;
+}
+
+function toOptionalText(value: unknown): string | null {
+  if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  return null;
+}
+
+function toInteger(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.round(n);
+}
+
+function normalizeBookmarksJson(value: unknown): string {
+  if (typeof value !== "string" || value.trim().length === 0) return "[]";
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return JSON.stringify(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return "[]";
+  }
+}
+
+async function rebuildBooksTableCanonical(db: D1Database): Promise<void> {
+  await db.prepare("DROP TABLE IF EXISTS books__canonical").run();
+  await db.prepare(
+    `CREATE TABLE books__canonical (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      author TEXT NOT NULL,
+      cover_url TEXT,
+      content_hash TEXT,
+      content_blob BLOB,
+      content_type TEXT,
+      progress INTEGER NOT NULL DEFAULT 0,
+      total_pages INTEGER NOT NULL DEFAULT 100,
+      last_location TEXT,
+      bookmarks_json TEXT NOT NULL DEFAULT '[]',
+      is_favorite INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`
+  ).run();
+
+  const rowsResult = await db.prepare("SELECT * FROM books").all<Record<string, unknown>>();
+  const rows = rowsResult.results || [];
+  const seenIds = new Set<string>();
+
+  for (const row of rows) {
+    const rawId = toNonEmptyText(row.id, createFallbackId());
+    let id = rawId;
+    let suffix = 1;
+    while (seenIds.has(id)) {
+      suffix += 1;
+      id = `${rawId}-${suffix}`;
+    }
+    seenIds.add(id);
+
+    const totalPages = Math.max(1, toInteger(row.total_pages, 100));
+    const progress = Math.max(0, Math.min(totalPages, toInteger(row.progress, 0)));
+    const isFavorite = toInteger(row.is_favorite, 0) ? 1 : 0;
+
+    await db.prepare(
+      `INSERT INTO books__canonical (
+        id, user_id, title, author, cover_url, content_hash, content_blob, content_type,
+        progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        id,
+        toNonEmptyText(row.user_id, ""),
+        toNonEmptyText(row.title, "Untitled"),
+        toNonEmptyText(row.author, "Unknown"),
+        toOptionalText(row.cover_url),
+        toOptionalText(row.content_hash),
+        row.content_blob ?? null,
+        toOptionalText(row.content_type),
+        progress,
+        totalPages,
+        toOptionalText(row.last_location),
+        normalizeBookmarksJson(row.bookmarks_json),
+        isFavorite,
+        toNonEmptyText(row.updated_at, new Date().toISOString())
+      )
+      .run();
+  }
+
+  await db.prepare("DROP TABLE books").run();
+  await db.prepare("ALTER TABLE books__canonical RENAME TO books").run();
 }

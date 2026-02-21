@@ -21,6 +21,7 @@ interface LibraryPatchPayload {
   id?: string;
   title?: string;
   author?: string;
+  coverUrl?: string;
   progress?: number;
   totalPages?: number;
   lastLocation?: string;
@@ -30,6 +31,16 @@ interface LibraryPatchPayload {
 
 function getBookContentKey(userId: string, bookId: string): string {
   return `users/${userId}/books/${bookId}.epub`;
+}
+
+function getBookCoverKey(userId: string, bookId: string): string {
+  return `users/${userId}/books/${bookId}.cover`;
+}
+
+async function sha256Hex(input: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", input);
+  const bytes = new Uint8Array(digest);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function normalizeBookmarks(input: unknown): Array<{ cfi: string; title: string }> | null {
@@ -124,12 +135,35 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
     const typedFile = file as File;
     const bytes = await typedFile.arrayBuffer();
     if (bytes.byteLength === 0) return new Response("Empty file", { status: 400 });
+    const contentHash = await sha256Hex(bytes);
     const blobContentType = typedFile.type || "application/epub+zip";
     const contentKey = getBookContentKey(userId, id);
+    const coverPart = formData.get("cover");
+    let coverUrl: string | null = null;
+
+    if (coverPart && typeof coverPart === "object" && typeof (coverPart as { arrayBuffer?: unknown }).arrayBuffer === "function") {
+      const typedCover = coverPart as File;
+      const coverBytes = await typedCover.arrayBuffer();
+      if (coverBytes.byteLength > 0) {
+        const coverType = typedCover.type || "image/jpeg";
+        await env.SANCTUARY_BUCKET.put(getBookCoverKey(userId, id), coverBytes, {
+          httpMetadata: { contentType: coverType },
+        });
+        coverUrl = `/api/content/${encodeURIComponent(id)}?asset=cover`;
+      }
+    }
 
     await env.SANCTUARY_BUCKET.put(contentKey, bytes, {
       httpMetadata: { contentType: blobContentType },
     });
+
+    const duplicate = await env.SANCTUARY_DB
+      .prepare("SELECT id FROM books WHERE user_id = ? AND content_hash = ? AND id != ? LIMIT 1")
+      .bind(userId, contentHash, id)
+      .first<{ id?: string }>();
+    if (duplicate?.id) {
+      return jsonResponse({ error: "Duplicate book upload is not allowed", existingId: duplicate.id }, { status: 409 });
+    }
 
     const updateResult = await env.SANCTUARY_DB
       .prepare(
@@ -141,6 +175,8 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
           last_location = ?,
           bookmarks_json = ?,
           is_favorite = ?,
+          cover_url = COALESCE(?, cover_url),
+          content_hash = ?,
           content_blob = NULL,
           content_type = ?,
           updated_at = CURRENT_TIMESTAMP
@@ -154,6 +190,8 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
         lastLocation,
         bookmarksJson,
         favorite,
+        coverUrl,
+        contentHash,
         blobContentType,
         id,
         userId
@@ -166,15 +204,17 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
         await env.SANCTUARY_DB
           .prepare(
             `INSERT INTO books (
-              id, user_id, title, author, cover_url, content_type,
+              id, user_id, title, author, cover_url, content_hash, content_type,
               progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
-            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
           )
           .bind(
             id,
             userId,
             title,
             author,
+            coverUrl,
+            contentHash,
             blobContentType,
             progress,
             totalPages,
@@ -188,7 +228,7 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
       }
     }
 
-    return jsonResponse({ success: true, upserted: changes === 0 });
+    return jsonResponse({ success: true, upserted: changes === 0, coverUrl });
   }
 
   if (request.method === "PATCH") {
@@ -204,6 +244,7 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
     const lastLocation = typeof body.lastLocation === "string" && body.lastLocation.length > 0 ? body.lastLocation : null;
     const title = typeof body.title === "string" && body.title.trim().length > 0 ? body.title.trim() : null;
     const author = typeof body.author === "string" && body.author.trim().length > 0 ? body.author.trim() : null;
+    const coverUrl = typeof body.coverUrl === "string" && body.coverUrl.trim().length > 0 ? body.coverUrl.trim() : null;
     const bookmarks = normalizeBookmarks(body.bookmarks);
     const bookmarksJson = bookmarks === null ? null : JSON.stringify(bookmarks);
 
@@ -217,6 +258,7 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
           last_location = COALESCE(?, last_location),
           bookmarks_json = COALESCE(?, bookmarks_json),
           is_favorite = COALESCE(?, is_favorite),
+          cover_url = COALESCE(?, cover_url),
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND user_id = ?`
       )
@@ -228,6 +270,7 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
         lastLocation,
         bookmarksJson,
         favorite,
+        coverUrl,
         id,
         userId
       )
@@ -239,13 +282,14 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
         .prepare(
           `INSERT INTO books (
             id, user_id, title, author, cover_url, progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
-          ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
         )
         .bind(
           id,
           userId,
           title || "Untitled",
           author || "Unknown",
+          coverUrl,
           sanitizedProgress ?? 0,
           totalPages ?? 100,
           lastLocation,
@@ -262,12 +306,14 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
     const id = new URL(request.url).searchParams.get("id");
     if (!id) return new Response("Missing id", { status: 400 });
     const contentKey = getBookContentKey(userId, id);
+    const coverKey = getBookCoverKey(userId, id);
 
     const result = await env.SANCTUARY_DB
       .prepare("DELETE FROM books WHERE id = ? AND user_id = ?")
       .bind(id, userId)
       .run();
     await env.SANCTUARY_BUCKET.delete(contentKey);
+    await env.SANCTUARY_BUCKET.delete(coverKey);
 
     return jsonResponse({
       success: true,
