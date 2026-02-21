@@ -1,0 +1,15 @@
+{
+  "name": "@sanctuary/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "dev:guest": "VITE_DISABLE_AUTH=true vite --host 127.0.0.1 --port 5173",
+    "dev:strict": "VITE_DISABLE_AUTH=false vite --host 127.0.0.1 --port 5173",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src vite.config.ts",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}

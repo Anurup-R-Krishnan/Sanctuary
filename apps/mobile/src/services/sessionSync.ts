@@ -23,7 +23,7 @@ export function createSessionSyncQueue(options: CreateSessionSyncOptions) {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(queue.values())));
     } catch {
-      // Ignore persistence errors.
+      return;
     }
   };
 
@@ -40,7 +40,7 @@ export function createSessionSyncQueue(options: CreateSessionSyncOptions) {
         queue.set(item.id, item);
       }
     } catch {
-      // Ignore malformed payload.
+      return;
     }
   };
 

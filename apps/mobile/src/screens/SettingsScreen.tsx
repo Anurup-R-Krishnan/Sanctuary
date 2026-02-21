@@ -21,6 +21,8 @@ export function SettingsScreen() {
     try {
       setSaving(true);
       await api.saveSettings({
+        dailyGoal: 30,
+        weeklyGoal: 150,
         themePreset: "paper",
         fontScale: 102,
         lineHeight: 1.7,

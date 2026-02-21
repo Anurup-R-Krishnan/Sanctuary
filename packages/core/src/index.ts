@@ -1,6 +1,8 @@
 export type SessionMode = "guest" | "clerk";
 
 export interface ReaderSettingsV2 {
+  dailyGoal: number;
+  weeklyGoal: number;
   themePreset: "paper" | "ivory" | "ink";
   fontScale: number;
   lineHeight: number;
@@ -35,6 +37,22 @@ export interface ReadingSessionV2 {
   durationSec: number;
   pagesAdvanced: number;
   device: "android" | "desktop" | "web";
+}
+
+export interface ReadingGoalsV2 {
+  day: {
+    date: string;
+    totalMinutes: number;
+    targetMinutes: number;
+    progressPercent: number;
+  };
+  week: {
+    startDate: string;
+    endDate: string;
+    totalMinutes: number;
+    targetMinutes: number;
+    progressPercent: number;
+  };
 }
 
 export interface ApiClientOptions {
@@ -107,5 +125,11 @@ export class SanctuaryApiClient {
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error(`Failed to save session (${res.status})`);
+  }
+
+  async getGoals(): Promise<ReadingGoalsV2> {
+    const res = await fetch(`${this.options.baseUrl}/api/v2/goals`, { headers: await this.headers() });
+    if (!res.ok) throw new Error(`Failed to fetch goals (${res.status})`);
+    return (await res.json()) as ReadingGoalsV2;
   }
 }

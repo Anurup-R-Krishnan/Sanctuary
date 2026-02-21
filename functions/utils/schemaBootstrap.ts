@@ -42,6 +42,8 @@ export async function ensureBooksSchema(db: D1Database): Promise<void> {
       title TEXT NOT NULL,
       author TEXT NOT NULL,
       cover_url TEXT,
+      content_blob BLOB,
+      content_type TEXT,
       progress INTEGER NOT NULL DEFAULT 0,
       total_pages INTEGER NOT NULL DEFAULT 100,
       last_location TEXT,
@@ -54,6 +56,16 @@ export async function ensureBooksSchema(db: D1Database): Promise<void> {
   const hasBookmarksJson = await hasColumn(db, "books", "bookmarks_json");
   if (!hasBookmarksJson) {
     await db.prepare(`ALTER TABLE books ADD COLUMN bookmarks_json TEXT NOT NULL DEFAULT '[]'`).run();
+  }
+
+  const hasContentBlob = await hasColumn(db, "books", "content_blob");
+  if (!hasContentBlob) {
+    await db.prepare(`ALTER TABLE books ADD COLUMN content_blob BLOB`).run();
+  }
+
+  const hasContentType = await hasColumn(db, "books", "content_type");
+  if (!hasContentType) {
+    await db.prepare(`ALTER TABLE books ADD COLUMN content_type TEXT`).run();
   }
 }
 import { hasColumn } from "./dbSchema";
