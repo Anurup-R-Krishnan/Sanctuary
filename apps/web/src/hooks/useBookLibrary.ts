@@ -30,6 +30,30 @@ type BookSyncMeta = {
   serverUpdatedAt?: string;
 };
 
+async function extractCoverBlobFromEpubSource(source: ArrayBuffer): Promise<Blob | null> {
+  let bookData: EpubBookHandle | null = null;
+  let coverHref: string | null = null;
+  try {
+    bookData = ePub(source) as unknown as EpubBookHandle;
+    await bookData.ready;
+    coverHref = await bookData.coverUrl();
+    if (!coverHref) return null;
+    const response = await fetch(coverHref);
+    return await response.blob();
+  } catch {
+    return null;
+  } finally {
+    if (coverHref?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(coverHref);
+      } catch {
+        // no-op
+      }
+    }
+    bookData?.destroy?.();
+  }
+}
+
 export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   const { persistent = true } = options;
   const { getToken } = useAuth();
@@ -243,8 +267,8 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   }, [persistent]);
 
   const addBook = useCallback(async (file: File) => {
-    let bookData: EpubBookHandle | null = null;
     const bookId = uuidv4();
+    let bookData: EpubBookHandle | null = null;
 
     try {
       const epubArrayBuffer = await file.arrayBuffer();
@@ -257,26 +281,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         ? metadata.creator.join(", ") || "Unknown"
         : metadata.creator || "Unknown";
 
-      let coverBlob: Blob | null = null;
-      let coverHref: string | null = null;
-
-      try {
-        coverHref = await bookData.coverUrl();
-      } catch (error) {
-        console.warn("Could not extract EPUB cover.", error);
-      }
-
-      if (coverHref) {
-        const response = await fetch(coverHref);
-        coverBlob = await response.blob();
-        if (coverHref.startsWith("blob:")) {
-          try {
-            URL.revokeObjectURL(coverHref);
-          } catch (error) {
-            console.debug("Failed to revoke EPUB cover URL", error);
-          }
-        }
-      }
+      const coverBlob = await extractCoverBlobFromEpubSource(epubArrayBuffer);
 
       const displayCoverUrl = coverBlob ? trackCoverBlobForBook(bookId, coverBlob) : "";
       const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
@@ -311,7 +316,15 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
 
       try {
         const token = await getToken();
-        await bookService.addBook(file, newBook, token || undefined);
+        const result = await bookService.addBook(file, newBook, token || undefined, coverBlob);
+        if (result.coverUrl && result.coverUrl !== newBook.coverUrl) {
+          revokeTrackedCoverUrl(newBook.id);
+          const persistedBook = { ...newBook, coverUrl: result.coverUrl };
+          setBooks((prev) => prev.map((book) => (book.id === newBook.id ? persistedBook : book)));
+          await putBookInDb(persistedBook).catch((dbError) => {
+            console.error("Failed to persist server cover URL locally:", dbError);
+          });
+        }
       } catch (error) {
         console.error("Backend upload failed:", error);
         setBooks((prev) => prev.filter((book) => book.id !== newBook.id));
@@ -400,10 +413,50 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       await putBookInDb(updatedBook).catch((error) => {
         console.error("Failed to cache hydrated book content locally:", error);
       });
+
+      if (!updatedBook.coverUrl) {
+        const blobBuffer = await blob.arrayBuffer();
+        const generatedCover = await extractCoverBlobFromEpubSource(blobBuffer);
+        if (generatedCover) {
+          const localCoverUrl = trackCoverBlobForBook(id, generatedCover);
+          let localBookWithCover: Book | null = null;
+          setBooks((prev) => prev.map((book) => {
+            if (book.id !== id) return book;
+            localBookWithCover = { ...book, coverUrl: localCoverUrl };
+            return localBookWithCover;
+          }));
+          if (localBookWithCover) {
+            await putBookInDb(localBookWithCover).catch((error) => {
+              console.error("Failed to cache regenerated cover locally:", error);
+            });
+          }
+
+          if (persistent) {
+            try {
+              const token = await getToken();
+              const durableCoverUrl = await bookService.uploadBookCover(id, generatedCover, token || undefined);
+              revokeTrackedCoverUrl(id);
+              let serverBookWithCover: Book | null = null;
+              setBooks((prev) => prev.map((book) => {
+                if (book.id !== id) return book;
+                serverBookWithCover = { ...book, coverUrl: durableCoverUrl };
+                return serverBookWithCover;
+              }));
+              if (serverBookWithCover) {
+                await putBookInDb(serverBookWithCover).catch((error) => {
+                  console.error("Failed to persist durable cover URL locally:", error);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to sync regenerated cover to backend:", error);
+            }
+          }
+        }
+      }
     }
 
     return blob;
-  }, [getToken]);
+  }, [getToken, persistent, revokeTrackedCoverUrl, trackCoverBlobForBook]);
 
   const recentBooks = useMemo(() =>
     [...books]

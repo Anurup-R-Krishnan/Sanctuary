@@ -18,7 +18,8 @@ interface LibraryItemV2 {
 export interface IBookService {
     getBooks(token?: string): Promise<Book[]>;
     getBookContent(id: string, token?: string): Promise<Blob>;
-    addBook(file: File, metadata: Book, token?: string): Promise<void>;
+    addBook(file: File, metadata: Book, token?: string, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }>;
+    uploadBookCover(id: string, coverBlob: Blob, token?: string): Promise<string>;
     updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void>;
     updateBookProgress(id: string, progress: number, lastLocation: string, token?: string): Promise<void>;
 }
@@ -64,12 +65,15 @@ export const bookService: IBookService = {
         return await res.blob();
     },
 
-    async addBook(file: File, metadata: Book, token?: string): Promise<void> {
+    async addBook(file: File, metadata: Book, token?: string, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }> {
         const headers: HeadersInit = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const formData = new FormData();
         formData.append("file", file, file.name || `${metadata.id}.epub`);
+        if (coverBlob && coverBlob.size > 0) {
+            formData.append("cover", coverBlob, `${metadata.id}.cover`);
+        }
         formData.append(
             "metadata",
             JSON.stringify({
@@ -90,7 +94,7 @@ export const bookService: IBookService = {
                 headers,
                 body: formData,
             });
-            await readJsonSafely<{ success: boolean }>(res, "Failed to save book");
+            return await readJsonSafely<{ success: boolean; coverUrl?: string | null }>(res, "Failed to save book");
         } catch (error) {
             // Best-effort cleanup for partial backend writes (binary uploaded, metadata failed).
             await fetch(`/api/v2/library?id=${encodeURIComponent(metadata.id)}`, {
@@ -99,6 +103,19 @@ export const bookService: IBookService = {
             }).catch(() => undefined);
             throw error;
         }
+    },
+
+    async uploadBookCover(id: string, coverBlob: Blob, token?: string): Promise<string> {
+        const headers: HeadersInit = { "Content-Type": coverBlob.type || "image/jpeg" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`/api/content/${encodeURIComponent(id)}?asset=cover`, {
+            method: "PUT",
+            headers,
+            body: coverBlob,
+        });
+        const data = await readJsonSafely<{ success: boolean; coverUrl?: string }>(res, "Failed to upload cover");
+        if (!data.coverUrl) throw new Error("Cover upload succeeded but no cover URL was returned");
+        return data.coverUrl;
     },
 
     async updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void> {
@@ -110,6 +127,7 @@ export const bookService: IBookService = {
             body: JSON.stringify({
                 title: updates.title,
                 author: updates.author,
+                coverUrl: updates.coverUrl,
                 progress: updates.progress,
                 totalPages: updates.totalPages,
                 lastLocation: updates.lastLocation,

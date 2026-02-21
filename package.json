@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "bash -lc 'npm run web:guest & npm run dev:backend:guest; wait -n; kill 0'",
+    "dev:remote": "bash -lc 'npm run web:guest & npm run dev:backend:guest:remote; wait -n; kill 0'",
     "dev:strict": "bash -lc 'npm run web:strict & npm run dev:backend:strict; wait -n; kill 0'",
     "web:dev": "npm --workspace @sanctuary/web run dev",
     "web:guest": "npm --workspace @sanctuary/web run dev:guest",
@@ -18,6 +19,8 @@
     "dev:frontend:guest": "npm run web:guest",
     "dev:frontend:strict": "npm run web:strict",
     "dev:backend:guest": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true",
+    "dev:backend:guest:local": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true",
+    "dev:backend:guest:remote": "bash -lc 'echo \"wrangler pages dev has no --remote in this Wrangler version; running local Pages dev. Use wrangler --remote commands to verify real D1/R2.\"; wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true'",
     "dev:backend:strict": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=false",
     "build": "npm run web:build",
     "preview": "npm run web:preview",
