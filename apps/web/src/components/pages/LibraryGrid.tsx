@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
-import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
+import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen, Sparkles, BookUp, Info } from "lucide-react";
 import BookCard from "../ui/BookCard";
 import AddBookButton from "../ui/AddBookButton";
 import BunniesPick from "../ui/BunniesPick";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useShallow } from "zustand/react/shallow";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LibraryGridProps {
   onSelectBook: (book: Book) => void;
@@ -58,6 +59,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [selectedBookForDetails, setSelectedBookForDetails] = useState<Book | null>(null);
+
   const sortRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
   const sortMenuId = "library-sort-menu";
@@ -108,6 +111,25 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     [displayBooks, visibleCount]
   );
 
+  // Smart Grouping Logic
+  const upNextBooks = useMemo(() => {
+    // Mock recommendation logic: unread books from favorite authors, or random unread
+    if (books.length === 0) return [];
+    const unread = books.filter(b => b.progress === 0 && b.readingList !== 'finished');
+    return unread.slice(0, 5);
+  }, [books]);
+
+  const handleBookClick = (book: Book) => {
+    setSelectedBookForDetails(book);
+  };
+
+  const handleStartReading = () => {
+    if (selectedBookForDetails) {
+        onSelectBook(selectedBookForDetails);
+        setSelectedBookForDetails(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="page-stack animate-fadeIn">
@@ -153,11 +175,11 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     count?: number;
     icon?: React.ElementType;
   }) => (
-    <div className="flex items-center gap-2 mb-4">
-      {Icon && <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />}
-      <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">{title}</h3>
+    <div className="flex items-center gap-2 mb-4 mt-8 border-b-2 border-[rgb(var(--aged-paper))] pb-2">
+      {Icon && <Icon className="w-5 h-5 text-[rgb(var(--ink-navy))]" strokeWidth={2} />}
+      <h3 className="text-lg font-serif font-bold text-[rgb(var(--ink-navy))]">{title}</h3>
       {count !== undefined && (
-        <span className="px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.04] text-[10px] font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
+        <span className="ml-auto px-2 py-0.5 rounded-full bg-[rgb(var(--aged-paper))] text-[10px] font-pixel text-[rgb(var(--sepia-brown))] tabular-nums">
           {count}
         </span>
       )}
@@ -168,7 +190,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     <div className="flex gap-4 overflow-x-auto pb-6 pt-2 scrollbar-hide px-1">
       {scrollBooks.map((book) => (
         <div key={book.id} className="flex-shrink-0 w-[140px] sm:w-[160px]">
-          <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} variant="compact" />
+          <BookCard book={book} onSelect={handleBookClick} onToggleFavorite={onToggleFavorite} variant="compact" />
         </div>
       ))}
     </div>
@@ -218,9 +240,95 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
 
   return (
     <div className="page-stack">
+      {/* Book Details Modal */}
+      <AnimatePresence>
+        {selectedBookForDetails && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setSelectedBookForDetails(null)}
+                    className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                />
+                <motion.div
+                    initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                    animate={{ scale: 1, y: 0, opacity: 1 }}
+                    exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                    className="relative bg-[rgb(var(--paper-cream))] w-full max-w-lg rounded-2xl shadow-2xl border-2 border-[rgb(var(--ink-navy))] overflow-hidden"
+                >
+                    <div className="flex flex-col sm:flex-row">
+                        {/* Cover Column */}
+                        <div className="w-full sm:w-1/3 bg-[rgb(var(--aged-paper))] p-6 flex items-center justify-center border-b sm:border-b-0 sm:border-r-2 border-[rgb(var(--ink-navy))]">
+                             <div className="relative aspect-[2/3] w-32 shadow-pixel rotate-3 transform transition-transform hover:rotate-0">
+                                 <img
+                                    src={selectedBookForDetails.coverUrl}
+                                    alt={selectedBookForDetails.title}
+                                    className="w-full h-full object-cover rounded-sm border border-black/20"
+                                 />
+                             </div>
+                        </div>
+
+                        {/* Info Column */}
+                        <div className="flex-1 p-6 sm:p-8 flex flex-col">
+                            <div className="flex-1">
+                                <h2 className="text-2xl font-serif font-bold text-[rgb(var(--ink-navy))] leading-tight mb-2">
+                                    {selectedBookForDetails.title}
+                                </h2>
+                                <p className="text-[rgb(var(--sepia-brown))] font-medium italic mb-4">
+                                    by {selectedBookForDetails.author}
+                                </p>
+
+                                <div className="space-y-3">
+                                    <div className="bg-white/50 p-3 rounded-lg border border-[rgb(var(--ink-navy))]/10">
+                                        <div className="flex items-center gap-2 mb-1 text-xs font-bold text-[rgb(var(--sage-green))] uppercase tracking-wider">
+                                            <Sparkles className="w-3 h-3" />
+                                            <span>Librarian's Note</span>
+                                        </div>
+                                        <p className="text-sm text-[rgb(var(--ink-navy))] leading-relaxed">
+                                            "A compelling journey waiting to be unfolded. Perfect for a quiet afternoon."
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedBookForDetails.progress > 0 && (
+                                            <span className="px-2 py-1 rounded-md bg-[rgb(var(--aged-paper))] text-xs font-mono text-[rgb(var(--sepia-brown))] border border-[rgb(var(--ink-navy))]/10">
+                                                {selectedBookForDetails.progress}% Read
+                                            </span>
+                                        )}
+                                        {selectedBookForDetails.isFavorite && (
+                                            <span className="px-2 py-1 rounded-md bg-[rgb(var(--woodstock-gold))]/20 text-xs font-mono text-[rgb(var(--ink-navy))] border border-[rgb(var(--woodstock-gold))]">
+                                                Favorite
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 flex gap-3">
+                                <button
+                                    onClick={handleStartReading}
+                                    className="flex-1 btn-cozy shadow-pixel hover:shadow-none hover:translate-y-[2px] active:translate-y-[4px] border-2 border-[rgb(var(--ink-navy))]"
+                                >
+                                    {selectedBookForDetails.progress > 0 ? "Continue" : "Start Reading"}
+                                </button>
+                                <button
+                                    onClick={() => setSelectedBookForDetails(null)}
+                                    className="px-4 py-2 rounded-full border-2 border-[rgb(var(--ink-navy))] text-[rgb(var(--ink-navy))] font-bold hover:bg-[rgb(var(--aged-paper))]"
+                                >
+                                    Back
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        )}
+      </AnimatePresence>
+
       {/* Bunnies' Pick Feature - Only show when filtering "All" and no search term */}
       {filterBy === "all" && !searchTerm && books.length > 0 && (
-        <BunniesPick books={books} onSelectBook={onSelectBook} />
+        <BunniesPick books={books} onSelectBook={handleBookClick} />
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -315,6 +423,14 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
         </section>
       )}
 
+      {/* Up Next Section (Smart Grouping) */}
+      {upNextBooks.length > 0 && filterBy === "all" && !searchTerm && (
+        <section>
+            <SectionHeader title="Up Next" count={upNextBooks.length} icon={BookUp} />
+            <HorizontalScroll books={upNextBooks} />
+        </section>
+      )}
+
       {favoriteBooks.length > 0 && filterBy === "all" && !searchTerm && (
         <section>
           <SectionHeader title="Favorites" count={favoriteBooks.length} icon={Star} />
@@ -360,7 +476,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
             {visibleBooks.map((book) => (
               <div key={book.id}>
-                <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} />
+                <BookCard book={book} onSelect={handleBookClick} onToggleFavorite={onToggleFavorite} />
               </div>
             ))}
           </div>
@@ -369,7 +485,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
             {visibleBooks.map((book) => (
               <button
                 key={book.id}
-                onClick={() => onSelectBook(book)}
+                onClick={() => handleBookClick(book)}
                 className="w-full flex items-center gap-3.5 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] border border-transparent hover:border-black/[0.04] dark:hover:border-white/[0.04] transition-all duration-150 text-left group"
               >
                 <img

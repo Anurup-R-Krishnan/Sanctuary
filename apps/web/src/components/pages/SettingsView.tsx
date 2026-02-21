@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSettingsShallow } from "@/context/SettingsContext";
-import { Folder, Volume2, Moon, Sun, Type, Monitor, Sparkles, Brain, Save } from "lucide-react";
+import { Folder, Moon, Sun, Type, Brain, Save, Volume2 } from "lucide-react";
 import { Theme } from "@/types";
 import { useUIStore } from "@/store/useUIStore";
 import { motion } from "framer-motion";
@@ -36,8 +36,16 @@ const SettingsView: React.FC = () => {
     }));
 
     // Mock state for new "Organizer" features
-    const [cozyMode, setCozyMode] = React.useState(true);
-    const [aiAssistant, setAiAssistant] = React.useState(false); // Default off/hidden
+    const [cozyMode, setCozyMode] = useState(true);
+    const [aiAssistant, setAiAssistant] = useState(false); // Default off/hidden
+
+    // Effect to persist/apply settings if they were real (mocked for visual logic)
+    useEffect(() => {
+        // Here we would play a sound if cozy mode is enabled and toggled on
+        if (cozyMode) {
+            // new Audio('/sounds/page-flip.mp3').play().catch(() => {});
+        }
+    }, [cozyMode]);
 
     const tabs = [
         { id: "general", label: "General", icon: Folder },
@@ -65,12 +73,12 @@ const SettingsView: React.FC = () => {
             <h1 className="text-4xl font-serif font-bold text-[rgb(var(--ink-navy))] mb-8 text-center">Settings Organizer</h1>
 
             {/* Folder Tabs */}
-            <div className="flex gap-2 border-b-2 border-[rgb(var(--ink-navy))] px-4">
+            <div className="flex gap-2 border-b-2 border-[rgb(var(--ink-navy))] px-4 overflow-x-auto">
                 {tabs.map(tab => <TabButton key={tab.id} {...tab} />)}
             </div>
 
             {/* Folder Content Area */}
-            <div className="bg-[rgb(var(--paper-cream))] border-x-2 border-b-2 border-[rgb(var(--ink-navy))] rounded-b-xl shadow-pixel p-8 min-h-[400px]">
+            <div className="bg-[rgb(var(--paper-cream))] border-x-2 border-b-2 border-[rgb(var(--ink-navy))] rounded-b-xl shadow-pixel p-6 sm:p-8 min-h-[400px]">
 
                 {activeTab === "general" && (
                     <motion.div
@@ -101,7 +109,7 @@ const SettingsView: React.FC = () => {
                         {/* Cozy Mode */}
                         <section className="space-y-4">
                             <h2 className="text-xl font-serif font-bold text-[rgb(var(--ink-navy))] flex items-center gap-2">
-                                <Sparkles className="w-5 h-5" /> Atmosphere
+                                <Volume2 className="w-5 h-5" /> Atmosphere
                             </h2>
                             <div className="flex items-center justify-between p-4 rounded-xl border border-[rgb(var(--aged-paper))] bg-white">
                                 <div>
@@ -191,9 +199,9 @@ const SettingsView: React.FC = () => {
                                 <Brain className="w-5 h-5" /> Intelligence
                             </h2>
 
-                            <div className="bg-[rgb(var(--aged-paper))] p-4 rounded-xl border border-[rgb(var(--ink-navy))] flex gap-4">
-                                <div className="shrink-0 p-2 bg-[rgb(var(--ink-navy))] rounded-lg">
-                                    <Sparkles className="w-6 h-6 text-[rgb(var(--woodstock-gold))]" />
+                            <div className="bg-[rgb(var(--aged-paper))] p-4 rounded-xl border border-[rgb(var(--ink-navy))] flex flex-col sm:flex-row gap-4">
+                                <div className="shrink-0 p-2 bg-[rgb(var(--ink-navy))] rounded-lg w-fit h-fit">
+                                    <Brain className="w-6 h-6 text-[rgb(var(--woodstock-gold))]" />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-[rgb(var(--ink-navy))]">AI Assistant</h3>
