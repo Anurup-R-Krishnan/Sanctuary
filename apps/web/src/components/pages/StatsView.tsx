@@ -1,521 +1,175 @@
-import React, { useState, useMemo } from "react";
-import type { Badge } from "@/types";
-import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
-import { useSettingsShallow } from "@/context/SettingsContext";
+import React from "react";
 import { useStatsStore } from "@/store/useStatsStore";
-import { useShallow } from "zustand/react/shallow";
-import { useUIStore } from "@/store/useUIStore";
-import { View } from "@/types";
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  flame: Flame,
-  trophy: Trophy,
-  book: BookOpen,
-  star: Star,
-  award: Award,
-  zap: Zap,
-  target: Target,
-};
+import { Book, Award, Clock, Flame, Calendar, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 const StatsView: React.FC = () => {
-  const { stats } = useStatsStore(useShallow((state) => ({
-    stats: state.stats,
-  })));
-  const { dailyGoal, weeklyGoal, setReadingGoals } = useSettingsShallow((state) => ({
-    dailyGoal: state.dailyGoal,
-    weeklyGoal: state.weeklyGoal,
-    setReadingGoals: state.setReadingGoals,
-  }));
-  const setView = useUIStore((state) => state.setView);
-  const safeLabel = (value: string, max = 40) => value.length > max ? `${value.slice(0, max - 1)}...` : value;
-  const onUpdateGoal = (daily: number, weekly: number) => {
-    setReadingGoals(daily, weekly);
-  };
-  const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
-  const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
-  const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
+    const stats = useStatsStore((state) => state.stats);
 
-  const StatCard = ({
-    icon: Icon,
-    label,
-    value,
-    subtext,
-    accent = false,
-  }: {
-    icon: React.ElementType;
-    label: string;
-    value: string | number;
-    subtext?: string;
-    accent?: boolean;
-  }) => (
-    <div
-      className={`p-4 rounded-xl border transition-colors ${
-        accent
-          ? "bg-gradient-to-br from-light-accent/6 to-amber-500/6 dark:from-dark-accent/8 dark:to-amber-400/8 border-light-accent/15 dark:border-dark-accent/15"
-          : "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`p-2 rounded-lg ${
-            accent ? "bg-light-accent/12 dark:bg-dark-accent/12" : "bg-black/[0.04] dark:bg-white/[0.04]"
-          }`}
-        >
-          <Icon
-            className={`w-4 h-4 ${
-              accent ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted dark:text-dark-text-muted"
-            }`}
-            strokeWidth={1.75}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide font-medium">
-            {label}
-          </p>
-          <p className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text tabular-nums mt-0.5 leading-tight break-words">{value}</p>
-          {subtext && (
-            <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-0.5">{subtext}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ProgressRing = ({ progress, size = 80, stroke = 6 }: { progress: number; size?: number; stroke?: number }) => {
-    const radius = (size - stroke) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
-    return (
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          className="text-black/[0.04] dark:text-white/[0.04]"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="url(#progressGradient)"
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-700"
-        />
-        <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#b8956c" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-        </defs>
-      </svg>
-    );
-  };
-
-  const HeatmapCell = ({ level }: { level: number }) => {
-    const colors = [
-      "bg-black/[0.03] dark:bg-white/[0.03]",
-      "bg-light-accent/20 dark:bg-dark-accent/20",
-      "bg-light-accent/45 dark:bg-dark-accent/45",
-      "bg-light-accent dark:bg-dark-accent",
+    // Mock data for new visualization features
+    const moodData = [
+        { genre: "Fiction", count: 12, color: "bg-[rgb(var(--sage-green))]" },
+        { genre: "History", count: 5, color: "bg-[rgb(var(--woodstock-gold))]" },
+        { genre: "Sci-Fi", count: 8, color: "bg-[rgb(var(--ink-navy))]" },
     ];
-    return <div className={`w-2.5 h-2.5 rounded-sm ${colors[level]} transition-colors`} />;
-  };
 
-  const BadgeCard = ({ badge }: { badge: Badge }) => {
-    const IconComponent = ICON_MAP[badge.icon.toLowerCase()] || Award;
+    // Helper to generate a pixel-art contribution grid (mock)
+    const renderContributionGrid = () => {
+        return (
+            <div className="flex gap-1 flex-wrap w-full max-w-xs justify-center">
+                {[...Array(28)].map((_, i) => (
+                    <div
+                        key={i}
+                        className={`w-3 h-3 rounded-sm ${Math.random() > 0.7
+                                ? "bg-[rgb(var(--sage-green))]"
+                                : Math.random() > 0.4
+                                    ? "bg-[rgb(var(--woodstock-gold))]"
+                                    : "bg-[rgb(var(--aged-paper))]"
+                            }`}
+                    />
+                ))}
+            </div>
+        );
+    };
+
     return (
-      <div
-        className={`p-4 rounded-xl border text-center transition-all ${
-          badge.unlocked
-            ? "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
-            : "opacity-35 bg-black/[0.01] dark:bg-white/[0.01] border-black/[0.03] dark:border-white/[0.03]"
-        }`}
-      >
-        <div
-          className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2.5 ${
-            badge.unlocked
-              ? "bg-gradient-to-br from-light-accent/15 to-amber-500/15 dark:from-dark-accent/15 dark:to-amber-400/15"
-              : "bg-black/[0.04] dark:bg-white/[0.04]"
-          }`}
-        >
-          <IconComponent
-            className={`w-5 h-5 ${
-              badge.unlocked ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted/40 dark:text-dark-text-muted/40"
-            }`}
-            strokeWidth={1.75}
-          />
-        </div>
-        <p className="font-semibold text-sm text-light-text dark:text-dark-text">{badge.name}</p>
-        <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5 leading-relaxed">{badge.description}</p>
-        {badge.target && !badge.unlocked && (
-          <div className="mt-2.5">
-            <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all"
-                style={{ width: `${Math.min(100, ((badge.progress || 0) / badge.target) * 100)}%` }}
-              />
+        <div className="page-stack max-w-4xl mx-auto pb-20">
+            {/* Journal Header */}
+            <div className="text-center mb-10 space-y-2">
+                <div className="inline-block p-3 rounded-full bg-[rgb(var(--aged-paper))] border-2 border-[rgb(var(--ink-navy))] shadow-pixel mb-4">
+                    <Book className="w-8 h-8 text-[rgb(var(--ink-navy))]" />
+                </div>
+                <h1 className="text-4xl font-serif font-bold text-[rgb(var(--ink-navy))]">Reading Journal</h1>
+                <p className="text-[rgb(var(--sepia-brown))] font-serif italic">"A room without books is like a body without a soul."</p>
             </div>
-            <p className="text-[9px] text-light-text-muted dark:text-dark-text-muted mt-1 tabular-nums">
-              {badge.progress}/{badge.target}
-            </p>
-          </div>
-        )}
-        {badge.unlocked && (
-          <span className="inline-block mt-2 text-[10px] text-light-accent dark:text-dark-accent font-medium">Unlocked</span>
-        )}
-      </div>
+
+            {/* Main Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                {/* Current Streak (Ticket Style) */}
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="relative bg-[rgb(var(--woodstock-gold))] p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex items-center justify-between overflow-hidden"
+                >
+                    <div className="relative z-10">
+                        <h3 className="text-xs font-pixel uppercase tracking-widest text-[rgb(var(--ink-navy))] opacity-80 mb-1">Current Streak</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-5xl font-pixel text-[rgb(var(--ink-navy))]">{stats.currentStreak}</span>
+                            <span className="text-sm font-bold text-[rgb(var(--ink-navy))]">days</span>
+                        </div>
+                    </div>
+                    <Flame className="w-16 h-16 text-[rgb(var(--ink-navy))] opacity-20 absolute -right-2 -bottom-2 rotate-12" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-[rgb(var(--paper-cream))] rounded-r-full border-y-2 border-r-2 border-[rgb(var(--ink-navy))]" />
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-[rgb(var(--paper-cream))] rounded-l-full border-y-2 border-l-2 border-[rgb(var(--ink-navy))]" />
+                </motion.div>
+
+                {/* Total Pages (Badge Style) */}
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex items-center gap-4"
+                >
+                    <div className="p-3 bg-[rgb(var(--sage-green))] rounded-lg border-2 border-[rgb(var(--ink-navy))] shadow-pixel-sm">
+                        <Book className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-pixel uppercase text-[rgb(var(--sepia-brown))] mb-0.5">Pages Turned</h3>
+                        <p className="text-2xl font-serif font-bold text-[rgb(var(--ink-navy))]">{stats.totalPagesRead.toLocaleString()}</p>
+                    </div>
+                </motion.div>
+
+                {/* Time Reading (Badge Style) */}
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex items-center gap-4"
+                >
+                    <div className="p-3 bg-[rgb(var(--ink-navy))] rounded-lg border-2 border-[rgb(var(--ink-navy))] shadow-pixel-sm">
+                        <Clock className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-pixel uppercase text-[rgb(var(--sepia-brown))] mb-0.5">Time Spent</h3>
+                        <p className="text-2xl font-serif font-bold text-[rgb(var(--ink-navy))]">
+                            {Math.round(stats.totalReadingTime / 60)} <span className="text-base font-normal">hours</span>
+                        </p>
+                    </div>
+                </motion.div>
+
+                {/* Level / XP (Pixel Progress) */}
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-[rgb(var(--aged-paper))] p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex flex-col justify-center"
+                >
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="font-pixel text-xs text-[rgb(var(--ink-navy))]">LEVEL 3 BOOKWORM</span>
+                        <span className="font-pixel text-xs text-[rgb(var(--ink-navy))]">XP: 850/1000</span>
+                    </div>
+                    <div className="h-4 w-full bg-white border-2 border-[rgb(var(--ink-navy))] rounded-full p-0.5">
+                        <div className="h-full bg-[rgb(var(--clay-red))] w-[85%] rounded-full border border-[rgb(var(--ink-navy))]" />
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Reading Mood & Calendar */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Calendar */}
+                <div className="md:col-span-2 bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Calendar className="w-5 h-5 text-[rgb(var(--sage-green))]" />
+                        <h3 className="font-serif font-bold text-lg text-[rgb(var(--ink-navy))]">Consistency Calendar</h3>
+                    </div>
+                    <div className="flex justify-center py-4">
+                         {/* Replace with real calendar later */}
+                         {renderContributionGrid()}
+                    </div>
+                    <p className="text-center text-xs text-[rgb(var(--sepia-brown))] mt-4 font-pixel">KEEP THE FIRE BURNING!</p>
+                </div>
+
+                {/* Mood Palette */}
+                <div className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Sparkles className="w-5 h-5 text-[rgb(var(--woodstock-gold))]" />
+                        <h3 className="font-serif font-bold text-lg text-[rgb(var(--ink-navy))]">Reading Mood</h3>
+                    </div>
+                    <div className="space-y-4">
+                        {moodData.map((mood) => (
+                            <div key={mood.genre}>
+                                <div className="flex justify-between text-xs font-bold text-[rgb(var(--sepia-brown))] mb-1">
+                                    <span>{mood.genre}</span>
+                                    <span>{mood.count}</span>
+                                </div>
+                                <div className="h-2 w-full bg-[rgb(var(--aged-paper))] rounded-full overflow-hidden">
+                                    <div className={`h-full ${mood.color}`} style={{ width: `${(mood.count / 25) * 100}%` }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+             {/* Recent Badges Section */}
+             <div className="mt-10">
+                <h3 className="font-pixel text-lg text-[rgb(var(--ink-navy))] mb-6 text-center">--- RECENTLY UNLOCKED ---</h3>
+                <div className="flex flex-wrap justify-center gap-4">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="group relative w-24 h-24 bg-[rgb(var(--paper-cream))] rounded-xl border-2 border-[rgb(var(--ink-navy))] flex items-center justify-center hover:scale-110 transition-transform cursor-help">
+                            <Award className={`w-10 h-10 ${i === 1 ? 'text-[rgb(var(--woodstock-gold))]' : 'text-[rgb(var(--sage-green))]'}`} />
+                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[rgb(var(--ink-navy))] text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap font-pixel pointer-events-none transition-opacity">
+                                badge_name_0{i}
+                            </div>
+                        </div>
+                    ))}
+                    <div className="w-24 h-24 bg-[rgb(var(--aged-paper))] rounded-xl border-2 border-dashed border-[rgb(var(--ink-navy))] flex items-center justify-center opacity-50">
+                        <span className="text-2xl">?</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
-  };
-
-  const BarChart = ({ data, maxValue }: { data: { label: string; value: number }[]; maxValue: number }) => (
-    <div className="flex items-end gap-1.5 h-28">
-      {data.map((d) => (
-        <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
-          <div className="w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-t flex-1 flex items-end min-h-0">
-            <div
-              className="w-full bg-gradient-to-t from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-t transition-all duration-500"
-              style={{ height: `${maxValue > 0 ? (d.value / maxValue) * 100 : 0}%` }}
-            />
-          </div>
-          <span className="text-[9px] text-light-text-muted dark:text-dark-text-muted font-medium">{d.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-
-  const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "charts", label: "Charts", icon: PieChart },
-    { id: "badges", label: "Badges", icon: Trophy },
-    { id: "insights", label: "Insights", icon: Zap },
-  ] as const;
-
-  return (
-    <div className="page-narrow page-stack">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Stats</h2>
-          <p className="text-light-text-muted dark:text-dark-text-muted mt-1 text-sm">Track your reading</p>
-        </div>
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-orange-500/8 to-amber-500/8 dark:from-orange-500/10 dark:to-amber-500/10 border border-orange-500/15 dark:border-orange-500/10">
-          <Flame className="w-4 h-4 text-orange-500" strokeWidth={2} />
-          <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.currentStreak}</span>
-            <span className="text-xs text-light-text-muted dark:text-dark-text-muted">day streak</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-0.5 p-0.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-lg">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-md text-sm font-medium transition-all duration-150 ${
-              activeTab === tab.id
-                ? "bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text shadow-sm"
-                : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-            }`}
-          >
-            <tab.icon className="w-3.5 h-3.5" strokeWidth={1.75} />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "overview" && (
-        <div className="space-y-5">
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">Today</h3>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="relative">
-                <ProgressRing progress={(stats.dailyProgress / dailyGoal) * 100} size={80} stroke={6} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-light-text dark:text-dark-text tabular-nums">
-                    {Math.round((stats.dailyProgress / dailyGoal) * 100)}%
-                  </span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">
-                  {stats.dailyProgress}{" "}
-                  <span className="text-sm font-normal text-light-text-muted dark:text-dark-text-muted">/ {dailyGoal} pages</span>
-                </p>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-0.5">
-                  {stats.dailyProgress >= dailyGoal ? "Goal achieved" : `${dailyGoal - stats.dailyProgress} pages to go`}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={Flame} label="Streak" value={`${stats.currentStreak}d`} subtext={`Best: ${stats.longestStreak}d`} accent />
-            <StatCard icon={BookOpen} label="Books" value={stats.totalBooksRead} subtext={`${stats.booksCompletedThisMonth} this month`} />
-            <StatCard icon={Clock} label="Time" value={`${Math.round(stats.totalReadingTime / 60)}h`} subtext={`${dailyAvg} min/day`} />
-            <StatCard icon={TrendingUp} label="Speed" value={`${stats.averageReadingSpeed}`} subtext="pages/hr" />
-          </div>
-
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">This Week</h3>
-              <span className="text-xs text-light-text-muted dark:text-dark-text-muted tabular-nums">{weeklyTotal} min</span>
-            </div>
-            <BarChart
-              data={stats.weeklyData.map((d) => ({ label: d.day, value: d.minutes }))}
-              maxValue={Math.max(...stats.weeklyData.map((d) => d.minutes), 1)}
-            />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                Weekly goal: <span className="font-semibold tabular-nums">{weeklyGoal} pages</span>
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onUpdateGoal(Math.max(5, dailyGoal - 5), Math.max(20, weeklyGoal - 20))}
-                  className="px-2.5 py-1 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                >
-                  Easier
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateGoal(dailyGoal + 5, weeklyGoal + 20)}
-                  className="px-2.5 py-1 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                >
-                  Harder
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-xl bg-gradient-to-br from-light-accent/4 to-amber-500/4 dark:from-dark-accent/6 dark:to-amber-400/6 border border-light-accent/10 dark:border-dark-accent/10">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-light-accent/12 dark:bg-dark-accent/12">
-                <Star className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-              </div>
-              <div>
-                <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide font-medium">
-                  Reading Style
-                </p>
-                <h3 className="text-xl font-bold text-light-text dark:text-dark-text mt-0.5">{stats.readingPersonality}</h3>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
-                  {stats.personalityDescription}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "charts" && (
-        <div className="space-y-5">
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Activity ({stats.heatmapData.length} weeks)</h3>
-            <div className="flex gap-0.5 overflow-x-auto pb-2">
-              {stats.heatmapData.map((week, wi) => (
-                <div key={`week-${wi}`} className="flex flex-col gap-0.5">
-                  {week.map((level, di) => (
-                    <HeatmapCell key={`w${wi}-d${di}`} level={level} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-1 mt-3 text-[10px] text-light-text-muted dark:text-dark-text-muted">
-              <span>Less</span>
-              {[0, 1, 2, 3].map((l) => (
-                <HeatmapCell key={l} level={l} />
-              ))}
-              <span>More</span>
-            </div>
-          </div>
-
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Monthly Hours</h3>
-            <BarChart
-              data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
-              maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
-            />
-          </div>
-
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Genres</h3>
-            {stats.genreDistribution.length > 0 ? (
-              <div className="space-y-2.5">
-                {stats.genreDistribution.map((g, i) => (
-                  <div key={g.genre} className="flex items-center gap-2.5">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{safeLabel(g.genre, 28)}</span>
-                    <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                      {g.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Add genres to see distribution</p>
-            )}
-          </div>
-
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Top Authors</h3>
-            {stats.authorNetwork.length > 0 ? (
-              <div className="space-y-2.5">
-                {stats.authorNetwork.map((a, i) => (
-                  <div key={a.author} className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
-                      <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-                    </div>
-                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{safeLabel(a.author, 28)}</span>
-                    <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                      {a.books}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Start reading to see favorites</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "badges" && (
-        <div className="space-y-5">
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
-            {stats.badges.filter((b) => b.unlocked).length} of {stats.badges.length} unlocked
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {stats.badges.map((badge) => (
-              <BadgeCard key={badge.id} badge={badge} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "insights" && (
-        <div className="space-y-5">
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Insights</h3>
-            <div className="space-y-3">
-              {[
-                {
-                  icon: BookOpen,
-                  title: "Completion Rate",
-                  value: stats.totalBooksInLibrary > 0 ? `${Math.round((stats.totalBooksRead / stats.totalBooksInLibrary) * 100)}%` : "N/A",
-                  desc: "Books finished",
-                },
-                {
-                  icon: Clock,
-                  title: "Avg Session",
-                  value: `${stats.totalReadingTime > 0 ? Math.round(stats.totalReadingTime / Math.max(stats.weeklyData.filter((d) => d.minutes > 0).length * 4, 1)) : 0} min`,
-                  desc: "Per sitting",
-                },
-                {
-                  icon: TrendingUp,
-                  title: "Pages/Session",
-                  value: `${stats.averageReadingSpeed > 0 ? Math.round(stats.averageReadingSpeed / 2) : 0}`,
-                  desc: "Average",
-                },
-                {
-                  icon: Target,
-                  title: "Today's Goal",
-                  value: `${Math.round((stats.dailyProgress / dailyGoal) * 100)}%`,
-                  desc: "Progress",
-                },
-              ].map((item) => (
-                <div key={item.title} className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
-                    <item.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-light-text dark:text-dark-text">{item.title}</p>
-                    <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">{item.desc}</p>
-                  </div>
-                  <span className="text-base font-bold text-light-accent dark:text-dark-accent tabular-nums">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Milestones</h3>
-            <div className="space-y-3">
-              {[
-                { icon: BookOpen, title: "5 Books", progress: stats.totalBooksRead, target: 5, show: stats.totalBooksRead < 5 },
-                { icon: Flame, title: "7 Day Streak", progress: stats.currentStreak, target: 7, show: stats.currentStreak < 7 },
-                { icon: Calendar, title: "100 Pages", progress: stats.totalPagesRead, target: 100, show: stats.totalPagesRead < 100 },
-                { icon: Clock, title: "10 Hours", progress: stats.totalReadingTime, target: 600, show: stats.totalReadingTime < 600 },
-              ]
-                .filter((m) => m.show)
-                .map((m) => (
-                  <div key={m.title} className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
-                      <m.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-light-text dark:text-dark-text">{m.title}</span>
-                        <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                          {m.progress}/{m.target}
-                        </span>
-                      </div>
-                      <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all"
-                          style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/4 to-violet-500/4 dark:from-blue-500/6 dark:to-violet-500/6 border border-blue-500/8 dark:border-blue-500/10">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-3">Tips</h3>
-            <ul className="space-y-2 text-xs text-light-text-muted dark:text-dark-text-muted">
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Set a consistent reading time daily
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Start with shorter sessions
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Use immersive mode for focus
-              </li>
-            </ul>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setView(View.LIBRARY)}
-                className="px-3 py-1.5 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-              >
-                Open Library
-              </button>
-              <button
-                type="button"
-                onClick={() => setView(View.READER)}
-                className="px-3 py-1.5 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-              >
-                Open Reader
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 };
 
 export default StatsView;
