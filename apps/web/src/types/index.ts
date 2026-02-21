@@ -41,7 +41,7 @@ export interface Book {
   title: string;
   author: string;
   coverUrl: string;
-  epubBlob: Blob;
+  epubBlob: Blob | null;
   progress: number;
   lastLocation: string;
   genre?: string;
@@ -75,6 +75,7 @@ export interface ReadingStats {
   currentStreak: number;
   longestStreak: number;
   totalBooksRead: number;
+  totalBooksInLibrary: number;
   totalPagesRead: number;
   totalReadingTime: number;
   averageReadingSpeed: number;

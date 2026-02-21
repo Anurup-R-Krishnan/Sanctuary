@@ -13,7 +13,7 @@ import {
     ChartLine,
     Droplets,
 } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/context/SettingsContext";
 
 const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]; onChange: (keys: string[]) => void }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -112,7 +112,6 @@ const COLOR_PRESETS = [
 
 const SettingsView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
-    const settings = useSettings();
     const {
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
@@ -124,7 +123,27 @@ const SettingsView: React.FC = () => {
         trackingEnabled, setTrackingEnabled,
         showFloatingCapsule, setShowFloatingCapsule,
         resetToDefaults,
-    } = settings;
+    } = useSettingsShallow((state) => ({
+        readerForeground: state.readerForeground,
+        setReaderForeground: state.setReaderForeground,
+        readerBackground: state.readerBackground,
+        setReaderBackground: state.setReaderBackground,
+        readerAccent: state.readerAccent,
+        setReaderAccent: state.setReaderAccent,
+        keybinds: state.keybinds,
+        setKeybinds: state.setKeybinds,
+        dailyGoal: state.dailyGoal,
+        setDailyGoal: state.setDailyGoal,
+        weeklyGoal: state.weeklyGoal,
+        setWeeklyGoal: state.setWeeklyGoal,
+        showStreakReminder: state.showStreakReminder,
+        setShowStreakReminder: state.setShowStreakReminder,
+        trackingEnabled: state.trackingEnabled,
+        setTrackingEnabled: state.setTrackingEnabled,
+        showFloatingCapsule: state.showFloatingCapsule,
+        setShowFloatingCapsule: state.setShowFloatingCapsule,
+        resetToDefaults: state.resetToDefaults,
+    }));
 
     const tabs = [
         { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },

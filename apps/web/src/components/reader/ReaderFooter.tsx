@@ -21,7 +21,10 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
     onPrevPage,
     onPageChange,
 }) => {
-    const { readerForeground, readerBackground, readerAccent, continuous } = useSettings();
+    const readerForeground = useSettings((state) => state.readerForeground);
+    const readerBackground = useSettings((state) => state.readerBackground);
+    const readerAccent = useSettings((state) => state.readerAccent);
+    const continuous = useSettings((state) => state.continuous);
 
     const progressPercent = Math.round((currentPage / totalPages) * 100) || 0;
 

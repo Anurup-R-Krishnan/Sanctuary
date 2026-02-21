@@ -28,6 +28,10 @@ interface LibraryPatchPayload {
   bookmarks?: Array<{ cfi: string; title: string }>;
 }
 
+function getBookContentKey(userId: string, bookId: string): string {
+  return `users/${userId}/books/${bookId}.epub`;
+}
+
 function normalizeBookmarks(input: unknown): Array<{ cfi: string; title: string }> | null {
   if (!Array.isArray(input)) return null;
   const out: Array<{ cfi: string; title: string }> = [];
@@ -54,7 +58,9 @@ function parseBookmarksJson(value: string | null): Array<{ cfi: string; title: s
   }
 }
 
-export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
+type RequestContext = { request: Request; env: Env };
+
+export const onRequest = async ({ request, env }: RequestContext): Promise<Response> => {
   const userId = await getUserId(request, env);
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -94,7 +100,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     const formData = await request.formData();
     const file = formData.get("file");
     const metadataRaw = formData.get("metadata");
-    if (!(file instanceof File)) {
+    if (!file || typeof file !== "object" || typeof (file as { arrayBuffer?: unknown }).arrayBuffer !== "function") {
       return new Response("Missing file", { status: 400 });
     }
     if (typeof metadataRaw !== "string") {
@@ -115,9 +121,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     const author = typeof body.author === "string" && body.author.trim().length > 0 ? body.author.trim() : "Unknown";
     const bookmarks = normalizeBookmarks(body.bookmarks) || [];
     const bookmarksJson = JSON.stringify(bookmarks);
-    const bytes = await file.arrayBuffer();
+    const typedFile = file as File;
+    const bytes = await typedFile.arrayBuffer();
     if (bytes.byteLength === 0) return new Response("Empty file", { status: 400 });
-    const blobContentType = file.type || "application/epub+zip";
+    const blobContentType = typedFile.type || "application/epub+zip";
+    const contentKey = getBookContentKey(userId, id);
+
+    await env.SANCTUARY_BUCKET.put(contentKey, bytes, {
+      httpMetadata: { contentType: blobContentType },
+    });
 
     const updateResult = await env.SANCTUARY_DB
       .prepare(
@@ -129,7 +141,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
           last_location = ?,
           bookmarks_json = ?,
           is_favorite = ?,
-          content_blob = ?,
+          content_blob = NULL,
           content_type = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND user_id = ?`
@@ -142,7 +154,6 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         lastLocation,
         bookmarksJson,
         favorite,
-        bytes,
         blobContentType,
         id,
         userId
@@ -155,16 +166,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         await env.SANCTUARY_DB
           .prepare(
             `INSERT INTO books (
-              id, user_id, title, author, cover_url, content_blob, content_type,
+              id, user_id, title, author, cover_url, content_type,
               progress, total_pages, last_location, bookmarks_json, is_favorite, updated_at
-            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
+            ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`
           )
           .bind(
             id,
             userId,
             title,
             author,
-            bytes,
             blobContentType,
             progress,
             totalPages,
@@ -184,7 +194,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === "PATCH") {
     const id = new URL(request.url).searchParams.get("id");
     if (!id) return new Response("Missing id", { status: 400 });
-    const body = (await request.json<LibraryPatchPayload>().catch(() => ({}))) as LibraryPatchPayload;
+    const body = (await request.json().catch(() => ({}))) as LibraryPatchPayload;
 
     const progress = toFiniteNumber(body.progress);
     const totalPagesRaw = toFiniteNumber(body.totalPages);
@@ -251,11 +261,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (request.method === "DELETE") {
     const id = new URL(request.url).searchParams.get("id");
     if (!id) return new Response("Missing id", { status: 400 });
+    const contentKey = getBookContentKey(userId, id);
 
     const result = await env.SANCTUARY_DB
       .prepare("DELETE FROM books WHERE id = ? AND user_id = ?")
       .bind(id, userId)
       .run();
+    await env.SANCTUARY_BUCKET.delete(contentKey);
 
     return jsonResponse({
       success: true,

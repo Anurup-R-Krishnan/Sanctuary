@@ -17,7 +17,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
   ];
 
   return (
-    <nav className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50">
+    <nav aria-label="Primary navigation" className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50">
       <div className="flex items-center gap-1 p-1.5 rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md shadow-lg">
         {navItems.map((item) => {
           const isActive = activeView === item.view;
@@ -25,6 +25,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
 
           return (
             <button
+              type="button"
               key={item.view}
               onClick={() => !item.disabled && onNavigate(item.view)}
               disabled={item.disabled}
@@ -35,6 +36,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReade
                   : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                 }`}
               aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
             >
               <Icon className="w-4 h-4" />
               <span className="hidden sm:inline font-medium">{item.label}</span>

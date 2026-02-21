@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface UseReaderShortcutsOptions {
   nextPage: () => void;
@@ -11,24 +11,34 @@ interface UseReaderShortcutsOptions {
   showControls: boolean;
   setShowSettings: (value: boolean) => void;
   setShowControls: (value: boolean) => void;
+  isEnabled?: boolean;
 }
 
 export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
-  const {
-    nextPage,
-    prevPage,
-    onClose,
-    toggleBookmark,
-    toggleFullscreen,
-    toggleUI,
-    showSettings,
-    showControls,
-    setShowSettings,
-    setShowControls,
-  } = options;
+  const optionsRef = useRef(options);
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      const {
+        nextPage,
+        prevPage,
+        onClose,
+        toggleBookmark,
+        toggleFullscreen,
+        toggleUI,
+        showSettings,
+        showControls,
+        setShowSettings,
+        setShowControls,
+        isEnabled,
+      } = optionsRef.current;
+
+      if (isEnabled === false) return;
+
       const target = event.target as HTMLElement | null;
       const isTyping = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       if (isTyping) return;
@@ -55,6 +65,11 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           toggleFullscreen();
           return;
         case " ":
+          event.preventDefault();
+          nextPage();
+          return;
+        case "m":
+        case "M":
           event.preventDefault();
           toggleUI();
           return;
@@ -84,20 +99,12 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
+    // Capture phase improves reliability when other listeners stop propagation.
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    document.addEventListener("keydown", onKeyDown, { capture: true });
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+      document.removeEventListener("keydown", onKeyDown, { capture: true });
     };
-  }, [
-    nextPage,
-    prevPage,
-    onClose,
-    toggleBookmark,
-    toggleFullscreen,
-    toggleUI,
-    showSettings,
-    showControls,
-    setShowSettings,
-    setShowControls,
-  ]);
+  }, []);
 }

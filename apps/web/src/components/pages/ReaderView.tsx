@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Book, Bookmark } from "@/types";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/context/SettingsContext";
 import { useReaderEngine } from "@/hooks/useReaderEngine";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
 import ReaderContent from "@/components/reader/ReaderContent";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
-import { bookService } from "@/services/bookService";
 
 interface ReaderViewProps {
     book: Book;
@@ -13,6 +12,7 @@ interface ReaderViewProps {
     onUpdateProgress: (id: string, progress: number, location: string) => void;
     onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
     onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
+    getBookContent: (id: string) => Promise<Blob>;
 }
 
 const ReaderView: React.FC<ReaderViewProps> = ({
@@ -21,6 +21,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     onUpdateProgress,
     onAddBookmark,
     onRemoveBookmark,
+    getBookContent,
 }) => {
     // UI State
     const [showUI, setShowUI] = useState(true);
@@ -30,6 +31,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     const [isBookmarked, setIsBookmarked] = useState(false); // Local optimistic state
     const [readingTime, setReadingTime] = useState(0);
 
+    const rootRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const lastMouseMoveRef = useRef<number>(Date.now());
     const latestBookRef = useRef(book);
@@ -54,7 +56,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         setContentError(null);
         if (!activeBook.epubBlob) {
             setIsFetchingContent(true);
-            bookService.getBookContent(activeBook.id)
+            getBookContent(activeBook.id)
                 .then(blob => {
                     if (isMounted) {
                         setHydratedBook(prev => ({ ...prev, epubBlob: blob }));
@@ -74,14 +76,14 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [book.id, book.epubBlob]);
+    }, [book.id, book.epubBlob, getBookContent]);
 
     // Settings
-    const {
-        brightness,
-        grayscale,
-        screenReaderMode
-    } = useSettings();
+    const { screenReaderMode, brightness, grayscale } = useSettingsShallow((state) => ({
+        screenReaderMode: state.screenReaderMode,
+        brightness: state.brightness,
+        grayscale: state.grayscale,
+    }));
 
     // Reader Engine
     const {
@@ -138,6 +140,18 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         goToPage(page);
     }, [goToPage]);
 
+    useEffect(() => {
+        const root = rootRef.current;
+        if (!root) return;
+        // Ensure reader owns keyboard focus when opened.
+        root.focus({ preventScroll: true });
+        const focusRoot = () => root.focus({ preventScroll: true });
+        root.addEventListener("pointerdown", focusRoot);
+        return () => {
+            root.removeEventListener("pointerdown", focusRoot);
+        };
+    }, []);
+
     // Shortcuts
     useReaderShortcuts({
         nextPage,
@@ -149,15 +163,9 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         showSettings,
         showControls,
         setShowSettings,
-        setShowControls
+        setShowControls,
+        isEnabled: true,
     });
-
-    // UI Styles (Brightness/Grayscale)
-    useEffect(() => {
-        const prev = document.body.style.filter || "";
-        document.body.style.filter = `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})`;
-        return () => { document.body.style.filter = prev; };
-    }, [brightness, grayscale]);
 
     // Reading Time
     useEffect(() => {
@@ -193,7 +201,11 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     }, [showUI, showSettings, showControls, screenReaderMode]);
 
     return (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-black font-sans overflow-hidden">
+        <div
+            ref={rootRef}
+            tabIndex={-1}
+            className="fixed inset-0 z-50 bg-white dark:bg-black font-sans overflow-hidden"
+        >
             {contentError && !isLoading && (
                 <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
                     <div className="max-w-md rounded-xl bg-white p-5 text-center shadow-xl dark:bg-neutral-900">
@@ -201,10 +213,15 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                     </div>
                 </div>
             )}
-            <ReaderContent
-                containerRef={containerRef}
-                isLoading={isLoading}
-            />
+            <div
+                className="absolute inset-0"
+                style={{ filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }}
+            >
+                <ReaderContent
+                    containerRef={containerRef}
+                    isLoading={isLoading}
+                />
+            </div>
 
             <ReaderOverlay
                 book={book}

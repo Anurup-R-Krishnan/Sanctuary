@@ -1,13 +1,9 @@
 import React, { useState, useMemo } from "react";
-import type { ReadingStats, Badge } from "@/types";
+import type { Badge } from "@/types";
 import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
-
-interface StatsViewProps {
-  stats: ReadingStats;
-  dailyGoal: number;
-  weeklyGoal: number;
-  onUpdateGoal: (daily: number, weekly: number) => void;
-}
+import { useSettingsShallow } from "@/context/SettingsContext";
+import { useStatsStore } from "@/store/useStatsStore";
+import { useShallow } from "zustand/react/shallow";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   flame: Flame,
@@ -19,7 +15,20 @@ const ICON_MAP: Record<string, React.ElementType> = {
   target: Target,
 };
 
-const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onUpdateGoal }) => {
+const StatsView: React.FC = () => {
+  const { stats } = useStatsStore(useShallow((state) => ({
+    stats: state.stats,
+  })));
+  const { dailyGoal, weeklyGoal, setDailyGoal, setWeeklyGoal } = useSettingsShallow((state) => ({
+    dailyGoal: state.dailyGoal,
+    weeklyGoal: state.weeklyGoal,
+    setDailyGoal: state.setDailyGoal,
+    setWeeklyGoal: state.setWeeklyGoal,
+  }));
+  const onUpdateGoal = (daily: number, weekly: number) => {
+    setDailyGoal(daily);
+    setWeeklyGoal(weekly);
+  };
   const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
@@ -165,8 +174,8 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
 
   const BarChart = ({ data, maxValue }: { data: { label: string; value: number }[]; maxValue: number }) => (
     <div className="flex items-end gap-1.5 h-28">
-      {data.map((d, i) => (
-        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+      {data.map((d) => (
+        <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
           <div className="w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-t flex-1 flex items-end min-h-0">
             <div
               className="w-full bg-gradient-to-t from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-t transition-all duration-500"
@@ -310,9 +319,9 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
             <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Activity (14 weeks)</h3>
             <div className="flex gap-0.5 overflow-x-auto pb-2">
               {stats.heatmapData.map((week, wi) => (
-                <div key={wi} className="flex flex-col gap-0.5">
+                <div key={`week-${wi}`} className="flex flex-col gap-0.5">
                   {week.map((level, di) => (
-                    <HeatmapCell key={di} level={level} />
+                    <HeatmapCell key={`w${wi}-d${di}`} level={level} />
                   ))}
                 </div>
               ))}
@@ -339,7 +348,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
             {stats.genreDistribution.length > 0 ? (
               <div className="space-y-2.5">
                 {stats.genreDistribution.map((g, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
+                  <div key={g.genre} className="flex items-center gap-2.5">
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
                     <span className="flex-1 text-sm text-light-text dark:text-dark-text">{g.genre}</span>
                     <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
@@ -358,7 +367,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
             {stats.authorNetwork.length > 0 ? (
               <div className="space-y-2.5">
                 {stats.authorNetwork.map((a, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
+                  <div key={a.author} className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
                       <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
                     </div>
@@ -398,7 +407,7 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
                 {
                   icon: BookOpen,
                   title: "Completion Rate",
-                  value: stats.totalBooksRead > 0 ? `${Math.round((stats.totalBooksRead / Math.max(stats.totalBooksRead + 2, 1)) * 100)}%` : "N/A",
+                  value: stats.totalBooksInLibrary > 0 ? `${Math.round((stats.totalBooksRead / stats.totalBooksInLibrary) * 100)}%` : "N/A",
                   desc: "Books finished",
                 },
                 {
@@ -419,8 +428,8 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
                   value: `${Math.round((stats.dailyProgress / dailyGoal) * 100)}%`,
                   desc: "Progress",
                 },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
+              ].map((item) => (
+                <div key={item.title} className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
                     <item.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
                   </div>
@@ -444,8 +453,8 @@ const StatsView: React.FC<StatsViewProps> = ({ stats, dailyGoal, weeklyGoal, onU
                 { icon: Clock, title: "10 Hours", progress: stats.totalReadingTime, target: 600, show: stats.totalReadingTime < 600 },
               ]
                 .filter((m) => m.show)
-                .map((m, i) => (
-                  <div key={i} className="flex items-center gap-3">
+                .map((m) => (
+                  <div key={m.title} className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
                       <m.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
                     </div>

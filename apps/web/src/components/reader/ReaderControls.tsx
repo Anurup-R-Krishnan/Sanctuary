@@ -36,7 +36,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
     onJumpToBottom,
     onRemoveBookmark,
 }) => {
-    const { readerForeground } = useSettings();
+    const readerForeground = useSettings((state) => state.readerForeground);
     const [searchQuery, setSearchQuery] = useState("");
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<"chapters" | "bookmarks">("chapters");

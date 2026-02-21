@@ -1,13 +1,16 @@
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
-import { useBookLibrary } from "./hooks/useBookLibrary";
-import { useReadingStats } from "./hooks/useReadingStats";
-import { useSettings } from "@/context/SettingsContext";
+import { useBookStoreController } from "./hooks/useBookStoreController";
+import { useStatsStoreController } from "./hooks/useStatsStoreController";
+import { useSettingsShallow } from "@/context/SettingsContext";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import type { Book } from "@/types";
+import { useBookStore } from "@/store/useBookStore";
+import { useReaderProgressStore } from "@/store/useReaderProgressStore";
+import type { Book, Bookmark } from "@/types";
 import { Theme, View } from "@/types";
 import { BookOpen } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
@@ -22,33 +25,50 @@ const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 const App: React.FC = () => {
   // Global Stores
   const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
-  const { theme, view, selectedBook, searchTerm, setView, setSelectedBook, setSearchTerm, toggleTheme } = useUIStore();
+  const { theme, view, selectedBookId, searchTerm, setView, setSelectedBookId, setSearchTerm, toggleTheme } = useUIStore();
+  const {
+    selectedBook,
+    updateBookProgress,
+    addBookmark,
+    removeBookmark,
+    getBookContent,
+    reloadBooks,
+  } = useBookStore(useShallow((state) => ({
+    selectedBook: state.getBookById(selectedBookId),
+    updateBookProgress: state.updateBookProgress,
+    addBookmark: state.addBookmark,
+    removeBookmark: state.removeBookmark,
+    getBookContent: state.getBookContent,
+    reloadBooks: state.reloadBooks,
+  })));
 
   // Clerk Hooks
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useAuth();
 
   // Settings Context
-  const {
-    dailyGoal,
-    weeklyGoal,
-    setDailyGoal,
-    setWeeklyGoal,
-    reduceMotion
-  } = useSettings();
+  const { reduceMotion } = useSettingsShallow((state) => ({
+    reduceMotion: state.reduceMotion
+  }));
 
   // Library & Stats Hooks
   // When auth is disabled, always treat as persistent (local storage mode)
   const persistent = DISABLE_AUTH ? true : (isSignedIn && !isGuest);
 
-  const {
-    books, sortedBooks, recentBooks, favoriteBooks, seriesGroups,
-    addBook, updateBookProgress, toggleFavorite, addBookmark, removeBookmark,
-    sortBy, setSortBy, filterBy, setFilterBy, isLoading: libLoading,
-    reloadBooks
-  } = useBookLibrary({ persistent });
+  useBookStoreController({ persistent });
+  const { startSession, endSession } = useStatsStoreController({
+    persistent,
+    compute: view === View.STATS,
+  });
+  const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);
+  const progressTimerRef = useRef<number | null>(null);
 
-  const { stats, startSession, endSession } = useReadingStats(books);
+  const flushPendingProgress = useCallback(async () => {
+    const pending = pendingProgressRef.current;
+    pendingProgressRef.current = null;
+    if (!pending) return;
+    await updateBookProgress(pending.id, pending.progress, pending.location);
+  }, [updateBookProgress]);
 
   // Handlers
   const handleShowLogin = useCallback(() => {
@@ -67,28 +87,56 @@ const App: React.FC = () => {
   }, [isGuest, setIsGuest, resetSession, signOut]);
 
   const handleSelectBook = useCallback((book: Book) => {
-    setSelectedBook(book);
+    useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
+    setSelectedBookId(book.id);
     setView(View.READER);
-    startSession(book.id);
-  }, [setSelectedBook, setView, startSession]);
+    startSession(book.id, book.progress);
+  }, [setSelectedBookId, setView, startSession]);
 
-  const handleCloseReader = useCallback(() => {
-    endSession(0);
+  const handleCloseReader = useCallback(async () => {
+    const activeProgress = useReaderProgressStore.getState().active;
+    if (progressTimerRef.current !== null) {
+      window.clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    await flushPendingProgress();
+    endSession(activeProgress?.progress);
+    useReaderProgressStore.getState().clearActiveBook();
     setView(View.LIBRARY);
-    setSelectedBook(null);
-    reloadBooks();
-  }, [endSession, setView, setSelectedBook, reloadBooks]);
+    setSelectedBookId(null);
+    await reloadBooks();
+  }, [setView, setSelectedBookId, reloadBooks, flushPendingProgress, endSession]);
 
-  const handleUpdateGoal = useCallback((d: number, w: number) => {
-    setDailyGoal(d);
-    setWeeklyGoal(w);
-  }, [setDailyGoal, setWeeklyGoal]);
+  const handleAddBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {
+    const next: Bookmark = {
+      ...bookmark,
+      id: `${bookId}:${encodeURIComponent(bookmark.cfi)}`,
+      createdAt: new Date().toISOString(),
+    };
+    addBookmark(bookId, next);
+  }, [addBookmark]);
 
-  const filteredBooks = useMemo(() => {
-    if (!searchTerm) return books;
-    const term = searchTerm.toLowerCase();
-    return books.filter(b => b.title.toLowerCase().includes(term) || b.author.toLowerCase().includes(term));
-  }, [books, searchTerm]);
+  const handleReaderProgress = useCallback((id: string, progress: number, location: string) => {
+    useReaderProgressStore.getState().updateActiveProgress(id, progress, location);
+    pendingProgressRef.current = { id, progress, location };
+    if (progressTimerRef.current !== null) {
+      window.clearTimeout(progressTimerRef.current);
+    }
+    progressTimerRef.current = window.setTimeout(() => {
+      progressTimerRef.current = null;
+      void flushPendingProgress();
+    }, 350);
+  }, [flushPendingProgress]);
+
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current !== null) {
+        window.clearTimeout(progressTimerRef.current);
+      }
+      void flushPendingProgress();
+      useReaderProgressStore.getState().clearActiveBook();
+    };
+  }, [flushPendingProgress]);
 
   // Theme Effect
   useEffect(() => {
@@ -149,38 +197,19 @@ const App: React.FC = () => {
         <div className={`${isReader ? "" : "page-shell animate-fadeIn"}`}>
           {view === View.LIBRARY && (
             <LibraryGrid
-              books={filteredBooks}
-              sortedBooks={sortedBooks}
-              recentBooks={recentBooks}
-              favoriteBooks={favoriteBooks}
-              seriesGroups={seriesGroups}
               onSelectBook={handleSelectBook}
-              addBook={addBook}
-              isLoading={libLoading}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              filterBy={filterBy}
-              setFilterBy={setFilterBy}
-              onToggleFavorite={toggleFavorite}
-              searchTerm={searchTerm}
             />
           )}
           {view === View.SETTINGS && <SettingsView />}
-          {view === View.STATS && (
-            <StatsView
-              stats={stats}
-              dailyGoal={dailyGoal}
-              weeklyGoal={weeklyGoal}
-              onUpdateGoal={handleUpdateGoal}
-            />
-          )}
+          {view === View.STATS && <StatsView />}
           {view === View.READER && selectedBook && (
             <ReaderView
               book={selectedBook}
               onClose={handleCloseReader}
-              onUpdateProgress={updateBookProgress}
-              onAddBookmark={addBookmark}
+              onUpdateProgress={handleReaderProgress}
+              onAddBookmark={handleAddBookmark}
               onRemoveBookmark={removeBookmark}
+              getBookContent={getBookContent}
             />
           )}
         </div>
@@ -188,7 +217,7 @@ const App: React.FC = () => {
 
       {/* Navigation */}
       {!isReader && (
-        <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBook} />
+        <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
       )}
     </div>
   );

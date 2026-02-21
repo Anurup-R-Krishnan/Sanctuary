@@ -18,7 +18,7 @@ const BookCard: React.FC<BookCardProps> = ({
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const { reduceMotion } = useSettings();
+  const reduceMotion = useSettings((state) => state.reduceMotion);
 
   const progressPercentage = Math.round((book.progress / book.totalPages) * 100);
   const isRecent = book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
