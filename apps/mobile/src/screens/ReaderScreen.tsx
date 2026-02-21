@@ -1,23 +1,34 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, View, Text, StyleSheet, Pressable } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppState, Animated, Platform, View, StyleSheet } from "react-native";
 import type { ReadingSessionV2 } from "@sanctuary/core";
 import { LinearGradient } from "expo-linear-gradient";
 import { TopBar } from "../components/TopBar";
 import { ReaderPanel } from "../components/ReaderPanel";
 import { ReaderWebView } from "../reader/ReaderWebView";
 import type { ReaderBridgeHandle } from "../reader/ReaderWebView";
+import { ReaderHeader } from "./reader/components/ReaderHeader";
+import { ReaderStatusRows } from "./reader/components/ReaderStatusRows";
+import { ReaderOverlays } from "./reader/components/ReaderOverlays";
 import { useAppStore } from "../state/useAppStore";
 import { theme } from "../theme/tokens";
 import { api } from "../services/api";
 import { createProgressSyncQueue } from "../services/progressSync";
 import { createSessionSyncQueue } from "../services/sessionSync";
+import { loadGoalsWithFallback } from "../services/goals";
+import { loadLibraryWithFallback } from "../services/library";
+import {
+  findNextChapterLabel,
+  toProgressSnapshot,
+  updatePaceAndReadingTimeMinutes,
+  type RelocationPayload
+} from "./reader/readerLogic";
 
 interface ActiveSession {
   id: string;
   bookId: string;
   startedAtMs: number;
-  startProgress: number;
-  lastProgress: number;
+  startPage: number;
+  lastPage: number;
 }
 
 function createSessionId() {
@@ -30,6 +41,10 @@ export function ReaderScreen() {
   const selectedBookId = useAppStore((s) => s.selectedBookId);
   const selected = useAppStore((s) => s.library.find((b) => b.id === selectedBookId));
   const updateBookProgress = useAppStore((s) => s.updateBookProgress);
+  const setLibrary = useAppStore((s) => s.setLibrary);
+  const goals = useAppStore((s) => s.goals);
+  const goalsStale = useAppStore((s) => s.goalsStale);
+  const setGoals = useAppStore((s) => s.setGoals);
   const [chapterTitle, setChapterTitle] = useState("");
   const [bookmarkItems, setBookmarkItems] = useState<Array<{ cfi: string; title: string }>>([]);
   const [syncState, setSyncState] = useState<"idle" | "syncing" | "error">("idle");
@@ -54,6 +69,12 @@ export function ReaderScreen() {
     })
   );
   const activeSessionRef = useRef<ActiveSession | null>(null);
+  const lastRelocationRef = useRef<{ atMs: number; page: number; totalPages: number; href?: string }>({
+    atMs: 0,
+    page: 1,
+    totalPages: 1
+  });
+  const pacePagesPerMinuteRef = useRef(1.6);
   const selectedRef = useRef(selected);
   const readerRef = useRef<ReaderBridgeHandle>(null);
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -102,13 +123,14 @@ export function ReaderScreen() {
     ).start();
   }, [shimmerAnim, particleAnim]);
 
-  const beginSession = (bookId: string, progress: number) => {
+  const beginSession = (bookId: string, page: number) => {
+    const safePage = Math.max(1, Math.round(page || 1));
     activeSessionRef.current = {
       id: createSessionId(),
       bookId,
       startedAtMs: Date.now(),
-      startProgress: progress,
-      lastProgress: progress
+      startPage: safePage,
+      lastPage: safePage
     };
   };
 
@@ -118,7 +140,7 @@ export function ReaderScreen() {
     activeSessionRef.current = null;
     const endedAtMs = Date.now();
     const durationSec = Math.max(0, Math.round((endedAtMs - session.startedAtMs) / 1000));
-    const pagesAdvanced = Math.max(0, Math.round(session.lastProgress - session.startProgress));
+    const pagesAdvanced = Math.max(0, Math.round(session.lastPage - session.startPage));
     if (durationSec < 5 && pagesAdvanced <= 0) return;
     const payload: ReadingSessionV2 = {
       id: session.id,
@@ -127,42 +149,45 @@ export function ReaderScreen() {
       endedAt: new Date(endedAtMs).toISOString(),
       durationSec,
       pagesAdvanced,
-      device: "desktop"
+      device: Platform.OS === "web" ? "web" : "android"
     };
     sessionSyncRef.current.enqueue(payload);
   };
 
-  const handleRelocated = (data: { cfi: string; progress: number; chapterTitle: string; page?: number; totalPages?: number }) => {
+  const handleRelocated = (data: RelocationPayload) => {
     if (!selected) return;
-    updateBookProgress(selected.id, data.progress, data.cfi);
+    const snapshot = toProgressSnapshot(data);
+    updateBookProgress(selected.id, snapshot.progressPercent, data.cfi);
     setChapterTitle(data.chapterTitle || "");
-    const percent = Math.max(0, Math.min(100, Math.round(data.progress)));
-    const readingLeft = data.totalPages && data.page ? Math.max(1, data.totalPages - data.page) : Math.max(1, 100 - percent);
-    setReadingTime(Math.max(1, Math.round(readingLeft * 0.6)));
-    if (data.page) setCurrentPage(data.page);
-    if (data.totalPages) setTotalPages(data.totalPages);
+
+    const nowMs = Date.now();
+    const { nextPace, readingTimeMinutes } = updatePaceAndReadingTimeMinutes(
+      lastRelocationRef.current,
+      nowMs,
+      snapshot.page,
+      snapshot.totalPages,
+      pacePagesPerMinuteRef.current
+    );
+    pacePagesPerMinuteRef.current = nextPace;
+    setReadingTime(readingTimeMinutes);
+    setCurrentPage(snapshot.page);
+    setTotalPages(snapshot.totalPages);
+    lastRelocationRef.current = { atMs: nowMs, page: snapshot.page, totalPages: snapshot.totalPages, href: data.href };
+
     syncRef.current.enqueue({
       id: selected.id,
       title: selected.title,
       author: selected.author,
-      progress: percent,
-      totalPages: data.totalPages || 100,
+      progress: snapshot.page,
+      totalPages: snapshot.totalPages,
       lastLocation: data.cfi
     });
     const active = activeSessionRef.current;
     if (active && active.bookId === selected.id) {
-      active.lastProgress = Math.max(active.lastProgress, percent);
-    }
-    if (!data.totalPages && data.page) {
-      setTotalPages(data.page);
+      active.lastPage = Math.max(active.lastPage, snapshot.page);
     }
 
-    const currentIndex = tocItems.findIndex((item) => item.label === data.chapterTitle);
-    if (currentIndex >= 0 && currentIndex < tocItems.length - 1) {
-      setChapterPreview(tocItems[currentIndex + 1].label);
-    } else {
-      setChapterPreview(null);
-    }
+    setChapterPreview(findNextChapterLabel(tocItems, data.href, data.chapterTitle));
   };
 
   const handleBookmarks = (items: Array<{ cfi: string; title: string }>) => {
@@ -184,25 +209,37 @@ export function ReaderScreen() {
     setPanelMode((prev) => (prev === mode ? null : mode));
   };
 
-  const handlePanelSelect = (item: { href?: string; label: string }) => {
+  const handlePanelSelect = (item: { href?: string; cfi?: string; label: string }) => {
     if (item.href) {
       readerRef.current?.sendCommand({ type: "NAV_TO_HREF", payload: { href: item.href } });
       setPanelMode(null);
+      return;
+    }
+    if (item.cfi) {
+      readerRef.current?.sendCommand({ type: "NAV_TO_CFI", payload: { cfi: item.cfi } });
+      setPanelMode(null);
     }
   };
+
+  const reconcileOnReconnect = useCallback(async () => {
+    await Promise.all([syncRef.current.flush(), sessionSyncRef.current.flush()]);
+    const [libraryResult, goalsResult] = await Promise.all([loadLibraryWithFallback(), loadGoalsWithFallback()]);
+    setLibrary(libraryResult.items, { stale: libraryResult.stale, cachedAt: libraryResult.cachedAt || null });
+    setGoals(goalsResult.data, { stale: goalsResult.stale, cachedAt: goalsResult.cachedAt || null });
+  }, [setGoals, setLibrary]);
 
   useEffect(() => {
     const sync = syncRef.current;
     const sessionSync = sessionSyncRef.current;
     void sync.init();
     void sessionSync.init();
+    void reconcileOnReconnect();
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") {
-        void sync.flush();
-        void sessionSync.flush();
+        void reconcileOnReconnect();
         const current = selectedRef.current;
         if (current && !activeSessionRef.current) {
-          beginSession(current.id, current.progressPercent || 0);
+          beginSession(current.id, lastRelocationRef.current.page || 1);
         }
       } else {
         finalizeActiveSession();
@@ -217,7 +254,16 @@ export function ReaderScreen() {
       sessionSync.dispose();
       sub.remove();
     };
-  }, []);
+  }, [reconcileOnReconnect]);
+
+  useEffect(() => {
+    if (!selected) return;
+    if (activeSessionRef.current?.bookId && activeSessionRef.current.bookId !== selected.id) {
+      finalizeActiveSession();
+    }
+    if (activeSessionRef.current?.bookId === selected.id) return;
+    beginSession(selected.id, currentPage || 1);
+  }, [selected, currentPage]);
 
   const panelTheme = {
     surface: "#15100b",
@@ -282,40 +328,23 @@ export function ReaderScreen() {
         />
       ))}
       <TopBar />
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: "#fff" }]}>{selected?.title || "Reader"}</Text>
-          <Text style={[styles.meta, { color: "#b9ada2" }]}>
-            {selected?.author || "Open a book to start."}
-          </Text>
-          {!!selected && (
-            <Text style={[styles.meta, { color: "#a88e7b", marginTop: 4 }]}> 
-              {chapterTitle ? `${chapterTitle} • ` : ""}
-              {selected.progressPercent}% • TOC {tocItems.length} • Bookmarks {bookmarkItems.length}
-            </Text>
-          )}
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable style={styles.actionBtn} onPress={() => openPanel("toc")}>
-            <Text style={styles.actionText}>Contents</Text>
-          </Pressable>
-          <Pressable style={styles.actionBtn} onPress={() => openPanel("bookmarks")}>
-            <Text style={styles.actionText}>Bookmarks</Text>
-          </Pressable>
-        </View>
-      </View>
-      <View style={styles.statsWrap}>
-        <Text style={[styles.statsLabel, { color: "#f6e8d9" }]}>Reading time ~ {readingTime}m</Text>
-        <Text style={[styles.statsLabel, { color: "#f6e8d9" }]}>Page {currentPage || 1} / {totalPages || 1}</Text>
-      </View>
-      <View style={styles.syncStatusWrap}>
-        <Text style={[styles.statsLabel, { color: "#cdd1cf" }]}>
-          {syncState === "syncing" ? "Progress syncing…" : syncState === "error" ? "Progress sync error" : "Progress synced"}
-        </Text>
-        <Text style={[styles.statsLabel, { color: "#cdd1cf" }]}>
-          {sessionSyncState === "syncing" ? "Sessions syncing…" : sessionSyncState === "error" ? "Session sync error" : "Sessions synced"}
-        </Text>
-      </View>
+      <ReaderHeader
+        selected={selected}
+        chapterTitle={chapterTitle}
+        tocCount={tocItems.length}
+        bookmarkCount={bookmarkItems.length}
+        goals={goals}
+        goalsStale={goalsStale}
+        onToggleToc={() => openPanel("toc")}
+        onToggleBookmarks={() => openPanel("bookmarks")}
+      />
+      <ReaderStatusRows
+        readingTime={readingTime}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        syncState={syncState}
+        sessionSyncState={sessionSyncState}
+      />
       <View style={styles.readerWrap}>
         <ReaderWebView
           ref={readerRef}
@@ -328,17 +357,7 @@ export function ReaderScreen() {
           onError={setReaderError}
         />
       </View>
-      {!!readerError && (
-        <View style={styles.errorCapsule}>
-          <Text style={{ color: "#fff" }}>{readerError}</Text>
-        </View>
-      )}
-      {chapterPreview && (
-        <View style={styles.previewCard}>
-          <Text style={styles.previewLabel}>Next chapter</Text>
-          <Text style={styles.previewText}>{chapterPreview}</Text>
-        </View>
-      )}
+      <ReaderOverlays readerError={readerError} goalsStale={goalsStale} chapterPreview={chapterPreview} />
       <ReaderPanel
         visible={panelMode === "toc"}
         title="Table of Contents"
@@ -361,38 +380,7 @@ export function ReaderScreen() {
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8, flexDirection: "row", alignItems: "flex-end" },
-  title: { fontSize: 26, fontWeight: "700" },
-  meta: { fontSize: 14, letterSpacing: 0.4 },
-  headerActions: { flexDirection: "row", marginLeft: 16 },
-  actionBtn: { borderWidth: 1, borderColor: "rgba(255,255,255,0.4)", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
-  actionText: { color: "#fff", fontWeight: "600", fontSize: 12 },
-  statsWrap: { marginHorizontal: 20, flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
-  syncStatusWrap: { marginHorizontal: 20, flexDirection: "row", justifyContent: "space-between", paddingBottom: 10 },
-  statsLabel: { fontSize: 11, letterSpacing: 0.5 },
   readerWrap: { flex: 1, marginTop: 8, borderTopWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
-  errorCapsule: {
-    position: "absolute",
-    top: 80,
-    right: 24,
-    backgroundColor: "rgba(180,40,40,0.85)",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    elevation: 8
-  },
-  previewCard: {
-    position: "absolute",
-    bottom: 90,
-    right: 20,
-    backgroundColor: "rgba(16,9,6,0.88)",
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)"
-  },
-  previewLabel: { fontSize: 10, color: "#c6b3a1", marginBottom: 4 },
-  previewText: { fontSize: 15, color: "#fff", fontWeight: "600" },
   shimmerLayer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(255,255,255,0.25)",

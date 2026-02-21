@@ -1,6 +1,7 @@
 import { getUserId } from "../../utils/auth";
 import type { Env } from "../../types";
 import { ensureSessionsSchema } from "../../utils/schemaBootstrap";
+import { jsonResponse, methodNotAllowed } from "./_shared/http";
 
 interface SessionRow {
   id: string;
@@ -57,7 +58,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       device: row.device
     }));
 
-    return new Response(JSON.stringify(items), { headers: { "Content-Type": "application/json" } });
+    return jsonResponse(items);
   }
 
   if (request.method === "POST") {
@@ -95,8 +96,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       )
       .run();
 
-    return new Response(JSON.stringify({ success: true }), { headers: { "Content-Type": "application/json" } });
+    return jsonResponse({ success: true });
   }
 
-  return new Response("Method not allowed", { status: 405 });
+  return methodNotAllowed();
 };

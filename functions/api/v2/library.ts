@@ -1,6 +1,8 @@
 import { getUserId } from "../../utils/auth";
 import type { Env } from "../../types";
 import { ensureBooksSchema } from "../../utils/schemaBootstrap";
+import { jsonResponse, methodNotAllowed } from "./_shared/http";
+import { clamp, toFiniteNumber } from "./_shared/validation";
 
 interface BookRow {
   id: string;
@@ -23,15 +25,6 @@ interface LibraryPatchPayload {
   lastLocation?: string;
   favorite?: boolean;
   bookmarks?: Array<{ cfi: string; title: string }>;
-}
-
-function toFiniteNumber(value: unknown): number | null {
-  const num = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(num) ? num : null;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 function normalizeBookmarks(input: unknown): Array<{ cfi: string; title: string }> | null {
@@ -88,7 +81,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       updatedAt: b.updated_at
     }));
 
-    return new Response(JSON.stringify(items), { headers: { "Content-Type": "application/json" } });
+    return jsonResponse(items);
   }
 
   if (request.method === "PATCH") {
@@ -110,6 +103,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     const updateResult = await env.SANCTUARY_DB
       .prepare(
         `UPDATE books SET
+          title = COALESCE(?, title),
+          author = COALESCE(?, author),
           progress = COALESCE(?, progress),
           total_pages = COALESCE(?, total_pages),
           last_location = COALESCE(?, last_location),
@@ -119,6 +114,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         WHERE id = ? AND user_id = ?`
       )
       .bind(
+        title,
+        author,
         sanitizedProgress,
         totalPages,
         lastLocation,
@@ -151,8 +148,23 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
         .run();
     }
 
-    return new Response(JSON.stringify({ success: true, upserted: changes === 0 }), { headers: { "Content-Type": "application/json" } });
+    return jsonResponse({ success: true, upserted: changes === 0 });
   }
 
-  return new Response("Method not allowed", { status: 405 });
+  if (request.method === "DELETE") {
+    const id = new URL(request.url).searchParams.get("id");
+    if (!id) return new Response("Missing id", { status: 400 });
+
+    const result = await env.SANCTUARY_DB
+      .prepare("DELETE FROM books WHERE id = ? AND user_id = ?")
+      .bind(id, userId)
+      .run();
+
+    return jsonResponse({
+      success: true,
+      deleted: Number(result.meta?.changes || 0) > 0
+    });
+  }
+
+  return methodNotAllowed();
 };

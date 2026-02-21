@@ -2,4 +2,10 @@ name = "sanctuary"
 compatibility_date = "2024-01-01"
 
 [assets]
-directory = "./dist"
+directory = "./apps/web/dist"
+
+[[d1_databases]]
+binding = "SANCTUARY_DB"
+database_name = "sanctuary_db"
+database_id = "8135deaf-e4f9-44e5-9b37-8a04af9f3019"
+preview_database_id = "8135deaf-e4f9-44e5-9b37-8a04af9f3019"

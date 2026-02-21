@@ -4,9 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.sanctuary.desktop",
   "build": {
-    "beforeDevCommand": "npm --workspace @sanctuary/mobile run web",
-    "beforeBuildCommand": "npm --workspace @sanctuary/mobile run build:web",
-    "frontendDist": "../../mobile/dist"
+    "beforeDevCommand": "node scripts/serve-web.mjs",
+    "devUrl": "http://127.0.0.1:5174",
+    "beforeBuildCommand": "npm --prefix ../web run build",
+    "frontendDist": "../../web/dist"
   },
   "app": {
     "windows": [
@@ -19,7 +20,7 @@
     ]
   },
   "bundle": {
-    "active": true,
+    "active": false,
     "targets": "all",
     "icon": []
   }

@@ -32,7 +32,7 @@ export function createProgressSyncQueue(options: CreateProgressSyncOptions) {
       const payload = JSON.stringify(Array.from(queue.values()));
       await AsyncStorage.setItem(STORAGE_KEY, payload);
     } catch {
-      // Best effort persistence.
+      return;
     }
   };
 
@@ -49,7 +49,7 @@ export function createProgressSyncQueue(options: CreateProgressSyncOptions) {
         queue.set(item.id, item);
       }
     } catch {
-      // Ignore malformed persisted payload.
+      return;
     }
   };
 

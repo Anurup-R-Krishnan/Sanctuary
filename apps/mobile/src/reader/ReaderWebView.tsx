@@ -12,7 +12,7 @@ interface ReaderWebViewProps {
   bookUrl?: string | null;
   initialLocation?: string | null;
   initialBookmarks?: Array<{ cfi: string; title: string }>;
-  onRelocated?: (data: { cfi: string; progress: number; chapterTitle: string }) => void;
+  onRelocated?: (data: { cfi: string; href?: string; progress: number; chapterTitle: string; page: number; totalPages: number }) => void;
   onToc?: (items: Array<{ href: string; label: string }>) => void;
   onBookmarks?: (items: Array<{ cfi: string; title: string }>) => void;
   onReady?: () => void;
@@ -121,7 +121,6 @@ export const ReaderWebView = React.forwardRef<ReaderBridgeHandle, ReaderWebViewP
         onMoveShouldSetPanResponder: (_, gesture) =>
           Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onPanResponderRelease: (_, gesture) => {
-          // Horizontal swipe navigation with conservative threshold to avoid accidental turns.
           if (gesture.dx > 44 && gesture.vx > 0.18) {
             sendCommand({ type: "NAV_PREV" });
           } else if (gesture.dx < -44 && gesture.vx < -0.18) {
@@ -194,8 +193,8 @@ export const ReaderWebView = React.forwardRef<ReaderBridgeHandle, ReaderWebViewP
         <Pressable style={styles.controlBtn} onPress={() => sendCommand({ type: "NAV_PREV" })}>
           <Text style={styles.controlText}>Prev</Text>
         </Pressable>
-        <Pressable style={styles.controlBtn} onPress={() => sendCommand({ type: "ADD_BOOKMARK" })}>
-          <Text style={styles.controlText}>Bookmark</Text>
+        <Pressable style={styles.controlBtn} onPress={() => sendCommand({ type: "TOGGLE_BOOKMARK" })}>
+          <Text style={styles.controlText}>Bookmark +/-</Text>
         </Pressable>
         <Pressable style={styles.controlBtn} onPress={() => sendCommand({ type: "NAV_NEXT" })}>
           <Text style={styles.controlText}>Next</Text>

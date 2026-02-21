@@ -8,13 +8,14 @@ export type ReaderBridgeCommand =
   | { type: "SET_THEME"; payload: { fg: string; bg: string; accent: string } }
   | { type: "SET_TYPO"; payload: { fontSize: number; lineHeight: number; textWidth: number } }
   | { type: "ADD_BOOKMARK" }
+  | { type: "TOGGLE_BOOKMARK" }
   | { type: "REMOVE_BOOKMARK"; payload: { cfi: string } };
 
 export type ReaderBridgeEvent =
   | { type: "READY" }
   | {
       type: "RELOCATED";
-      payload: { cfi: string; progress: number; chapterTitle: string; page?: number; totalPages?: number };
+      payload: { cfi: string; href?: string; progress: number; chapterTitle: string; page: number; totalPages: number };
     }
   | { type: "TOC_READY"; payload: { items: Array<{ href: string; label: string }> } }
   | { type: "BOOKMARKS_CHANGED"; payload: { bookmarks: Array<{ cfi: string; title: string }> } }
@@ -28,6 +29,7 @@ export const readerBridgeBootstrap = `
   var tocItems = [];
   var bookmarks = [];
   var currentCfi = "";
+  var currentHref = "";
   var currentChapter = "";
   var currentPage = 0;
   var totalPagesCount = 0;
@@ -75,14 +77,55 @@ export const readerBridgeBootstrap = `
     }
   }
 
+  function normalizeHref(href) {
+    if (!href || typeof href !== "string") return "";
+    return href.split("#")[0].replace(/^\\/+/, "");
+  }
+
   function chapterFromHref(href) {
     if (!href || !tocItems.length) return "";
+    var normalized = normalizeHref(href);
     for (var i = 0; i < tocItems.length; i += 1) {
-      if (href.indexOf(tocItems[i].href) >= 0 || tocItems[i].href.indexOf(href) >= 0) {
+      var tocHref = normalizeHref(tocItems[i].href);
+      if (tocHref && (normalized.indexOf(tocHref) >= 0 || tocHref.indexOf(normalized) >= 0)) {
         return tocItems[i].label || "";
       }
     }
     return "";
+  }
+
+  function emitRelocated(location) {
+    if (!location || !location.start) return;
+    currentCfi = location.start.cfi || currentCfi || "";
+    currentHref = location.start.href || currentHref || "";
+    currentChapter = chapterFromHref(currentHref);
+    var progress = 0;
+    if (locationsReady && book && book.locations && typeof book.locations.percentageFromCfi === "function" && currentCfi) {
+      progress = Math.round((book.locations.percentageFromCfi(currentCfi) || 0) * 100);
+    } else if (typeof location.start.percentage === "number") {
+      progress = Math.round(location.start.percentage * 100);
+    }
+    if (location.start.displayed && typeof location.start.displayed.total === "number" && location.start.displayed.total > 0) {
+      totalPagesCount = Math.max(1, Math.round(location.start.displayed.total));
+      currentPage = Math.max(1, Math.round(location.start.displayed.page || 1));
+    } else if (book && book.locations && locationsReady && typeof book.locations.length === "function") {
+      totalPagesCount = Math.max(1, book.locations.length());
+      currentPage = Math.max(1, Math.ceil((Math.max(0, Math.min(100, progress)) / 100) * totalPagesCount || 1));
+    } else {
+      currentPage = Math.max(1, currentPage || 1);
+      totalPagesCount = Math.max(currentPage, totalPagesCount || currentPage);
+    }
+    post({
+      type: "RELOCATED",
+      payload: {
+        cfi: currentCfi,
+        href: currentHref,
+        progress: Math.max(0, Math.min(100, progress)),
+        chapterTitle: currentChapter,
+        page: currentPage,
+        totalPages: Math.max(currentPage, totalPagesCount)
+      }
+    });
   }
 
   async function openBook(payload) {
@@ -106,7 +149,10 @@ export const readerBridgeBootstrap = `
         return { cfi: b.cfi, title: typeof b.title === "string" && b.title ? b.title : "Bookmark" };
       }) : [];
       currentCfi = "";
+      currentHref = "";
       currentChapter = "";
+      currentPage = 0;
+      totalPagesCount = 0;
       locationsReady = false;
 
       book = window.ePub(payload.url);
@@ -123,30 +169,7 @@ export const readerBridgeBootstrap = `
       tocItems = flat;
       post({ type: "TOC_READY", payload: { items: tocItems } });
 
-      rendition.on("relocated", function (location) {
-        if (!location || !location.start) return;
-        currentCfi = location.start.cfi || "";
-        currentChapter = chapterFromHref(location.start.href || "");
-        var progress = 0;
-      if (locationsReady && book.locations && typeof book.locations.percentageFromCfi === "function") {
-        progress = Math.round((book.locations.percentageFromCfi(currentCfi) || 0) * 100);
-      }
-      if (book.locations && locationsReady && typeof book.locations.length === "function") {
-        totalPagesCount = Math.max(1, book.locations.length());
-        currentPage = Math.max(1, Math.ceil((progress / 100) * totalPagesCount || 1));
-      }
-      post({
-        type: "RELOCATED",
-        payload: {
-          cfi: currentCfi,
-          progress: Math.max(0, Math.min(100, progress)),
-          chapterTitle: currentChapter
-          ,
-          page: currentPage,
-          totalPages: totalPagesCount
-        }
-      });
-      });
+      rendition.on("relocated", emitRelocated);
 
       await rendition.display(payload.initialLocation || undefined);
       applyThemeAndTypography();
@@ -156,6 +179,9 @@ export const readerBridgeBootstrap = `
       locationsReady = true;
       if (book.locations && typeof book.locations.length === "function") {
         totalPagesCount = Math.max(1, book.locations.length());
+      }
+      if (rendition && rendition.currentLocation) {
+        emitRelocated(rendition.currentLocation());
       }
       } catch (e) {
         locationsReady = false;
@@ -195,7 +221,20 @@ export const readerBridgeBootstrap = `
           break;
         case "NAV_TO_HREF":
           if (rendition && cmd.payload && cmd.payload.href) {
-            rendition.display(cmd.payload.href);
+            var href = cmd.payload.href;
+            rendition.display(href).catch(function () {
+              var fallback = normalizeHref(href);
+              if (!fallback) return;
+              var matched = null;
+              for (var i = 0; i < tocItems.length; i += 1) {
+                var tocHref = normalizeHref(tocItems[i].href);
+                if (tocHref === fallback || tocHref.indexOf(fallback) >= 0 || fallback.indexOf(tocHref) >= 0) {
+                  matched = tocItems[i].href;
+                  break;
+                }
+              }
+              if (matched) rendition.display(matched);
+            });
           }
           break;
         case "SET_THEME":
@@ -220,6 +259,16 @@ export const readerBridgeBootstrap = `
             bookmarks.push({ cfi: currentCfi, title: currentChapter || "Bookmark" });
             post({ type: "BOOKMARKS_CHANGED", payload: { bookmarks: bookmarks } });
           }
+          break;
+        case "TOGGLE_BOOKMARK":
+          if (!currentCfi) break;
+          var existing = bookmarks.find(function (b) { return b.cfi === currentCfi; });
+          if (existing) {
+            bookmarks = bookmarks.filter(function (b) { return b.cfi !== currentCfi; });
+          } else {
+            bookmarks.push({ cfi: currentCfi, title: currentChapter || "Bookmark" });
+          }
+          post({ type: "BOOKMARKS_CHANGED", payload: { bookmarks: bookmarks } });
           break;
         case "REMOVE_BOOKMARK":
           if (!cmd.payload || !cmd.payload.cfi) break;

@@ -1,20 +1,25 @@
 import { getUserId } from "../../utils/auth";
 import type { Env } from "../../types";
 import { ensureSettingsSchema } from "../../utils/schemaBootstrap";
+import { jsonResponse, methodNotAllowed } from "./_shared/http";
+import { toIntWithin } from "./_shared/validation";
+import { readerSettingsDefaults as defaults } from "./_shared/settings";
 
-const defaults = {
-  themePreset: "paper",
-  fontScale: 100,
-  lineHeight: 1.6,
-  textWidth: 70,
-  motion: "full",
-  tapZones: true,
-  swipeNav: true,
-  autoHideMs: 4500,
-  showProgress: true,
-  showPageMeta: true,
-  accent: "#B37A4C"
-};
+interface UserSettingsRow {
+  daily_goal: number | null;
+  weekly_goal: number | null;
+  theme_preset: string;
+  font_scale: number;
+  line_height: number;
+  text_width: number;
+  motion: string;
+  tap_zones: number;
+  swipe_nav: number;
+  auto_hide_ms: number;
+  show_progress: number;
+  show_page_meta: number;
+  accent: string;
+}
 
 export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   const userId = await getUserId(request, env);
@@ -26,13 +31,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     const row = await env.SANCTUARY_DB
       .prepare("SELECT * FROM user_settings WHERE user_id = ?")
       .bind(userId)
-      .first<any>();
+      .first<UserSettingsRow>();
 
     if (!row) {
-      return new Response(JSON.stringify(defaults), { headers: { "Content-Type": "application/json" } });
+      return jsonResponse(defaults);
     }
 
-    return new Response(JSON.stringify({
+    return jsonResponse({
+      dailyGoal: row.daily_goal ?? defaults.dailyGoal,
+      weeklyGoal: row.weekly_goal ?? defaults.weeklyGoal,
       themePreset: row.theme_preset,
       fontScale: row.font_scale,
       lineHeight: row.line_height,
@@ -44,18 +51,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       showProgress: !!row.show_progress,
       showPageMeta: !!row.show_page_meta,
       accent: row.accent
-    }), { headers: { "Content-Type": "application/json" } });
+    });
   }
 
   if (request.method === "PUT") {
-    const body = await request.json<any>().catch(() => ({}));
+    const body = await request.json<Record<string, unknown>>().catch(() => ({}));
     const payload = {
       ...defaults,
       ...body,
-      tapZones: !!body.tapZones,
-      swipeNav: !!body.swipeNav,
-      showProgress: !!body.showProgress,
-      showPageMeta: !!body.showPageMeta
+      dailyGoal: toIntWithin(body.dailyGoal, defaults.dailyGoal, 1, 1200),
+      weeklyGoal: toIntWithin(body.weeklyGoal, defaults.weeklyGoal, 1, 5000),
+      tapZones: body.tapZones === undefined ? defaults.tapZones : !!body.tapZones,
+      swipeNav: body.swipeNav === undefined ? defaults.swipeNav : !!body.swipeNav,
+      showProgress: body.showProgress === undefined ? defaults.showProgress : !!body.showProgress,
+      showPageMeta: body.showPageMeta === undefined ? defaults.showPageMeta : !!body.showPageMeta
     };
 
     await env.SANCTUARY_DB
@@ -64,10 +73,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
           user_id, daily_goal, weekly_goal, theme_preset, font_scale, line_height,
           text_width, motion, tap_zones, swipe_nav, auto_hide_ms, show_progress,
           show_page_meta, accent
-        ) VALUES (?, 30, 150, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         userId,
+        payload.dailyGoal,
+        payload.weeklyGoal,
         payload.themePreset,
         payload.fontScale,
         payload.lineHeight,
@@ -82,10 +93,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       )
       .run();
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json" }
-    });
+    return jsonResponse({ success: true });
   }
 
-  return new Response("Method not allowed", { status: 405 });
+  return methodNotAllowed();
 };
