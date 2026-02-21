@@ -146,9 +146,20 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         // Ensure reader owns keyboard focus when opened.
         root.focus({ preventScroll: true });
         const focusRoot = () => root.focus({ preventScroll: true });
+        const handleWindowFocus = () => focusRoot();
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                // Defer one tick so browser restores active element first.
+                window.setTimeout(focusRoot, 0);
+            }
+        };
         root.addEventListener("pointerdown", focusRoot);
+        window.addEventListener("focus", handleWindowFocus);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => {
             root.removeEventListener("pointerdown", focusRoot);
+            window.removeEventListener("focus", handleWindowFocus);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
     }, []);
 
