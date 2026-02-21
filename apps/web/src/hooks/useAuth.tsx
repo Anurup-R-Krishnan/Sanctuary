@@ -1,62 +1,87 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
+import type { ReactNode } from "react";
 import {
-    useAuth as useClerkAuth,
-    useUser as useClerkUser,
-    SignIn as ClerkSignIn,
-    SignUp as ClerkSignUp,
+  ClerkProvider,
+  SignIn as ClerkSignIn,
+  SignUp as ClerkSignUp,
+  useAuth as useClerkAuth,
+  useUser as useClerkUser,
 } from "@clerk/clerk-react";
 
-const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
+type AuthUser = {
+  primaryEmailAddress?: { emailAddress?: string | null } | null;
+  imageUrl?: string | null;
+} | null;
 
-const mockAuthState = {
-    isLoaded: true,
-    isSignedIn: true as const,
-    userId: "guest",
-    sessionId: "guest-session",
-    getToken: async () => null as string | null,
-    signOut: async () => { },
-    orgId: null,
-    orgRole: null,
-    orgSlug: null,
-    actor: null,
+type AuthContextValue = {
+  enabled: boolean;
+  isLoaded: boolean;
+  isSignedIn: boolean;
+  user: AuthUser;
+  getToken: () => Promise<string | null>;
+  signOut: () => Promise<void>;
 };
 
-const mockUserState = {
-    isLoaded: true,
-    isSignedIn: true as const,
-    user: {
-        id: "guest",
-        fullName: "Guest",
-        firstName: "Guest",
-        lastName: "",
-        primaryEmailAddress: { emailAddress: "" },
-        imageUrl: "",
-    },
+const fallbackAuth: AuthContextValue = {
+  enabled: false,
+  isLoaded: true,
+  isSignedIn: false,
+  user: null,
+  getToken: async () => null,
+  signOut: async () => undefined,
 };
 
-const authHookImpl: () => ReturnType<typeof useClerkAuth> | typeof mockAuthState = DISABLE_AUTH ? (() => mockAuthState) : useClerkAuth;
-const userHookImpl: () => ReturnType<typeof useClerkUser> | typeof mockUserState = DISABLE_AUTH ? (() => mockUserState) : useClerkUser;
+const AuthContext = createContext<AuthContextValue>(fallbackAuth);
+
+function ClerkBridge({ children }: { children: ReactNode }) {
+  const { isLoaded: authLoaded, isSignedIn, getToken, signOut } = useClerkAuth();
+  const { isLoaded: userLoaded, user } = useClerkUser();
+
+  const value: AuthContextValue = {
+    enabled: true,
+    isLoaded: authLoaded && userLoaded,
+    isSignedIn: !!isSignedIn,
+    user: (user as AuthUser) ?? null,
+    getToken,
+    signOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+  if (!publishableKey) {
+    return <AuthContext.Provider value={fallbackAuth}>{children}</AuthContext.Provider>;
+  }
+
+  return (
+    <ClerkProvider publishableKey={publishableKey}>
+      <ClerkBridge>{children}</ClerkBridge>
+    </ClerkProvider>
+  );
+}
 
 export function useAuth() {
-    return authHookImpl();
+  const { getToken, signOut, enabled, isLoaded, isSignedIn } = useContext(AuthContext);
+  return { getToken, signOut, enabled, isLoaded, isSignedIn };
 }
 
 export function useUser() {
-    return userHookImpl();
+  const { isLoaded, isSignedIn, user, enabled } = useContext(AuthContext);
+  return { isLoaded, isSignedIn, user, enabled };
 }
 
 type AuthComponentProps = Record<string, unknown>;
 
 export const SignIn = (props: AuthComponentProps) => {
-    if (DISABLE_AUTH) {
-        return <div className="p-4 text-center text-sm opacity-60">Sign-in disabled in guest mode.</div>;
-    }
-    return <ClerkSignIn {...props} />;
+  const { enabled } = useContext(AuthContext);
+  if (!enabled) return null;
+  return <ClerkSignIn {...props} />;
 };
 
 export const SignUp = (props: AuthComponentProps) => {
-    if (DISABLE_AUTH) {
-        return <div className="p-4 text-center text-sm opacity-60">Sign-up disabled in guest mode.</div>;
-    }
-    return <ClerkSignUp {...props} />;
+  const { enabled } = useContext(AuthContext);
+  if (!enabled) return null;
+  return <ClerkSignUp {...props} />;
 };

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { SettingsProvider } from '@/context/SettingsContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { AuthProvider } from '@/hooks/useAuth';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,9 +14,11 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <SettingsProvider>
-        <App />
-      </SettingsProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <App />
+        </SettingsProvider>
+      </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

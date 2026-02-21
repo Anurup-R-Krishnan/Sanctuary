@@ -1,7 +1,8 @@
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
 import { useBookStoreController } from "./hooks/useBookStoreController";
 import { useStatsStoreController } from "./hooks/useStatsStoreController";
+import { useDebouncedTask } from "./hooks/useDebouncedTask";
 import { useSettingsShallow } from "@/context/SettingsContext";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -19,8 +20,7 @@ import ReaderView from "./components/pages/ReaderView";
 import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
 import ClerkAuth from "./components/pages/Auth";
-
-const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
+import { ReaderErrorBoundary } from "./components/ui/ReaderErrorBoundary";
 
 const App: React.FC = () => {
   // Global Stores
@@ -45,6 +45,7 @@ const App: React.FC = () => {
   // Clerk Hooks
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useAuth();
+  const [showAuthScreen, setShowAuthScreen] = useState(false);
 
   // Settings Context
   const { reduceMotion } = useSettingsShallow((state) => ({
@@ -52,8 +53,8 @@ const App: React.FC = () => {
   }));
 
   // Library & Stats Hooks
-  // When auth is disabled, always treat as persistent (local storage mode)
-  const persistent = DISABLE_AUTH ? true : (isSignedIn && !isGuest);
+  // Guest and Clerk users both persist through the API with scoped identities.
+  const persistent = true;
 
   useBookStoreController({ persistent });
   const { startSession, endSession } = useStatsStoreController({
@@ -61,7 +62,6 @@ const App: React.FC = () => {
     compute: view === View.STATS,
   });
   const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);
-  const progressTimerRef = useRef<number | null>(null);
 
   const flushPendingProgress = useCallback(async () => {
     const pending = pendingProgressRef.current;
@@ -69,16 +69,17 @@ const App: React.FC = () => {
     if (!pending) return;
     await updateBookProgress(pending.id, pending.progress, pending.location);
   }, [updateBookProgress]);
+  const { schedule: scheduleProgressSync, cancel: cancelProgressSync, flush: flushProgressSync } = useDebouncedTask(flushPendingProgress, 350);
 
   // Handlers
   const handleShowLogin = useCallback(() => {
     setIsGuest(false);
-    // Clerk handles the rest (redirects to sign in if we render logic correctly)
+    setShowAuthScreen(true);
   }, [setIsGuest]);
 
   const handleSignOut = useCallback(async () => {
     if (isGuest) {
-      setIsGuest(false);
+      setIsGuest(true);
       resetSession();
     } else {
       await signOut();
@@ -95,48 +96,47 @@ const App: React.FC = () => {
 
   const handleCloseReader = useCallback(async () => {
     const activeProgress = useReaderProgressStore.getState().active;
-    if (progressTimerRef.current !== null) {
-      window.clearTimeout(progressTimerRef.current);
-      progressTimerRef.current = null;
-    }
-    await flushPendingProgress();
+    cancelProgressSync();
+    await flushProgressSync();
     endSession(activeProgress?.progress);
     useReaderProgressStore.getState().clearActiveBook();
     setView(View.LIBRARY);
     setSelectedBookId(null);
     await reloadBooks();
-  }, [setView, setSelectedBookId, reloadBooks, flushPendingProgress, endSession]);
+  }, [setView, setSelectedBookId, reloadBooks, cancelProgressSync, flushProgressSync, endSession]);
 
-  const handleAddBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {
+  const handleAddBookmark = useCallback(async (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">): Promise<void> => {
     const next: Bookmark = {
       ...bookmark,
       id: `${bookId}:${encodeURIComponent(bookmark.cfi)}`,
       createdAt: new Date().toISOString(),
     };
-    addBookmark(bookId, next);
+    await addBookmark(bookId, next);
   }, [addBookmark]);
+
+  const handleRemoveBookmark = useCallback(async (bookId: string, bookmarkId: string): Promise<void> => {
+    await removeBookmark(bookId, bookmarkId);
+  }, [removeBookmark]);
 
   const handleReaderProgress = useCallback((id: string, progress: number, location: string) => {
     useReaderProgressStore.getState().updateActiveProgress(id, progress, location);
     pendingProgressRef.current = { id, progress, location };
-    if (progressTimerRef.current !== null) {
-      window.clearTimeout(progressTimerRef.current);
+    scheduleProgressSync();
+  }, [scheduleProgressSync]);
+
+  useEffect(() => {
+    if (isSignedIn && showAuthScreen) {
+      setShowAuthScreen(false);
     }
-    progressTimerRef.current = window.setTimeout(() => {
-      progressTimerRef.current = null;
-      void flushPendingProgress();
-    }, 350);
-  }, [flushPendingProgress]);
+  }, [isSignedIn, showAuthScreen]);
 
   useEffect(() => {
     return () => {
-      if (progressTimerRef.current !== null) {
-        window.clearTimeout(progressTimerRef.current);
-      }
-      void flushPendingProgress();
+      cancelProgressSync();
+      void flushProgressSync();
       useReaderProgressStore.getState().clearActiveBook();
     };
-  }, [flushPendingProgress]);
+  }, [cancelProgressSync, flushProgressSync]);
 
   // Theme Effect
   useEffect(() => {
@@ -149,8 +149,8 @@ const App: React.FC = () => {
     document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
   }, [theme, reduceMotion]);
 
-  // Render - Loading State (Clerk)
-  if (!DISABLE_AUTH && !isLoaded) {
+  // Render - Explicit Auth Screen (only when user asks to sign in)
+  if (showAuthScreen && !isLoaded) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
         <div className="relative mb-6">
@@ -167,9 +167,11 @@ const App: React.FC = () => {
     );
   }
 
-  // Render - Auth (skip entirely when auth is disabled)
-  if (!DISABLE_AUTH && !isSignedIn && !isGuest) {
-    return <ClerkAuth onContinueAsGuest={() => setIsGuest(true)} />;
+  if (showAuthScreen) {
+    return <ClerkAuth onContinueAsGuest={() => {
+      setIsGuest(true);
+      setShowAuthScreen(false);
+    }} />;
   }
 
   const isReader = view === View.READER;
@@ -203,14 +205,16 @@ const App: React.FC = () => {
           {view === View.SETTINGS && <SettingsView />}
           {view === View.STATS && <StatsView />}
           {view === View.READER && selectedBook && (
-            <ReaderView
-              book={selectedBook}
-              onClose={handleCloseReader}
-              onUpdateProgress={handleReaderProgress}
-              onAddBookmark={handleAddBookmark}
-              onRemoveBookmark={removeBookmark}
-              getBookContent={getBookContent}
-            />
+            <ReaderErrorBoundary onRecover={() => { void handleCloseReader(); }} resetKey={selectedBook.id}>
+              <ReaderView
+                book={selectedBook}
+                onClose={handleCloseReader}
+                onUpdateProgress={handleReaderProgress}
+                onAddBookmark={handleAddBookmark}
+                onRemoveBookmark={handleRemoveBookmark}
+                getBookContent={getBookContent}
+              />
+            </ReaderErrorBoundary>
           )}
         </div>
       </main>

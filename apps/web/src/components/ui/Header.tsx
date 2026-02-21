@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun } from "lucide-react";
 import { Theme } from "@/types";
 
@@ -26,6 +26,20 @@ const Header: React.FC<HeaderProps> = ({
   userImage,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (localSearchTerm !== searchTerm) {
+        onSearch(localSearchTerm);
+      }
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [localSearchTerm, onSearch, searchTerm]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-black/[0.08] dark:border-white/[0.08] bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-md">
@@ -47,14 +61,18 @@ const Header: React.FC<HeaderProps> = ({
               <input
                 ref={inputRef}
                 type="text"
+                aria-label="Search books and authors"
                 placeholder="Search books and authors"
-                value={searchTerm}
-                onChange={(e) => onSearch(e.target.value)}
+                value={localSearchTerm}
+                onChange={(e) => setLocalSearchTerm(e.target.value)}
                 className="w-full h-10 pl-10 pr-10 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface text-sm text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted focus:outline-none focus:ring-2 focus:ring-light-accent/30 dark:focus:ring-dark-accent/30"
               />
-              {searchTerm && (
+              {localSearchTerm && (
                 <button
-                  onClick={() => onSearch("")}
+                  onClick={() => {
+                    setLocalSearchTerm("");
+                    onSearch("");
+                  }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
                   aria-label="Clear search"
                 >

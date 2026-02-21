@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useSettingsShallow } from "@/context/SettingsContext";
 
 interface UseReaderShortcutsOptions {
   nextPage: () => void;
@@ -16,6 +17,7 @@ interface UseReaderShortcutsOptions {
 
 export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
   const optionsRef = useRef(options);
+  const { keybinds } = useSettingsShallow((state) => ({ keybinds: state.keybinds }));
 
   useEffect(() => {
     optionsRef.current = options;
@@ -40,71 +42,73 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
       if (isEnabled === false) return;
 
       const target = event.target as HTMLElement | null;
-      const isTyping = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      const tag = target?.tagName || "";
+      const role = target?.getAttribute("role") || "";
+      const isTyping = !!target && (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable ||
+        role === "textbox" ||
+        role === "combobox" ||
+        !!target.closest("[contenteditable='true']")
+      );
       if (isTyping) return;
 
-      switch (event.key) {
-        case "ArrowRight":
-        case "PageDown":
-          event.preventDefault();
-          nextPage();
+      const key = event.key;
+      if (keybinds.nextPage.includes(key) || key === "PageDown") {
+        event.preventDefault();
+        nextPage();
+        return;
+      }
+      if (keybinds.prevPage.includes(key) || key === "PageUp") {
+        event.preventDefault();
+        prevPage();
+        return;
+      }
+      if (keybinds.toggleBookmark.includes(key)) {
+        event.preventDefault();
+        void toggleBookmark();
+        return;
+      }
+      if (keybinds.toggleFullscreen.includes(key)) {
+        event.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+      if (keybinds.toggleUI.includes(key)) {
+        event.preventDefault();
+        toggleUI();
+        return;
+      }
+      if (key.toLowerCase() === "t") {
+        event.preventDefault();
+        setShowControls(!showControls);
+        return;
+      }
+      if (key.toLowerCase() === "s") {
+        event.preventDefault();
+        setShowSettings(!showSettings);
+        return;
+      }
+      if (keybinds.close.includes(key)) {
+        if (showSettings) {
+          setShowSettings(false);
           return;
-        case "ArrowLeft":
-        case "PageUp":
-          event.preventDefault();
-          prevPage();
+        }
+        if (showControls) {
+          setShowControls(false);
           return;
-        case "b":
-        case "B":
-          event.preventDefault();
-          toggleBookmark();
-          return;
-        case "f":
-        case "F":
-          event.preventDefault();
-          toggleFullscreen();
-          return;
-        case " ":
-          event.preventDefault();
-          nextPage();
-          return;
-        case "m":
-        case "M":
-          event.preventDefault();
-          toggleUI();
-          return;
-        case "t":
-        case "T":
-          event.preventDefault();
-          setShowControls(!showControls);
-          return;
-        case "s":
-        case "S":
-          event.preventDefault();
-          setShowSettings(!showSettings);
-          return;
-        case "Escape":
-          if (showSettings) {
-            setShowSettings(false);
-            return;
-          }
-          if (showControls) {
-            setShowControls(false);
-            return;
-          }
-          onClose();
-          return;
-        default:
-          return;
+        }
+        onClose();
+        return;
       }
     };
 
     // Capture phase improves reliability when other listeners stop propagation.
     window.addEventListener("keydown", onKeyDown, { capture: true });
-    document.addEventListener("keydown", onKeyDown, { capture: true });
     return () => {
       window.removeEventListener("keydown", onKeyDown, { capture: true });
-      document.removeEventListener("keydown", onKeyDown, { capture: true });
     };
-  }, []);
+  }, [keybinds]);
 }

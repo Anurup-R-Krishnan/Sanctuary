@@ -11,6 +11,17 @@ function notFound(): Response {
   return new Response("Not found", { status: 404 });
 }
 
+function missingCoverPlaceholder(): Response {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="540" viewBox="0 0 360 540"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f3ece0"/><stop offset="100%" stop-color="#e3d5c2"/></linearGradient></defs><rect width="360" height="540" fill="url(#bg)"/><rect x="44" y="72" width="272" height="396" rx="18" fill="#fff" opacity="0.75"/><text x="180" y="250" text-anchor="middle" font-size="60" fill="#8b7355">📖</text><text x="180" y="300" text-anchor="middle" font-size="22" fill="#6b5a45" font-family="system-ui, sans-serif">No Cover</text></svg>`;
+  return new Response(svg, {
+    status: 200,
+    headers: {
+      "Content-Type": "image/svg+xml; charset=utf-8",
+      "Cache-Control": "private, max-age=300",
+    },
+  });
+}
+
 function getBookContentKey(userId: string, bookId: string): string {
   return `users/${userId}/books/${bookId}.epub`;
 }
@@ -43,7 +54,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
 
     if (isCoverAsset) {
       const coverObject = await env.SANCTUARY_BUCKET.get(coverKey);
-      if (!coverObject) return notFound();
+      if (!coverObject) {
+        await env.SANCTUARY_DB
+          .prepare("UPDATE books SET cover_url = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?")
+          .bind(id, userId)
+          .run()
+          .catch(() => undefined);
+        return missingCoverPlaceholder();
+      }
       const coverType = coverObject.httpMetadata?.contentType || "image/jpeg";
       return new Response(coverObject.body, {
         status: 200,

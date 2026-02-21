@@ -16,8 +16,8 @@ type LibraryHandlers = {
   addBook: (file: File) => Promise<void>;
   updateBookProgress: (id: string, progress: number, lastLocation: string) => Promise<void>;
   toggleFavorite: (id: string) => void;
-  addBookmark: (bookId: string, bookmark: Bookmark) => void;
-  removeBookmark: (bookId: string, bookmarkId: string) => void;
+  addBookmark: (bookId: string, bookmark: Bookmark) => Promise<void>;
+  removeBookmark: (bookId: string, bookmarkId: string) => Promise<void>;
   getBookContent: (id: string) => Promise<Blob>;
   reloadBooks: () => Promise<void>;
   setSortBy: (sortBy: SortOption) => void;
@@ -26,18 +26,19 @@ type LibraryHandlers = {
 
 type BookStoreState = LibrarySnapshot & {
   setSnapshot: (snapshot: LibrarySnapshot) => void;
-  bindHandlers: (handlers: LibraryHandlers) => void;
+  bindHandlers: (handlers: LibraryHandlers, ownerId: string) => void;
   addBook: (file: File) => Promise<void>;
   updateBookProgress: (id: string, progress: number, lastLocation: string) => Promise<void>;
   toggleFavorite: (id: string) => void;
-  addBookmark: (bookId: string, bookmark: Bookmark) => void;
-  removeBookmark: (bookId: string, bookmarkId: string) => void;
+  addBookmark: (bookId: string, bookmark: Bookmark) => Promise<void>;
+  removeBookmark: (bookId: string, bookmarkId: string) => Promise<void>;
   getBookContent: (id: string) => Promise<Blob>;
   reloadBooks: () => Promise<void>;
   getBookById: (id: string | null) => Book | null;
   setSortBy: (sortBy: SortOption) => void;
   setFilterBy: (filterBy: FilterOption) => void;
-  handlers: LibraryHandlers | null;
+  handlers: LibraryHandlers;
+  handlersOwnerId: string | null;
 };
 
 const emptySnapshot: LibrarySnapshot = {
@@ -51,48 +52,65 @@ const emptySnapshot: LibrarySnapshot = {
   filterBy: "all",
 };
 
+const unboundHandlers: LibraryHandlers = {
+  addBook: async () => {
+    throw new Error("Book store not initialized");
+  },
+  updateBookProgress: async () => {
+    throw new Error("Book store not initialized");
+  },
+  toggleFavorite: () => {
+    throw new Error("Book store not initialized");
+  },
+  addBookmark: () => {
+    throw new Error("Book store not initialized");
+  },
+  removeBookmark: () => {
+    throw new Error("Book store not initialized");
+  },
+  getBookContent: async () => {
+    throw new Error("Book store not initialized");
+  },
+  reloadBooks: async () => {
+    throw new Error("Book store not initialized");
+  },
+  setSortBy: () => undefined,
+  setFilterBy: () => undefined,
+};
+
 export const useBookStore = create<BookStoreState>((set, get) => ({
   ...emptySnapshot,
-  handlers: null,
+  handlers: unboundHandlers,
+  handlersOwnerId: null,
 
   setSnapshot: (snapshot) => set(snapshot),
-  bindHandlers: (handlers) => set({ handlers }),
+  bindHandlers: (handlers, ownerId) => {
+    const currentOwner = get().handlersOwnerId;
+    if (currentOwner && currentOwner !== ownerId) return;
+    set({ handlers, handlersOwnerId: ownerId });
+  },
 
   addBook: async (file) => {
-    const handlers = get().handlers;
-    if (!handlers) return;
-    await handlers.addBook(file);
+    await get().handlers.addBook(file);
   },
   updateBookProgress: async (id, progress, lastLocation) => {
-    const handlers = get().handlers;
-    if (!handlers) return;
-    await handlers.updateBookProgress(id, progress, lastLocation);
+    await get().handlers.updateBookProgress(id, progress, lastLocation);
   },
 
   toggleFavorite: (id) => {
-    const handlers = get().handlers;
-    if (!handlers) return;
-    handlers.toggleFavorite(id);
+    get().handlers.toggleFavorite(id);
   },
-  addBookmark: (bookId, bookmark) => {
-    const handlers = get().handlers;
-    if (!handlers) return;
-    handlers.addBookmark(bookId, bookmark);
+  addBookmark: async (bookId, bookmark) => {
+    await get().handlers.addBookmark(bookId, bookmark);
   },
-  removeBookmark: (bookId, bookmarkId) => {
-    const handlers = get().handlers;
-    if (!handlers) return;
-    handlers.removeBookmark(bookId, bookmarkId);
+  removeBookmark: async (bookId, bookmarkId) => {
+    await get().handlers.removeBookmark(bookId, bookmarkId);
   },
   getBookContent: async (id) => {
-    const handlers = get().handlers;
-    if (!handlers) throw new Error("Book handlers unavailable");
-    return handlers.getBookContent(id);
+    return get().handlers.getBookContent(id);
   },
   reloadBooks: async () => {
-    const handlers = get().handlers;
-    if (!handlers) return;
-    await handlers.reloadBooks();
+    await get().handlers.reloadBooks();
   },
   getBookById: (id) => {
     if (!id) return null;
@@ -101,15 +119,11 @@ export const useBookStore = create<BookStoreState>((set, get) => ({
 
   setSortBy: (sortBy) => {
     set({ sortBy });
-    const handlers = get().handlers;
-    if (!handlers) return;
-    handlers.setSortBy(sortBy);
+    get().handlers.setSortBy(sortBy);
   },
 
   setFilterBy: (filterBy) => {
     set({ filterBy });
-    const handlers = get().handlers;
-    if (!handlers) return;
-    handlers.setFilterBy(filterBy);
+    get().handlers.setFilterBy(filterBy);
   },
 }));

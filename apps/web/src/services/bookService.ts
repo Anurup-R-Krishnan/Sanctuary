@@ -1,5 +1,5 @@
 import type { Book } from "@/types";
-import { readJsonSafely } from "./http";
+import { buildApiHeaders, fetchWithRetry, readJsonSafely } from "./http";
 import { getBookById } from "@/utils/db";
 
 interface LibraryItemV2 {
@@ -26,10 +26,8 @@ export interface IBookService {
 
 export const bookService: IBookService = {
     async getBooks(token?: string): Promise<Book[]> {
-        const headers: HeadersInit = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const res = await fetch("/api/v2/library", { headers });
+        const headers = buildApiHeaders(token);
+        const res = await fetchWithRetry("/api/v2/library", { headers }, { retries: 2 });
         const books = (await readJsonSafely<LibraryItemV2[] | null>(res, "Failed to fetch books")) || [];
         const bookmarkIdFromCfi = (bookId: string, cfi: string) => `${bookId}:${encodeURIComponent(cfi)}`;
         return books.map((b) => ({
@@ -57,17 +55,14 @@ export const bookService: IBookService = {
         const local = await getBookById(id).catch(() => null);
         if (local?.epubBlob) return local.epubBlob;
 
-        const headers: HeadersInit = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const res = await fetch(`/api/content/${encodeURIComponent(id)}`, { headers });
+        const headers = buildApiHeaders(token);
+        const res = await fetchWithRetry(`/api/content/${encodeURIComponent(id)}`, { headers }, { retries: 2 });
         if (!res.ok) throw new Error("Failed to fetch book content");
         return await res.blob();
     },
 
     async addBook(file: File, metadata: Book, token?: string, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }> {
-        const headers: HeadersInit = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const headers = buildApiHeaders(token);
 
         const formData = new FormData();
         formData.append("file", file, file.name || `${metadata.id}.epub`);
@@ -106,8 +101,7 @@ export const bookService: IBookService = {
     },
 
     async uploadBookCover(id: string, coverBlob: Blob, token?: string): Promise<string> {
-        const headers: HeadersInit = { "Content-Type": coverBlob.type || "image/jpeg" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const headers = buildApiHeaders(token, { "Content-Type": coverBlob.type || "image/jpeg" });
         const res = await fetch(`/api/content/${encodeURIComponent(id)}?asset=cover`, {
             method: "PUT",
             headers,
@@ -119,8 +113,7 @@ export const bookService: IBookService = {
     },
 
     async updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void> {
-        const headers: HeadersInit = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const headers = buildApiHeaders(token, { "Content-Type": "application/json" });
         const res = await fetch(`/api/v2/library?id=${encodeURIComponent(id)}`, {
             method: "PATCH",
             headers,
@@ -139,16 +132,15 @@ export const bookService: IBookService = {
     },
 
     async updateBookProgress(id: string, progress: number, lastLocation: string, token?: string): Promise<void> {
-        const headers: HeadersInit = { "Content-Type": "application/json" };
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        const res = await fetch(`/api/v2/library?id=${encodeURIComponent(id)}`, {
+        const headers = buildApiHeaders(token, { "Content-Type": "application/json" });
+        const res = await fetchWithRetry(`/api/v2/library?id=${encodeURIComponent(id)}`, {
             method: "PATCH",
             headers,
             body: JSON.stringify({
                 progress,
                 lastLocation,
             }),
-        });
+        }, { retries: 2 });
         await readJsonSafely<{ success: boolean }>(res, "Failed to update reading progress");
     }
 };

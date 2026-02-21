@@ -1,6 +1,6 @@
 import { getUserId } from "../../utils/auth";
 import type { Env } from "../../types";
-import { ensureBooksSchema } from "../../utils/schemaBootstrap";
+import { ensureBooksSchemaOnce } from "../../utils/schemaBootstrap";
 import { jsonResponse, methodNotAllowed } from "./_shared/http";
 import { clamp, toFiniteNumber } from "./_shared/validation";
 
@@ -75,7 +75,7 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
   const userId = await getUserId(request, env);
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
-  await ensureBooksSchema(env.SANCTUARY_DB);
+  await ensureBooksSchemaOnce(env.SANCTUARY_DB);
 
   if (request.method === "GET") {
     const data = await env.SANCTUARY_DB
@@ -118,7 +118,12 @@ export const onRequest = async ({ request, env }: RequestContext): Promise<Respo
       return new Response("Missing metadata", { status: 400 });
     }
 
-    const body = JSON.parse(metadataRaw) as LibraryPatchPayload;
+    let body: LibraryPatchPayload;
+    try {
+      body = JSON.parse(metadataRaw) as LibraryPatchPayload;
+    } catch {
+      return new Response("Invalid metadata JSON", { status: 400 });
+    }
     const id = typeof body.id === "string" && body.id.trim().length > 0 ? body.id.trim() : null;
     if (!id) return new Response("Missing id", { status: 400 });
 

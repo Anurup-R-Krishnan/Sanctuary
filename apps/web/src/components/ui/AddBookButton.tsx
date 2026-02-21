@@ -10,12 +10,29 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const toUploadErrorMessage = (error: unknown): string => {
+    const raw = error instanceof Error ? error.message : "";
+    const normalized = raw.toLowerCase();
+    if (
+      normalized.includes("already uploaded") ||
+      normalized.includes("duplicate book upload") ||
+      normalized.includes("409")
+    ) {
+      return "This book is already in your library.";
+    }
+    return raw || "Upload failed. Please try again.";
+  };
 
   const handleFile = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".epub")) return;
     setIsLoading(true);
+    setErrorMessage("");
     try {
       await onAddBook(file);
+    } catch (error) {
+      setErrorMessage(toUploadErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +78,9 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
             </>
           )}
         </button>
+        {errorMessage && (
+          <p className="max-w-xs text-center text-xs text-red-600 dark:text-red-400">{errorMessage}</p>
+        )}
       </>
     );
   }
@@ -107,6 +127,11 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
           <div className="absolute -inset-4 rounded-3xl border-2 border-dashed border-light-accent dark:border-dark-accent animate-pulse pointer-events-none" />
         )}
       </div>
+      {errorMessage && (
+        <div className="fixed bottom-40 right-6 z-40 max-w-[260px] rounded-lg border border-red-300/60 bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-300">
+          {errorMessage}
+        </div>
+      )}
     </>
   );
 };

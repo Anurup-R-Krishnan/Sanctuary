@@ -7,7 +7,7 @@ interface SessionState {
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
-  isGuest: false,
+  isGuest: true,
   setIsGuest: (value) => set({ isGuest: value }),
-  reset: () => set({ isGuest: false })
+  reset: () => set({ isGuest: true })
 }));

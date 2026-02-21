@@ -1,4 +1,4 @@
-import { logErrorOnce, readJsonSafely } from "./http";
+import { buildApiHeaders, logErrorOnce, readJsonSafely } from "./http";
 
 const API_URL = "/api/v2/settings";
 
@@ -9,6 +9,7 @@ export interface ISettingsService {
     setItem<T>(key: string, value: T, token?: string): Promise<void>;
     getSettings(token?: string): Promise<SettingsMap | null>;
     saveSettings(settings: SettingsMap, token?: string): Promise<void>;
+    flushPendingWrites(token?: string): Promise<void>;
 }
 
 let settingsCache: SettingsMap | null = null;
@@ -19,18 +20,12 @@ let pendingSaveToken: string | undefined;
 let dirty = false;
 let lifecycleAttached = false;
 
-const buildHeaders = (token?: string): HeadersInit => {
-    const headers: HeadersInit = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    return headers;
-};
-
 const cloneCache = (): SettingsMap => ({ ...(settingsCache || {}) });
 
 const saveSnapshot = async (snapshot: SettingsMap, token?: string) => {
     const res = await fetch(API_URL, {
         method: "PUT",
-        headers: buildHeaders(token),
+        headers: buildApiHeaders(token, { "Content-Type": "application/json" }),
         body: JSON.stringify(snapshot),
         keepalive: true,
     });
@@ -109,9 +104,7 @@ export const settingsService: ISettingsService = {
 
         fetchPromise = (async () => {
             try {
-                const headers: HeadersInit = {};
-                if (token) headers["Authorization"] = `Bearer ${token}`;
-
+                const headers = buildApiHeaders(token);
                 const res = await fetch(API_URL, { headers });
                 const data = await readJsonSafely<SettingsMap | null>(res, "Failed to fetch settings");
                 if (data && typeof data === "object") {
@@ -132,6 +125,16 @@ export const settingsService: ISettingsService = {
     async saveSettings(settings: SettingsMap, token?: string): Promise<void> {
         settingsCache = { ...(settingsCache || {}), ...settings };
         await enqueueSave(token);
+    },
+
+    async flushPendingWrites(token?: string): Promise<void> {
+        if (token) pendingSaveToken = token;
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+            saveTimeout = null;
+        }
+        if (!dirty) return;
+        await drainSaveQueue();
     },
 
     async getItem<T>(key: string, token?: string): Promise<T | null> {

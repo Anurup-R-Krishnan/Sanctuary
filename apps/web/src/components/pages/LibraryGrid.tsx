@@ -17,6 +17,8 @@ const SkeletonCard: React.FC = () => (
   </div>
 );
 
+const LIBRARY_PAGE_SIZE = 40;
+
 const LibraryGrid: React.FC<LibraryGridProps> = ({
   onSelectBook,
 }) => {
@@ -52,6 +54,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
   })));
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
@@ -94,6 +97,15 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
         (b.tags ?? []).some((t) => t.toLowerCase().includes(term))
     );
   }, [sortedBooks, searchTerm]);
+
+  useEffect(() => {
+    setVisibleCount(LIBRARY_PAGE_SIZE);
+  }, [searchTerm, sortBy, filterBy]);
+
+  const visibleBooks = useMemo(
+    () => displayBooks.slice(0, visibleCount),
+    [displayBooks, visibleCount]
+  );
 
   if (isLoading) {
     return (
@@ -324,8 +336,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
       )}
 
       <section>
-        <SectionHeader
-          title={searchTerm ? "Results" : "All Books"}
+          <SectionHeader
+            title={searchTerm ? "Results" : "All Books"}
           count={displayBooks.length}
           icon={searchTerm ? Search : undefined}
         />
@@ -340,7 +352,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-            {displayBooks.map((book) => (
+            {visibleBooks.map((book) => (
               <div key={book.id}>
                 <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} />
               </div>
@@ -348,7 +360,7 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
           </div>
         ) : (
           <div className="space-y-1.5">
-            {displayBooks.map((book) => (
+            {visibleBooks.map((book) => (
               <button
                 key={book.id}
                 onClick={() => onSelectBook(book)}
@@ -395,6 +407,17 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
                 </button>
               </button>
             ))}
+          </div>
+        )}
+        {visibleBooks.length < displayBooks.length && (
+          <div className="mt-5 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + LIBRARY_PAGE_SIZE)}
+              className="px-4 py-2 rounded-lg text-sm border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+            >
+              Load more ({displayBooks.length - visibleBooks.length} remaining)
+            </button>
           </div>
         )}
       </section>

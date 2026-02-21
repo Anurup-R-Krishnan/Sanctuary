@@ -8,10 +8,15 @@ export default defineConfig(({ mode }) => {
   const apiTarget = process.env.VITE_API_PROXY_TARGET || env.VITE_API_PROXY_TARGET || "http://127.0.0.1:8788";
   // Visible at dev startup so proxy target confusion is obvious.
   console.log(`[vite] API proxy target: ${apiTarget}`);
+  const isDev = mode === "development";
 
   return {
     envDir: path.resolve(__dirname, "../.."),
     server: {
+      watch: {
+        // Wrangler mutates these paths during local API requests; ignore to avoid dev full-reloads.
+        ignored: ["**/.wrangler/**"],
+      },
       proxy: {
         "/api": {
           target: apiTarget,
@@ -26,7 +31,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      VitePWA({
+      ...(isDev ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
@@ -57,7 +62,7 @@ export default defineConfig(({ mode }) => {
           }
         ]
       }
-      })
+      })])
     ],
     build: {
       rollupOptions: {

@@ -42,14 +42,14 @@ const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
     return `${parentKey}:${encodeURIComponent(stablePart)}`;
   };
 
-  const mappedToc = props.toc.map((item) => {
-    const itemId = tocId("toc", item.id, item.href, item.label);
+  const mappedToc = props.toc.map((item, itemIndex) => {
+    const itemId = tocId(`toc:${itemIndex}`, item.id, item.href, item.label);
     return {
       id: itemId,
       href: item.href,
       label: item.label,
-      subitems: item.subitems?.map((sub) => ({
-        id: tocId(itemId, sub.id, sub.href, sub.label),
+      subitems: item.subitems?.map((sub, subIndex) => ({
+        id: tocId(`${itemId}:${subIndex}`, sub.id, sub.href, sub.label),
         href: sub.href,
         label: sub.label
       }))
@@ -82,7 +82,7 @@ const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
       />
 
       {props.showControls && (
-        <div className="fixed right-4 top-24 bottom-24 z-50 w-[min(420px,92vw)] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
+        <div className="fixed right-4 top-24 bottom-24 z-50 w-[clamp(18rem,34vw,28rem)] max-w-[92vw] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
           <ReaderControls
             toc={mappedToc}
             bookmarks={props.bookmarks}
@@ -96,7 +96,7 @@ const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
       )}
 
       {props.showSettings && (
-        <div className="fixed left-4 top-24 bottom-24 z-50 w-[min(420px,92vw)] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
+        <div className="fixed left-4 top-24 bottom-24 z-50 w-[clamp(18rem,34vw,28rem)] max-w-[92vw] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
           <ReaderSettings />
           <button className="mt-4 w-full btn-secondary" onClick={props.onCloseSettings}>Close Settings</button>
         </div>

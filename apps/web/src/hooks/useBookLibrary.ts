@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Book, Bookmark, SortOption, FilterOption } from "@/types";
 import { bookService } from "@/services/bookService";
 import { useAuth } from "@/hooks/useAuth";
-import { logErrorOnce } from "@/services/http";
+import { ApiError, logError, logErrorOnce } from "@/services/http";
 import { putBook as putBookInDb, deleteBook as deleteBookFromDb } from "@/utils/db";
 import { useBookStore } from "@/store/useBookStore";
 
@@ -29,6 +29,11 @@ type BookSyncMeta = {
   syncInFlight: boolean;
   serverUpdatedAt?: string;
 };
+
+const RECENT_BOOKS_LIMIT = 10;
+// epubjs cover extraction is unreliable for some EPUBs (replaceCss/resources errors).
+// Keep uploads stable by skipping extraction unless this is deliberately re-enabled.
+const ENABLE_EPUB_COVER_EXTRACTION = false;
 
 async function extractCoverBlobFromEpubSource(source: ArrayBuffer): Promise<Blob | null> {
   let bookData: EpubBookHandle | null = null;
@@ -66,6 +71,9 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   const bindBookHandlers = useBookStore((state) => state.bindHandlers);
 
   const booksRef = useRef<Book[]>([]);
+  const handlerOwnerIdRef = useRef(`book-library-${uuidv4()}`);
+  const isMountedRef = useRef(true);
+  const loadRequestIdRef = useRef(0);
   const coverObjectUrlByBookIdRef = useRef<Map<string, string>>(new Map());
   const inFlightMutationsRef = useRef<Set<string>>(new Set());
   const syncMetaByBookIdRef = useRef<Map<string, BookSyncMeta>>(new Map());
@@ -90,6 +98,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   }, []);
 
   const trackCoverBlobForBook = useCallback((bookId: string, blob: Blob): string => {
+    if (!isMountedRef.current) return "";
     const url = URL.createObjectURL(blob);
     setTrackedCoverUrl(bookId, url);
     return url;
@@ -113,20 +122,32 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     coverObjectUrlByBookIdRef.current.clear();
   }, []);
 
-  useEffect(() => cleanupAllObjectUrls, [cleanupAllObjectUrls]);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      cleanupAllObjectUrls();
+    };
+  }, [cleanupAllObjectUrls]);
 
   const loadBooks = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
     if (!persistent) {
       cleanupAllObjectUrls();
-      setBooks([]);
-      setIsLoading(false);
+      if (requestId === loadRequestIdRef.current && isMountedRef.current) {
+        setBooks([]);
+        setIsLoading(false);
+      }
       return;
     }
 
-    setIsLoading(true);
+    if (isMountedRef.current) {
+      setIsLoading(true);
+    }
     try {
       const token = await getToken();
       const stored = await bookService.getBooks(token || undefined);
+      if (requestId !== loadRequestIdRef.current || !isMountedRef.current) return;
       const localById = new Map(booksRef.current.map((book) => [book.id, book]));
       // Keep library state metadata-only; content blobs are loaded lazily by ReaderView.
       const hydrated: Book[] = stored.map((s): Book => {
@@ -163,11 +184,17 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       });
 
       reconcileTrackedCoverUrls(hydrated);
-      setBooks(hydrated);
+      if (requestId === loadRequestIdRef.current && isMountedRef.current) {
+        setBooks(hydrated);
+      }
     } catch (error) {
-      logErrorOnce("books-load", "Failed to load books:", error);
+      if (requestId === loadRequestIdRef.current) {
+        logErrorOnce("books-load", "Failed to load books:", error);
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === loadRequestIdRef.current && isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [cleanupAllObjectUrls, persistent, getToken, reconcileTrackedCoverUrls]);
 
@@ -179,7 +206,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     id: string,
     updater: (book: Book) => Book,
     remoteSync: (next: Book) => Promise<void>
-  ) => {
+  ): Promise<boolean> => {
     let previousBook: Book | null = null;
     let nextBook: Book | null = null;
 
@@ -190,7 +217,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       return nextBook;
     }));
 
-    if (!nextBook || !previousBook) return;
+    if (!nextBook || !previousBook) return false;
     inFlightMutationsRef.current.add(id);
     const previousMeta = syncMetaByBookIdRef.current.get(id) || {
       dirty: false,
@@ -209,14 +236,14 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     try {
       await putBookInDb(nextBook);
     } catch (error) {
-      console.error("Failed to persist local book update:", error);
+      logError("Failed to persist local book update:", error);
       setBooks((prev) => prev.map((book) => (book.id === id ? previousBook! : book)));
       syncMetaByBookIdRef.current.set(id, {
         ...previousMeta,
         syncInFlight: false,
       });
       inFlightMutationsRef.current.delete(id);
-      return;
+      return false;
     }
 
     if (!persistent) {
@@ -228,7 +255,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         syncInFlight: false,
       });
       inFlightMutationsRef.current.delete(id);
-      return;
+      return true;
     }
 
     try {
@@ -248,10 +275,10 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         });
       }
     } catch (error) {
-      console.error("Failed to persist remote book update:", error);
+      logError("Failed to persist remote book update:", error);
       setBooks((prev) => prev.map((book) => (book.id === id ? previousBook! : book)));
       await putBookInDb(previousBook).catch((rollbackError) => {
-        console.error("Failed to rollback local book update:", rollbackError);
+        logError("Failed to rollback local book update:", rollbackError);
       });
       const latestMeta = syncMetaByBookIdRef.current.get(id);
       if (latestMeta) {
@@ -261,9 +288,11 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
           syncInFlight: false,
         });
       }
+      return false;
     } finally {
       inFlightMutationsRef.current.delete(id);
     }
+    return true;
   }, [persistent]);
 
   const addBook = useCallback(async (file: File) => {
@@ -281,7 +310,9 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
         ? metadata.creator.join(", ") || "Unknown"
         : metadata.creator || "Unknown";
 
-      const coverBlob = await extractCoverBlobFromEpubSource(epubArrayBuffer);
+      const coverBlob = ENABLE_EPUB_COVER_EXTRACTION
+        ? await extractCoverBlobFromEpubSource(epubArrayBuffer)
+        : null;
 
       const displayCoverUrl = coverBlob ? trackCoverBlobForBook(bookId, coverBlob) : "";
       const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
@@ -322,20 +353,23 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
           const persistedBook = { ...newBook, coverUrl: result.coverUrl };
           setBooks((prev) => prev.map((book) => (book.id === newBook.id ? persistedBook : book)));
           await putBookInDb(persistedBook).catch((dbError) => {
-            console.error("Failed to persist server cover URL locally:", dbError);
+            logError("Failed to persist server cover URL locally:", dbError);
           });
         }
       } catch (error) {
-        console.error("Backend upload failed:", error);
+        logError("Backend upload failed:", error);
         setBooks((prev) => prev.filter((book) => book.id !== newBook.id));
         revokeTrackedCoverUrl(newBook.id);
         await deleteBookFromDb(newBook.id).catch((dbError) => {
-          console.error("Failed to rollback local EPUB after backend upload failure:", dbError);
+          logError("Failed to rollback local EPUB after backend upload failure:", dbError);
         });
+        if (error instanceof ApiError && error.status === 409) {
+          throw new Error("You already uploaded this book.");
+        }
         throw error;
       }
     } catch (error) {
-      console.error("Error adding book:", error);
+      logError("Error adding book:", error);
       throw error;
     } finally {
       bookData?.destroy?.();
@@ -366,8 +400,8 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     );
   }, [syncBookUpdate, getToken]);
 
-  const updateBook = useCallback(async (id: string, updates: Partial<Book>) => {
-    await syncBookUpdate(
+  const updateBook = useCallback(async (id: string, updates: Partial<Book>): Promise<boolean> => {
+    return await syncBookUpdate(
       id,
       (book) => ({ ...book, ...updates }),
       async (nextBook) => {
@@ -383,16 +417,18 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     void updateBook(id, { isFavorite: !book.isFavorite });
   }, [updateBook]);
 
-  const addBookmark = useCallback((bookId: string, bookmark: Bookmark) => {
+  const addBookmark = useCallback(async (bookId: string, bookmark: Bookmark): Promise<void> => {
     const book = booksRef.current.find((item) => item.id === bookId);
     if (!book) return;
-    void updateBook(bookId, { bookmarks: [...(book.bookmarks || []), bookmark] });
+    const success = await updateBook(bookId, { bookmarks: [...(book.bookmarks || []), bookmark] });
+    if (!success) throw new Error("Failed to save bookmark");
   }, [updateBook]);
 
-  const removeBookmark = useCallback((bookId: string, bookmarkId: string) => {
+  const removeBookmark = useCallback(async (bookId: string, bookmarkId: string): Promise<void> => {
     const book = booksRef.current.find((item) => item.id === bookId);
     if (!book) return;
-    void updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((bookmark) => bookmark.id !== bookmarkId) });
+    const success = await updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((bookmark) => bookmark.id !== bookmarkId) });
+    if (!success) throw new Error("Failed to remove bookmark");
   }, [updateBook]);
 
   const getBookContent = useCallback(async (id: string): Promise<Blob> => {
@@ -411,10 +447,10 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
 
     if (updatedBook) {
       await putBookInDb(updatedBook).catch((error) => {
-        console.error("Failed to cache hydrated book content locally:", error);
+        logError("Failed to cache hydrated book content locally:", error);
       });
 
-      if (!updatedBook.coverUrl) {
+      if (ENABLE_EPUB_COVER_EXTRACTION && !updatedBook.coverUrl) {
         const blobBuffer = await blob.arrayBuffer();
         const generatedCover = await extractCoverBlobFromEpubSource(blobBuffer);
         if (generatedCover) {
@@ -427,7 +463,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
           }));
           if (localBookWithCover) {
             await putBookInDb(localBookWithCover).catch((error) => {
-              console.error("Failed to cache regenerated cover locally:", error);
+              logError("Failed to cache regenerated cover locally:", error);
             });
           }
 
@@ -444,11 +480,11 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
               }));
               if (serverBookWithCover) {
                 await putBookInDb(serverBookWithCover).catch((error) => {
-                  console.error("Failed to persist durable cover URL locally:", error);
+                  logError("Failed to persist durable cover URL locally:", error);
                 });
               }
             } catch (error) {
-              console.error("Failed to sync regenerated cover to backend:", error);
+              logError("Failed to sync regenerated cover to backend:", error);
             }
           }
         }
@@ -462,7 +498,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     [...books]
       .filter((book) => !book.isIncognito)
       .sort((a, b) => new Date(b.lastOpenedAt || 0).getTime() - new Date(a.lastOpenedAt || 0).getTime())
-      .slice(0, 10),
+      .slice(0, RECENT_BOOKS_LIMIT),
     [books]
   );
 
@@ -542,7 +578,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       reloadBooks: loadBooks,
       setSortBy,
       setFilterBy,
-    });
+    }, handlerOwnerIdRef.current);
   }, [
     addBook,
     updateBookProgress,

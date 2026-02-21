@@ -42,6 +42,11 @@ type EpubRendition = {
     themes: {
         default: (styles: Record<string, Record<string, string>>) => void;
     };
+    hooks?: {
+        content?: {
+            register: (cb: (contents: { document: Document }) => void) => void;
+        };
+    };
 };
 
 type EpubBookHandle = {
@@ -58,6 +63,15 @@ const READER_THEME = {
     pageMarginPx: 28,
     paragraphSpacingPx: 14,
 } as const;
+
+const FONT_FAMILY_BY_PAIRING: Record<string, string> = {
+    "merriweather-georgia": "'Merriweather', Georgia, serif",
+    "crimson-pro": "'Crimson Pro', Georgia, serif",
+    "libre-baskerville": "'Libre Baskerville', Georgia, serif",
+    "lora": "'Lora', Georgia, serif",
+    "source-serif": "'Source Serif Pro', Georgia, serif",
+    "inter": "'Inter', system-ui, sans-serif",
+};
 
 export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
     const activeBookId = book.id;
@@ -77,7 +91,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const {
         fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
         readerForeground, readerBackground,
-        continuous, spread, reduceMotion
+        continuous, spread, reduceMotion, pageMargin, paragraphSpacing, maxTextWidth
     } = useSettingsShallow((state) => ({
         fontSize: state.fontSize,
         lineHeight: state.lineHeight,
@@ -88,7 +102,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         readerBackground: state.readerBackground,
         continuous: state.continuous,
         spread: state.spread,
-        reduceMotion: state.reduceMotion
+        reduceMotion: state.reduceMotion,
+        pageMargin: state.pageMargin,
+        paragraphSpacing: state.paragraphSpacing,
+        maxTextWidth: state.maxTextWidth,
     }));
 
     useEffect(() => {
@@ -133,6 +150,13 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     flow: continuous ? "scrolled-doc" : "paginated",
                 });
 
+                // Some EPUBs incorrectly mark CSS/font assets with invalid MIME types.
+                // Remove blob-linked stylesheet tags and rely on our controlled theme styles.
+                renditionRef.current.hooks?.content?.register((contents) => {
+                    const links = contents.document.querySelectorAll("link[rel='stylesheet'][href^='blob:']");
+                    links.forEach((link) => link.remove());
+                });
+
                 // Display book
                 if (startLocation) {
                     await renditionRef.current.display(startLocation);
@@ -156,11 +180,19 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 });
 
                 // Generate locations
-                bookRef.current.locations.generate(1024).then(() => {
-                    if (mounted) {
-                        setTotalPages(Math.max(1, bookRef.current.locations.length()));
-                    }
-                }).catch((err: unknown) => console.warn("Location generation failed:", err));
+                const generateLocations = () => {
+                    bookRef.current?.locations.generate(1024).then(() => {
+                        if (mounted && bookRef.current) {
+                            setTotalPages(Math.max(1, bookRef.current.locations.length()));
+                        }
+                    }).catch((err: unknown) => console.warn("Location generation failed:", err));
+                };
+                if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+                    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+                        .requestIdleCallback(generateLocations, { timeout: 1200 });
+                } else {
+                    setTimeout(generateLocations, 0);
+                }
 
                 setIsLoading(false);
             } catch (err) {
@@ -224,15 +256,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
     // Get font family string
     const getFontFamily = useCallback(() => {
-        const fonts: Record<string, string> = {
-            "merriweather-georgia": "'Merriweather', Georgia, serif",
-            "crimson-pro": "'Crimson Pro', Georgia, serif",
-            "libre-baskerville": "'Libre Baskerville', Georgia, serif",
-            "lora": "'Lora', Georgia, serif",
-            "source-serif": "'Source Serif Pro', Georgia, serif",
-            "inter": "'Inter', system-ui, sans-serif",
-        };
-        return fonts[fontPairing] || fonts["merriweather-georgia"];
+        return FONT_FAMILY_BY_PAIRING[fontPairing] || FONT_FAMILY_BY_PAIRING["merriweather-georgia"];
     }, [fontPairing]);
 
     // Apply current settings to rendition
@@ -248,12 +272,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 "line-height": `${lineHeight}`,
                 "color": readerForeground,
                 "background-color": readerBackground,
-                "padding-top": `${READER_THEME.pageMarginPx}px`,
-                "padding-bottom": `${READER_THEME.pageMarginPx}px`,
-                "padding-left": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
-                "padding-right": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
+                "padding-top": `${Math.max(0, pageMargin)}px`,
+                "padding-bottom": `${Math.max(0, pageMargin)}px`,
+                "padding-left": `${continuous ? Math.max(0, pageMargin) : 0}px`,
+                "padding-right": `${continuous ? Math.max(0, pageMargin) : 0}px`,
                 ...(continuous ? {
-                    "max-width": `${READER_THEME.textWidthCh}ch`,
+                    "max-width": `${Math.max(50, maxTextWidth)}ch`,
                     "margin": "0 auto",
                     "padding-bottom": "2em",
                 } : {
@@ -267,12 +291,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 "font-size": "inherit",
                 "line-height": "inherit",
                 "color": "inherit",
-                "margin-bottom": `${READER_THEME.paragraphSpacingPx}px`,
+                "margin-bottom": `${Math.max(0, paragraphSpacing)}px`,
                 "text-align": textAlignment,
                 "hyphens": hyphenation ? "auto" : "none",
             },
         });
-    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous]);
+    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous, pageMargin, paragraphSpacing, maxTextWidth]);
 
     // Apply styles when settings change
     useEffect(() => {

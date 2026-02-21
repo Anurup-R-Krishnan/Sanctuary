@@ -4,6 +4,8 @@ import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart
 import { useSettingsShallow } from "@/context/SettingsContext";
 import { useStatsStore } from "@/store/useStatsStore";
 import { useShallow } from "zustand/react/shallow";
+import { useUIStore } from "@/store/useUIStore";
+import { View } from "@/types";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   flame: Flame,
@@ -19,15 +21,15 @@ const StatsView: React.FC = () => {
   const { stats } = useStatsStore(useShallow((state) => ({
     stats: state.stats,
   })));
-  const { dailyGoal, weeklyGoal, setDailyGoal, setWeeklyGoal } = useSettingsShallow((state) => ({
+  const { dailyGoal, weeklyGoal, setReadingGoals } = useSettingsShallow((state) => ({
     dailyGoal: state.dailyGoal,
     weeklyGoal: state.weeklyGoal,
-    setDailyGoal: state.setDailyGoal,
-    setWeeklyGoal: state.setWeeklyGoal,
+    setReadingGoals: state.setReadingGoals,
   }));
+  const setView = useUIStore((state) => state.setView);
+  const safeLabel = (value: string, max = 40) => value.length > max ? `${value.slice(0, max - 1)}...` : value;
   const onUpdateGoal = (daily: number, weekly: number) => {
-    setDailyGoal(daily);
-    setWeeklyGoal(weekly);
+    setReadingGoals(daily, weekly);
   };
   const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
@@ -70,7 +72,7 @@ const StatsView: React.FC = () => {
           <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide font-medium">
             {label}
           </p>
-          <p className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums mt-0.5">{value}</p>
+          <p className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text tabular-nums mt-0.5 leading-tight break-words">{value}</p>
           {subtext && (
             <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-0.5">{subtext}</p>
           )}
@@ -316,7 +318,7 @@ const StatsView: React.FC = () => {
       {activeTab === "charts" && (
         <div className="space-y-5">
           <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Activity (14 weeks)</h3>
+            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Activity ({stats.heatmapData.length} weeks)</h3>
             <div className="flex gap-0.5 overflow-x-auto pb-2">
               {stats.heatmapData.map((week, wi) => (
                 <div key={`week-${wi}`} className="flex flex-col gap-0.5">
@@ -350,7 +352,7 @@ const StatsView: React.FC = () => {
                 {stats.genreDistribution.map((g, i) => (
                   <div key={g.genre} className="flex items-center gap-2.5">
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{g.genre}</span>
+                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{safeLabel(g.genre, 28)}</span>
                     <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
                       {g.count}
                     </span>
@@ -371,7 +373,7 @@ const StatsView: React.FC = () => {
                     <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
                       <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
                     </div>
-                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{a.author}</span>
+                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{safeLabel(a.author, 28)}</span>
                     <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
                       {a.books}
                     </span>
@@ -493,6 +495,22 @@ const StatsView: React.FC = () => {
                 Use immersive mode for focus
               </li>
             </ul>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setView(View.LIBRARY)}
+                className="px-3 py-1.5 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+              >
+                Open Library
+              </button>
+              <button
+                type="button"
+                onClick={() => setView(View.READER)}
+                className="px-3 py-1.5 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+              >
+                Open Reader
+              </button>
+            </div>
           </div>
         </div>
       )}

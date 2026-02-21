@@ -72,6 +72,7 @@ type SettingsActions = {
   setKeybinds: (v: Keybinds) => void;
   setDailyGoal: (v: number) => void;
   setWeeklyGoal: (v: number) => void;
+  setReadingGoals: (daily: number, weekly: number) => void;
   setShowStreakReminder: (v: boolean) => void;
   setTrackingEnabled: (v: boolean) => void;
   setScreenReaderMode: (v: boolean) => void;
@@ -220,6 +221,7 @@ const useSettingsStore = create<Settings>((set) => ({
   setKeybinds: createSetAction("keybinds", set),
   setDailyGoal: createSetAction("dailyGoal", set),
   setWeeklyGoal: createSetAction("weeklyGoal", set),
+  setReadingGoals: (daily, weekly) => set({ dailyGoal: daily, weeklyGoal: weekly }),
   setShowStreakReminder: createSetAction("showStreakReminder", set),
   setTrackingEnabled: createSetAction("trackingEnabled", set),
   setScreenReaderMode: createSetAction("screenReaderMode", set),
@@ -246,6 +248,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const localSaveTimerRef = useRef<number | null>(null);
   const tokenCacheRef = useRef<{ value: string | null; expiresAt: number }>({ value: null, expiresAt: 0 });
   const tokenPromiseRef = useRef<Promise<string | null> | null>(null);
+  const latestValuesRef = useRef<SettingsValues>(DEFAULTS);
   const getCachedToken = useCallback(async () => {
     const now = Date.now();
     if (tokenCacheRef.current.expiresAt > now) {
@@ -300,6 +303,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     const unsubscribe = useSettingsStore.subscribe((state) => {
       if (!hydratedRef.current) return;
       const values = pickValues(state);
+      latestValuesRef.current = values;
 
       if (localSaveTimerRef.current !== null) {
         window.clearTimeout(localSaveTimerRef.current);
@@ -333,6 +337,49 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (remoteSaveTimerRef.current !== null) {
         window.clearTimeout(remoteSaveTimerRef.current);
       }
+    };
+  }, [getCachedToken]);
+
+  useEffect(() => {
+    const flushPendingSaves = () => {
+      const values = latestValuesRef.current;
+      if (localSaveTimerRef.current !== null) {
+        window.clearTimeout(localSaveTimerRef.current);
+        localSaveTimerRef.current = null;
+      }
+      try {
+        localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(values));
+      } catch (error) {
+        console.warn("Failed to flush local settings cache", error);
+      }
+
+      if (remoteSaveTimerRef.current !== null) {
+        window.clearTimeout(remoteSaveTimerRef.current);
+        remoteSaveTimerRef.current = null;
+      }
+      void (async () => {
+        try {
+          const token = await getCachedToken();
+          await settingsService.saveSettings(toRemotePayload(values), token || undefined);
+        } catch (error) {
+          console.warn("Failed to flush remote settings", error);
+        }
+      })();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushPendingSaves();
+      }
+    };
+
+    window.addEventListener("beforeunload", flushPendingSaves);
+    window.addEventListener("pagehide", flushPendingSaves);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("beforeunload", flushPendingSaves);
+      window.removeEventListener("pagehide", flushPendingSaves);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [getCachedToken]);
 

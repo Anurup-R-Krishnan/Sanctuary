@@ -24,6 +24,8 @@ type SessionAggregates = {
   totalPagesRead: number;
   nightOwlUnlocked: boolean;
   earlyBirdUnlocked: boolean;
+  nightOwlCount: number;
+  earlyBirdCount: number;
   sessionDates: Set<string>;
   dayTotals: Map<string, { pages: number; minutes: number }>;
   monthMinutes: Map<string, number>;
@@ -65,6 +67,8 @@ const dateKeyToEpochDay = (dateKey: string): number | null => {
   const month = Number(match[2]);
   const day = Number(match[3]);
   if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  if (year < 1970 || year > 2100) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 };
 
@@ -73,11 +77,24 @@ const createEmptyAggregates = (): SessionAggregates => ({
   totalPagesRead: 0,
   nightOwlUnlocked: false,
   earlyBirdUnlocked: false,
+  nightOwlCount: 0,
+  earlyBirdCount: 0,
   sessionDates: new Set<string>(),
   dayTotals: new Map<string, { pages: number; minutes: number }>(),
   monthMinutes: new Map<string, number>(),
   sessionCount: 0,
 });
+
+const getSessionStartHour = (session: ReadingSession): number | null => {
+  if (typeof session.localStartHour === "number" && session.localStartHour >= 0 && session.localStartHour <= 23) {
+    return session.localStartHour;
+  }
+  if (typeof session.startTime === "string") {
+    const parsed = new Date(session.startTime);
+    if (!Number.isNaN(parsed.getTime())) return parsed.getHours();
+  }
+  return null;
+};
 
 const applySessionToAggregates = (aggregates: SessionAggregates, session: ReadingSession) => {
   aggregates.totalReadingTime += session.duration;
@@ -91,18 +108,69 @@ const applySessionToAggregates = (aggregates: SessionAggregates, session: Readin
   dayAgg.minutes += session.duration;
   aggregates.dayTotals.set(session.date, dayAgg);
 
-  const sessionHour = typeof session.localStartHour === "number"
-    ? session.localStartHour
-    : (typeof session.startTime === "string" ? new Date(session.startTime).getHours() : NaN);
-
-  if (!Number.isNaN(sessionHour)) {
-    if (sessionHour >= 0 && sessionHour < 5) aggregates.nightOwlUnlocked = true;
-    if (sessionHour >= 5 && sessionHour < 7) aggregates.earlyBirdUnlocked = true;
+  const sessionHour = getSessionStartHour(session);
+  if (sessionHour !== null) {
+    if (sessionHour >= 0 && sessionHour < 5) aggregates.nightOwlCount += 1;
+    if (sessionHour >= 5 && sessionHour < 7) aggregates.earlyBirdCount += 1;
   }
+  aggregates.nightOwlUnlocked = aggregates.nightOwlCount > 0;
+  aggregates.earlyBirdUnlocked = aggregates.earlyBirdCount > 0;
 
   const monthKey = session.date.slice(0, 7);
   aggregates.monthMinutes.set(monthKey, (aggregates.monthMinutes.get(monthKey) || 0) + session.duration);
 };
+
+const colorForGenre = (genre: string, index: number): string => {
+  // Deterministic hue from label + index avoids indistinguishable repeated 6-color cycles.
+  let hash = 0;
+  for (let i = 0; i < genre.length; i++) {
+    hash = (hash * 31 + genre.charCodeAt(i)) >>> 0;
+  }
+  const hue = (hash + index * 37) % 360;
+  return `hsl(${hue} 46% 56%)`;
+};
+
+const removeSessionFromAggregates = (aggregates: SessionAggregates, session: ReadingSession) => {
+  aggregates.totalReadingTime = Math.max(0, aggregates.totalReadingTime - session.duration);
+  aggregates.totalPagesRead = Math.max(0, aggregates.totalPagesRead - session.pagesRead);
+  aggregates.sessionCount = Math.max(0, aggregates.sessionCount - 1);
+
+  const dayAgg = aggregates.dayTotals.get(session.date);
+  if (dayAgg) {
+    dayAgg.pages = Math.max(0, dayAgg.pages - session.pagesRead);
+    dayAgg.minutes = Math.max(0, dayAgg.minutes - session.duration);
+    if (dayAgg.pages === 0 && dayAgg.minutes === 0) {
+      aggregates.dayTotals.delete(session.date);
+      aggregates.sessionDates.delete(session.date);
+    } else {
+      aggregates.dayTotals.set(session.date, dayAgg);
+      aggregates.sessionDates.add(session.date);
+    }
+  }
+
+  const sessionHour = getSessionStartHour(session);
+  if (sessionHour !== null) {
+    if (sessionHour >= 0 && sessionHour < 5) aggregates.nightOwlCount = Math.max(0, aggregates.nightOwlCount - 1);
+    if (sessionHour >= 5 && sessionHour < 7) aggregates.earlyBirdCount = Math.max(0, aggregates.earlyBirdCount - 1);
+  }
+  aggregates.nightOwlUnlocked = aggregates.nightOwlCount > 0;
+  aggregates.earlyBirdUnlocked = aggregates.earlyBirdCount > 0;
+
+  const monthKey = session.date.slice(0, 7);
+  const currentMonthMinutes = aggregates.monthMinutes.get(monthKey);
+  if (typeof currentMonthMinutes === "number") {
+    const next = Math.max(0, currentMonthMinutes - session.duration);
+    if (next === 0) aggregates.monthMinutes.delete(monthKey);
+    else aggregates.monthMinutes.set(monthKey, next);
+  }
+};
+
+const sessionsEquivalent = (a: ReadingSession, b: ReadingSession): boolean =>
+  a.date === b.date &&
+  a.duration === b.duration &&
+  a.pagesRead === b.pagesRead &&
+  a.startTime === b.startTime &&
+  a.localStartHour === b.localStartHour;
 
 type UseReadingStatsOptions = {
   compute?: boolean;
@@ -145,6 +213,7 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
   const [currentSessionStartProgress, setCurrentSessionStartProgress] = useState<number>(0);
   const [aggregateVersion, setAggregateVersion] = useState(0);
   const { getToken } = useAuth();
+  const sessionsRef = useRef<ReadingSession[]>([]);
   const aggregateRef = useRef<SessionAggregates>(createEmptyAggregates());
   const sessionIndexRef = useRef<Map<string, ReadingSession>>(new Map());
 
@@ -152,7 +221,6 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
     dailyGoal: state.dailyGoal,
   }));
   const shouldCompute = options.compute ?? true;
-  const cachedStatsRef = useRef<ReadingStats>(emptyStats(dailyGoal));
   const setStatsSnapshot = useStatsStore((state) => state.setStats);
 
   const normalizeSessions = useCallback((input: unknown): ReadingSession[] => {
@@ -188,14 +256,6 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
   }, []);
 
   useEffect(() => {
-    if (shouldCompute) return;
-    cachedStatsRef.current = {
-      ...cachedStatsRef.current,
-      dailyGoal,
-    };
-  }, [dailyGoal, shouldCompute]);
-
-  useEffect(() => {
     const savedSessions = localStorage.getItem(SESSIONS_KEY);
     const localSessions = savedSessions ? normalizeSessions(JSON.parse(savedSessions)) : [];
     if (localSessions.length > 0) {
@@ -224,6 +284,10 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
   }, [getToken, normalizeSessions, persistent]);
 
   useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
+
+  useEffect(() => {
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
   }, [sessions]);
 
@@ -233,29 +297,38 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
 
     const addedIds: string[] = [];
     const removedIds: string[] = [];
+    const changedIds: string[] = [];
     for (const id of currentIndex.keys()) {
-      if (!previousIndex.has(id)) addedIds.push(id);
+      if (!previousIndex.has(id)) {
+        addedIds.push(id);
+      } else {
+        const prev = previousIndex.get(id);
+        const next = currentIndex.get(id);
+        if (prev && next && !sessionsEquivalent(prev, next)) {
+          changedIds.push(id);
+        }
+      }
     }
     for (const id of previousIndex.keys()) {
       if (!currentIndex.has(id)) removedIds.push(id);
     }
 
-    const isPureAppend = removedIds.length === 0 && addedIds.length === 1 && currentIndex.size === previousIndex.size + 1;
-
-    if (isPureAppend) {
-      const addedSession = currentIndex.get(addedIds[0]);
-      if (addedSession) {
-        const next = aggregateRef.current;
-        applySessionToAggregates(next, addedSession);
-        aggregateRef.current = next;
-      }
-    } else {
-      const rebuilt = createEmptyAggregates();
-      for (const session of sessions) {
-        applySessionToAggregates(rebuilt, session);
-      }
-      aggregateRef.current = rebuilt;
+    const next = aggregateRef.current;
+    for (const id of removedIds) {
+      const previous = previousIndex.get(id);
+      if (previous) removeSessionFromAggregates(next, previous);
     }
+    for (const id of changedIds) {
+      const previous = previousIndex.get(id);
+      const current = currentIndex.get(id);
+      if (previous) removeSessionFromAggregates(next, previous);
+      if (current) applySessionToAggregates(next, current);
+    }
+    for (const id of addedIds) {
+      const current = currentIndex.get(id);
+      if (current) applySessionToAggregates(next, current);
+    }
+    aggregateRef.current = next;
 
     sessionIndexRef.current = currentIndex;
     setAggregateVersion((v) => v + 1);
@@ -272,6 +345,41 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
       }
     })();
   }, [sessions, getToken, persistent]);
+
+  useEffect(() => {
+    if (!persistent) return;
+
+    const flushSessions = () => {
+      const snapshot = sessionsRef.current;
+      try {
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(snapshot));
+      } catch {
+        // no-op
+      }
+      void (async () => {
+        try {
+          const token = await getToken();
+          await settingsService.setItem(REMOTE_SESSIONS_KEY, snapshot, token || undefined);
+          await settingsService.flushPendingWrites(token || undefined);
+        } catch {
+          // no-op
+        }
+      })();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushSessions();
+    };
+
+    window.addEventListener("beforeunload", flushSessions);
+    window.addEventListener("pagehide", flushSessions);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("beforeunload", flushSessions);
+      window.removeEventListener("pagehide", flushSessions);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [getToken, persistent]);
 
   const startSession = useCallback((bookId: string, startProgress = 0) => {
     const now = Date.now();
@@ -316,7 +424,10 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
 
   const stats: ReadingStats = useMemo(() => {
     if (!shouldCompute) {
-      return cachedStatsRef.current;
+      return {
+        ...emptyStats(dailyGoal),
+        totalBooksInLibrary: books.length,
+      };
     }
 
     void aggregateVersion;
@@ -410,8 +521,24 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
       };
     });
 
+    const MIN_HEATMAP_WEEKS = 14;
+    const MAX_HEATMAP_WEEKS = 52;
+    const todayEpochDay = dateKeyToEpochDay(today);
+    let earliestEpochDay = todayEpochDay;
+    for (const dateKey of dayTotals.keys()) {
+      const epochDay = dateKeyToEpochDay(dateKey);
+      if (epochDay === null) continue;
+      if (earliestEpochDay === null || epochDay < earliestEpochDay) {
+        earliestEpochDay = epochDay;
+      }
+    }
+    const computedWeeks = earliestEpochDay !== null && todayEpochDay !== null
+      ? Math.ceil((todayEpochDay - earliestEpochDay + 1) / 7)
+      : MIN_HEATMAP_WEEKS;
+    const heatmapWeeks = Math.max(MIN_HEATMAP_WEEKS, Math.min(MAX_HEATMAP_WEEKS, computedWeeks));
+
     const heatmapData: number[][] = [];
-    for (let week = 13; week >= 0; week--) {
+    for (let week = heatmapWeeks - 1; week >= 0; week--) {
       const row: number[] = [];
       for (let day = 0; day < 7; day++) {
         const date = new Date(now);
@@ -423,11 +550,10 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
       heatmapData.push(row);
     }
 
-    const colors = ["#c7a77b", "#8b7355", "#d4b58b", "#a08060", "#e8d5b7", "#6b5344"];
     const genreDistribution = Array.from(genreMap.entries()).map(([genre, count], i) => ({
       genre,
       count,
-      color: colors[i % colors.length],
+      color: colorForGenre(genre, i),
     }));
 
     const authorNetwork = Array.from(authorMap.entries())
@@ -528,7 +654,6 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
       readingPersonality,
       personalityDescription,
     };
-    cachedStatsRef.current = nextStats;
     return nextStats;
   }, [books, dailyGoal, aggregateVersion, shouldCompute]);
 

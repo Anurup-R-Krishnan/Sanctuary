@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { Book, Bookmark } from "@/types";
 import { useSettingsShallow } from "@/context/SettingsContext";
 import { useReaderEngine } from "@/hooks/useReaderEngine";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
 import ReaderContent from "@/components/reader/ReaderContent";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
+import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 
 interface ReaderViewProps {
     book: Book;
     onClose: () => void;
     onUpdateProgress: (id: string, progress: number, location: string) => void;
-    onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
-    onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
+    onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => Promise<void>;
+    onRemoveBookmark: (bookId: string, bookmarkId: string) => Promise<void>;
     getBookContent: (id: string) => Promise<Blob>;
 }
 
@@ -23,15 +24,29 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     onRemoveBookmark,
     getBookContent,
 }) => {
+    const activeReaderProgress = useReaderProgressStore((state) =>
+        state.active && state.active.bookId === book.id ? state.active : null
+    );
+    const activeBook = useMemo(() => {
+        if (!activeReaderProgress) return book;
+        return {
+            ...book,
+            progress: activeReaderProgress.progress,
+            lastLocation: activeReaderProgress.location,
+        };
+    }, [book, activeReaderProgress]);
+
     // UI State
     const [showUI, setShowUI] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showControls, setShowControls] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false); // Local optimistic state
+    const [bookmarkError, setBookmarkError] = useState<string | null>(null);
     const [readingTime, setReadingTime] = useState(0);
 
     const rootRef = useRef<HTMLDivElement>(null);
+    const previousFocusRef = useRef<HTMLElement | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const lastMouseMoveRef = useRef<number>(Date.now());
     const latestBookRef = useRef(book);
@@ -42,8 +57,8 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     const [contentError, setContentError] = useState<string | null>(null);
 
     useEffect(() => {
-        latestBookRef.current = book;
-    }, [book]);
+        latestBookRef.current = activeBook;
+    }, [activeBook]);
 
     // Sync prop to local state and fetch content if missing
     useEffect(() => {
@@ -76,7 +91,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [book.id, book.epubBlob, getBookContent]);
+    }, [activeBook.id, activeBook.epubBlob, getBookContent]);
 
     // Settings
     const { screenReaderMode, brightness, grayscale } = useSettingsShallow((state) => ({
@@ -102,20 +117,30 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
     // Bookmark sync
     useEffect(() => {
-        setIsBookmarked(book.bookmarks?.some((b) => b.cfi === currentCfi) ?? false);
-    }, [currentCfi, book.bookmarks]);
+        setIsBookmarked(activeBook.bookmarks?.some((b) => b.cfi === currentCfi) ?? false);
+    }, [currentCfi, activeBook.bookmarks]);
 
     // Derived Actions
-    const handleToggleBookmark = useCallback(() => {
+    const handleToggleBookmark = useCallback(async () => {
         if (!currentCfi) return;
-        if (isBookmarked) {
-            const bookmark = book.bookmarks?.find((b) => b.cfi === currentCfi);
-            if (bookmark) onRemoveBookmark(book.id, bookmark.id);
-        } else {
-            onAddBookmark(book.id, { cfi: currentCfi, title: `Page ${currentPage}` });
+        setBookmarkError(null);
+        const previous = isBookmarked;
+        const next = !previous;
+        setIsBookmarked(next);
+        try {
+            if (previous) {
+                const bookmark = activeBook.bookmarks?.find((b) => b.cfi === currentCfi);
+                if (bookmark) {
+                    await onRemoveBookmark(activeBook.id, bookmark.id);
+                }
+            } else {
+                await onAddBookmark(activeBook.id, { cfi: currentCfi, title: `Page ${currentPage}` });
+            }
+        } catch {
+            setIsBookmarked(previous);
+            setBookmarkError(previous ? "Failed to remove bookmark." : "Failed to save bookmark.");
         }
-        setIsBookmarked(!isBookmarked);
-    }, [currentCfi, isBookmarked, book.id, book.bookmarks, currentPage, onAddBookmark, onRemoveBookmark]);
+    }, [currentCfi, isBookmarked, activeBook.id, activeBook.bookmarks, currentPage, onAddBookmark, onRemoveBookmark]);
 
     const handleToggleFullscreen = useCallback(async () => {
         try {
@@ -143,10 +168,10 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     useEffect(() => {
         const root = rootRef.current;
         if (!root) return;
+        previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         // Ensure reader owns keyboard focus when opened.
         root.focus({ preventScroll: true });
         const focusRoot = () => root.focus({ preventScroll: true });
-        const handleWindowFocus = () => focusRoot();
         const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
                 // Defer one tick so browser restores active element first.
@@ -154,12 +179,11 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             }
         };
         root.addEventListener("pointerdown", focusRoot);
-        window.addEventListener("focus", handleWindowFocus);
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => {
             root.removeEventListener("pointerdown", focusRoot);
-            window.removeEventListener("focus", handleWindowFocus);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
+            previousFocusRef.current?.focus?.();
         };
     }, []);
 
@@ -217,6 +241,11 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             tabIndex={-1}
             className="fixed inset-0 z-50 bg-white dark:bg-black font-sans overflow-hidden"
         >
+            {bookmarkError && (
+                <div className="absolute left-1/2 top-20 z-[70] -translate-x-1/2 rounded-lg border border-red-300/50 bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:border-red-700/50 dark:bg-red-950/40 dark:text-red-300">
+                    {bookmarkError}
+                </div>
+            )}
             {contentError && !isLoading && (
                 <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
                     <div className="max-w-md rounded-xl bg-white p-5 text-center shadow-xl dark:bg-neutral-900">
@@ -235,7 +264,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             </div>
 
             <ReaderOverlay
-                book={book}
+                book={activeBook}
                 showUI={showUI}
                 showSettings={showSettings}
                 showControls={showControls}
@@ -246,7 +275,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
                 isBookmarked={isBookmarked}
                 currentCfi={currentCfi}
                 toc={tocItems}
-                bookmarks={book.bookmarks || []}
+                bookmarks={activeBook.bookmarks || []}
                 isFullscreen={isFullscreen}
 
                 onClose={onClose}
