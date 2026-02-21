@@ -14,6 +14,19 @@ interface UseReaderShortcutsOptions {
 }
 
 export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
+  const {
+    nextPage,
+    prevPage,
+    onClose,
+    toggleBookmark,
+    toggleFullscreen,
+    toggleUI,
+    showSettings,
+    showControls,
+    setShowSettings,
+    setShowControls,
+  } = options;
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -24,47 +37,47 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         case "ArrowRight":
         case "PageDown":
           event.preventDefault();
-          options.nextPage();
+          nextPage();
           return;
         case "ArrowLeft":
         case "PageUp":
           event.preventDefault();
-          options.prevPage();
+          prevPage();
           return;
         case "b":
         case "B":
           event.preventDefault();
-          options.toggleBookmark();
+          toggleBookmark();
           return;
         case "f":
         case "F":
           event.preventDefault();
-          options.toggleFullscreen();
+          toggleFullscreen();
           return;
         case " ":
           event.preventDefault();
-          options.toggleUI();
+          toggleUI();
           return;
         case "t":
         case "T":
           event.preventDefault();
-          options.setShowControls(!options.showControls);
+          setShowControls(!showControls);
           return;
         case "s":
         case "S":
           event.preventDefault();
-          options.setShowSettings(!options.showSettings);
+          setShowSettings(!showSettings);
           return;
         case "Escape":
-          if (options.showSettings) {
-            options.setShowSettings(false);
+          if (showSettings) {
+            setShowSettings(false);
             return;
           }
-          if (options.showControls) {
-            options.setShowControls(false);
+          if (showControls) {
+            setShowControls(false);
             return;
           }
-          options.onClose();
+          onClose();
           return;
         default:
           return;
@@ -75,5 +88,16 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [options]);
+  }, [
+    nextPage,
+    prevPage,
+    onClose,
+    toggleBookmark,
+    toggleFullscreen,
+    toggleUI,
+    showSettings,
+    showControls,
+    setShowSettings,
+    setShowControls,
+  ]);
 }

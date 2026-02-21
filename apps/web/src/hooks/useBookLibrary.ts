@@ -30,7 +30,6 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
     try {
       const token = await getToken();
       const stored = await bookService.getBooks(token || undefined);
-      cleanupObjectUrls();
       const hydrated: Book[] = await Promise.all(
         stored.map(async (s): Promise<Book> => {
           const local = await getBookByIdFromDb(s.id).catch(() => null);
@@ -122,7 +121,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       if (persistent) {
         try {
           const token = await getToken();
-          await bookService.addBook(file, coverBlob, newBook, token || undefined);
+          await bookService.addBook(file, newBook, token || undefined);
         } catch (err) {
           console.error("Backend upload failed:", err);
           setBooks(prev => prev.filter(b => b.id !== newBook.id));
@@ -138,29 +137,20 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
   }, [persistent, getToken]);
 
   const updateBookProgress = useCallback(async (id: string, progress: number, lastLocation: string) => {
+    let nextBookForDb: Book | null = null;
     setBooks((prev) => prev.map((book) => {
       if (book.id !== id) return book;
-      const history = book.locationHistory || [];
+      const history = [...(book.locationHistory || [])];
       if (book.lastLocation && book.lastLocation !== lastLocation) {
         history.push(book.lastLocation);
         if (history.length > 10) history.shift();
       }
-      return { ...book, progress, lastLocation, lastOpenedAt: new Date().toISOString(), locationHistory: history };
+      const updated = { ...book, progress, lastLocation, lastOpenedAt: new Date().toISOString(), locationHistory: history };
+      nextBookForDb = updated;
+      return updated;
     }));
-    const current = books.find((b) => b.id === id);
-    if (current) {
-      const history = current.locationHistory || [];
-      if (current.lastLocation && current.lastLocation !== lastLocation) {
-        history.push(current.lastLocation);
-        if (history.length > 10) history.shift();
-      }
-      await putBookInDb({
-        ...current,
-        progress,
-        lastLocation,
-        lastOpenedAt: new Date().toISOString(),
-        locationHistory: history
-      }).catch((err) => {
+    if (nextBookForDb) {
+      await putBookInDb(nextBookForDb).catch((err) => {
         console.error("Failed to persist local progress:", err);
       });
     }
@@ -168,13 +158,18 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       const token = await getToken();
       await bookService.updateBookProgress(id, progress, lastLocation, token || undefined);
     } catch (e) { console.error("Failed to persist progress:", e); }
-  }, [books, persistent, getToken]);
+  }, [persistent, getToken]);
 
   const updateBook = useCallback(async (id: string, updates: Partial<Book>) => {
-    setBooks((prev) => prev.map((book) => book.id === id ? { ...book, ...updates } : book));
-    const current = books.find((b) => b.id === id);
-    if (current) {
-      await putBookInDb({ ...current, ...updates }).catch((err) => {
+    let nextBookForDb: Book | null = null;
+    setBooks((prev) => prev.map((book) => {
+      if (book.id !== id) return book;
+      const updated = { ...book, ...updates };
+      nextBookForDb = updated;
+      return updated;
+    }));
+    if (nextBookForDb) {
+      await putBookInDb(nextBookForDb).catch((err) => {
         console.error("Failed to persist local book update:", err);
       });
     }
@@ -182,7 +177,7 @@ export function useBookLibrary(options: UseBookLibraryOptions = {}) {
       const token = await getToken();
       await bookService.updateBook(id, updates, token || undefined);
     } catch (e) { console.error("Failed to update book:", e); }
-  }, [books, persistent, getToken]);
+  }, [persistent, getToken]);
 
   const toggleFavorite = useCallback((id: string) => {
     const book = books.find((b) => b.id === id);

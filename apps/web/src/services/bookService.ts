@@ -18,7 +18,7 @@ interface LibraryItemV2 {
 export interface IBookService {
     getBooks(token?: string): Promise<Book[]>;
     getBookContent(id: string, token?: string): Promise<Blob>;
-    addBook(file: File, cover: Blob | null, metadata: Book, token?: string): Promise<void>;
+    addBook(file: File, metadata: Book, token?: string): Promise<void>;
     updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void>;
     updateBookProgress(id: string, progress: number, lastLocation: string, token?: string): Promise<void>;
     deleteBook(id: string, token?: string): Promise<void>;
@@ -64,26 +64,16 @@ export const bookService: IBookService = {
         return await res.blob();
     },
 
-    async addBook(file: File, _cover: Blob | null, metadata: Book, token?: string): Promise<void> {
-        const contentHeaders: HeadersInit = {};
-        if (token) contentHeaders["Authorization"] = `Bearer ${token}`;
-        contentHeaders["Content-Type"] = file.type || "application/epub+zip";
-
-        const contentRes = await fetch(`/api/content/${encodeURIComponent(metadata.id)}`, {
-            method: "PUT",
-            headers: contentHeaders,
-            body: file,
-        });
-        await readJsonSafely<{ success: boolean }>(contentRes, "Failed to upload book content");
-
+    async addBook(file: File, metadata: Book, token?: string): Promise<void> {
         const headers: HeadersInit = {};
-        headers["Content-Type"] = "application/json";
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const res = await fetch(`/api/v2/library?id=${encodeURIComponent(metadata.id)}`, {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify({
+        const formData = new FormData();
+        formData.append("file", file, file.name || `${metadata.id}.epub`);
+        formData.append(
+            "metadata",
+            JSON.stringify({
+                id: metadata.id,
                 title: metadata.title,
                 author: metadata.author,
                 progress: 0,
@@ -91,9 +81,15 @@ export const bookService: IBookService = {
                 lastLocation: metadata.lastLocation || "",
                 favorite: !!metadata.isFavorite,
                 bookmarks: (metadata.bookmarks || []).map((bm) => ({ cfi: bm.cfi, title: bm.title })),
-            }),
+            })
+        );
+
+        const res = await fetch("/api/v2/library", {
+            method: "POST",
+            headers,
+            body: formData,
         });
-        await readJsonSafely<{ success: boolean }>(res, "Failed to save book metadata");
+        await readJsonSafely<{ success: boolean }>(res, "Failed to save book");
     },
 
     async updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void> {
@@ -132,12 +128,6 @@ export const bookService: IBookService = {
     async deleteBook(id: string, token?: string): Promise<void> {
         const headers: HeadersInit = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
-
-        const contentRes = await fetch(`/api/content/${encodeURIComponent(id)}`, {
-            method: "DELETE",
-            headers
-        });
-        await readJsonSafely<{ success: boolean }>(contentRes, "Failed to delete book content");
 
         const res = await fetch(`/api/v2/library?id=${encodeURIComponent(id)}`, {
             method: "DELETE",

@@ -10,32 +10,47 @@ interface UseReaderEngineProps {
 }
 
 export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
-    const [isReady, setIsReady] = useState(false);
+    const activeBookId = book.id;
+    const activeBlob = book.epubBlob;
+
     const [isLoading, setIsLoading] = useState(true);
     const [currentCfi, setCurrentCfi] = useState<string>("");
     const [totalPages, setTotalPages] = useState(book.totalPages || 100);
     const [currentPage, setCurrentPage] = useState(book.progress || 1);
     const [tocItems, setTocItems] = useState<any[]>([]);
-    const chapterTitle = "";
 
     const renditionRef = useRef<any>(null);
     const bookRef = useRef<any>(null);
+    const onUpdateProgressRef = useRef(onUpdateProgress);
+    const startLocationRef = useRef(book.lastLocation);
 
     const {
-        fontSize, lineHeight, fontPairing, textAlignment, maxTextWidth, hyphenation,
-        pageMargin, paragraphSpacing, readerForeground, readerBackground,
+        fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
+        readerForeground, readerBackground,
         continuous, spread, brightness, grayscale, reduceMotion
     } = useSettings();
+
+    const cozyTextWidth = 96;
+    const cozyPageMargin = 28;
+    const cozyParagraphSpacing = 14;
+
+    useEffect(() => {
+        onUpdateProgressRef.current = onUpdateProgress;
+    }, [onUpdateProgress]);
+
+    useEffect(() => {
+        startLocationRef.current = book.lastLocation;
+    }, [book.id, book.lastLocation]);
 
     // Initialize ePub
     useEffect(() => {
         let mounted = true;
+        const startLocation = startLocationRef.current;
 
         const init = async () => {
             try {
-                if (!book || !book.epubBlob) {
+                if (!activeBlob) {
                     setIsLoading(false);
-                    setIsReady(false);
                     return;
                 }
 
@@ -44,7 +59,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
                 if (!containerRef.current || !mounted) return;
 
-                const arrayBuffer = await book.epubBlob.arrayBuffer();
+                const arrayBuffer = await activeBlob.arrayBuffer();
                 bookRef.current = ePub(arrayBuffer);
 
                 // Extract TOC
@@ -62,8 +77,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 });
 
                 // Display book
-                if (book.lastLocation) {
-                    await renditionRef.current.display(book.lastLocation);
+                if (startLocation) {
+                    await renditionRef.current.display(startLocation);
                 } else {
                     await renditionRef.current.display();
                 }
@@ -79,7 +94,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                         const generatedPages = Math.max(1, bookRef.current.locations.length());
                         const page = Math.max(1, Math.ceil(percent * generatedPages));
                         setCurrentPage(page);
-                        onUpdateProgress(book.id, page, cfi);
+                        onUpdateProgressRef.current(activeBookId, page, cfi);
                     }
                 });
 
@@ -91,12 +106,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 }).catch((err: any) => console.warn("Location generation failed:", err));
 
                 setIsLoading(false);
-                setIsReady(true);
             } catch (err) {
                 console.error("Init error:", err);
                 if (mounted) {
                     setIsLoading(false);
-                    setIsReady(false);
                 }
             }
         };
@@ -108,7 +121,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             if (renditionRef.current) renditionRef.current.destroy();
             if (bookRef.current) bookRef.current.destroy();
         };
-    }, [book, continuous, spread, containerRef, onUpdateProgress]);
+    }, [activeBookId, activeBlob, continuous, spread, containerRef]);
 
     // Navigation methods
     const nextPage = useCallback(() => {
@@ -152,35 +165,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         if (cfi) renditionRef.current.display(cfi);
     }, [totalPages]);
 
-    // Helper to flatten TOC
-    const flattenToc = useCallback((items: any[]) => {
-        return items.reduce((acc: any[], item: any) => {
-            acc.push(item);
-            if (item.subitems) {
-                acc.push(...flattenToc(item.subitems));
-            }
-            return acc;
-        }, []);
-    }, []);
-
-    const prevChapter = useCallback(() => {
-        if (!renditionRef.current || !tocItems.length) return;
-        const flat = flattenToc(tocItems);
-        const currentIndex = flat.findIndex((item: any) => item.label.trim() === chapterTitle.trim());
-        if (currentIndex > 0) {
-            renditionRef.current.display(flat[currentIndex - 1].href);
-        }
-    }, [tocItems, chapterTitle, flattenToc]);
-
-    const nextChapter = useCallback(() => {
-        if (!renditionRef.current || !tocItems.length) return;
-        const flat = flattenToc(tocItems);
-        const currentIndex = flat.findIndex((item: any) => item.label.trim() === chapterTitle.trim());
-        if (currentIndex !== -1 && currentIndex < flat.length - 1) {
-            renditionRef.current.display(flat[currentIndex + 1].href);
-        }
-    }, [tocItems, chapterTitle, flattenToc]);
-
 
     // Get font family string
     const getFontFamily = useCallback(() => {
@@ -209,12 +193,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 "color": `${readerForeground} !important`,
                 "background-color": `${readerBackground} !important`,
                 "filter": `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0}) !important`,
-                "padding-top": `${pageMargin}px !important`,
-                "padding-bottom": `${pageMargin}px !important`,
-                "padding-left": `${continuous ? pageMargin : 0}px !important`,
-                "padding-right": `${continuous ? pageMargin : 0}px !important`,
+                "padding-top": `${cozyPageMargin}px !important`,
+                "padding-bottom": `${cozyPageMargin}px !important`,
+                "padding-left": `${continuous ? cozyPageMargin : 0}px !important`,
+                "padding-right": `${continuous ? cozyPageMargin : 0}px !important`,
                 ...(continuous ? {
-                    "max-width": `${maxTextWidth}ch !important`,
+                    "max-width": `${cozyTextWidth}ch !important`,
                     "margin": "0 auto !important",
                     "padding-bottom": "2em !important",
                 } : {
@@ -228,12 +212,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 "font-size": "inherit !important",
                 "line-height": "inherit !important",
                 "color": "inherit !important",
-                "margin-bottom": `${paragraphSpacing}px !important`,
+                "margin-bottom": `${cozyParagraphSpacing}px !important`,
                 "text-align": `${textAlignment} !important`,
                 "hyphens": hyphenation ? "auto !important" : "none !important",
             },
         });
-    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, pageMargin, maxTextWidth, hyphenation, paragraphSpacing, getFontFamily, continuous, grayscale, brightness]);
+    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous, grayscale, brightness]);
 
     // Apply styles when settings change
     useEffect(() => {
@@ -241,20 +225,16 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     }, [applyStyles]);
 
     return {
-        isReady,
         isLoading,
         currentCfi,
         totalPages,
         currentPage,
         tocItems,
-        chapterTitle,
         renditionRef,
         bookRef,
         nextPage,
         prevPage,
         display,
         goToPage,
-        nextChapter,
-        prevChapter
     };
 };

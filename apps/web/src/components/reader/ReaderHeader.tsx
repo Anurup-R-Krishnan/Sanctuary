@@ -14,7 +14,6 @@ import { useSettings } from "@/context/SettingsContext";
 
 interface ReaderHeaderProps {
     book: Book;
-    chapterTitle: string;
     isBookmarked: boolean;
     isFullscreen: boolean;
     showUI: boolean;
@@ -28,7 +27,6 @@ interface ReaderHeaderProps {
 
 const ReaderHeader: React.FC<ReaderHeaderProps> = ({
     book,
-    chapterTitle,
     isBookmarked,
     isFullscreen,
     showUI,
@@ -90,11 +88,6 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
                     >
                         {book.title}
                     </h1>
-                    {chapterTitle && (
-                        <p className="text-[10px] uppercase tracking-wider opacity-60 truncate max-w-[200px]" style={{ color: readerForeground }}>
-                            {chapterTitle}
-                        </p>
-                    )}
                 </div>
 
                 {/* Right: Actions (Floating Group) */}

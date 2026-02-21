@@ -55,7 +55,9 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   if (request.method === "PUT") {
-    const body = await request.json<Record<string, unknown>>().catch(() => ({}));
+    const body: Record<string, unknown> = await request
+      .json<Record<string, unknown>>()
+      .catch(() => ({} as Record<string, unknown>));
     const payload = {
       ...defaults,
       ...body,

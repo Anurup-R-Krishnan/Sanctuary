@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { ReadingStats, Badge, Book } from "@/types";
 
 const SESSIONS_KEY = "sanctuary_reading_sessions";
@@ -97,7 +97,7 @@ export function useReadingStats(books: Book[]) {
   }, []);
 
   // Calculate stats
-  const stats: ReadingStats = (() => {
+  const stats: ReadingStats = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
     const completedBooks = books.filter(b => b.progress >= 100);
 
@@ -269,7 +269,7 @@ export function useReadingStats(books: Book[]) {
       readingPersonality,
       personalityDescription,
     };
-  })();
+  }, [books, sessions, settings.dailyGoal]);
 
   // Add manual session (for testing/manual entry)
   const addManualSession = useCallback((bookId: string, date: string, duration: number, pagesRead: number) => {
