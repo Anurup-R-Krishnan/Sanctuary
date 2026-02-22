@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&family=Nunito:wght@400;600;700&family=VT323&family=Caveat:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cozy Library Palette */
+    --paper-cream: 253 251 247;    /* #FDFBF7 */
+    --aged-paper: 245 230 211;     /* #F5E6D3 */
+    --ink-navy: 28 42 58;          /* #1C2A3A */
+    --sepia-brown: 62 39 35;       /* #3E2723 */
+    --sage-green: 126 156 142;     /* #7E9C8E */
+    --woodstock-gold: 255 213 79;  /* #FFD54F */
+    --clay-red: 211 84 0;          /* #D35400 */
+
+    /* Shadows & Borders */
+    --pixel-border: 2px solid rgb(var(--ink-navy));
+    --shadow-deep:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06),
+      0 10px 15px -3px rgba(40, 66, 94, 0.1);
+  }
+
+  body {
+    @apply bg-[rgb(var(--paper-cream))] text-[rgb(var(--ink-navy))] font-sans antialiased selection:bg-[rgb(var(--woodstock-gold))] selection:text-[rgb(var(--ink-navy))];
+    /* Global Grain Texture */
+    position: relative;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+    z-index: 9999;
+    mix-blend-mode: multiply;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-semibold;
+  }
+}
+
+@layer components {
+  /* Cozy Primitives */
+  .card-paper {
+    @apply bg-white border border-[rgb(var(--aged-paper))] rounded-xl shadow-sm transition-all duration-300 relative;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.05),
+      0 4px 12px rgba(44, 28, 20, 0.05);
+  }
+
+  /* Rough Edge Effect */
+  .rough-edge {
+    clip-path: polygon(
+      0% 0%, 100% 0%, 100% 100%,
+      98% 99%, 96% 100%, 94% 99%, 92% 100%, 90% 99%, 88% 100%, 86% 99%,
+      84% 100%, 82% 99%, 80% 100%, 78% 99%, 76% 100%, 74% 99%, 72% 100%,
+      70% 99%, 68% 100%, 66% 99%, 64% 100%, 62% 99%, 60% 100%, 58% 99%,
+      56% 100%, 54% 99%, 52% 100%, 50% 99%, 48% 100%, 46% 99%, 44% 100%,
+      42% 99%, 40% 100%, 38% 99%, 36% 100%, 34% 99%, 32% 100%, 30% 99%,
+      28% 100%, 26% 99%, 24% 100%, 22% 99%, 20% 100%, 18% 99%, 16% 100%,
+      14% 99%, 12% 100%, 10% 99%, 8% 100%, 6% 99%, 4% 100%, 2% 99%,
+      0% 100%
+    );
+  }
+
+  .btn-cozy {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-2 font-medium transition-all duration-200 active:scale-95 relative overflow-hidden;
+    @apply bg-[rgb(var(--ink-navy))] text-[rgb(var(--paper-cream))] hover:bg-[rgb(var(--sage-green))];
+    box-shadow: 0 4px 0 rgb(20, 30, 45);
+  }
+
+  .btn-cozy:active {
+    box-shadow: 0 0 0 transparent;
+    transform: translateY(4px);
+  }
+
+  .input-underline {
+    @apply bg-transparent border-b-2 border-[rgb(var(--aged-paper))] px-2 py-1 outline-none transition-colors focus:border-[rgb(var(--sage-green))] font-hand;
+  }
+
+  /* Tape Effect */
+  .tape-strip {
+    @apply absolute h-8 w-24 bg-white/40 backdrop-blur-sm shadow-sm;
+    transform: rotate(-2deg);
+    mask-image: url("data:image/svg+xml,%3Csvg width='100' height='30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h100v30H0z' fill='black'/%3E%3C/svg%3E");
+    /* In a real scenario, use a jagged edge SVG mask */
+    border-left: 2px dashed rgba(255,255,255,0.4);
+    border-right: 2px dashed rgba(255,255,255,0.4);
+  }
+
+  /* Pixel Art */
+  .pixel-border {
+    border: 2px solid rgb(var(--ink-navy));
+    box-shadow: 4px 4px 0px rgb(var(--ink-navy));
+  }
+
+  .pixel-btn {
+    @apply font-pixel text-xs px-4 py-2 bg-[rgb(var(--woodstock-gold))] text-[rgb(var(--ink-navy))] uppercase tracking-widest border-2 border-[rgb(var(--ink-navy))] hover:translate-y-0.5 hover:shadow-none active:translate-y-1 transition-all;
+    box-shadow: 3px 3px 0px rgb(var(--ink-navy));
+  }
+}

@@ -70,59 +70,75 @@ const StatsView: React.FC = () => {
     return (
         <div className="page-stack max-w-4xl mx-auto pb-20">
             {/* Journal Header */}
-            <div className="text-center mb-10 space-y-2">
-                <div className="inline-block p-3 rounded-full bg-[rgb(var(--aged-paper))] border-2 border-[rgb(var(--ink-navy))] shadow-pixel mb-4">
+            <div className="text-center mb-10 space-y-2 relative">
+                <motion.div
+                    initial={{ rotate: -5 }}
+                    animate={{ rotate: 5 }}
+                    transition={{ duration: 4, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
+                    className="inline-block p-4 rounded-full bg-[rgb(var(--aged-paper))] border-2 border-[rgb(var(--ink-navy))] shadow-deep mb-4"
+                >
                     <Book className="w-8 h-8 text-[rgb(var(--ink-navy))]" />
-                </div>
-                <h1 className="text-4xl font-serif font-bold text-[rgb(var(--ink-navy))]">Reading Journal</h1>
-                <p className="text-[rgb(var(--sepia-brown))] font-serif italic">"A room without books is like a body without a soul."</p>
+                </motion.div>
+                <h1 className="text-5xl font-serif font-bold text-[rgb(var(--ink-navy))] tracking-tight">Reading Journal</h1>
+                <p className="text-[rgb(var(--sepia-brown))] font-hand text-xl italic opacity-80 rotate-1">"A room without books is like a body without a soul."</p>
+
+                {/* Coffee Stain Decoration */}
+                <div className="absolute top-0 right-10 w-32 h-32 bg-[rgb(var(--woodstock-gold))] opacity-10 rounded-full blur-2xl pointer-events-none mix-blend-multiply" />
             </div>
 
             {/* Letter from the Librarian */}
             <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-10 bg-[rgb(var(--paper-cream))] p-6 sm:p-8 rounded-xl border border-[rgb(var(--aged-paper))] shadow-sm relative overflow-hidden"
+                initial={{ opacity: 0, y: 10, rotate: -1 }}
+                animate={{ opacity: 1, y: 0, rotate: -1 }}
+                whileHover={{ rotate: 0, scale: 1.01 }}
+                className="mb-10 bg-[rgb(var(--paper-cream))] p-6 sm:p-10 rounded-xl border border-[rgb(var(--aged-paper))] shadow-deep relative overflow-visible transform transition-transform"
             >
-                <div className="absolute top-0 left-0 w-full h-2 bg-[rgb(var(--ink-navy))]/10" />
-                <div className="flex gap-4">
-                    <div className="shrink-0 pt-1">
-                        <Feather className="w-6 h-6 text-[rgb(var(--sage-green))]" />
+                {/* Tape */}
+                <div className="tape-strip -top-4 left-1/2 -translate-x-1/2 w-40 opacity-80" />
+
+                <div className="flex gap-6 items-start">
+                    <div className="shrink-0 pt-2 p-2 bg-[rgb(var(--ink-navy))] rounded-full shadow-md">
+                        <Feather className="w-6 h-6 text-[rgb(var(--paper-cream))]" />
                     </div>
                     <div>
-                        <h3 className="font-serif font-bold text-lg text-[rgb(var(--ink-navy))] mb-2">Weekly Correspondence</h3>
-                        <p className="font-serif text-[rgb(var(--ink-navy))] leading-relaxed text-lg">
+                        <h3 className="font-serif font-bold text-2xl text-[rgb(var(--ink-navy))] mb-3 border-b-2 border-[rgb(var(--ink-navy))]/10 pb-2">
+                            Weekly Correspondence
+                        </h3>
+                        <p className="font-serif text-[rgb(var(--ink-navy))] leading-relaxed text-lg italic">
                             "Dearest Reader, <br/><br/>
                             {stats.totalPagesRead > 0
                                 ? `It seems you've been quite busy! Turning ${stats.totalPagesRead} pages is a wonderful achievement. Your consistency is admirable.`
                                 : "The library is quiet, waiting for you to open a new chapter. There is no time like the present to begin an adventure."
                             }
-                            <br/>
+                            <br/><br/>
                             Keep the kettle on."
                         </p>
-                        <p className="font-serif text-[rgb(var(--sepia-brown))] mt-4 text-right italic">- The Librarian</p>
+                        <p className="font-hand font-bold text-[rgb(var(--sepia-brown))] mt-6 text-right text-xl -rotate-2">- The Librarian</p>
                     </div>
                 </div>
             </motion.div>
 
             {/* Main Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                 {/* Current Streak (Ticket Style) */}
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="relative bg-[rgb(var(--woodstock-gold))] p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex items-center justify-between overflow-hidden"
+                    whileHover={{ y: -5 }}
+                    className="relative bg-[rgb(var(--woodstock-gold))] p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex items-center justify-between overflow-hidden group"
                 >
                     <div className="relative z-10">
                         <h3 className="text-xs font-pixel uppercase tracking-widest text-[rgb(var(--ink-navy))] opacity-80 mb-1">Current Streak</h3>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-5xl font-pixel text-[rgb(var(--ink-navy))]">{stats.currentStreak}</span>
-                            <span className="text-sm font-bold text-[rgb(var(--ink-navy))]">days</span>
+                            <span className="text-6xl font-pixel text-[rgb(var(--ink-navy))] drop-shadow-sm">{stats.currentStreak}</span>
+                            <span className="text-lg font-bold text-[rgb(var(--ink-navy))]">days</span>
                         </div>
                     </div>
-                    <Flame className="w-16 h-16 text-[rgb(var(--ink-navy))] opacity-20 absolute -right-2 -bottom-2 rotate-12" />
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-[rgb(var(--paper-cream))] rounded-r-full border-y-2 border-r-2 border-[rgb(var(--ink-navy))]" />
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-[rgb(var(--paper-cream))] rounded-l-full border-y-2 border-l-2 border-[rgb(var(--ink-navy))]" />
+                    <Flame className="w-24 h-24 text-[rgb(var(--ink-navy))] opacity-10 absolute -right-4 -bottom-4 rotate-12 group-hover:scale-110 transition-transform duration-500" />
+
+                    {/* Ticket Cutouts */}
+                    <div className="absolute left-0 top-1/2 -translate-x-1/2 w-4 h-8 bg-[rgb(var(--paper-cream))] rounded-r-full border-y-2 border-r-2 border-[rgb(var(--ink-navy))]" />
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-[rgb(var(--paper-cream))] rounded-l-full border-y-2 border-l-2 border-[rgb(var(--ink-navy))]" />
                 </motion.div>
 
                 {/* Level / XP (Pixel Progress) */}
@@ -130,104 +146,123 @@ const StatsView: React.FC = () => {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="bg-[rgb(var(--aged-paper))] p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex flex-col justify-center"
+                    className="bg-[rgb(var(--aged-paper))] p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex flex-col justify-center relative overflow-hidden"
                 >
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="font-pixel text-xs text-[rgb(var(--ink-navy))]">
+                    {/* Background Grid Pattern */}
+                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, rgb(var(--ink-navy)) 1px, transparent 1px)", backgroundSize: "10px 10px" }} />
+
+                    <div className="flex justify-between items-center mb-4 relative z-10">
+                        <span className="font-pixel text-sm text-[rgb(var(--ink-navy))] bg-white px-2 py-1 border border-[rgb(var(--ink-navy))] shadow-pixel-sm">
                             LEVEL {Math.floor(stats.totalPagesRead / 100) + 1} BOOKWORM
                         </span>
-                        <span className="font-pixel text-xs text-[rgb(var(--ink-navy))]">
-                            XP: {stats.totalPagesRead % 100}/100
-                        </span>
+                        <div className="flex items-center gap-1 font-pixel text-xs text-[rgb(var(--ink-navy))]">
+                            <Award className="w-3 h-3" />
+                            <span>{stats.totalPagesRead % 100}/100 XP</span>
+                        </div>
                     </div>
-                    <div className="h-4 w-full bg-white border-2 border-[rgb(var(--ink-navy))] rounded-full p-0.5">
+                    <div className="h-6 w-full bg-white border-2 border-[rgb(var(--ink-navy))] rounded-full p-1 relative z-10">
                         <div
-                            className="h-full bg-[rgb(var(--clay-red))] rounded-full border border-[rgb(var(--ink-navy))]"
+                            className="h-full bg-[rgb(var(--clay-red))] rounded-full border border-[rgb(var(--ink-navy))] shadow-inner"
                             style={{ width: `${Math.min(100, stats.totalPagesRead % 100)}%` }}
                         />
                     </div>
                 </motion.div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Reading Memories (Timeline) */}
-                <div className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex flex-col">
-                    <div className="flex items-center gap-2 mb-6">
+                <div className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel flex flex-col relative rotate-1">
+                    {/* Tape holding it */}
+                    <div className="tape-strip -top-3 left-10 w-24 opacity-60 rotate-2" />
+
+                    <div className="flex items-center gap-2 mb-6 border-b-2 border-[rgb(var(--ink-navy))]/10 pb-4 border-dashed">
                         <Scroll className="w-5 h-5 text-[rgb(var(--ink-navy))]" />
-                        <h3 className="font-serif font-bold text-lg text-[rgb(var(--ink-navy))]">Recent Memories</h3>
+                        <h3 className="font-serif font-bold text-xl text-[rgb(var(--ink-navy))]">Recent Memories</h3>
                     </div>
-                    <div className="space-y-6 relative pl-2">
-                        {/* Timeline Line */}
-                        <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-[rgb(var(--aged-paper))]" />
+                    <div className="space-y-8 relative pl-2">
+                        {/* Timeline Line (Hand drawn style) */}
+                        <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-[rgb(var(--ink-navy))] opacity-20" />
 
                         {readingMemories.map((memory) => (
-                            <div key={memory.id} className="relative pl-6">
-                                <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-[rgb(var(--paper-cream))] border-2 border-[rgb(var(--ink-navy))] flex items-center justify-center z-10">
+                            <div key={memory.id} className="relative pl-8 group">
+                                <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-[rgb(var(--paper-cream))] border-2 border-[rgb(var(--ink-navy))] flex items-center justify-center z-10 group-hover:scale-110 transition-transform">
                                     <div className="w-2 h-2 rounded-full bg-[rgb(var(--ink-navy))]" />
                                 </div>
-                                <span className="text-xs font-pixel text-[rgb(var(--sepia-brown))] bg-[rgb(var(--aged-paper))] px-1 rounded">{memory.date}</span>
-                                <p className="text-sm font-bold text-[rgb(var(--ink-navy))] mt-1">
-                                    {memory.action} <span className="italic">{memory.book}</span>
+                                <span className="text-xs font-pixel text-[rgb(var(--sepia-brown))] bg-[rgb(var(--aged-paper))] px-2 py-0.5 rounded border border-[rgb(var(--ink-navy))]/20">{memory.date}</span>
+                                <p className="text-base font-serif font-bold text-[rgb(var(--ink-navy))] mt-1 leading-tight">
+                                    {memory.action} <span className="italic text-[rgb(var(--clay-red))] decoration-wavy underline decoration-[rgb(var(--woodstock-gold))]">{memory.book}</span>
                                 </p>
-                                <span className="text-xs text-[rgb(var(--sage-green))] uppercase tracking-wide font-bold">Mood: {memory.mood}</span>
+                                <span className="text-[10px] font-pixel text-[rgb(var(--sage-green))] uppercase tracking-widest mt-1 block">Mood: {memory.mood}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Calendar & Mood */}
-                <div className="md:col-span-2 space-y-6">
+                <div className="md:col-span-2 space-y-8">
                      {/* Calendar */}
-                    <div className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel">
-                        <div className="flex items-center gap-2 mb-6">
-                            <Calendar className="w-5 h-5 text-[rgb(var(--sage-green))]" />
-                            <h3 className="font-serif font-bold text-lg text-[rgb(var(--ink-navy))]">Consistency Calendar</h3>
+                    <div className="bg-white p-8 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel relative overflow-hidden -rotate-1">
+                        <div className="absolute right-0 top-0 p-4 opacity-5">
+                            <Calendar className="w-32 h-32" />
                         </div>
-                        <div className="flex justify-center py-4">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-[rgb(var(--sage-green))] border-2 border-[rgb(var(--ink-navy))] rounded-lg shadow-pixel-sm">
+                                <Calendar className="w-5 h-5 text-white" />
+                            </div>
+                            <h3 className="font-serif font-bold text-xl text-[rgb(var(--ink-navy))]">Consistency Calendar</h3>
+                        </div>
+                        <div className="flex justify-center py-6 bg-[rgb(var(--paper-cream))] rounded-lg border border-[rgb(var(--aged-paper))] border-dashed">
                              {renderContributionGrid()}
                         </div>
-                        <p className="text-center text-xs text-[rgb(var(--sepia-brown))] mt-4 font-pixel">KEEP THE FIRE BURNING!</p>
+                        <p className="text-center text-sm text-[rgb(var(--sepia-brown))] mt-4 font-hand font-bold tracking-wide">"KEEP THE FIRE BURNING!"</p>
                     </div>
 
                     {/* Mood Palette */}
-                    <div className="bg-white p-6 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel">
-                        <div className="flex items-center gap-2 mb-6">
-                            <Sparkles className="w-5 h-5 text-[rgb(var(--woodstock-gold))]" />
-                            <h3 className="font-serif font-bold text-lg text-[rgb(var(--ink-navy))]">Reading Mood</h3>
+                    <div className="bg-white p-8 rounded-xl border-2 border-[rgb(var(--ink-navy))] shadow-pixel relative rotate-1">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-[rgb(var(--woodstock-gold))] border-2 border-[rgb(var(--ink-navy))] rounded-lg shadow-pixel-sm">
+                                <Sparkles className="w-5 h-5 text-[rgb(var(--ink-navy))]" />
+                            </div>
+                            <h3 className="font-serif font-bold text-xl text-[rgb(var(--ink-navy))]">Reading Mood</h3>
                         </div>
-                        <div className="space-y-4">
-                            {moodData.length > 0 ? moodData.map((mood) => (
+                        <div className="space-y-5">
+                            {moodData.map((mood) => (
                                 <div key={mood.genre}>
-                                    <div className="flex justify-between text-xs font-bold text-[rgb(var(--sepia-brown))] mb-1">
+                                    <div className="flex justify-between text-xs font-bold text-[rgb(var(--sepia-brown))] mb-1 font-pixel uppercase tracking-widest">
                                         <span>{mood.genre}</span>
                                         <span>{mood.count}</span>
                                     </div>
-                                    <div className="h-2 w-full bg-[rgb(var(--aged-paper))] rounded-full overflow-hidden">
+                                    <div className="h-3 w-full bg-[rgb(var(--aged-paper))] rounded-full overflow-hidden border border-[rgb(var(--ink-navy))]/20">
                                         <div className={`h-full ${mood.color}`} style={{ width: `${(mood.count / Math.max(1, stats.totalBooksRead)) * 100}%` }} />
                                     </div>
                                 </div>
-                            )) : (
-                                <p className="text-sm text-[rgb(var(--sepia-brown))] italic">Read books with genre tags to see your mood palette.</p>
-                            )}
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
 
-             {/* Badges Section - using real badges */}
-             <div className="mt-10">
-                <h3 className="font-pixel text-lg text-[rgb(var(--ink-navy))] mb-6 text-center">--- UNLOCKED BADGES ---</h3>
-                <div className="flex flex-wrap justify-center gap-4">
+             {/* Badges Section */}
+             <div className="mt-16 relative">
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-[rgb(var(--ink-navy))] opacity-20" />
+                <h3 className="font-pixel text-xl text-[rgb(var(--ink-navy))] mb-8 text-center bg-[rgb(var(--paper-cream))] inline-block px-4 relative z-10 mx-auto w-fit border-2 border-[rgb(var(--ink-navy))] shadow-pixel-sm py-1">
+                    UNLOCKED BADGES
+                </h3>
+
+                <div className="flex flex-wrap justify-center gap-6">
                     {stats.badges.filter(b => b.unlocked).length > 0 ? stats.badges.filter(b => b.unlocked).map((badge) => (
-                        <div key={badge.id} className="group relative w-24 h-24 bg-[rgb(var(--paper-cream))] rounded-xl border-2 border-[rgb(var(--ink-navy))] flex items-center justify-center hover:scale-110 transition-transform cursor-help">
-                            <Award className="w-10 h-10 text-[rgb(var(--woodstock-gold))]" />
-                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[rgb(var(--ink-navy))] text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap font-pixel pointer-events-none transition-opacity z-20">
-                                {badge.name}
+                        <div key={badge.id} className="group relative w-28 h-28 bg-white rounded-xl border-2 border-[rgb(var(--ink-navy))] flex flex-col items-center justify-center hover:scale-110 transition-transform cursor-help shadow-pixel hover:shadow-deep hover:-rotate-3">
+                            <Award className="w-10 h-10 text-[rgb(var(--woodstock-gold))] mb-2" />
+                            <span className="text-[10px] font-pixel text-center px-1 leading-tight">{badge.name}</span>
+
+                            {/* Tooltip */}
+                            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 bg-[rgb(var(--ink-navy))] text-white text-[10px] px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap font-pixel pointer-events-none transition-opacity z-20 shadow-lg">
+                                Unlocked!
                             </div>
                         </div>
                     )) : (
-                        <div className="w-24 h-24 bg-[rgb(var(--aged-paper))] rounded-xl border-2 border-dashed border-[rgb(var(--ink-navy))] flex items-center justify-center opacity-50">
-                            <span className="text-2xl">?</span>
+                        <div className="w-28 h-28 bg-[rgb(var(--aged-paper))] rounded-xl border-2 border-dashed border-[rgb(var(--ink-navy))] flex items-center justify-center opacity-50">
+                            <span className="text-4xl font-hand text-[rgb(var(--ink-navy))]">?</span>
                         </div>
                     )}
                 </div>
