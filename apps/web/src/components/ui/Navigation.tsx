@@ -1,6 +1,7 @@
 import React from "react";
+import { Library, BookOpen, Settings, BarChart2 } from "lucide-react";
 import { View } from "@/types";
-import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface NavigationProps {
   activeView: View;
@@ -10,41 +11,46 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReaderActive }) => {
   const navItems = [
-    { view: View.LIBRARY, label: "Library", icon: Library, disabled: false },
-    { view: View.READER, label: "Reader", icon: BookOpen, disabled: !isReaderActive },
-    { view: View.STATS, label: "Stats", icon: BarChart3, disabled: false },
-    { view: View.SETTINGS, label: "Settings", icon: Settings, disabled: false },
+    { id: View.LIBRARY, label: "Library", icon: Library },
+    { id: View.READER, label: "Reader", icon: BookOpen, disabled: !isReaderActive },
+    { id: View.STATS, label: "Journal", icon: BarChart2 },
+    { id: View.SETTINGS, label: "Settings", icon: Settings },
   ];
 
   return (
-    <nav aria-label="Primary navigation" className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-1 p-1.5 rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md shadow-lg">
-        {navItems.map((item) => {
-          const isActive = activeView === item.view;
-          const Icon = item.icon;
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+      <div className="flex items-end gap-2 p-2 rounded-2xl bg-[rgb(var(--paper-cream))] border-2 border-[rgb(var(--ink-navy))] shadow-deep">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => !item.disabled && onNavigate(item.id)}
+            disabled={item.disabled}
+            className={`group relative flex flex-col items-center justify-end w-16 transition-all duration-300 ${
+              item.disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
+            }`}
+          >
+            {/* String/Chain holding the sign */}
+            <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-[rgb(var(--ink-navy))] origin-top transition-all duration-500 ${activeView === item.id ? "h-6" : "group-hover:h-5"}`} />
 
-          return (
-            <button
-              type="button"
-              key={item.view}
-              onClick={() => !item.disabled && onNavigate(item.view)}
-              disabled={item.disabled}
-              className={`h-11 px-3 rounded-xl flex items-center gap-2 text-sm transition-colors ${isActive
-                ? "bg-light-accent/12 dark:bg-dark-accent/18 text-light-accent dark:text-dark-accent"
-                : item.disabled
-                  ? "text-light-text-muted/40 dark:text-dark-text-muted/40 cursor-not-allowed"
-                  : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+            {/* The "Sign" */}
+            <div
+                className={`relative z-10 w-full h-14 rounded-lg border-2 border-[rgb(var(--ink-navy))] flex items-center justify-center transition-all duration-300 origin-top
+                ${activeView === item.id
+                    ? "bg-[rgb(var(--woodstock-gold))] -translate-y-2 shadow-pixel-sm rotate-0"
+                    : "bg-white hover:bg-[rgb(var(--aged-paper))] hover:rotate-2 hover:-translate-y-1 shadow-sm"
                 }`}
-              aria-label={item.label}
-              aria-current={isActive ? "page" : undefined}
             >
-              <Icon className="w-4 h-4" />
-              <span className="hidden sm:inline font-medium">{item.label}</span>
-            </button>
-          );
-        })}
+                <item.icon className={`w-6 h-6 ${activeView === item.id ? "text-[rgb(var(--ink-navy))]" : "text-[rgb(var(--sepia-brown))]"}`} />
+            </div>
+
+            {/* Label (Tooltip style on hover) */}
+            <span className={`absolute -bottom-6 text-[10px] font-pixel font-bold tracking-wider text-[rgb(var(--ink-navy))] transition-opacity duration-200 ${activeView === item.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                {item.label}
+            </span>
+          </button>
+        ))}
       </div>
-    </nav>
+    </div>
   );
 };
 
