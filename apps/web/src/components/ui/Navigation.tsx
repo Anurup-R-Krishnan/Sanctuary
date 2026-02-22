@@ -1,7 +1,6 @@
-import React from "react";
-import { Library, BookOpen, Settings, BarChart2 } from "lucide-react";
+import React, { useMemo } from "react";
 import { View } from "@/types";
-import { motion } from "framer-motion";
+import { Library, BookOpen, Settings, BarChart2 } from "lucide-react";
 
 interface NavigationProps {
   activeView: View;
@@ -10,47 +9,62 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReaderActive }) => {
-  const navItems = [
-    { id: View.LIBRARY, label: "Library", icon: Library },
-    { id: View.READER, label: "Reader", icon: BookOpen, disabled: !isReaderActive },
-    { id: View.STATS, label: "Journal", icon: BarChart2 },
-    { id: View.SETTINGS, label: "Settings", icon: Settings },
-  ];
+  const navItems = useMemo(() => [
+    { id: View.LIBRARY, label: "Library", icon: Library, rotation: -2, delay: 0 },
+    { id: View.READER, label: "Reader", icon: BookOpen, rotation: 3, delay: 0.1, disabled: !isReaderActive },
+    { id: View.STATS, label: "Journal", icon: BarChart2, rotation: -1, delay: 0.2 },
+    { id: View.SETTINGS, label: "Settings", icon: Settings, rotation: 2, delay: 0.3 },
+  ], [isReaderActive]);
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-      <div className="flex items-end gap-2 p-2 rounded-2xl bg-[rgb(var(--paper-cream))] border-2 border-[rgb(var(--ink-navy))] shadow-deep">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none pb-4 sm:pb-8 flex justify-center items-end">
+      {/* Container is invisible, items are scattered */}
+      <div className="flex gap-4 sm:gap-8 items-end justify-center pointer-events-auto max-w-lg mx-auto px-4">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => !item.disabled && onNavigate(item.id)}
             disabled={item.disabled}
-            className={`group relative flex flex-col items-center justify-end w-16 transition-all duration-300 ${
-              item.disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"
-            }`}
+            className={`
+              relative group flex flex-col items-center justify-center
+              w-16 h-20 sm:w-20 sm:h-24
+              bg-white p-2 pb-6 sm:pb-8
+              shadow-scrap-card transition-all duration-300 ease-out
+              border border-gray-100
+              ${item.disabled ? "opacity-50 grayscale cursor-not-allowed" : "hover:z-50 hover:scale-110 hover:-translate-y-2 hover:shadow-scrap-lift cursor-pointer"}
+            `}
+            style={{
+              transform: `rotate(${item.rotation}deg)`,
+              transitionDelay: `${item.delay}s`
+            }}
           >
-            {/* String/Chain holding the sign */}
-            <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-0.5 h-4 bg-[rgb(var(--ink-navy))] origin-top transition-all duration-500 ${activeView === item.id ? "h-6" : "group-hover:h-5"}`} />
-
-            {/* The "Sign" */}
-            <div
-                className={`relative z-10 w-full h-14 rounded-lg border-2 border-[rgb(var(--ink-navy))] flex items-center justify-center transition-all duration-300 origin-top
-                ${activeView === item.id
-                    ? "bg-[rgb(var(--woodstock-gold))] -translate-y-2 shadow-pixel-sm rotate-0"
-                    : "bg-white hover:bg-[rgb(var(--aged-paper))] hover:rotate-2 hover:-translate-y-1 shadow-sm"
-                }`}
-            >
-                <item.icon className={`w-6 h-6 ${activeView === item.id ? "text-[rgb(var(--ink-navy))]" : "text-[rgb(var(--sepia-brown))]"}`} />
+            {/* Polaroid Photo Area */}
+            <div className={`w-full aspect-square bg-scrap-cream border border-gray-200 mb-2 flex items-center justify-center overflow-hidden
+                ${activeView === item.id ? "bg-scrap-sage/20 border-scrap-sage" : "group-hover:bg-scrap-blue/10"}
+            `}>
+                <item.icon
+                    className={`w-6 h-6 sm:w-8 sm:h-8 transition-colors ${
+                        activeView === item.id ? "text-scrap-navy stroke-2" : "text-scrap-blue stroke-1 group-hover:text-scrap-navy"
+                    }`}
+                />
             </div>
 
-            {/* Label (Tooltip style on hover) */}
-            <span className={`absolute -bottom-6 text-[10px] font-pixel font-bold tracking-wider text-[rgb(var(--ink-navy))] transition-opacity duration-200 ${activeView === item.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+            {/* Handwritten Label */}
+            <span className={`font-head text-[10px] sm:text-xs text-scrap-navy font-bold tracking-tight absolute bottom-1.5 sm:bottom-2 transform -rotate-1`}>
                 {item.label}
             </span>
+
+            {/* Tape Strip (Top Center) - Only visible on active or hover */}
+            <div
+                className={`absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-4 bg-scrap-sage/60 rotate-[-2deg] backdrop-blur-[1px] shadow-sm transition-opacity duration-300
+                ${activeView === item.id ? "opacity-100" : "opacity-0 group-hover:opacity-60"}
+                `}
+                style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.3) 2px, rgba(255,255,255,0.3) 4px)" }}
+            />
           </button>
         ))}
       </div>
-    </div>
+    </nav>
   );
 };
 

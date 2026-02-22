@@ -20,6 +20,7 @@ import ReaderView from "./components/pages/ReaderView";
 import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
 import ClerkAuth from "./components/pages/Auth";
+import ScrapbookLayout from "./components/layout/ScrapbookLayout";
 import { ReaderErrorBoundary } from "./components/ui/ReaderErrorBoundary";
 
 const App: React.FC = () => {
@@ -53,7 +54,6 @@ const App: React.FC = () => {
   }));
 
   // Library & Stats Hooks
-  // Guest and Clerk users both persist through the API with scoped identities.
   const persistent = true;
 
   useBookStoreController({ persistent });
@@ -143,87 +143,81 @@ const App: React.FC = () => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === Theme.DARK);
     root.classList.toggle("reduce-motion", reduceMotion);
-
-    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
-    document.body.style.backgroundColor = bgColor;
-    document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
   }, [theme, reduceMotion]);
 
-  // Render - Explicit Auth Screen (only when user asks to sign in)
+  // Render - Explicit Auth Screen (Scrapbook Themed)
   if (showAuthScreen && !isLoaded) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-light-accent/20 to-amber-500/20 dark:from-dark-accent/20 dark:to-amber-400/20 rounded-3xl blur-3xl scale-150" />
-          <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center shadow-2xl">
-            <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
-          </div>
+      <ScrapbookLayout>
+        <div className="min-h-screen flex flex-col items-center justify-center pointer-events-none">
+            <div className="bg-white p-8 rounded-full shadow-scrap-deep animate-pulse-soft border-4 border-scrap-navy pointer-events-auto">
+                <BookOpen className="w-12 h-12 text-scrap-navy" strokeWidth={2} />
+            </div>
+            <p className="mt-6 text-scrap-navy font-head text-xl font-bold bg-scrap-cream px-4 py-1 rounded-lg border border-scrap-navy shadow-sm transform -rotate-2">
+                Gathering supplies...
+            </p>
         </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Preparing your reading sanctuary...</p>
-        </div>
-      </div>
+      </ScrapbookLayout>
     );
   }
 
   if (showAuthScreen) {
-    return <ClerkAuth onContinueAsGuest={() => {
-      setIsGuest(true);
-      setShowAuthScreen(false);
-    }} />;
+    return (
+        <ScrapbookLayout>
+             <ClerkAuth onContinueAsGuest={() => {
+                setIsGuest(true);
+                setShowAuthScreen(false);
+             }} />
+        </ScrapbookLayout>
+    );
   }
 
   const isReader = view === View.READER;
 
-  // Render - App
-  return (
-    <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
-      {/* Header */}
-      {!isReader && (
-        <Header
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          searchTerm={searchTerm}
-          onSearch={setSearchTerm}
-          isGuest={isGuest}
-          onShowLogin={isGuest ? handleShowLogin : undefined}
-          onSignOut={isSignedIn ? handleSignOut : undefined}
-          userEmail={user?.primaryEmailAddress?.emailAddress}
-          userImage={user?.imageUrl}
-        />
-      )}
+  if (isReader && selectedBook) {
+      return (
+        <ReaderErrorBoundary onRecover={() => { void handleCloseReader(); }} resetKey={selectedBook.id}>
+          <ReaderView
+            book={selectedBook}
+            onClose={handleCloseReader}
+            onUpdateProgress={handleReaderProgress}
+            onAddBookmark={handleAddBookmark}
+            onRemoveBookmark={handleRemoveBookmark}
+            getBookContent={getBookContent}
+          />
+        </ReaderErrorBoundary>
+      );
+  }
 
-      {/* Main Content */}
-      <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
-        <div className={`${isReader ? "" : "page-shell animate-fadeIn"}`}>
+  // Render - Main App (Scrapbook Layout)
+  return (
+    <ScrapbookLayout view={view}>
+      {/* Header */}
+      <Header
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
+        isGuest={isGuest}
+        onShowLogin={isGuest ? handleShowLogin : undefined}
+        onSignOut={isSignedIn ? handleSignOut : undefined}
+        userEmail={user?.primaryEmailAddress?.emailAddress}
+        userImage={user?.imageUrl}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 pb-32">
           {view === View.LIBRARY && (
-            <LibraryGrid
-              onSelectBook={handleSelectBook}
-            />
+            <LibraryGrid onSelectBook={handleSelectBook} />
           )}
+          {/* We keep Stats and Settings as is for now, they will inherit global font/color styles but might need specific layout tweaks later if requested. The prompt focused on Library/Empty State. */}
           {view === View.SETTINGS && <SettingsView />}
           {view === View.STATS && <StatsView />}
-          {view === View.READER && selectedBook && (
-            <ReaderErrorBoundary onRecover={() => { void handleCloseReader(); }} resetKey={selectedBook.id}>
-              <ReaderView
-                book={selectedBook}
-                onClose={handleCloseReader}
-                onUpdateProgress={handleReaderProgress}
-                onAddBookmark={handleAddBookmark}
-                onRemoveBookmark={handleRemoveBookmark}
-                getBookContent={getBookContent}
-              />
-            </ReaderErrorBoundary>
-          )}
-        </div>
       </main>
 
       {/* Navigation */}
-      {!isReader && (
-        <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
-      )}
-    </div>
+      <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
+    </ScrapbookLayout>
   );
 };
 

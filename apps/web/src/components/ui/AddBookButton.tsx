@@ -64,27 +64,28 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
         <button
           onClick={() => inputRef.current?.click()}
           disabled={isLoading}
-          className="btn-primary"
+          className="px-6 py-3 bg-scrap-sage text-white font-head font-bold rounded-sm border-2 border-scrap-navy shadow-scrap-card hover:shadow-scrap-lift hover:-translate-y-1 transition-all flex items-center gap-2"
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
               <span>Adding...</span>
             </>
           ) : (
             <>
-              <Upload className="w-4 h-4" />
+              <Upload className="w-5 h-5" />
               <span>Add Book</span>
             </>
           )}
         </button>
         {errorMessage && (
-          <p className="max-w-xs text-center text-xs text-red-600 dark:text-red-400">{errorMessage}</p>
+          <p className="max-w-xs text-center text-xs text-red-600 font-body bg-red-100 px-2 py-1 border border-red-300 transform rotate-1">{errorMessage}</p>
         )}
       </>
     );
   }
 
+  // FAB Variant (Stamp / Sticker Style)
   return (
     <>
       <input
@@ -105,31 +106,44 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           disabled={isLoading}
-          className={`group flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-200 ${
-            isDragging
-              ? "bg-light-accent dark:bg-dark-accent scale-110"
-              : "bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:shadow-xl hover:scale-105"
-          }`}
+          className={`
+            group flex items-center justify-center
+            w-16 h-16 rounded-full
+            bg-scrap-navy border-4 border-scrap-cream outline outline-2 outline-scrap-navy
+            shadow-scrap-deep transition-all duration-300
+            hover:scale-110 hover:-translate-y-1 hover:rotate-12 hover:shadow-scrap-lift
+            active:scale-95 active:translate-y-0
+            ${isDragging ? "bg-scrap-sage rotate-12" : ""}
+          `}
           aria-label="Add book"
+          title="Add a new book (EPUB)"
         >
           {isLoading ? (
-            <Loader2 className="w-5 h-5 text-white animate-spin" />
+            <Loader2 className="w-6 h-6 text-scrap-cream animate-spin" />
           ) : (
             <Plus
-              className={`w-6 h-6 text-white transition-transform duration-200 ${
+              className={`w-8 h-8 text-scrap-cream transition-transform duration-200 stroke-[3px] ${
                 isDragging ? "rotate-45" : "group-hover:rotate-90"
               }`}
             />
           )}
+
+          {/* Sticker Edge Effect */}
+          <div className="absolute inset-0 rounded-full border border-white/20 pointer-events-none" />
         </button>
 
+        {/* Label Tooltip (Scrap of paper) */}
+        <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-white px-3 py-1 rounded-sm border border-scrap-navy shadow-sm transform -rotate-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            <span className="font-head font-bold text-scrap-navy text-xs">ADD NEW</span>
+        </div>
+
         {isDragging && (
-          <div className="absolute -inset-4 rounded-3xl border-2 border-dashed border-light-accent dark:border-dark-accent animate-pulse pointer-events-none" />
+          <div className="absolute -inset-4 rounded-full border-2 border-dashed border-scrap-sage animate-spin-slow pointer-events-none opacity-50" />
         )}
       </div>
       {errorMessage && (
-        <div className="fixed bottom-40 right-6 z-40 max-w-[260px] rounded-lg border border-red-300/60 bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-300">
-          {errorMessage}
+        <div className="fixed bottom-44 right-6 z-40 max-w-[260px] bg-red-50 border-2 border-red-200 p-3 shadow-scrap-card transform -rotate-1 font-body text-xs text-red-800">
+          <strong>Oops!</strong> {errorMessage}
         </div>
       )}
     </>
