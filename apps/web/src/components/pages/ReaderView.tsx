@@ -104,11 +104,23 @@ const ReaderView: React.FC<ReaderViewProps> = ({
     }, [activeBook.id, activeBook.epubBlob, getBookContent]);
 
     // Settings
-    const { screenReaderMode, brightness, grayscale } = useSettingsShallow((state) => ({
+    const { screenReaderMode, brightness, grayscale, reduceMotion, fontSize, fontFamily, lineHeight } = useSettingsShallow((state) => ({
         screenReaderMode: state.screenReaderMode,
         brightness: state.brightness,
         grayscale: state.grayscale,
+        reduceMotion: state.reduceMotion,
+        fontSize: state.fontSize,
+        fontFamily: state.fontFamily,
+        lineHeight: state.lineHeight
     }));
+
+    // Apply font settings via CSS variables for immediate effect
+    useEffect(() => {
+        if (rootRef.current) {
+            rootRef.current.style.setProperty('--reader-font-size', `${fontSize}px`);
+            rootRef.current.style.setProperty('--reader-line-height', `${lineHeight}`);
+        }
+    }, [fontSize, lineHeight]);
 
     // Reader Engine
     const {
@@ -218,16 +230,20 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
     // Wrap page turns to trigger animation
     const handleNextPage = useCallback(() => {
-        setIsTurningPage(true);
-        setTimeout(() => setIsTurningPage(false), 600); // Animation duration
+        if (!reduceMotion && !screenReaderMode) {
+            setIsTurningPage(true);
+            setTimeout(() => setIsTurningPage(false), 600); // Animation duration
+        }
         nextPage();
-    }, [nextPage]);
+    }, [nextPage, reduceMotion, screenReaderMode]);
 
     const handlePrevPage = useCallback(() => {
-        setIsTurningPage(true);
-        setTimeout(() => setIsTurningPage(false), 600);
+        if (!reduceMotion && !screenReaderMode) {
+            setIsTurningPage(true);
+            setTimeout(() => setIsTurningPage(false), 600);
+        }
         prevPage();
-    }, [prevPage]);
+    }, [prevPage, reduceMotion, screenReaderMode]);
 
     const handlePageChange = useCallback((page: number) => {
         goToPage(page);
@@ -305,7 +321,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
         <div
             ref={rootRef}
             tabIndex={-1}
-            className="fixed inset-0 z-50 bg-[rgb(var(--paper-cream))] text-[rgb(var(--ink-navy))] font-serif overflow-hidden transition-colors duration-1000 ease-in-out"
+            className={`fixed inset-0 z-50 bg-[rgb(var(--paper-cream))] text-[rgb(var(--ink-navy))] overflow-hidden transition-colors duration-1000 ease-in-out ${fontFamily === 'serif' ? 'font-serif' : fontFamily === 'mono' ? 'font-mono' : 'font-sans'}`}
         >
             {/* Ambient Background Noise/Texture */}
             <div className="absolute inset-0 pointer-events-none opacity-50 bg-repeat z-0 mix-blend-multiply"
@@ -314,7 +330,7 @@ const ReaderView: React.FC<ReaderViewProps> = ({
 
             {/* Page Turn Overlay Effect */}
             <AnimatePresence>
-                {isTurningPage && !screenReaderMode && (
+                {isTurningPage && !reduceMotion && !screenReaderMode && (
                     <motion.div
                         initial={{ x: "100%", opacity: 0 }}
                         animate={{ x: "-100%", opacity: 0.1 }}
