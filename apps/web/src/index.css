@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400;1,600&family=Nunito:wght@400;600;700&family=VT323&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Scrapbook Palette Variables (New) */
+    --scrap-cream: 253, 251, 247;
+    --scrap-navy: 44, 58, 79;
+    --scrap-sage: 139, 154, 139;
+    --scrap-blue: 91, 112, 138;
+    --scrap-kraft: 229, 217, 197;
+
+    /* Cozy Library Palette (Old - Kept for compatibility) */
+    --paper-cream: 253 251 247;    /* #FDFBF7 */
+    --aged-paper: 245 230 211;     /* #F5E6D3 */
+    --ink-navy: 28 42 58;          /* #1C2A3A */
+    --sepia-brown: 62 39 35;       /* #3E2723 */
+    --sage-green: 126 156 142;     /* #7E9C8E */
+    --woodstock-gold: 255 213 79;  /* #FFD54F */
+    --clay-red: 211 84 0;          /* #D35400 */
+
+    /* Pixel Art Touches */
+    --pixel-border: 2px solid rgb(var(--ink-navy));
+
+    /* Global Background: Noise Texture */
+    --noise-svg: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+
+    /* Torn Paper Clip Paths */
+    --torn-edge-top: polygon(0% 10px, 5% 0px, 10% 12px, 15% 2px, 20% 10px, 25% 0px, 30% 12px, 35% 2px, 40% 10px, 45% 0px, 50% 12px, 55% 2px, 60% 10px, 65% 0px, 70% 12px, 75% 2px, 80% 10px, 85% 0px, 90% 12px, 95% 2px, 100% 10px, 100% 100%, 0% 100%);
+    --torn-edge-all: polygon(
+        2% 0%, 5% 2%, 10% 0%, 15% 3%, 20% 0%, 25% 2%, 30% 0%, 35% 3%, 40% 0%, 45% 2%, 50% 0%, 55% 3%, 60% 0%, 65% 2%, 70% 0%, 75% 3%, 80% 0%, 85% 2%, 90% 0%, 95% 3%, 98% 0%,
+        100% 2%, 98% 5%, 100% 10%, 98% 15%, 100% 20%, 98% 25%, 100% 30%, 98% 35%, 100% 40%, 98% 45%, 100% 50%, 98% 55%, 100% 60%, 98% 65%, 100% 70%, 98% 75%, 100% 80%, 98% 85%, 100% 90%, 98% 95%, 100% 98%,
+        98% 100%, 95% 98%, 90% 100%, 85% 97%, 80% 100%, 75% 97%, 70% 100%, 65% 97%, 60% 100%, 55% 97%, 50% 100%, 45% 97%, 40% 100%, 35% 97%, 30% 100%, 25% 97%, 20% 100%, 15% 97%, 10% 100%, 5% 97%, 2% 100%,
+        0% 98%, 2% 95%, 0% 90%, 2% 85%, 0% 80%, 2% 75%, 0% 70%, 2% 65%, 0% 60%, 2% 55%, 0% 50%, 2% 45%, 0% 40%, 2% 35%, 0% 30%, 2% 25%, 0% 20%, 2% 15%, 0% 10%, 2% 5%, 0% 2%
+    );
+  }
+
+  body {
+    background-color: rgb(var(--scrap-cream));
+    color: rgb(var(--scrap-navy));
+    @apply font-sans antialiased overflow-x-hidden;
+  }
+
+  /* Compatibility for old components */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-semibold;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 12px;
+    background-color: rgb(var(--scrap-cream));
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--scrap-kraft));
+    border: 3px solid rgb(var(--scrap-cream));
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--scrap-sage));
+  }
+}
+
+@layer components {
+  /* Cozy Primitives (Old) */
+  .card-paper {
+    @apply bg-white border border-[rgb(var(--aged-paper))] rounded-xl shadow-sm transition-all duration-300;
+  }
+
+  .btn-cozy {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-2 font-medium transition-all duration-200 active:scale-95;
+    @apply bg-[rgb(var(--ink-navy))] text-[rgb(var(--paper-cream))] hover:bg-[rgb(var(--sage-green))];
+  }
+
+  .input-underline {
+    @apply bg-transparent border-b-2 border-[rgb(var(--aged-paper))] px-2 py-1 outline-none transition-colors focus:border-[rgb(var(--sage-green))];
+  }
+
+  /* Pixel Art (Old) */
+  .pixel-border {
+    border: 2px solid rgb(var(--ink-navy));
+    box-shadow: 4px 4px 0px rgb(var(--ink-navy));
+  }
+
+  .pixel-btn {
+    @apply font-pixel text-xs px-4 py-2 bg-[rgb(var(--woodstock-gold))] text-[rgb(var(--ink-navy))] uppercase tracking-widest border-2 border-[rgb(var(--ink-navy))] hover:translate-y-0.5 hover:shadow-none active:translate-y-1 transition-all;
+    box-shadow: 3px 3px 0px rgb(var(--ink-navy));
+  }
+}
+
+@layer utilities {
+  .font-head {
+    font-family: 'Fredoka', cursive;
+  }
+
+  .font-body {
+    font-family: 'Courier Prime', monospace;
+  }
+
+  .font-accent {
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Old fonts mapping */
+  .font-serif {
+    font-family: 'Crimson Pro', serif;
+  }
+  .font-pixel {
+    font-family: 'VT323', monospace;
+  }
+
+  .text-shadow-sm {
+    text-shadow: 1px 1px 0px rgba(44, 58, 79, 0.1);
+  }
+
+  .bg-noise {
+    background-image: var(--noise-svg);
+  }
+
+  .mask-torn-top {
+    clip-path: var(--torn-edge-top);
+  }
+
+  .mask-torn-all {
+    clip-path: var(--torn-edge-all);
+  }
+
+  /* Washi Tape Effect */
+  .washi-tape {
+    @apply absolute w-12 h-6 bg-scrap-sage/60 rotate-[-5deg] backdrop-blur-[1px] shadow-sm;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px);
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    z-index: 20;
+  }
+
+  .washi-tape-blue {
+     @apply bg-scrap-blue/60 rotate-[3deg];
+  }
+
+  .washi-tape-kraft {
+      @apply bg-scrap-kraft/80 rotate-[-2deg];
+  }
+
+  /* Polaroid/Card Styles */
+  .card-polaroid {
+    @apply bg-white p-2 pb-8 shadow-scrap-card transition-all duration-300 border border-black/5;
+  }
+
+  .card-polaroid:hover {
+    @apply shadow-scrap-lift -translate-y-1 rotate-1;
+    z-index: 30;
+  }
+
+  /* Stamp Style */
+  .stamp-edge {
+    --r: 3px; /* Radius of circles */
+    background: radial-gradient(var(--r), transparent 95%, #fff 100%) 0 0/calc(2*var(--r)) calc(2*var(--r)),
+                linear-gradient(#fff 0 0);
+    background-composite: destination-in; /* Standard */
+    mask: radial-gradient(var(--r), #0000 95%, #000 100%) 0 0/calc(2*var(--r)) calc(2*var(--r)),
+          linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}

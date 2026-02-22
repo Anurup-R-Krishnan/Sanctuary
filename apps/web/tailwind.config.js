@@ -1,132 +1,79 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['Nunito', 'system-ui', 'sans-serif'],
-        serif: ['Crimson Pro', 'Georgia', 'serif'],
-        mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
-        pixel: ['"VT323"', 'monospace'],
-      },
       colors: {
-        // Light theme colors (Cozy Library)
+        // Updated Maximalist/Scrapbook Palette
+        scrap: {
+          cream: '#FDFBF7',  // Pale, buttery cream
+          navy: '#2C3A4F',   // Deep slate navy
+          sage: '#8B9A8B',   // Muted sage green
+          blue: '#5B708A',   // Faded dusty blue
+          kraft: '#E5D9C5',  // Faded kraft paper
+          ink: '#1A2333',    // Darker ink for emphasis (optional)
+        },
+        // Keeping semantic tokens for compatibility but remapping them
         light: {
-          primary: 'rgb(var(--paper-cream))',
-          secondary: 'rgb(var(--aged-paper))',
-          surface: '#ffffff',
-          card: '#ffffff',
-          accent: 'rgb(var(--sage-green))',
-          text: 'rgb(var(--ink-navy))',
-          'text-muted': 'rgb(var(--sepia-brown))',
-          border: 'rgb(var(--aged-paper))',
-          'border-muted': '#f0efea',
+          primary: '#FDFBF7', // scrap-cream
+          surface: '#FFFFFF', // pure white (for cards/torn paper)
+          accent: '#5B708A',  // scrap-blue
+          text: '#2C3A4F',    // scrap-navy
+          'text-muted': '#5B708A', // scrap-blue
         },
-        // Dark theme colors (Night Reading) - kept similar structure but warmer
         dark: {
-          primary: '#1A1410',
-          secondary: '#2C2319',
-          surface: '#252320',
-          card: '#2a2825',
-          accent: '#D4AF37', // Gold
-          text: '#E8DCC8', // Parchment
-          'text-muted': '#B8A890',
-          border: '#3E2723',
-          'border-muted': '#2f2e2b',
-        },
+          // Minimal Dark Mode Support (inverts logic slightly but keeps vibe)
+          primary: '#1A2333', // dark-ink
+          surface: '#2C3A4F', // scrap-navy
+          accent: '#8B9A8B',  // scrap-sage
+          text: '#FDFBF7',    // scrap-cream
+          'text-muted': '#E5D9C5', // scrap-kraft
+        }
+      },
+      fontFamily: {
+        // Updated Fonts
+        'scrap-head': ['Fredoka', 'Sniglet', 'cursive'],
+        'scrap-body': ['"Courier Prime"', '"Special Elite"', 'monospace'],
+        'scrap-accent': ['"Playfair Display"', 'serif'],
+        // Remapping existing font tokens
+        sans: ['"Courier Prime"', 'monospace'], // Default to typewriter look
+        serif: ['"Playfair Display"', 'serif'],
+        mono: ['"Courier Prime"', 'monospace'],
+        pixel: ['"Press Start 2P"', 'cursive'], // Keep for legacy pixel elements if any
+        hand: ['"Indie Flower"', 'cursive'],    // Keep for legacy hand-drawn elements
+      },
+      backgroundImage: {
+        'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E\")",
       },
       boxShadow: {
-        'pixel': '4px 4px 0px rgb(var(--ink-navy))',
-        'pixel-sm': '2px 2px 0px rgb(var(--ink-navy))',
+        'scrap-card': '4px 6px 12px rgba(44, 58, 79, 0.15)', // Harsh shadow
+        'scrap-deep': '8px 10px 0px rgba(44, 58, 79, 0.1)', // Hard deep shadow
+        'scrap-lift': '4px 8px 16px rgba(44, 58, 79, 0.25)', // Lifted state
       },
-      // ... existing spacing/animation configs can stay or be cleaned up
       animation: {
-        'fade-in': 'fadeIn 0.4s ease-out',
-        'fade-out': 'fadeOut 0.3s ease-out',
-        'slide-up': 'slideUp 0.4s ease-out',
-        'slide-down': 'slideDown 0.4s ease-out',
-        'scale-in': 'scaleIn 0.3s ease-out',
-        'bounce-gentle': 'bounceGentle 2s ease-in-out infinite',
-        'pulse-soft': 'pulseSoft 2.5s ease-in-out infinite',
         'float': 'float 6s ease-in-out infinite',
-        'shimmer': 'shimmer 2.5s infinite',
+        'wiggle': 'wiggle 2s ease-in-out infinite',
+        'lift': 'lift 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        fadeOut: {
-          '0%': { opacity: '1' },
-          '100%': { opacity: '0' },
-        },
-        slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(24px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        slideDown: {
-          '0%': { opacity: '0', transform: 'translateY(-24px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-        bounceGentle: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-4px)' },
-        },
-        pulseSoft: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' },
-        },
         float: {
-          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
-          '33%': { transform: 'translateY(-10px) rotate(1deg)' },
-          '66%': { transform: 'translateY(-5px) rotate(-1deg)' },
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
         },
-        shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(-3deg)' },
+          '50%': { transform: 'rotate(3deg)' },
         },
+        lift: {
+          '0%': { transform: 'translateY(0)', boxShadow: '4px 6px 12px rgba(44, 58, 79, 0.15)' },
+          '100%': { transform: 'translateY(-4px) rotate(-1deg)', boxShadow: '6px 12px 20px rgba(44, 58, 79, 0.25)' },
+        }
       },
     },
   },
-  plugins: [
-    function ({ addUtilities, theme }) {
-      const newUtilities = {
-        '.text-balance': {
-          'text-wrap': 'balance',
-        },
-        '.text-pretty': {
-          'text-wrap': 'pretty',
-        },
-        '.scrollbar-none': {
-          '-ms-overflow-style': 'none',
-          'scrollbar-width': 'none',
-        },
-        '.scrollbar-none::-webkit-scrollbar': {
-          'display': 'none',
-        },
-        '.perspective': {
-          'perspective': '1200px',
-        },
-        '.preserve-3d': {
-          'transform-style': 'preserve-3d',
-        },
-        '.backface-hidden': {
-          'backface-visibility': 'hidden',
-        },
-        '.writing-vertical': {
-          'writing-mode': 'vertical-rl',
-          'text-orientation': 'mixed',
-        },
-      }
-      addUtilities(newUtilities)
-    }
-  ],
+  plugins: [],
 }

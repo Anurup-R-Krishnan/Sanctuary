@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
-import { Book } from "@/types";
-import { BookOpen, Star, Sparkles } from "lucide-react";
+import type { Book } from "@/types";
+import { BookOpen, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface BunniesPickProps {
@@ -9,9 +9,6 @@ interface BunniesPickProps {
 }
 
 const BunniesPick: React.FC<BunniesPickProps> = ({ books, onSelectBook }) => {
-  // Logic: Prefer a "Favorite" book that is NOT finished.
-  // If no favorites, pick a random unfinished book.
-  // If all finished, pick a random book.
   const pickedBook = useMemo(() => {
     if (!books.length) return null;
 
@@ -32,72 +29,77 @@ const BunniesPick: React.FC<BunniesPickProps> = ({ books, onSelectBook }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative w-full overflow-hidden rounded-2xl border-2 border-[rgb(var(--ink-navy))] bg-[rgb(var(--aged-paper))] p-6 sm:p-8 shadow-pixel mb-10"
+      initial={{ opacity: 0, y: 20, rotate: 1 }}
+      animate={{ opacity: 1, y: 0, rotate: 1 }}
+      className="relative w-full overflow-hidden rounded-sm border-2 border-scrap-navy bg-scrap-cream p-6 sm:p-8 shadow-scrap-deep mb-12 max-w-4xl mx-auto transform rotate-1"
     >
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-[rgb(var(--woodstock-gold))] opacity-20 blur-2xl" />
-      <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-24 w-24 rounded-full bg-[rgb(var(--sage-green))] opacity-20 blur-2xl" />
+      {/* Tape Strip */}
+      <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-48 h-10 bg-scrap-sage/60 rotate-1 backdrop-blur-[1px] shadow-sm z-20"
+           style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)" }}
+      />
 
-      {/* Pixel Art Decoration (SVG) */}
-      <div className="absolute top-4 right-4 animate-bounce-gentle hidden sm:block">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="rgb(var(--ink-navy))" className="opacity-80">
-             <path d="M4 2h2v2H4V2zm2 2h2v2H6V4zm2 2h2v2H8V6zm2 2h2v2h-2V8zm2-2h2v2h-2V6zm2-2h2v2h-2V4zm2-2h2v2h-2V2zM4 16h2v-2H4v2zm2-2h2v-2H6v2zm2-2h2v-2H8v2zm8 4h2v-2h-2v2zm2-2h2v-2h-2v2zm2-2h2v-2h-2v2z" />
-        </svg>
+      {/* Background Texture */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] opacity-80" />
+
+      {/* Decorative Stamp */}
+      <div className="absolute top-4 right-4 hidden sm:block opacity-60 transform rotate-12">
+        <div className="w-20 h-20 border-4 border-scrap-navy rounded-full flex items-center justify-center mask-stamp">
+             <span className="font-head font-bold text-scrap-navy text-xs text-center leading-tight">BUNNIES'<br/>CHOICE<br/>★</span>
+        </div>
       </div>
 
-      <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+      <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 sm:gap-12">
         {/* Book Cover with 3D effect */}
-        <div className="relative group shrink-0">
-          <div className="absolute inset-0 bg-[rgb(var(--ink-navy))] translate-x-2 translate-y-2 rounded-lg" />
+        <div className="relative group shrink-0 perspective-500">
           <motion.div
-            whileHover={{ y: -4, x: -4 }}
-            className="relative w-32 sm:w-40 aspect-[2/3] rounded-lg overflow-hidden border-2 border-[rgb(var(--ink-navy))]"
+            whileHover={{ rotateY: -10, rotateX: 5, scale: 1.05 }}
+            className="relative w-40 sm:w-48 aspect-[2/3] rounded-sm shadow-xl border-l-4 border-t border-b border-r border-white/20"
           >
             <img
               src={pickedBook.coverUrl}
               alt={pickedBook.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-r-sm shadow-md"
             />
-            {/* Shine effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none" />
+            {/* Gloss */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent pointer-events-none mix-blend-overlay" />
           </motion.div>
+          {/* Shadow */}
+          <div className="absolute -bottom-6 left-4 right-4 h-4 bg-black/30 blur-xl transform rotate-3" />
         </div>
 
         {/* Content */}
         <div className="flex-1 text-center md:text-left space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[rgb(var(--ink-navy))] bg-[rgb(var(--paper-cream))] text-xs font-pixel uppercase tracking-widest text-[rgb(var(--ink-navy))]">
-            <Sparkles className="w-3 h-3" />
-            <span>Bunnies' Pick</span>
-            <Sparkles className="w-3 h-3" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-scrap-kraft text-scrap-navy border border-scrap-navy/20 text-xs font-head font-bold uppercase tracking-widest shadow-sm transform -rotate-1">
+            <Sparkles className="w-3 h-3 text-scrap-sage" />
+            <span>Recommended Reading</span>
+            <Sparkles className="w-3 h-3 text-scrap-sage" />
           </div>
 
           <div>
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[rgb(var(--ink-navy))] mb-1">
+            <h2 className="text-3xl sm:text-4xl font-head font-bold text-scrap-navy mb-2 drop-shadow-sm">
               {pickedBook.title}
             </h2>
-            <p className="text-[rgb(var(--sepia-brown))] font-medium italic">
+            <p className="text-scrap-blue font-accent italic text-xl">
               by {pickedBook.author}
             </p>
           </div>
 
-          <p className="text-sm text-[rgb(var(--ink-navy))] opacity-80 max-w-lg mx-auto md:mx-0 font-sans leading-relaxed">
-             The bunnies have sniffed around your library and think this is the perfect story for right now.
-             Curl up with a warm drink and dive in!
+          <p className="text-base text-scrap-navy opacity-80 max-w-lg mx-auto md:mx-0 font-body leading-relaxed bg-white/50 p-4 rounded-sm border border-dashed border-scrap-navy/10 transform rotate-[0.5deg]">
+             "The bunnies have sniffed around your library and think this is the perfect story for right now.
+             Curl up with a warm drink and dive in!"
           </p>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-start">
+          <div className="pt-4 flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start">
             <button
               onClick={() => onSelectBook(pickedBook)}
-              className="btn-cozy shadow-pixel active:translate-y-1 active:shadow-none hover:-translate-y-0.5 transition-transform"
+              className="px-8 py-3 bg-scrap-navy text-scrap-cream font-head font-bold text-lg rounded-sm shadow-scrap-card hover:shadow-scrap-lift hover:-translate-y-1 transition-all border-2 border-transparent flex items-center gap-2"
             >
-              <BookOpen className="w-4 h-4 mr-2" />
+              <BookOpen className="w-5 h-5" />
               Start Reading
             </button>
 
             {pickedBook.progress > 0 && (
-              <span className="text-xs font-pixel text-[rgb(var(--sepia-brown))] bg-white/50 px-3 py-2 rounded-lg border border-[rgb(var(--ink-navy))]/20">
+              <span className="text-sm font-mono font-bold text-scrap-blue bg-white px-4 py-2 border border-scrap-navy/20 shadow-sm transform rotate-2">
                 {pickedBook.progress}% Complete
               </span>
             )}

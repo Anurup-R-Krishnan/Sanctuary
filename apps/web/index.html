@@ -1,31 +1,25 @@
-<!doctype html>
-<html lang="en" class="scroll-smooth">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.com https://*.clerk.accounts.dev; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.com https://*.clerk.accounts.dev; style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' blob: https://fonts.googleapis.com; img-src 'self' blob: data: https:; connect-src 'self' blob: https://*.clerk.com https://*.clerk.accounts.dev wss://*.clerk.com; frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev; font-src 'self' blob: https://fonts.gstatic.com data:;">
-        <meta name="description" content="Sanctuary - Your personal reading haven. A beautiful, modern EPUB reader for focused reading." />
-        <meta name="theme-color" content="#8B7355" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Sanctuary" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
-        <title>Sanctuary - Book Reader</title>
-        <link rel="stylesheet" href="/index.css" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    </head>
-    <body class="antialiased">
-        <noscript>
-            <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui;background:#faf8f3;color:#2d2a26;padding:2rem;text-align:center;">
-                <div>
-                    <h1 style="font-size:1.5rem;margin-bottom:0.5rem;">JavaScript Required</h1>
-                    <p style="opacity:0.7;">Please enable JavaScript to use Sanctuary Book Reader.</p>
-                </div>
-            </div>
-        </noscript>
-        <div id="root"></div>
-        <script type="module" src="/src/index.tsx"></script>
-    </body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Preconnect for faster font loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Fonts:
+      - Fredoka: Headings/Logos (chunky, rounded, playful)
+      - Sniglet: Headings/Logos (alternative playful)
+      - Courier Prime: Body/UI Text (vintage typewriter)
+      - Special Elite: Body/UI Text (alternative vintage typewriter)
+      - Playfair Display: Accents/Quotes (elegant serif)
+    -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Fredoka:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Sniglet:wght@400;800&family=Special+Elite&display=swap" rel="stylesheet" />
+    <title>Sanctuary</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
 </html>
