@@ -58,11 +58,7 @@ type EpubBookHandle = {
     destroy: () => void;
 };
 
-const READER_THEME = {
-    textWidthCh: 96,
-    pageMarginPx: 28,
-    paragraphSpacingPx: 14,
-} as const;
+// Removed unused READER_THEME
 
 const FONT_FAMILY_BY_PAIRING: Record<string, string> = {
     "merriweather-georgia": "'Merriweather', Georgia, serif",
@@ -148,7 +144,17 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     height: continuous ? "auto" : "100%",
                     spread: continuous ? "none" : (spread ? "always" : "none"),
                     flow: continuous ? "scrolled-doc" : "paginated",
+                    manager: continuous ? "continuous" : "default",
                 });
+
+                // Add CSS for 3D page flip effect when not continuous
+                if (!continuous && !reduceMotion) {
+                    renditionRef.current.themes.default({
+                        "body": {
+                            "transition": "transform 0.5s ease-in-out, opacity 0.3s"
+                        }
+                    });
+                }
 
                 // Some EPUBs incorrectly mark CSS/font assets with invalid MIME types.
                 // Remove blob-linked stylesheet tags and rely on our controlled theme styles.
@@ -210,7 +216,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             if (renditionRef.current) renditionRef.current.destroy();
             if (bookRef.current) bookRef.current.destroy();
         };
-    }, [activeBookId, activeBlob, continuous, spread, containerRef]);
+    }, [activeBookId, activeBlob, continuous, spread, containerRef, reduceMotion]);
 
     // Navigation methods
     const nextPage = useCallback(() => {

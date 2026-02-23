@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { Book } from "@/types";
 import { Star, Clock, BookOpen, Heart } from "lucide-react";
+import { motion } from "framer-motion";
 import { useSettings } from "@/context/SettingsContext";
 
 interface BookCardProps {
@@ -45,10 +46,13 @@ const BookCard: React.FC<BookCardProps> = ({
         onKeyDown={(e) => handleCardKeyDown(e, book)}
         role="button"
         tabIndex={0}
-        className="group flex items-center gap-4 p-3 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer"
+        className="group relative flex items-center gap-4 p-3 bg-[#faf6f0] dark:bg-[#302b26] border-2 border-[#2c1e16] dark:border-[#453c34] shadow-[4px_4px_0px_rgba(44,30,22,1)] dark:shadow-[4px_4px_0px_rgba(0,0,0,0.9)] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[6px_6px_0px_rgba(44,30,22,1)] dark:hover:shadow-[6px_6px_0px_rgba(0,0,0,0.9)] transition-all cursor-pointer"
       >
+        {/* Masking tape on top-left corner */}
+        <div className="absolute -top-2 -left-3 w-10 h-4 bg-[#e6d5b8] dark:bg-[#5a4238] border border-[#2c1e16]/20 rotate-[-15deg] shadow-sm z-10" />
+
         <div className="relative flex-shrink-0">
-          <div className="w-12 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10">
+          <div className="w-12 h-16 border-2 border-[#2c1e16] dark:border-[#453c34] overflow-hidden bg-[#e6d5b8] dark:bg-[#26211e]">
             {book.coverUrl && !imageError ? (
               <img
                 src={book.coverUrl}
@@ -65,27 +69,27 @@ const BookCard: React.FC<BookCardProps> = ({
             )}
           </div>
           {progressPercentage > 0 && (
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-light-accent dark:bg-dark-accent flex items-center justify-center">
-              <span className="text-[8px] font-bold text-white">{progressPercentage}%</span>
+            <div className="absolute -bottom-2 -right-2 px-1.5 py-0.5 border-2 border-[#2c1e16] bg-amber-400 rotate-6 shadow-[2px_2px_0px_rgba(44,30,22,1)]">
+              <span className="text-[10px] font-bold text-[#2c1e16]">{progressPercentage}%</span>
             </div>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-light-text dark:text-dark-text line-clamp-1 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
+          <h3 className="font-bold font-serif text-light-text dark:text-dark-text line-clamp-1 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
             {book.title}
           </h3>
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted line-clamp-1">
+          <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-0.5 font-sans font-medium line-clamp-1">
             {book.author}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-2">
           {book.isFavorite && (
-            <Heart className="w-4 h-4 text-red-500 fill-current" strokeWidth={1.5} />
+            <Heart className="w-4 h-4 text-[#b85e42] fill-current" strokeWidth={2} />
           )}
           {isRecent && (
-            <Clock className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
+            <div className="w-2 h-2 rounded-full bg-amber-500 border border-[#2c1e16]" title="Recent" />
           )}
         </div>
       </div>
@@ -99,82 +103,76 @@ const BookCard: React.FC<BookCardProps> = ({
         onKeyDown={(e) => handleCardKeyDown(e, book)}
         role="button"
         tabIndex={0}
-        className="group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer p-5"
+        className="group relative overflow-hidden border-[3px] border-[#2c1e16] dark:border-[#453c34] bg-[#faf6f0] dark:bg-[#302b26] shadow-[6px_6px_0px_rgba(44,30,22,1)] dark:shadow-[6px_6px_0px_rgba(0,0,0,0.9)] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[10px_10px_0px_rgba(44,30,22,1)] dark:hover:shadow-[10px_10px_0px_rgba(0,0,0,0.9)] transition-all cursor-pointer p-5"
       >
         <div className="flex items-start gap-6">
           <div className="relative flex-shrink-0">
-            <div className="w-20 h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10 book-spine-shadow">
+            <div className="w-20 h-28 border-2 border-[#2c1e16] bg-[#e6d5b8] dark:bg-[#1c1815] shadow-[2px_2px_0px_rgba(44,30,22,1)]">
               {book.coverUrl && !imageError ? (
                 <img
                   src={book.coverUrl}
                   alt={book.title}
-                  className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-                    } group-hover:scale-105`}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <BookOpen className="w-8 h-8 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
+                  <BookOpen className="w-8 h-8 text-[#2c1e16] dark:text-[#a69a8a]" strokeWidth={1.5} />
                 </div>
               )}
             </div>
-
-            {!reduceMotion && (
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            )}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4 mb-3">
               <div>
-                <h3 className="text-xl font-bold text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
+                <h3 className="text-xl font-black font-serif text-light-text dark:text-dark-text line-clamp-2 leading-tight">
                   {book.title}
                 </h3>
-                <p className="text-light-text-muted dark:text-dark-text-muted font-medium">
+                <p className="text-light-text-muted dark:text-dark-text-muted font-bold font-sans mt-1">
                   {book.author}
                 </p>
               </div>
 
               <button
                 onClick={handleFavoriteClick}
-                className={`p-2 rounded-xl transition-all duration-200 ${book.isFavorite
-                    ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
-                    : 'text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
+                className={`p-2 transition-transform duration-200 hover:scale-110 ${book.isFavorite
+                  ? 'text-[#b85e42]'
+                  : 'text-[#6a5a4e] hover:text-[#b85e42]'
                   }`}
               >
-                <Heart className={`w-5 h-5 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
+                <Heart className={`w-6 h-6 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={2} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {progressPercentage > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-light-text-muted dark:text-dark-text-muted">Progress</span>
-                    <span className="font-semibold text-light-accent dark:text-dark-accent">{progressPercentage}%</span>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-[#6a5a4e]">
+                    <span>Progress</span>
+                    <span>{progressPercentage}%</span>
                   </div>
-                  <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
+                  <div className="h-3 border-2 border-[#2c1e16] bg-white dark:bg-[#1c1815]">
                     <div
-                      className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-500"
+                      className="h-full bg-[#b85e42] transition-all duration-500"
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center gap-4 text-sm text-light-text-muted dark:text-dark-text-muted">
+              <div className="flex items-center gap-3 text-sm font-bold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider text-[10px]">
                 {isRecent && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" strokeWidth={1.5} />
-                    <span>Recently read</span>
-                  </div>
+                  <span className="px-2 py-0.5 border border-[#2c1e16] bg-[#e6d5b8] text-[#2c1e16] shadow-[2px_2px_0px_#2c1e16]">
+                    Recently Read
+                  </span>
                 )}
                 {isCompleted && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-amber-500 fill-current" strokeWidth={1.5} />
-                    <span>Completed</span>
-                  </div>
+                  <span className="px-2 py-0.5 border border-[#2c1e16] bg-amber-400 text-[#2c1e16] shadow-[2px_2px_0px_#2c1e16]">
+                    Completed
+                  </span>
                 )}
               </div>
             </div>
@@ -186,90 +184,104 @@ const BookCard: React.FC<BookCardProps> = ({
 
   // Default variant
   return (
-    <article
+    <motion.article
       onClick={() => onSelect(book)}
       onKeyDown={(e) => handleCardKeyDown(e, book)}
       role="button"
       tabIndex={0}
-      className="group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/35 dark:hover:border-dark-accent/35 transition-colors cursor-pointer"
+      whileHover={{
+        y: -12,
+        x: -12,
+        scale: 1.02,
+        rotateY: -5,
+        rotateX: 5,
+        boxShadow: "16px 16px 0px rgba(44,30,22,1)",
+        zIndex: 10
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative flex flex-col overflow-visible bg-[#faf6f0] dark:bg-[#302b26] border-2 border-[#2c1e16] dark:border-[#453c34] cursor-pointer transform-gpu shadow-[6px_6px_0px_rgba(44,30,22,1)] dark:shadow-[6px_6px_0px_rgba(0,0,0,0.9)]"
     >
+      {/* Decorative Washi Tape */}
+      {book.isFavorite && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-4 bg-red-400/80 border border-black/20 rotate-[-2deg] z-20 mix-blend-multiply shadow-sm" />
+      )}
+
       {/* Book Cover */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-black/[0.03] dark:bg-white/[0.05]">
+      <div className="relative aspect-[3/4] overflow-hidden border-b-[2px] border-[#2c1e16] dark:border-[#453c34] bg-[#e6d5b8] dark:bg-[#1c1815]">
         {book.coverUrl && !imageError ? (
-          <img
+          <motion.img
             src={book.coverUrl}
             alt={book.title}
-            className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-              } group-hover:scale-105`}
+            className={`w-full h-full object-cover filter contrast-105 saturate-105 transition-all duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
             onLoad={handleImageLoad}
             onError={handleImageError}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <BookOpen className="w-12 h-12 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
+          <div className="w-full h-full flex flex-col items-center justify-center p-4">
+            <BookOpen className="w-12 h-12 text-[#b85e42] mb-3" strokeWidth={1.5} />
+            <span className="text-center font-serif text-sm font-bold text-[#b85e42] uppercase tracking-widest px-2">
+              {book.title}
+            </span>
           </div>
         )}
 
-        {/* Overlay */}
-        {!reduceMotion && <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />}
+        {/* Overlay removed, texture implicitly applied */}
 
-        {/* Favorite Button */}
+        {/* Favorite Button (Tactile) */}
         <button
           onClick={handleFavoriteClick}
-          className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 ${book.isFavorite
-              ? 'bg-red-500/90 text-white'
-              : 'bg-black/20 text-white hover:bg-red-500/90'
-            } opacity-0 group-hover:opacity-100`}
+          className={`absolute top-2 right-2 p-1.5 border-2 border-[#2c1e16] shadow-[2px_2px_0px_#2c1e16] transition-all duration-200 focus:outline-none ${book.isFavorite
+            ? 'bg-[#b85e42] text-[#faf6f0]'
+            : 'bg-[#faf6f0] text-[#2c1e16] hover:bg-[#b85e42] hover:text-[#faf6f0]'
+            }`}
         >
-          <Heart className={`w-4 h-4 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
+          <Heart className={`w-4 h-4 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={2} />
         </button>
 
-        {/* Progress Indicator */}
+        {/* Custom Progress Indicator Label */}
         {progressPercentage > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-            <div
-              className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
-              style={{ width: `${progressPercentage}%` }}
-            />
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 border-2 border-[#2c1e16] bg-amber-400 -rotate-3 shadow-[2px_2px_0px_#2c1e16]">
+            <span className="text-[10px] uppercase font-black tracking-widest text-[#2c1e16]">{progressPercentage}% read</span>
           </div>
         )}
 
         {/* Status Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-2 left-2 flex flex-col gap-2">
           {isRecent && (
-            <div className="px-2 py-1 bg-light-accent/90 dark:bg-dark-accent/90 text-white text-xs font-semibold rounded-lg backdrop-blur-xl">
-              Recent
+            <div className="px-1.5 py-0.5 border-2 border-[#2c1e16] bg-[#e6d5b8] rotate-2 shadow-[2px_2px_0px_#2c1e16]">
+              <span className="text-[8px] uppercase font-black tracking-widest text-[#2c1e16]">Recent</span>
             </div>
           )}
           {isCompleted && (
-            <div className="px-2 py-1 bg-amber-500/90 text-white text-xs font-semibold rounded-lg backdrop-blur-xl">
-              Complete
+            <div className="px-1.5 py-0.5 border-2 border-[#2c1e16] bg-[#6ad46a] -rotate-3 shadow-[2px_2px_0px_#2c1e16]">
+              <span className="text-[8px] uppercase font-black tracking-widest text-[#2c1e16]">Finished</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Book Info */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-semibold text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200">
-          {book.title}
-        </h3>
-        <p className="text-sm text-light-text-muted dark:text-dark-text-muted line-clamp-1">
-          {book.author}
-        </p>
+      {/* Book Info Panel below cover */}
+      <div className="p-3 bg-[#faf6f0] dark:bg-[#302b26] flex flex-col justify-between flex-grow">
+        <div>
+          <h3 className="font-bold font-serif text-lg leading-tight text-light-text dark:text-dark-text line-clamp-2">
+            {book.title}
+          </h3>
+          <p className="text-xs font-sans font-bold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted line-clamp-1 mt-1">
+            {book.author}
+          </p>
+        </div>
 
         {progressPercentage > 0 && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-light-text-muted dark:text-dark-text-muted">
-              {book.progress} / {book.totalPages} pages
-            </span>
-            <span className="font-semibold text-light-accent dark:text-dark-accent">
-              {progressPercentage}%
-            </span>
+          <div className="w-full h-1.5 mt-3 border border-[#2c1e16]">
+            <div
+              className="h-full bg-[#b85e42] transition-all duration-500"
+              style={{ width: `${progressPercentage}%` }}
+            />
           </div>
         )}
       </div>
-    </article>
+    </motion.article>
   );
 };
 

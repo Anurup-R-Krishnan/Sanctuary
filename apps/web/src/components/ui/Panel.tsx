@@ -25,12 +25,12 @@ const Panel: React.FC<PanelProps> = ({ isOpen, onClose, title, children, side = 
             aria-label="Close panel overlay"
         />
         <div
-            className={`fixed top-0 ${side === "left" ? "left-0" : "right-0"} h-full w-80 max-w-[85vw] z-[60] bg-light-surface dark:bg-dark-surface shadow-2xl transition-transform duration-300 ${isOpen ? "translate-x-0" : side === "left" ? "-translate-x-full" : "translate-x-full"
+            className={`fixed top-0 ${side === "left" ? "left-0" : "right-0"} h-full w-80 max-w-[85vw] z-[60] bg-light-surface shadow-2xl transition-transform duration-300 ${isOpen ? "translate-x-0" : side === "left" ? "-translate-x-full" : "translate-x-full"
                 }`}
         >
-            <div className="flex items-center justify-between p-4 border-b border-black/10 dark:border-white/10">
-                <h3 className="font-semibold text-light-text dark:text-dark-text">{title}</h3>
-                <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
+            <div className="flex items-center justify-between p-4 border-b border-black/10">
+                <h3 className="font-semibold text-light-text">{title}</h3>
+                <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5">
                     <X className="w-5 h-5" strokeWidth={1.5} />
                 </button>
             </div>

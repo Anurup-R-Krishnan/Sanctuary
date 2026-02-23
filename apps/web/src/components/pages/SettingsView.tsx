@@ -60,28 +60,28 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
     };
 
     return (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all">
-            <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
+        <div className="flex items-center justify-between p-4 bg-[#fdfaf5] border-2 border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] rotate-[0.5deg]">
+            <span className="text-sm font-bold uppercase tracking-widest text-[#6a5a4e]">{label}</span>
             <div className="flex items-center gap-2">
                 {isEditing ? (
                     <input
                         type="text"
                         readOnly
                         aria-label={`${label} shortcut editor`}
-                        className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[120px] text-center"
+                        className="px-3 py-1 text-xs font-bold uppercase bg-white border-2 border-[#2c1e16] focus:outline-none focus:ring-2 focus:ring-[#b85e42] cursor-text min-w-[120px] text-center"
                         onKeyDown={handleKeyDown}
                         value={tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
                     />
                 ) : (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                         {keys.map((key, index) => (
                             <span key={index} className="relative group">
-                                <kbd className="px-2 py-1 text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded font-mono">
+                                <kbd className="px-2 py-1 text-xs bg-[#e6d5b8] border-2 border-[#2c1e16] font-mono shadow-[2px_2px_0px_#2c1e16]">
                                     {key === " " ? "Space" : key}
                                 </kbd>
                                 <button
                                     onClick={() => removeKey(key)}
-                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 border border-[#2c1e16] text-[#faf6f0] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                 >
                                     ×
                                 </button>
@@ -89,7 +89,7 @@ const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]
                         ))}
                         <button
                             onClick={startEditing}
-                            className="px-2 py-1 text-xs bg-light-accent dark:bg-dark-accent text-white rounded hover:opacity-80 transition-opacity"
+                            className="px-2 py-1 text-xs bg-[#b85e42] border-2 border-[#2c1e16] shadow-[2px_2px_0px_#2c1e16] text-[#faf6f0] hover:-translate-y-px hover:shadow-[3px_3px_0px_#2c1e16] active:translate-y-[2px] active:shadow-none transition-all"
                         >
                             +
                         </button>
@@ -155,22 +155,22 @@ const SettingsView: React.FC = () => {
     const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
         <button
             type="button"
-            className="group w-full text-left flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200 cursor-pointer"
+            className="group w-full text-left flex items-center justify-between p-4 bg-[#fdfaf5] border-2 border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] hover:-translate-y-px hover:shadow-[5px_5px_0px_rgba(44,30,22,1)] transition-all duration-200 cursor-pointer rotate-[-0.5deg]"
             onClick={() => onChange(!checked)}
         >
             <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>
-                {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
+                <span className="text-sm font-bold uppercase tracking-widest text-[#2c1e16] block">{label}</span>
+                {sublabel && <span className="text-[10px] text-[#6a5a4e]/70 mt-1 uppercase font-bold tracking-wider block">{sublabel}</span>}
             </div>
-            <div className={`relative w-14 h-8 rounded-full transition-all duration-300 ease-out ${checked
-                    ? "bg-light-accent dark:bg-dark-accent"
-                    : "bg-black/10 dark:bg-white/10"
+            <div className={`relative w-14 h-8 border-2 border-[#2c1e16] transition-all duration-300 ease-out ${checked
+                ? "bg-[#6ad46a]"
+                : "bg-[#e6d5b8]"
                 }`}>
-                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-500 ease-out ${checked ? "left-7 scale-110" : "left-1"
+                <div className={`absolute top-0 w-7 h-7 bg-white border-r-2 border-[#2c1e16] transition-all duration-500 ease-out ${checked ? "left-6" : "left-0"
                     }`}>
                     {checked && (
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-light-accent dark:text-dark-accent" strokeWidth={3} />
+                            <Check className="w-4 h-4 text-[#2c1e16]" strokeWidth={3} />
                         </div>
                     )}
                 </div>
@@ -201,26 +201,26 @@ const SettingsView: React.FC = () => {
         const percentage = ((value - min) / (max - min)) * 100;
 
         return (
-            <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200">
+            <div className="group p-5 bg-[#fdfaf5] border-2 border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] rotate-1">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         {Icon && (
-                            <div className="p-2 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                                <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+                            <div className="p-2 border-2 border-[#2c1e16] bg-[#e6d5b8] shadow-[2px_2px_0px_rgba(44,30,22,1)] -rotate-3">
+                                <Icon className="w-4 h-4 text-[#b85e42]" strokeWidth={2.5} />
                             </div>
                         )}
-                        <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
+                        <span className="text-sm font-bold uppercase tracking-widest text-[#2c1e16]">{label}</span>
                     </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                        <span className="text-sm font-bold text-light-accent dark:text-dark-accent tabular-nums">
+                    <div className="px-3 py-1 border-2 border-[#2c1e16] bg-[#6a5a4e]/10 shadow-[2px_2px_0px_rgba(44,30,22,1)] rotate-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-[#b85e42] tabular-nums">
                             {displayValue || value}
                         </span>
                     </div>
                 </div>
-                <div className="relative">
-                    <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="relative mt-2">
+                    <div className="h-3 border-2 border-[#2c1e16] bg-white">
                         <div
-                            className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
+                            className="h-full bg-[#b85e42] transition-all duration-300"
                             style={{ width: `${percentage}%` }}
                         />
                     </div>
@@ -234,8 +234,8 @@ const SettingsView: React.FC = () => {
                         className="absolute inset-0 w-full opacity-0 cursor-pointer"
                     />
                     <div
-                        className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-dark-surface rounded-full shadow-lg border-2 border-light-accent dark:border-dark-accent transition-all duration-300 pointer-events-none"
-                        style={{ left: `calc(${percentage}% - 10px)` }}
+                        className="absolute top-1/2 -translate-y-1/2 w-6 h-6 border-[3px] border-[#2c1e16] bg-[#faf6f0] shadow-[2px_2px_0px_#2c1e16] pointer-events-none transition-all duration-200"
+                        style={{ left: `calc(${percentage}% - 12px)` }}
                     />
                 </div>
             </div>
@@ -244,18 +244,17 @@ const SettingsView: React.FC = () => {
 
     // Premium Section Component
     const Section = ({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) => (
-        <div className="rounded-3xl border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/80 dark:bg-dark-surface/80">
-            <div className="relative p-6">
-                <div className="flex items-center gap-3 mb-5">
-                    {Icon && (
-                        <div className="p-2.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/15">
-                            <Icon className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-                        </div>
-                    )}
-                    <h3 className="text-base font-semibold text-light-text dark:text-dark-text">{title}</h3>
-                </div>
-                <div className="space-y-3">{children}</div>
+        <div className="bg-[#faf6f0] border-[3px] border-[#2c1e16] shadow-[8px_8px_0px_rgba(44,30,22,1)] relative p-6 mt-8">
+            <div className="absolute -top-3 -left-3 w-14 h-4 bg-[#e6d5b8] border border-[#2c1e16]/20 rotate-[-12deg] shadow-sm z-10 mix-blend-multiply" />
+            <div className="flex items-center gap-4 mb-6 border-b-[3px] border-[#2c1e16] pb-4 border-dashed">
+                {Icon && (
+                    <div className="p-2 border-2 border-[#2c1e16] bg-[#e6d5b8] shadow-[2px_2px_0px_rgba(44,30,22,1)] -rotate-3">
+                        <Icon className="w-5 h-5 text-[#b85e42]" strokeWidth={2.5} />
+                    </div>
+                )}
+                <h3 className="text-xl font-black uppercase tracking-widest text-[#2c1e16]">{title}</h3>
             </div>
+            <div className="space-y-4">{children}</div>
         </div>
     );
 
@@ -273,29 +272,29 @@ const SettingsView: React.FC = () => {
         return (
             <button
                 onClick={onClick}
-                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all duration-200 ${isActive
-                        ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/10"
-                        : "border-black/[0.06] dark:border-white/[0.06] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
+                className={`group relative flex flex-col items-center p-3 bg-[#fdfaf5] border-[3px] border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(44,30,22,1)] ${isActive
+                    ? "bg-[#e8bc9e]/40 border-[#b85e42] shadow-[4px_4px_0px_#2c1e16] scale-105"
+                    : ""
                     }`}
             >
                 {/* Color preview */}
                 <div
-                    className="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-inner"
+                    className="w-full aspect-square mb-3 flex items-center justify-center border-2 border-[#2c1e16]"
                     style={{ backgroundColor: preset.bg }}
                 >
-                    <span className="text-2xl font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
+                    <span className="text-3xl font-serif font-black" style={{ color: preset.fg }}>Aa</span>
                 </div>
 
                 {/* Label */}
-                <div className="flex items-center gap-1.5">
-                    <Icon className="w-3.5 h-3.5 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
-                    <span className="text-sm font-medium text-light-text dark:text-dark-text">{preset.label}</span>
+                <div className="flex flex-col items-center gap-1 w-full border-t-2 border-[#2c1e16] border-dashed pt-2">
+                    <Icon className="w-4 h-4 text-[#6a5a4e]" strokeWidth={2} />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#2c1e16]">{preset.label}</span>
                 </div>
 
                 {/* Active indicator */}
                 {isActive && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center shadow-sm">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    <div className="absolute -top-3 -right-3 w-8 h-8 bg-green-400 border-[3px] border-[#2c1e16] rounded-full flex items-center justify-center shadow-[2px_2px_0px_#2c1e16] rotate-[15deg]">
+                        <Check className="w-4 h-4 text-[#2c1e16]" strokeWidth={4} />
                     </div>
                 )}
             </button>
@@ -305,56 +304,44 @@ const SettingsView: React.FC = () => {
     return (
         <div className="page-narrow page-stack">
             {/* Hero Header */}
-            <div className="rounded-3xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="mt-8 relative mb-8">
+                <div className="absolute -left-4 -top-4 w-12 h-4 bg-[#e6d5b8] border border-[#2c1e16]/20 rotate-[-10deg] shadow-sm z-10 mix-blend-multiply" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
-                                <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
-                        </div>
-                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm max-w-md">
-                            Craft your perfect reading experience with personalized typography, colors, and layout preferences.
+                        <h2 className="text-4xl font-black font-serif text-[#2c1e16] tracking-tight">Settings</h2>
+                        <p className="text-[#6a5a4e] mt-1 text-sm font-bold uppercase tracking-widest max-w-sm">
+                            Tailor your reading desk
                         </p>
                     </div>
 
                     <button
                         onClick={resetToDefaults}
-                        className="group flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] text-light-text-muted dark:text-dark-text-muted hover:text-light-accent dark:hover:text-dark-accent hover:border-light-accent/30 dark:hover:border-dark-accent/30 transition-all duration-300 shadow-sm hover:shadow-md"
+                        className="group flex items-center gap-2.5 px-6 py-3 bg-[#e6d5b8] border-[3px] border-[#2c1e16] text-[#2c1e16] font-black uppercase tracking-widest text-xs transition-all duration-200 shadow-[4px_4px_0px_rgba(44,30,22,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(44,30,22,1)] active:translate-y-px active:shadow-[2px_2px_0px_rgba(44,30,22,1)] -rotate-1"
                     >
-                        <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
-                        <span className="text-sm font-medium">Reset All</span>
+                        <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={2.5} />
+                        <span>Factory Reset</span>
                     </button>
                 </div>
             </div>
 
             {/* Premium Tab Navigation */}
-            <div className="relative p-1.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-2xl">
-                <div className="flex gap-1">
-                    {tabs.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-300 ${isActive
-                                        ? "text-light-accent dark:text-dark-accent"
-                                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-                                    }`}
-                            >
-                                {isActive && (
-                                    <div className="absolute inset-0 bg-white dark:bg-dark-surface rounded-xl shadow-lg shadow-black/[0.05] dark:shadow-black/[0.2]" />
-                                )}
-                                <div className="relative flex items-center gap-2">
-                                    <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.75} />
-                                    <span className="text-sm font-medium hidden sm:inline">{tab.label}</span>
-                                </div>
-                                <span className="relative text-[10px] opacity-60 hidden lg:block">{tab.description}</span>
-                            </button>
-                        );
-                    })}
-                </div>
+            <div className="relative flex flex-wrap gap-2 p-3 bg-[#e6d5b8]/30 border-2 border-[#2c1e16]/20 border-dashed mb-8">
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`relative flex-1 sm:flex-none flex items-center justify-center gap-3 py-3 px-6 border-[3px] border-[#2c1e16] font-bold uppercase tracking-wider text-xs transition-all duration-200 ${isActive
+                                    ? "bg-[#faf6f0] text-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] -translate-y-1 rotate-1 scale-105"
+                                    : "bg-[#e6d5b8] text-[#6a5a4e] shadow-none opacity-80 hover:bg-[#faf6f0] hover:opacity-100"
+                                }`}
+                        >
+                            <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 2} />
+                            <span>{tab.label}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Global Interface Toggles */}
@@ -370,13 +357,9 @@ const SettingsView: React.FC = () => {
             {/* Tab Content */}
             <div className="space-y-6 animate-fadeIn" key={activeTab}>
                 {activeTab === "colors" && (
-                    <>
-                        <div className="pt-2">
-                            <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-                                <Palette className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-                                Color Themes
-                            </h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                    <div className="space-y-10">
+                        <Section title="Theme Palette" icon={Palette}>
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                                 {COLOR_PRESETS.map((preset) => (
                                     <ColorSwatch
                                         key={preset.id}
@@ -390,111 +373,113 @@ const SettingsView: React.FC = () => {
                                     />
                                 ))}
                             </div>
-                        </div>
+                        </Section>
 
-                        <Section title="Custom Colors" icon={Droplets}>
-                            <div className="grid gap-4 sm:grid-cols-3">
+                        <Section title="Custom Variables" icon={Droplets}>
+                            <div className="grid gap-6 sm:grid-cols-3">
                                 {[
-                                    { label: "Text", value: readerForeground, onChange: setReaderForeground },
-                                    { label: "Background", value: readerBackground, onChange: setReaderBackground },
-                                    { label: "Accent", value: readerAccent, onChange: setReaderAccent },
+                                    { label: "Text Ink", value: readerForeground, onChange: setReaderForeground },
+                                    { label: "Paper Color", value: readerBackground, onChange: setReaderBackground },
+                                    { label: "Accent Tone", value: readerAccent, onChange: setReaderAccent },
                                 ].map(({ label, value, onChange }) => (
-                                    <label key={label} className="group relative flex items-center gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all cursor-pointer">
+                                    <label key={label} className="group relative flex flex-col gap-3 p-5 bg-[#faf6f0] border-[3px] border-[#2c1e16] shadow-[4px_4px_0px_#2c1e16] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#2c1e16] transition-all cursor-pointer">
                                         <input
                                             type="color"
                                             value={value}
                                             onChange={(e) => onChange(e.target.value)}
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                                         />
                                         <div
-                                            className="w-10 h-10 rounded-xl border-2 border-black/10 dark:border-white/10 shadow-inner transition-transform group-hover:scale-110"
+                                            className="w-full h-16 border-2 border-[#2c1e16] shadow-[inset_2px_2px_0px_rgba(0,0,0,0.2)]"
                                             style={{ backgroundColor: value }}
                                         />
-                                        <div>
-                                            <p className="text-sm font-medium text-light-text dark:text-dark-text">{label}</p>
-                                            <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono uppercase">{value}</p>
+                                        <div className="flex justify-between items-end border-t-2 border-[#2c1e16] border-dashed pt-2">
+                                            <p className="text-xs font-black uppercase tracking-widest text-[#2c1e16]">{label}</p>
+                                            <p className="text-[10px] font-bold text-[#b85e42] font-mono uppercase">{value}</p>
                                         </div>
                                     </label>
                                 ))}
                             </div>
                         </Section>
-                    </>
+                    </div>
                 )}
 
                 {activeTab === "shortcuts" && (
-                    <>
-                        <Section title="Keyboard Shortcuts" icon={Zap}>
+                    <div className="space-y-10">
+                        <Section title="Keybinds Map" icon={Zap}>
                             <div className="space-y-4">
-                                <div className="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">
-                                    Customize keyboard shortcuts for reading navigation.
+                                <div className="text-xs font-bold uppercase tracking-widest text-[#6a5a4e] mb-6 p-3 bg-[#e6d5b8]/30 border-l-4 border-[#b85e42]">
+                                    Click + to edit shortcuts, backspace to remove.
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <ShortcutItem
-                                        label="Next Page"
+                                        label="Turn Page Forward"
                                         keys={keybinds.nextPage}
                                         onChange={(keys) => setKeybinds({ ...keybinds, nextPage: keys })}
                                     />
                                     <ShortcutItem
-                                        label="Previous Page"
+                                        label="Turn Page Backward"
                                         keys={keybinds.prevPage}
                                         onChange={(keys) => setKeybinds({ ...keybinds, prevPage: keys })}
                                     />
                                     <ShortcutItem
-                                        label="Toggle Bookmark"
+                                        label="Toggle Bookmark Tape"
                                         keys={keybinds.toggleBookmark}
                                         onChange={(keys) => setKeybinds({ ...keybinds, toggleBookmark: keys })}
                                     />
                                     <ShortcutItem
-                                        label="Toggle Fullscreen"
+                                        label="Immersive Fullscreen"
                                         keys={keybinds.toggleFullscreen}
                                         onChange={(keys) => setKeybinds({ ...keybinds, toggleFullscreen: keys })}
                                     />
                                     <ShortcutItem
-                                        label="Toggle UI"
+                                        label="Show/Hide Overlays"
                                         keys={keybinds.toggleUI}
                                         onChange={(keys) => setKeybinds({ ...keybinds, toggleUI: keys })}
                                     />
                                     <ShortcutItem
-                                        label="Close/Exit"
+                                        label="Close Book"
                                         keys={keybinds.close}
                                         onChange={(keys) => setKeybinds({ ...keybinds, close: keys })}
                                     />
                                 </div>
                             </div>
                         </Section>
-                    </>
+                    </div>
                 )}
 
                 {activeTab === "goals" && (
-                    <>
-                        <Section title="Reading Goals" icon={ChartLine}>
+                    <div className="space-y-10">
+                        <Section title="Reading Milestones" icon={ChartLine}>
                             <Slider
-                                label="Daily Goal"
+                                label="Daily Target"
                                 value={dailyGoal}
                                 onChange={setDailyGoal}
                                 min={5}
                                 max={120}
                                 step={5}
-                                displayValue={`${dailyGoal} pages`}
+                                displayValue={`${dailyGoal} pg`}
+                                icon={Coffee}
                             />
                             <Slider
-                                label="Weekly Goal"
+                                label="Weekly Target"
                                 value={weeklyGoal}
                                 onChange={setWeeklyGoal}
                                 min={20}
                                 max={500}
                                 step={10}
-                                displayValue={`${weeklyGoal} pages`}
+                                displayValue={`${weeklyGoal} pg`}
+                                icon={Target}
                             />
                         </Section>
 
-                        <div className="grid gap-6 lg:grid-cols-2">
-                            <Section title="Tracking" icon={Bell}>
-                                <Toggle checked={trackingEnabled} onChange={setTrackingEnabled} label="Reading Analytics" sublabel="Track your reading time and progress" />
-                                <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Reminders" sublabel="Get notified to maintain your streak" />
+                        <div className="grid gap-8 lg:grid-cols-2">
+                            <Section title="Tracking Preferences" icon={Bell}>
+                                <Toggle checked={trackingEnabled} onChange={setTrackingEnabled} label="Enable Analytics" sublabel="Log reading speed and progress history" />
+                                <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Pushes" sublabel="Daily nudges to keep chain alive" />
                             </Section>
                         </div>
-                    </>
+                    </div>
                 )}
 
             </div>

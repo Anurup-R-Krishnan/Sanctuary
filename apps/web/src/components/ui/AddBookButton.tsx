@@ -105,20 +105,18 @@ const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           disabled={isLoading}
-          className={`group flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-200 ${
-            isDragging
+          className={`group flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-200 ${isDragging
               ? "bg-light-accent dark:bg-dark-accent scale-110"
               : "bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:shadow-xl hover:scale-105"
-          }`}
+            }`}
           aria-label="Add book"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 text-white animate-spin" />
           ) : (
             <Plus
-              className={`w-6 h-6 text-white transition-transform duration-200 ${
-                isDragging ? "rotate-45" : "group-hover:rotate-90"
-              }`}
+              className={`w-6 h-6 text-white transition-transform duration-200 ${isDragging ? "rotate-45" : "group-hover:rotate-90"
+                }`}
             />
           )}
         </button>

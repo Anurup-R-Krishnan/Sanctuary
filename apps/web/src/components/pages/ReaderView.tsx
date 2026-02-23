@@ -242,14 +242,21 @@ const ReaderView: React.FC<ReaderViewProps> = ({
             className="fixed inset-0 z-50 bg-white dark:bg-black font-sans overflow-hidden"
         >
             {bookmarkError && (
-                <div className="absolute left-1/2 top-20 z-[70] -translate-x-1/2 rounded-lg border border-red-300/50 bg-red-50 px-3 py-2 text-xs text-red-700 shadow dark:border-red-700/50 dark:bg-red-950/40 dark:text-red-300">
-                    {bookmarkError}
+                <div className="absolute left-1/2 top-20 z-[70] -translate-x-1/2 bg-[#fdfaf5] dark:bg-[#302b26] border-[3px] border-[#2c1e16] dark:border-[#453c34] shadow-[6px_6px_0px_#2c1e16] px-4 py-3 rotate-1">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-4 bg-[#e6d5b8] dark:bg-[#5a4238] border border-[#2c1e16]/20 rotate-[3deg] shadow-sm z-10 mix-blend-multiply" />
+                    <p className="text-xs font-black uppercase tracking-widest text-red-600 dark:text-red-400">
+                        {bookmarkError}
+                    </p>
                 </div>
             )}
             {contentError && !isLoading && (
-                <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 p-6">
-                    <div className="max-w-md rounded-xl bg-white p-5 text-center shadow-xl dark:bg-neutral-900">
-                        <p className="text-sm text-light-text dark:text-dark-text">{contentError}</p>
+                <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#faf6f0]/80 dark:bg-[#302b26]/80 p-6 backdrop-blur-sm">
+                    <div className="max-w-md bg-[#fdfaf5] dark:bg-[#1c1815] p-6 border-[3px] border-[#2c1e16] dark:border-[#453c34] shadow-[8px_8px_0px_rgba(44,30,22,1)] rotate-[-1deg] relative">
+                        {/* Decorative tape */}
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#e6d5b8] dark:bg-[#5a4238] border border-[#2c1e16]/20 rotate-[2deg] shadow-sm z-10 mix-blend-multiply" />
+                        <p className="text-sm font-black uppercase tracking-widest text-[#2c1e16] dark:text-[#a69a8a] text-center">
+                            {contentError}
+                        </p>
                     </div>
                 </div>
             )}

@@ -35,19 +35,17 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
                 <>
                     <button
                         onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
-                        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group ${showUI ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"}`}
-                        style={{ backgroundColor: `${readerBackground}E6`, color: readerForeground }}
+                        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 p-4 bg-[#e6d5b8] border-[3px] border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(44,30,22,1)] active:translate-y-px active:shadow-[2px_2px_0px_rgba(44,30,22,1)] transition-all duration-300 hidden md:flex items-center justify-center group rotate-[-2deg] ${showUI ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"}`}
                         aria-label="Previous page"
                     >
-                        <ChevronLeft className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />
+                        <ChevronLeft className="w-6 h-6 text-[#2c1e16] opacity-70 group-hover:opacity-100" strokeWidth={3} />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onNextPage(); }}
-                        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group ${showUI ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"}`}
-                        style={{ backgroundColor: `${readerBackground}E6`, color: readerForeground }}
+                        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 p-4 bg-[#e6d5b8] border-[3px] border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(44,30,22,1)] active:translate-y-px active:shadow-[2px_2px_0px_rgba(44,30,22,1)] transition-all duration-300 hidden md:flex items-center justify-center group rotate-[2deg] ${showUI ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"}`}
                         aria-label="Next page"
                     >
-                        <ChevronRight className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />
+                        <ChevronRight className="w-6 h-6 text-[#2c1e16] opacity-70 group-hover:opacity-100" strokeWidth={3} />
                     </button>
                 </>
             )}
@@ -58,7 +56,7 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
             >
                 <button
                     type="button"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 cursor-pointer pointer-events-auto group"
                     onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
@@ -73,44 +71,47 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
                     />
                 </button>
 
-                {/* Centered Bottom Bar */}
-                <div className={`fixed left-1/2 -translate-x-1/2 bottom-6 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
-                    <div className="w-[min(880px,92vw)] px-4 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-4" style={{ backgroundColor: `${readerBackground}E8` }}>
-                        <div className="flex items-center gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); onPrevPage(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-                                <ChevronLeft className="w-5 h-5" />
+                {/* Floating Bottom Bar (Scrap Style) */}
+                <div className={`fixed left-1/2 -translate-x-1/2 bottom-8 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
+                    <div className="w-[min(880px,92vw)] px-6 py-4 bg-[#fdfaf5] border-[3px] border-[#2c1e16] shadow-[8px_8px_0px_rgba(44,30,22,1)] flex items-center justify-between gap-6 rotate-[1deg]">
+
+                        {/* Decorative Tape Left */}
+                        <div className="absolute -left-4 top-2 w-10 h-4 bg-[#e6d5b8] border border-[#2c1e16]/20 rotate-[-15deg] shadow-sm z-10 mix-blend-multiply" />
+
+                        {/* Decorative Tape Right */}
+                        <div className="absolute -right-4 bottom-2 w-10 h-4 bg-[#e6d5b8] border border-[#2c1e16]/20 rotate-[15deg] shadow-sm z-10 mix-blend-multiply" />
+
+                        <div className="flex items-center">
+                            <button onClick={(e) => { e.stopPropagation(); onPrevPage(); }} className="p-2 border-2 border-transparent hover:border-[#2c1e16] bg-[#e6d5b8] text-[#2c1e16] shadow-[2px_2px_0px_rgba(44,30,22,1)] hover:-translate-y-px active:translate-y-px active:shadow-none transition-all rotate-[-3deg]">
+                                <ChevronLeft className="w-5 h-5" strokeWidth={3} />
                             </button>
                         </div>
 
-                        <div className="flex-1">
-                            <div className="relative">
-                                <input
-                                    type="range"
-                                    min={1}
-                                    max={totalPages || 1}
-                                    value={currentPage}
-                                    onChange={(e) => onPageChange(Number(e.target.value))}
-                                    className="w-full h-2 appearance-none bg-transparent"
-                                    aria-label="Page slider"
-                                />
-                                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-                                    <div style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }} className="h-full transition-all" />
-                                </div>
+                        <div className="flex-1 relative group py-2">
+                            <input
+                                type="range"
+                                min={1}
+                                max={totalPages || 1}
+                                value={currentPage}
+                                onChange={(e) => onPageChange(Number(e.target.value))}
+                                className="w-full h-8 opacity-0 cursor-pointer absolute inset-0 z-10"
+                                aria-label="Page slider"
+                            />
+                            {/* Track */}
+                            <div className="h-4 border-2 border-[#2c1e16] bg-white w-full absolute top-1/2 -translate-y-1/2">
+                                <div style={{ width: `${progressPercent}%` }} className="h-full bg-[#b85e42] transition-all" />
                             </div>
-                            <div className="flex justify-center text-xs mt-1 text-light-text-muted dark:text-dark-text-muted gap-3">
-                                <span className="tabular-nums">{currentPage}</span>
-                                <span>/</span>
-                                <span className="tabular-nums">{totalPages}</span>
-                                <span>•</span>
-                                <span>{readingTime}m</span>
-                                <span>•</span>
-                                <span>{Math.max(0, totalPages - currentPage)} left</span>
+
+                            <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-[#6a5a4e] mt-6 gap-2">
+                                <span>{currentPage} / {totalPages}</span>
+                                <span>{readingTime}m • {Math.max(0, totalPages - currentPage)} LEFT</span>
+                                <span>{progressPercent}%</span>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); onNextPage(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-                                <ChevronRight className="w-5 h-5" />
+                        <div className="flex items-center">
+                            <button onClick={(e) => { e.stopPropagation(); onNextPage(); }} className="p-2 border-2 border-transparent hover:border-[#2c1e16] bg-[#e6d5b8] text-[#2c1e16] shadow-[2px_2px_0px_rgba(44,30,22,1)] hover:-translate-y-px active:translate-y-px active:shadow-none transition-all rotate-[3deg]">
+                                <ChevronRight className="w-5 h-5" strokeWidth={3} />
                             </button>
                         </div>
                     </div>

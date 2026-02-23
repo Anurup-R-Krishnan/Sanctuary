@@ -39,9 +39,9 @@ export class ReaderErrorBoundary extends Component<ReaderErrorBoundaryProps, Rea
     if (!this.state.hasError) return this.props.children;
 
     return (
-      <div className="mx-auto w-full max-w-xl rounded-2xl border border-red-300/40 bg-red-50/70 p-6 text-center dark:border-red-700/40 dark:bg-red-950/30">
-        <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">Reader crashed</h2>
-        <p className="mt-2 text-sm text-red-700/90 dark:text-red-300/90">
+      <div className="mx-auto w-full max-w-xl rounded-2xl border border-red-300/40 bg-red-50/70 p-6 text-center">
+        <h2 className="text-lg font-semibold text-red-700">Reader crashed</h2>
+        <p className="mt-2 text-sm text-red-700/90">
           {this.state.errorMessage}
         </p>
         <button

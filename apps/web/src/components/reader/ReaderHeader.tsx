@@ -48,14 +48,14 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
     }) => (
         <button
             onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className={`p-2 rounded-lg transition-all duration-200 ${active
-                    ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent"
-                    : "hover:bg-black/5 dark:hover:bg-white/5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className={`p-2 transition-all duration-200 border-2 border-transparent hover:border-[#2c1e16] ${active
+                ? "bg-[#b85e42]/20 text-[#b85e42] shadow-[2px_2px_0px_#2c1e16] -translate-y-px"
+                : "hover:bg-[#e6d5b8] text-[#6a5a4e] hover:text-[#2c1e16] hover:-translate-y-px hover:shadow-[2px_2px_0px_#2c1e16]"
                 }`}
             title={label}
             aria-label={label}
         >
-            <Icon className="w-5 h-5" strokeWidth={1.5} />
+            <Icon className="w-5 h-5" strokeWidth={2.5} />
         </button>
     );
 
@@ -64,53 +64,54 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
             className={`fixed top-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
         >
             <div className="relative flex items-start justify-between p-6">
-                {/* Left: Back Button (Floating) */}
+                {/* Left: Back Button (Floating Post-it style) */}
                 <button
                     onClick={(e) => { e.stopPropagation(); onClose(); }}
-                    className="pointer-events-auto p-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hover:scale-105 transition-all duration-200 group"
-                    style={{ backgroundColor: `${readerBackground}E6` }}
+                    className="pointer-events-auto p-3 bg-[#e6d5b8] border-[3px] border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(44,30,22,1)] active:translate-y-px active:shadow-[2px_2px_0px_rgba(44,30,22,1)] transition-all duration-200 group rotate-[-2deg]"
                     aria-label="Close reader"
                 >
-                    <ArrowLeft 
-                        className="w-5 h-5 transition-colors" 
-                        style={{ color: readerForeground }}
-                        strokeWidth={2} 
+                    <ArrowLeft
+                        className="w-5 h-5 text-[#2c1e16] transition-transform group-hover:-translate-x-1"
+                        strokeWidth={2.5}
                     />
                 </button>
 
-                {/* Center: Title (Floating Capsule) */}
-                <div 
-                    className="absolute left-1/2 -translate-x-1/2 top-6 pointer-events-auto max-w-md px-6 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-all duration-200"
-                    style={{ backgroundColor: `${readerBackground}E6` }}
+                {/* Center: Title (Taped Note) */}
+                <div
+                    className="absolute left-1/2 -translate-x-1/2 top-4 pointer-events-auto max-w-md px-8 py-3 bg-[#fdfaf5] border-[3px] border-[#2c1e16] shadow-[6px_6px_0px_rgba(44,30,22,1)] flex flex-col items-center justify-center transition-all duration-200 rotate-[1deg]"
                 >
-                    <h1 
-                        className="font-medium text-sm truncate max-w-[200px] text-center"
-                        style={{ color: readerForeground }}
+                    {/* Decorative Tape */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#e6d5b8] border border-[#2c1e16]/20 rotate-[-3deg] shadow-sm z-10 mix-blend-multiply" />
+
+                    <h1
+                        className="font-black font-serif uppercase tracking-widest text-[#2c1e16] text-sm truncate max-w-[200px] text-center"
                     >
                         {book.title}
                     </h1>
                 </div>
 
-                {/* Right: Actions (Floating Group) */}
-                <div 
-                    className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-200"
-                    style={{ backgroundColor: `${readerBackground}E6` }}
+                {/* Right: Actions (Floating Scrap) */}
+                <div
+                    className="pointer-events-auto flex items-center gap-2 p-2 bg-[#fdfaf5] border-[3px] border-[#2c1e16] shadow-[4px_4px_0px_rgba(44,30,22,1)] transition-all duration-200 rotate-[-1deg]"
                 >
-                    <ActionBtn 
-                        icon={isBookmarked ? BookmarkCheck : Bookmark} 
-                        label="Bookmark" 
-                        onClick={onToggleBookmark} 
-                        active={isBookmarked} 
+                    {/* Decorative Tape */}
+                    <div className="absolute -right-3 top-[-10px] w-12 h-4 bg-[#e6d5b8] border border-[#2c1e16]/20 rotate-[45deg] shadow-sm z-10 mix-blend-multiply" />
+
+                    <ActionBtn
+                        icon={isBookmarked ? BookmarkCheck : Bookmark}
+                        label="Bookmark"
+                        onClick={onToggleBookmark}
+                        active={isBookmarked}
                     />
-                    <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+                    <div className="w-0.5 h-6 bg-[#2c1e16]/20 mx-1 rotate-12" />
                     <ActionBtn icon={List} label="Contents" onClick={onToggleTOC} />
                     <ActionBtn icon={Settings} label="Appearance" onClick={onToggleSettings} />
                     <ActionBtn icon={MoreHorizontal} label="Utilities" onClick={onToggleControls} />
-                    <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
-                    <ActionBtn 
-                        icon={isFullscreen ? Minimize2 : Maximize2} 
-                        label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"} 
-                        onClick={onToggleFullscreen} 
+                    <div className="w-0.5 h-6 bg-[#2c1e16]/20 mx-1 border-dashed -rotate-12" />
+                    <ActionBtn
+                        icon={isFullscreen ? Minimize2 : Maximize2}
+                        label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                        onClick={onToggleFullscreen}
                     />
                 </div>
             </div>

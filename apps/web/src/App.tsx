@@ -13,6 +13,7 @@ import { Theme, View } from "@/types";
 import { BookOpen } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 
+import MorphCanvas from "./components/ui/MorphCanvas";
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
 import LibraryGrid from "./components/pages/LibraryGrid";
@@ -21,6 +22,7 @@ import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
 import ClerkAuth from "./components/pages/Auth";
 import { ReaderErrorBoundary } from "./components/ui/ReaderErrorBoundary";
+import ScrapbookBackground from "./components/layout/ScrapbookBackground";
 
 const App: React.FC = () => {
   // Global Stores
@@ -42,12 +44,13 @@ const App: React.FC = () => {
     reloadBooks: state.reloadBooks,
   })));
 
-  // Clerk Hooks
+  // Clerk Authentication
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useAuth();
   const [showAuthScreen, setShowAuthScreen] = useState(false);
+  const [transitioningBook, setTransitioningBook] = useState<Book | null>(null);
 
-  // Settings Context
+  // Global State (shallow selects to prevent over-renders)
   const { reduceMotion } = useSettingsShallow((state) => ({
     reduceMotion: state.reduceMotion
   }));
@@ -57,7 +60,7 @@ const App: React.FC = () => {
   const persistent = true;
 
   useBookStoreController({ persistent });
-  const { startSession, endSession } = useStatsStoreController({
+  const { endSession } = useStatsStoreController({
     persistent,
     compute: view === View.STATS,
   });
@@ -86,13 +89,6 @@ const App: React.FC = () => {
       resetSession();
     }
   }, [isGuest, setIsGuest, resetSession, signOut]);
-
-  const handleSelectBook = useCallback((book: Book) => {
-    useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
-    setSelectedBookId(book.id);
-    setView(View.READER);
-    startSession(book.id, book.progress);
-  }, [setSelectedBookId, setView, startSession]);
 
   const handleCloseReader = useCallback(async () => {
     const activeProgress = useReaderProgressStore.getState().active;
@@ -143,10 +139,6 @@ const App: React.FC = () => {
     const root = document.documentElement;
     root.classList.toggle("dark", theme === Theme.DARK);
     root.classList.toggle("reduce-motion", reduceMotion);
-
-    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
-    document.body.style.backgroundColor = bgColor;
-    document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
   }, [theme, reduceMotion]);
 
   // Render - Explicit Auth Screen (only when user asks to sign in)
@@ -178,52 +170,68 @@ const App: React.FC = () => {
 
   // Render - App
   return (
-    <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
-      {/* Header */}
-      {!isReader && (
-        <Header
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          searchTerm={searchTerm}
-          onSearch={setSearchTerm}
-          isGuest={isGuest}
-          onShowLogin={isGuest ? handleShowLogin : undefined}
-          onSignOut={isSignedIn ? handleSignOut : undefined}
-          userEmail={user?.primaryEmailAddress?.emailAddress}
-          userImage={user?.imageUrl}
-        />
-      )}
+    <ScrapbookBackground>
+      <div className={`min-h-screen font-sans text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
+        {/* Header */}
+        {!isReader && (
+          <Header
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            searchTerm={searchTerm}
+            onSearch={setSearchTerm}
+            isGuest={isGuest}
+            onShowLogin={isGuest ? handleShowLogin : undefined}
+            onSignOut={isSignedIn ? handleSignOut : undefined}
+            userEmail={user?.primaryEmailAddress?.emailAddress}
+            userImage={user?.imageUrl}
+          />
+        )}
 
-      {/* Main Content */}
-      <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
-        <div className={`${isReader ? "" : "page-shell animate-fadeIn"}`}>
-          {view === View.LIBRARY && (
-            <LibraryGrid
-              onSelectBook={handleSelectBook}
-            />
-          )}
-          {view === View.SETTINGS && <SettingsView />}
-          {view === View.STATS && <StatsView />}
-          {view === View.READER && selectedBook && (
-            <ReaderErrorBoundary onRecover={() => { void handleCloseReader(); }} resetKey={selectedBook.id}>
-              <ReaderView
-                book={selectedBook}
-                onClose={handleCloseReader}
-                onUpdateProgress={handleReaderProgress}
-                onAddBookmark={handleAddBookmark}
-                onRemoveBookmark={handleRemoveBookmark}
-                getBookContent={getBookContent}
+        {/* Main Content */}
+        <main className={`relative ${isReader ? "reader-main" : view === View.LIBRARY ? "" : "standard-main"}`}>
+          <div className={`${(isReader || view === View.LIBRARY) ? "" : "page-shell animate-fadeIn"}`}>
+            {view === View.LIBRARY && (
+              <LibraryGrid
+                onSelectBook={(book) => {
+                  setTransitioningBook(book);
+                }}
               />
-            </ReaderErrorBoundary>
-          )}
-        </div>
-      </main>
+            )}
+            <div className={view === View.LIBRARY ? "" : "page-shell animate-fadeIn"}>
+              {view === View.SETTINGS && <SettingsView />}
+              {view === View.STATS && <StatsView />}
+            </div>
+            {view === View.READER && selectedBook && (
+              <ReaderErrorBoundary onRecover={() => { void handleCloseReader(); }} resetKey={selectedBook.id}>
+                <ReaderView
+                  book={selectedBook}
+                  onClose={handleCloseReader}
+                  onUpdateProgress={handleReaderProgress}
+                  onAddBookmark={handleAddBookmark}
+                  onRemoveBookmark={handleRemoveBookmark}
+                  getBookContent={getBookContent}
+                />
+              </ReaderErrorBoundary>
+            )}
+          </div>
+        </main>
 
-      {/* Navigation */}
-      {!isReader && (
-        <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
-      )}
-    </div>
+        {/* Reader View & Transitions */}
+        <MorphCanvas
+          book={transitioningBook}
+          onAnimationComplete={() => {
+            setTransitioningBook(null);
+            setSelectedBookId(transitioningBook?.id ?? null); // Use existing setter
+            setView(View.READER); // Use existing setter
+          }}
+        />
+
+        {/* Navigation */}
+        {!isReader && (
+          <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
+        )}
+      </div>
+    </ScrapbookBackground>
   );
 };
 

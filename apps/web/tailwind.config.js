@@ -9,33 +9,36 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        serif: ['Crimson Pro', 'Georgia', 'serif'],
+        serif: ['Crimson Text', 'EB Garamond', 'Georgia', 'serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
       },
       colors: {
-        // Light theme colors
+        // Light theme colors (Cozy Scrapbook)
         light: {
-          primary: '#fefcf8',
-          secondary: '#f8f6f1',
-          surface: '#ffffff',
-          card: '#fdfdfc',
-          accent: 'rgb(184 149 108)',
-          text: '#1a1816',
-          'text-muted': '#6b6560',
-          border: '#e8e6e1',
-          'border-muted': '#f0efea',
+          primary: '#f4ebd8', // textured parchment base
+          secondary: '#e6d5b8', // darker parchment layer
+          surface: '#faf6f0',
+          card: '#fffbfa',
+          accent: '#b85e42', // terracotta
+          base: '#3e5c54', // deep spruce green
+          text: '#2c1e16', // deep espresso
+          'text-muted': '#6a5a4e',
+          border: '#d6c4a5',
+          'border-muted': '#eaddc7',
         },
-        // Dark theme colors
+        // Dark theme colors (Cozy Night Library)
         dark: {
-          primary: '#0f0e0d',
-          secondary: '#1a1917',
-          surface: '#252320',
-          card: '#2a2825',
-          accent: 'rgb(212 181 139)',
-          text: '#f5f4f2',
-          'text-muted': '#a8a29e',
-          border: '#3a3835',
-          'border-muted': '#2f2e2b',
+          primary: '#1c1815',
+          secondary: '#26211e',
+          surface: '#2a2520',
+          card: '#302b26',
+          accent: '#d98a6c', // faded terracotta
+          base: '#4a6d63',
+          text: '#f0e6d5',
+          'text-muted': '#a69a8a',
+          border: '#453c34',
+          'border-muted': '#362f28',
         },
       },
       spacing: {
@@ -115,17 +118,14 @@ export default {
         xs: '2px',
       },
       boxShadow: {
-        'glow-sm': '0 0 20px rgba(184, 149, 108, 0.15), 0 0 40px rgba(184, 149, 108, 0.08)',
-        'glow-md': '0 0 32px rgba(184, 149, 108, 0.2), 0 0 64px rgba(184, 149, 108, 0.1)',
-        'glow-lg': '0 0 48px rgba(184, 149, 108, 0.25), 0 0 96px rgba(184, 149, 108, 0.12)',
-        'inner-glow': 'inset 0 0 20px rgba(184, 149, 108, 0.1)',
-        'book-spine': 'inset -8px 0 16px -8px rgba(0, 0, 0, 0.4)',
-        'book-cover': '0 8px 32px rgba(184, 149, 108, 0.15), 0 16px 64px rgba(184, 149, 108, 0.08)',
+        'solid-sm': '2px 2px 0px rgba(44, 30, 22, 0.9)',
+        'solid-md': '4px 4px 0px rgba(44, 30, 22, 0.9)',
+        'solid-lg': '8px 8px 0px rgba(44, 30, 22, 0.9)',
+        'book-spine': 'inset -6px 0 12px -6px rgba(0, 0, 0, 0.4)',
+        'book-cover': '2px 4px 12px rgba(0, 0, 0, 0.15)',
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E\")",
+        'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E\")",
       },
       scale: {
         '102': '1.02',

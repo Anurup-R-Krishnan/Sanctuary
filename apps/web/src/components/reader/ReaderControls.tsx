@@ -72,7 +72,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
         return (
             <div className="select-none">
                 <div
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5"
                     style={{ paddingLeft: `${8 + depth * 12}px` }}
                     onClick={() => onNavigate(item.href)}
                     onKeyDown={(e) => {
@@ -87,7 +87,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     {hasSubs && (
                         <button
                             onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }}
-                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                            className="p-0.5 rounded hover:bg-black/10"
                             aria-label={isExpanded ? "Collapse" : "Expand"}
                             aria-expanded={isExpanded}
                         >
@@ -117,14 +117,14 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
             <div className="grid grid-cols-2 gap-2 mb-6">
                 <button
                     onClick={onJumpToTop}
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 hover:bg-black/10 transition-colors"
                 >
                     <ArrowUp className="w-4 h-4" />
                     <span className="text-sm font-medium">Top</span>
                 </button>
                 <button
                     onClick={onJumpToBottom}
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 hover:bg-black/10 transition-colors"
                 >
                     <ArrowDown className="w-4 h-4" />
                     <span className="text-sm font-medium">Bottom</span>
@@ -132,13 +132,13 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl mb-4" role="tablist">
+            <div className="flex p-1 bg-black/5 rounded-xl mb-4" role="tablist">
                 <button
                     onClick={() => setActiveTab("chapters")}
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
-                        ? "bg-white dark:bg-white/10 shadow-sm font-medium"
+                        ? "bg-white shadow-sm font-medium"
                         : "opacity-60 hover:opacity-100"
                         }`}
                     style={{ color: activeTab === "chapters" ? readerForeground : undefined }}
@@ -151,7 +151,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     role="tab"
                     aria-selected={activeTab === "bookmarks"}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
-                        ? "bg-white dark:bg-white/10 shadow-sm font-medium"
+                        ? "bg-white shadow-sm font-medium"
                         : "opacity-60 hover:opacity-100"
                         }`}
                     style={{ color: activeTab === "bookmarks" ? readerForeground : undefined }}
@@ -173,7 +173,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                                 aria-label="Search chapters"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border-none text-sm focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent outline-none"
+                                className="w-full pl-9 pr-4 py-2 rounded-xl bg-black/5 border-none text-sm focus:ring-2 focus:ring-light-accent outline-none"
                             />
                         </div>
                         <div className="space-y-0.5">
@@ -188,7 +188,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                     <div className="space-y-2">
                         {bookmarks.length > 0 ? (
                             bookmarks.map(bm => (
-                                <div key={bm.id} className="group flex items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <div key={bm.id} className="group flex items-center gap-3 p-3 rounded-lg hover:bg-black/5 transition-colors">
                                     <button
                                         onClick={() => onNavigate(bm.cfi)}
                                         className="flex-1 text-left"
@@ -198,7 +198,7 @@ const ReaderControls: React.FC<ReaderControlsProps> = ({
                                     </button>
                                     <button
                                         onClick={() => onRemoveBookmark(bm.id)}
-                                        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
+                                        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 transition-all"
                                         aria-label="Remove bookmark"
                                     >
                                         <X className="w-4 h-4 text-red-500" />

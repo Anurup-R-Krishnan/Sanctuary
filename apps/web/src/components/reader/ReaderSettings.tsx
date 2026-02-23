@@ -44,9 +44,11 @@ const ReaderSettings: React.FC = () => {
   }));
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
-      {children}
-    </p>
+    <div className="mb-4">
+      <p className="inline-block px-2 py-1 bg-[#e6d5b8] border-2 border-[#2c1e16] text-[10px] font-black uppercase tracking-widest text-[#2c1e16] shadow-[2px_2px_0px_#2c1e16] -rotate-1">
+        {children}
+      </p>
+    </div>
   );
 
   const Slider = ({
@@ -66,9 +68,9 @@ const ReaderSettings: React.FC = () => {
     label: string;
     formatValue?: (v: number) => string | number;
   }) => (
-    <div className="flex items-center gap-3">
-      <span className="w-16 text-sm text-light-text-muted dark:text-dark-text-muted">{label}</span>
-      <div className="relative flex h-8 flex-1 items-center">
+    <div className="flex items-center gap-4 p-3 bg-[#fdfaf5] border-2 border-[#2c1e16] shadow-[4px_4px_0px_#2c1e16]">
+      <span className="w-16 text-xs font-bold uppercase tracking-widest text-[#6a5a4e]">{label}</span>
+      <div className="relative flex h-8 flex-1 items-center mt-1">
         <input
           type="range"
           min={min}
@@ -78,14 +80,14 @@ const ReaderSettings: React.FC = () => {
           onChange={(e) => onChange(parseFloat(e.target.value))}
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
         />
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+        <div className="h-3 w-full overflow-hidden border-2 border-[#2c1e16] bg-white">
           <div
-            className="h-full transition-all duration-150"
-            style={{ width: `${((value - min) / (max - min)) * 100}%`, backgroundColor: readerAccent }}
+            className="h-full transition-all duration-300 bg-[#b85e42]"
+            style={{ width: `${((value - min) / (max - min)) * 100}%` }}
           />
         </div>
       </div>
-      <span className="w-12 text-right text-xs font-medium tabular-nums text-light-text dark:text-dark-text">
+      <span className="w-12 text-right text-xs font-black tabular-nums text-[#b85e42]">
         {formatValue(value)}
       </span>
     </div>
@@ -106,18 +108,17 @@ const ReaderSettings: React.FC = () => {
       onClick={() => onChange(!checked)}
       role="switch"
       aria-checked={checked}
-      className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all duration-200 ${
-        checked
-          ? "border-light-accent bg-light-accent/10 dark:border-dark-accent dark:bg-dark-accent/10"
-          : "border-black/10 bg-transparent hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
-      }`}
+      className={`flex w-full items-center justify-between p-3 border-2 border-[#2c1e16] transition-all duration-200 shadow-[4px_4px_0px_rgba(44,30,22,1)] hover:-translate-y-px hover:shadow-[5px_5px_0px_rgba(44,30,22,1)] active:translate-y-px active:shadow-[2px_2px_0px_rgba(44,30,22,1)] ${checked
+          ? "bg-[#faf6f0] border-[#b85e42]"
+          : "bg-[#e6d5b8]/30"
+        }`}
     >
       <div className="flex items-center gap-3">
-        {Icon && <Icon className="h-4 w-4 text-light-text-muted dark:text-dark-text-muted" />}
-        <span className="text-sm text-light-text dark:text-dark-text">{label}</span>
+        {Icon && <Icon className={`h-4 w-4 ${checked ? "text-[#b85e42]" : "text-[#6a5a4e]"}`} strokeWidth={2} />}
+        <span className="text-xs font-bold uppercase tracking-widest text-[#2c1e16]">{label}</span>
       </div>
-      <div className={`relative h-5 w-10 rounded-full ${checked ? "bg-light-accent dark:bg-dark-accent" : "bg-black/20 dark:bg-white/20"}`}>
-        <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ${checked ? "left-6" : "left-1"}`} />
+      <div className={`relative h-6 w-12 border-2 border-[#2c1e16] transition-colors duration-300 ${checked ? "bg-[#6ad46a]" : "bg-[#e6d5b8]"}`}>
+        <div className={`absolute top-0 h-5 w-5 bg-white border-r-2 border-[#2c1e16] transition-transform duration-300 ${checked ? "translate-x-6" : "translate-x-0"}`} />
       </div>
     </button>
   );
@@ -125,36 +126,35 @@ const ReaderSettings: React.FC = () => {
   return (
     <div className="space-y-7 pb-6">
       <section>
-        <SectionLabel>Reading Mode</SectionLabel>
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/5 p-1 dark:bg-white/5">
+        <SectionLabel>Reading Layout</SectionLabel>
+        <div className="grid grid-cols-2 gap-2 p-2 bg-[#e6d5b8]/30 border-2 border-dashed border-[#2c1e16]/20">
           <button
             onClick={() => setContinuous(false)}
-            className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${
-              !continuous ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-            }`}
+            className={`flex items-center justify-center gap-2 px-3 py-2 border-2 border-[#2c1e16] text-xs font-bold uppercase tracking-widest transition-all ${!continuous ? "bg-[#faf6f0] text-[#2c1e16] shadow-[2px_2px_0px_#2c1e16] -translate-y-0.5" : "bg-transparent text-[#6a5a4e] hover:bg-[#faf6f0]/50"
+              }`}
           >
-            <Layout className="h-4 w-4" />
+            <Layout className="h-4 w-4" strokeWidth={2} />
             Paged
           </button>
           <button
             onClick={() => setContinuous(true)}
-            className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${
-              continuous ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-            }`}
+            className={`flex items-center justify-center gap-2 px-3 py-2 border-2 border-[#2c1e16] text-xs font-bold uppercase tracking-widest transition-all ${continuous ? "bg-[#faf6f0] text-[#2c1e16] shadow-[2px_2px_0px_#2c1e16] -translate-y-0.5" : "bg-transparent text-[#6a5a4e] hover:bg-[#faf6f0]/50"
+              }`}
           >
-            <Scroll className="h-4 w-4" />
-            Flow
+            <Scroll className="h-4 w-4" strokeWidth={2} />
+            Scroll
           </button>
         </div>
       </section>
 
-      <section>
+      <section className="bg-[#e6d5b8]/10 p-4 border-[3px] border-[#2c1e16] shadow-[6px_6px_0px_rgba(44,30,22,1)] relative mt-4">
+        <div className="absolute -top-3 -right-3 w-6 h-6 border-2 border-[#2c1e16] bg-[#b85e42] shadow-[2px_2px_0px_rgba(44,30,22,1)] rotate-12" />
         <SectionLabel>Typography</SectionLabel>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <select
             value={fontPairing}
             onChange={(e) => setFontPairing(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-black/5 p-2.5 text-sm text-light-text outline-none focus:ring-2 focus:ring-light-accent dark:border-white/10 dark:bg-white/5 dark:text-dark-text dark:focus:ring-dark-accent"
+            className="w-full border-2 border-[#2c1e16] bg-[#faf6f0] p-3 text-sm font-bold text-[#2c1e16] outline-none focus:ring-2 focus:ring-[#b85e42] shadow-[2px_2px_0px_#2c1e16]"
           >
             <option value="merriweather-georgia">Merriweather</option>
             <option value="crimson-pro">Crimson Pro</option>
@@ -168,29 +168,29 @@ const ReaderSettings: React.FC = () => {
         </div>
       </section>
 
-      <section>
+      <section className="mt-6">
         <SectionLabel>Appearance</SectionLabel>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Slider label="Light" value={brightness} min={40} max={130} onChange={setBrightness} formatValue={(v) => `${Math.round(v)}%`} />
           <Toggle label="Grayscale" checked={grayscale} onChange={setGrayscale} icon={EyeOff} />
         </div>
       </section>
 
-      <section>
+      <section className="mt-6">
         <SectionLabel>Accessibility</SectionLabel>
-        <div className="space-y-2">
-          <Toggle label="Screen Reader Mode" checked={screenReaderMode} onChange={setScreenReaderMode} icon={Speech} />
+        <div className="space-y-3">
+          <Toggle label="Screen Reader" checked={screenReaderMode} onChange={setScreenReaderMode} icon={Speech} />
           <Toggle label="Reduce Motion" checked={reduceMotion} onChange={setReduceMotion} icon={ZapOff} />
         </div>
       </section>
 
-      <div className="border-t border-black/5 pt-4 dark:border-white/5">
+      <div className="border-t-2 border-dashed border-[#2c1e16]/20 pt-6 mt-6">
         <button
           onClick={resetToDefaults}
-          className="flex w-full items-center justify-center gap-2 rounded-xl p-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/10"
+          className="flex w-full items-center justify-center gap-2 p-3 bg-[#e6d5b8] border-[3px] border-[#2c1e16] text-xs font-black uppercase tracking-widest text-red-600 shadow-[4px_4px_0px_#2c1e16] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#2c1e16] active:translate-y-px active:shadow-[2px_2px_0px_#2c1e16] transition-all rotate-1"
         >
-          <RotateCcw className="h-4 w-4" />
-          Reset Reader Defaults
+          <RotateCcw className="h-4 w-4" strokeWidth={2.5} />
+          Reset Defaults
         </button>
       </div>
     </div>
