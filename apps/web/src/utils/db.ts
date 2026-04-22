@@ -26,7 +26,6 @@ function openDB(): Promise<IDBDatabase> {
       db = request.result;
       db.onversionchange = () => {
         db.close();
-        // Allow reopening after a schema upgrade from another tab/session.
         db = undefined;
       };
       dbPromise = null;
@@ -51,35 +50,47 @@ function bindTxFailure(tx: IDBTransaction, reject: (reason?: unknown) => void, m
   tx.onabort = () => reject(new Error(`${message}: ${tx.error?.message || "transaction aborted"}`));
 }
 
-export async function putBook(book: Book): Promise<void> {
+async function dbGet<T>(store: string, key: string): Promise<T | null> {
   const database = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = database.transaction(BOOKS_STORE, "readwrite");
-    bindTxFailure(tx, reject, "Failed to save book");
-    const req = tx.objectStore(BOOKS_STORE).put(book);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(new Error("Failed to save book: " + req.error?.message));
+    const tx = database.transaction(store, "readonly");
+    bindTxFailure(tx, reject, `Failed to get from ${store}`);
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve((req.result as T | undefined) ?? null);
+    req.onerror = () => reject(new Error(`Failed to get from ${store}: ${req.error?.message}`));
   });
+}
+
+async function dbPut<T>(store: string, value: T): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(store, "readwrite");
+    bindTxFailure(tx, reject, `Failed to save to ${store}`);
+    const req = tx.objectStore(store).put(value);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(new Error(`Failed to save to ${store}: ${req.error?.message}`));
+  });
+}
+
+async function dbDelete(store: string, key: string): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(store, "readwrite");
+    bindTxFailure(tx, reject, `Failed to delete from ${store}`);
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(new Error(`Failed to delete from ${store}: ${req.error?.message}`));
+  });
+}
+
+export async function putBook(book: Book): Promise<void> {
+  return dbPut(BOOKS_STORE, book);
 }
 
 export async function getBookById(id: string): Promise<Book | null> {
-  const database = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = database.transaction(BOOKS_STORE, "readonly");
-    bindTxFailure(tx, reject, "Failed to get book");
-    const req = tx.objectStore(BOOKS_STORE).get(id);
-    req.onsuccess = () => resolve((req.result as Book | undefined) ?? null);
-    req.onerror = () => reject(new Error("Failed to get book: " + req.error?.message));
-  });
+  return dbGet<Book>(BOOKS_STORE, id);
 }
 
 export async function deleteBook(id: string): Promise<void> {
-  const database = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = database.transaction(BOOKS_STORE, "readwrite");
-    bindTxFailure(tx, reject, "Failed to delete book");
-    const req = tx.objectStore(BOOKS_STORE).delete(id);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(new Error("Failed to delete book: " + req.error?.message));
-  });
+  return dbDelete(BOOKS_STORE, id);
 }

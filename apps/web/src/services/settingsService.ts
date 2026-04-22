@@ -1,6 +1,6 @@
 import { logErrorOnce, readJsonSafely } from "./http";
-
-const API_URL = "/api/v2/settings";
+import { buildAuthHeaders } from "./utils";
+import { API } from "./api";
 
 type SettingsMap = Record<string, unknown>;
 
@@ -19,16 +19,15 @@ let pendingSaveToken: string | undefined;
 let dirty = false;
 let lifecycleAttached = false;
 
-const buildHeaders = (token?: string): HeadersInit => {
-    const headers: HeadersInit = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    return headers;
-};
+const buildHeaders = (token?: string): HeadersInit => ({
+  ...buildAuthHeaders(token),
+  "Content-Type": "application/json",
+});
 
 const cloneCache = (): SettingsMap => ({ ...(settingsCache || {}) });
 
 const saveSnapshot = async (snapshot: SettingsMap, token?: string) => {
-    const res = await fetch(API_URL, {
+    const res = await fetch(API.SETTINGS, {
         method: "PUT",
         headers: buildHeaders(token),
         body: JSON.stringify(snapshot),
@@ -109,10 +108,9 @@ export const settingsService: ISettingsService = {
 
         fetchPromise = (async () => {
             try {
-                const headers: HeadersInit = {};
-                if (token) headers["Authorization"] = `Bearer ${token}`;
+                const headers = buildAuthHeaders(token);
 
-                const res = await fetch(API_URL, { headers });
+                const res = await fetch(API.SETTINGS, { headers });
                 const data = await readJsonSafely<SettingsMap | null>(res, "Failed to fetch settings");
                 if (data && typeof data === "object") {
                     settingsCache = data;

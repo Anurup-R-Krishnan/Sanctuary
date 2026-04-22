@@ -1,8 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { LibraryItemV2, ReadingGoalsV2 } from "@sanctuary/core";
+import { STORAGE_KEYS } from "@sanctuary/core";
+import { api } from "./api";
 
-const LIBRARY_KEY = "sanctuary:v2:library-cache";
-const GOALS_KEY = "sanctuary:v2:goals-cache";
+const LIBRARY_KEY = STORAGE_KEYS.LIBRARY;
+const GOALS_KEY = STORAGE_KEYS.GOALS;
 
 interface CacheEnvelope<T> {
   cachedAt: string;
@@ -32,36 +34,20 @@ async function readEnvelope<T>(key: string): Promise<CacheEnvelope<T> | null> {
   }
 }
 
-export async function cacheLibrary(data: LibraryItemV2[]): Promise<void> {
-  try {
-    await writeEnvelope(LIBRARY_KEY, data);
-  } catch {
-    return;
-  }
+async function cacheWriteLibrary(data: LibraryItemV2[]): Promise<void> {
+  try { await writeEnvelope(LIBRARY_KEY, data); } catch { return; }
 }
 
-export async function readCachedLibrary(): Promise<CacheEnvelope<LibraryItemV2[]> | null> {
-  try {
-    return await readEnvelope<LibraryItemV2[]>(LIBRARY_KEY);
-  } catch {
-    return null;
-  }
+async function cacheReadLibrary(): Promise<CacheEnvelope<LibraryItemV2[]> | null> {
+  try { return await readEnvelope<LibraryItemV2[]>(LIBRARY_KEY); } catch { return null; }
 }
 
-export async function cacheGoals(data: ReadingGoalsV2): Promise<void> {
-  try {
-    await writeEnvelope(GOALS_KEY, data);
-  } catch {
-    return;
-  }
+async function cacheWriteGoals(data: ReadingGoalsV2): Promise<void> {
+  try { await writeEnvelope(GOALS_KEY, data); } catch { return; }
 }
 
-export async function readCachedGoals(): Promise<CacheEnvelope<ReadingGoalsV2> | null> {
-  try {
-    return await readEnvelope<ReadingGoalsV2>(GOALS_KEY);
-  } catch {
-    return null;
-  }
+async function cacheReadGoals(): Promise<CacheEnvelope<ReadingGoalsV2> | null> {
+  try { return await readEnvelope<ReadingGoalsV2>(GOALS_KEY); } catch { return null; }
 }
 
 export async function loadWithCachedFallback<T>(options: {
@@ -76,13 +62,39 @@ export async function loadWithCachedFallback<T>(options: {
     return { data: live, stale: false };
   } catch {
     const cached = await options.cacheRead();
-    if (!cached) {
-      return { data: options.empty, stale: true };
-    }
-    return {
-      data: cached.data,
-      stale: true,
-      cachedAt: cached.cachedAt
-    };
+    if (!cached) return { data: options.empty, stale: true };
+    return { data: cached.data, stale: true, cachedAt: cached.cachedAt };
   }
+}
+
+export interface LibraryLoadResult {
+  items: LibraryItemV2[];
+  stale: boolean;
+  cachedAt?: string;
+}
+
+export interface GoalsLoadResult {
+  data: ReadingGoalsV2 | null;
+  stale: boolean;
+  cachedAt?: string;
+}
+
+export async function loadLibraryWithFallback(): Promise<LibraryLoadResult> {
+  const result = await loadWithCachedFallback({
+    loadLive: () => api.getLibrary(),
+    cacheRead: cacheReadLibrary,
+    cacheWrite: cacheWriteLibrary,
+    empty: []
+  });
+  return { items: result.data, stale: result.stale, cachedAt: result.cachedAt };
+}
+
+export async function loadGoalsWithFallback(): Promise<GoalsLoadResult> {
+  const result = await loadWithCachedFallback({
+    loadLive: () => api.getGoals(),
+    cacheRead: cacheReadGoals,
+    cacheWrite: async (value) => { if (value) await cacheWriteGoals(value); },
+    empty: null
+  });
+  return { data: result.data, stale: result.stale, cachedAt: result.cachedAt };
 }

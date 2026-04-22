@@ -43,8 +43,8 @@ declare module 'epubjs' {
     next(): Promise<void>;
     prev(): Promise<void>;
     destroy(): void;
-    on(event: string, callback: (data: any) => void): void;
-    off(event: string, callback: (data: any) => void): void;
+    on(event: string, callback: (data: unknown) => void): void;
+    off(event: string, callback: (data: unknown) => void): void;
     themes: {
       default(styles: Record<string, Record<string, string>>): void;
       register(name: string, styles: Record<string, Record<string, string>>): void;

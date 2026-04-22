@@ -347,7 +347,7 @@ const StatsView: React.FC = () => {
             <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Genres</h3>
             {stats.genreDistribution.length > 0 ? (
               <div className="space-y-2.5">
-                {stats.genreDistribution.map((g, i) => (
+                {stats.genreDistribution.map((g) => (
                   <div key={g.genre} className="flex items-center gap-2.5">
                     <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
                     <span className="flex-1 text-sm text-light-text dark:text-dark-text">{g.genre}</span>
@@ -366,7 +366,7 @@ const StatsView: React.FC = () => {
             <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Top Authors</h3>
             {stats.authorNetwork.length > 0 ? (
               <div className="space-y-2.5">
-                {stats.authorNetwork.map((a, i) => (
+                {stats.authorNetwork.map((a) => (
                   <div key={a.author} className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
                       <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />

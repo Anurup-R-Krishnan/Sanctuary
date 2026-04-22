@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ReadingStats } from "@/types";
+import { DEFAULT_WEEKLY_DATA, DEFAULT_PERSONALITY, DEFAULT_DAILY_GOAL } from "@/types";
 
 type StatsStoreState = {
   stats: ReadingStats;
@@ -15,24 +16,16 @@ const emptyStats: ReadingStats = {
   totalReadingTime: 0,
   averageReadingSpeed: 0,
   dailyProgress: 0,
-  dailyGoal: 30,
+  dailyGoal: DEFAULT_DAILY_GOAL,
   booksCompletedThisMonth: 0,
-  weeklyData: [
-    { day: "Mon", pages: 0, minutes: 0 },
-    { day: "Tue", pages: 0, minutes: 0 },
-    { day: "Wed", pages: 0, minutes: 0 },
-    { day: "Thu", pages: 0, minutes: 0 },
-    { day: "Fri", pages: 0, minutes: 0 },
-    { day: "Sat", pages: 0, minutes: 0 },
-    { day: "Sun", pages: 0, minutes: 0 },
-  ],
+  weeklyData: [...DEFAULT_WEEKLY_DATA],
   monthlyData: [],
   heatmapData: [],
   genreDistribution: [],
   authorNetwork: [],
   badges: [],
-  readingPersonality: "Explorer",
-  personalityDescription: "You're just getting started on your reading journey!",
+  readingPersonality: DEFAULT_PERSONALITY.personality,
+  personalityDescription: DEFAULT_PERSONALITY.description,
 };
 
 export const useStatsStore = create<StatsStoreState>((set) => ({
