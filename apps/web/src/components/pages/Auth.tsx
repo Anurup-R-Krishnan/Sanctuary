@@ -23,16 +23,16 @@ const Auth: React.FC<AuthProps> = ({ onContinueAsGuest }) => {
           <p className="text-light-text-muted dark:text-dark-text-muted mt-2 text-sm">Your personal reading haven</p>
         </div>
 
-        <div className="card p-7">
-          <div className="mb-5">
-            <SignIn />
-          </div>
-          <div className="relative my-6">
+        {/* Clerk renders its own card — no outer wrapper to avoid double-frame */}
+        <SignIn />
+
+        <div className="mt-3">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-black/[0.06] dark:border-white/[0.06]" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 text-xs text-light-text-muted dark:text-dark-text-muted bg-light-surface dark:bg-dark-surface">
+              <span className="px-3 text-xs text-light-text-muted dark:text-dark-text-muted bg-light-primary dark:bg-dark-primary">
                 or
               </span>
             </div>
@@ -48,7 +48,7 @@ const Auth: React.FC<AuthProps> = ({ onContinueAsGuest }) => {
             <span>Continue as guest</span>
           </button>
 
-          <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-5 text-center">
+          <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-4 text-center">
             Guest data is stored locally on this device
           </p>
         </div>

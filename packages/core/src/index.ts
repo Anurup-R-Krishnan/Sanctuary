@@ -55,6 +55,33 @@ export interface ReadingGoalsV2 {
   };
 }
 
+export type ReaderSettingsDefaults = ReaderSettingsV2;
+
+export const readerSettingsDefaults: ReaderSettingsDefaults = {
+  dailyGoal: 30,
+  weeklyGoal: 150,
+  themePreset: "paper",
+  fontScale: 100,
+  lineHeight: 1.6,
+  textWidth: 70,
+  motion: "full",
+  tapZones: true,
+  swipeNav: true,
+  autoHideMs: 4500,
+  showProgress: true,
+  showPageMeta: true,
+  accent: "#B37A4C"
+};
+
+export const colors = {
+  accent: "#B37A4C",
+  accentStrong: "#8E5A35",
+  fg: "#1E1A16",
+  bg: "#FFFDF8",
+  darkFg: "#F4EEE6",
+  darkBg: "#141210"
+} as const;
+
 export interface ApiClientOptions {
   baseUrl: string;
   getToken?: () => Promise<string | null>;
@@ -71,25 +98,28 @@ export class SanctuaryApiClient {
     return { ...jsonHeaders, Authorization: `Bearer ${token}` };
   }
 
+  private async fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+    const res = await fetch(`${this.options.baseUrl}${path}`, {
+      ...init,
+      headers: { ...jsonHeaders, ...init?.headers }
+    });
+    if (!res.ok) throw new Error(`Request to ${path} failed (${res.status})`);
+    return res.json() as Promise<T>;
+  }
+
   async getSettings(): Promise<ReaderSettingsV2> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/settings`, { headers: await this.headers() });
-    if (!res.ok) throw new Error(`Failed to fetch settings (${res.status})`);
-    return (await res.json()) as ReaderSettingsV2;
+    return this.fetchJson<ReaderSettingsV2>("/api/settings");
   }
 
   async saveSettings(payload: ReaderSettingsV2): Promise<void> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/settings`, {
+    await this.fetchJson<void>("/api/settings", {
       method: "PUT",
-      headers: await this.headers(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(`Failed to save settings (${res.status})`);
   }
 
   async getLibrary(): Promise<LibraryItemV2[]> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/library`, { headers: await this.headers() });
-    if (!res.ok) throw new Error(`Failed to fetch library (${res.status})`);
-    return (await res.json()) as LibraryItemV2[];
+    return this.fetchJson<LibraryItemV2[]>("/api/library");
   }
 
   async patchLibraryItem(
@@ -104,32 +134,38 @@ export class SanctuaryApiClient {
       bookmarks?: Array<{ cfi: string; title: string }>;
     }
   ): Promise<void> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/library?id=${encodeURIComponent(id)}`, {
+    await this.fetchJson<void>(`/api/library?id=${encodeURIComponent(id)}`, {
       method: "PATCH",
-      headers: await this.headers(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(`Failed to update library item (${res.status})`);
   }
 
   async getSessions(): Promise<ReadingSessionV2[]> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/sessions`, { headers: await this.headers() });
-    if (!res.ok) throw new Error(`Failed to fetch sessions (${res.status})`);
-    return (await res.json()) as ReadingSessionV2[];
+    return this.fetchJson<ReadingSessionV2[]>("/api/sessions");
   }
 
   async saveSession(payload: ReadingSessionV2): Promise<void> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/sessions`, {
+    await this.fetchJson<void>("/api/sessions", {
       method: "POST",
-      headers: await this.headers(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(`Failed to save session (${res.status})`);
   }
 
   async getGoals(): Promise<ReadingGoalsV2> {
-    const res = await fetch(`${this.options.baseUrl}/api/v2/goals`, { headers: await this.headers() });
-    if (!res.ok) throw new Error(`Failed to fetch goals (${res.status})`);
-    return (await res.json()) as ReadingGoalsV2;
+    return this.fetchJson<ReadingGoalsV2>("/api/goals");
   }
 }
+
+export const STORAGE_KEYS = {
+  LIBRARY: "sanctuary:library-cache",
+  GOALS: "sanctuary:goals-cache",
+  PROGRESS_QUEUE: "sanctuary:progress-queue",
+  SESSIONS_QUEUE: "sanctuary:sessions-queue",
+} as const;
+
+export const SYNC_TIMING = {
+  RETRY_INITIAL_MS: 1200,
+  RETRY_MAX_MS: 20000,
+  SCHEDULE_DEBOUNCE_MS: 500,
+  INIT_SCHEDULE_MS: 150,
+};

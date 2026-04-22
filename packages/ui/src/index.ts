@@ -1,15 +1,17 @@
+import { colors } from "@sanctuary/core";
+
 export const tokens = {
   color: {
     bg: "#F5F1EA",
     surface: "#FFFDF8",
     text: "#1E1A16",
     muted: "#6B6257",
-    accent: "#B37A4C",
-    accentStrong: "#8E5A35",
+    accent: colors.accent,
+    accentStrong: colors.accentStrong,
     border: "#E5DCCF",
-    darkBg: "#141210",
+    darkBg: colors.darkBg,
     darkSurface: "#1D1A17",
-    darkText: "#F4EEE6",
+    darkText: colors.darkFg,
     darkMuted: "#B5A998"
   },
   radius: { sm: 10, md: 16, lg: 24, xl: 32 },

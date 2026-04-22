@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Sanctuary V2",
-    "slug": "sanctuary-v2",
+    "name": "Sanctuary",
+    "slug": "sanctuary",
     "scheme": "sanctuary",
     "version": "1.0.0",
     "orientation": "portrait",

@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/[0.08] dark:border-white/[0.08] bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-black/[0.08] dark:border-white/[0.08] bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-md">
       <div className="container-wide py-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 min-w-[180px]">

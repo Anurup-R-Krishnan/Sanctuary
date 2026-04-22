@@ -1,8 +1,5 @@
 import React from "react";
-
-interface IconProps {
-  className?: string;
-}
+import type { IconProps } from "./index";
 
 export const BookOpenIcon: React.FC<IconProps> = ({ className }) => (
   <svg

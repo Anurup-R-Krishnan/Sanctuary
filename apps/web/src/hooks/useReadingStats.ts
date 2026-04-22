@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import type { ReadingStats, Badge, Book } from "@/types";
+import type { ReadingStats, Book } from "@/types";
 import { useSettingsShallow } from "@/context/SettingsContext";
 import { settingsService } from "@/services/settingsService";
 import { useAuth } from "@/hooks/useAuth";
 import { useStatsStore } from "@/store/useStatsStore";
+import { DEFAULT_WEEKLY_DATA, DEFAULT_PERSONALITY, DEFAULT_BADGES } from "@/types";
 
 const SESSIONS_KEY = "sanctuary_reading_sessions";
 const REMOTE_SESSIONS_KEY = "readingSessions";
@@ -29,21 +30,6 @@ type SessionAggregates = {
   monthMinutes: Map<string, number>;
   sessionCount: number;
 };
-
-const defaultBadges: Badge[] = [
-  { id: "first_book", name: "First Steps", icon: "📖", description: "Complete your first book", unlocked: false, progress: 0, target: 1 },
-  { id: "bookworm", name: "Bookworm", icon: "📚", description: "Complete 5 books", unlocked: false, progress: 0, target: 5 },
-  { id: "librarian", name: "Librarian", icon: "🏛️", description: "Complete 25 books", unlocked: false, progress: 0, target: 25 },
-  { id: "streak_3", name: "Getting Started", icon: "🔥", description: "3 day reading streak", unlocked: false, progress: 0, target: 3 },
-  { id: "streak_7", name: "Week Warrior", icon: "⚡", description: "7 day reading streak", unlocked: false, progress: 0, target: 7 },
-  { id: "streak_30", name: "Monthly Master", icon: "👑", description: "30 day reading streak", unlocked: false, progress: 0, target: 30 },
-  { id: "hour_1", name: "Time Flies", icon: "⏱️", description: "Read for 1 hour total", unlocked: false, progress: 0, target: 60 },
-  { id: "hour_10", name: "Dedicated", icon: "🎯", description: "Read for 10 hours total", unlocked: false, progress: 0, target: 600 },
-  { id: "pages_100", name: "Page Turner", icon: "📄", description: "Read 100 pages", unlocked: false, progress: 0, target: 100 },
-  { id: "pages_1000", name: "Thousand Club", icon: "📑", description: "Read 1000 pages", unlocked: false, progress: 0, target: 1000 },
-  { id: "night_owl", name: "Night Owl", icon: "🦉", description: "Read after midnight", unlocked: false },
-  { id: "early_bird", name: "Early Bird", icon: "🌅", description: "Read before 6 AM", unlocked: false },
-];
 
 const toLocalDateKey = (date: Date) => {
   const year = date.getFullYear();
@@ -119,22 +105,14 @@ const emptyStats = (dailyGoal: number): ReadingStats => ({
   dailyProgress: 0,
   dailyGoal,
   booksCompletedThisMonth: 0,
-  weeklyData: [
-    { day: "Mon", pages: 0, minutes: 0 },
-    { day: "Tue", pages: 0, minutes: 0 },
-    { day: "Wed", pages: 0, minutes: 0 },
-    { day: "Thu", pages: 0, minutes: 0 },
-    { day: "Fri", pages: 0, minutes: 0 },
-    { day: "Sat", pages: 0, minutes: 0 },
-    { day: "Sun", pages: 0, minutes: 0 },
-  ],
+  weeklyData: [...DEFAULT_WEEKLY_DATA],
   monthlyData: [],
   heatmapData: [],
   genreDistribution: [],
   authorNetwork: [],
-  badges: defaultBadges,
-  readingPersonality: "Explorer",
-  personalityDescription: "You're just getting started on your reading journey!",
+  badges: [...DEFAULT_BADGES],
+  readingPersonality: DEFAULT_PERSONALITY.personality,
+  personalityDescription: DEFAULT_PERSONALITY.description,
 });
 
 export function useReadingStats(books: Book[], persistent = true, options: UseReadingStatsOptions = {}) {
@@ -435,7 +413,7 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
       .slice(0, 5)
       .map(([author, booksCount]) => ({ author, books: booksCount }));
 
-    const badges = defaultBadges.map((badge) => {
+    const badges = DEFAULT_BADGES.map((badge) => {
       const updatedBadge = { ...badge };
       switch (badge.id) {
         case "first_book":
@@ -489,8 +467,8 @@ export function useReadingStats(books: Book[], persistent = true, options: UseRe
     });
 
     const avgSessionLength = aggregates.sessionCount > 0 ? totalReadingTime / aggregates.sessionCount : 0;
-    let readingPersonality = "Explorer";
-    let personalityDescription = "You're just getting started on your reading journey!";
+    let readingPersonality = DEFAULT_PERSONALITY.personality;
+    let personalityDescription = DEFAULT_PERSONALITY.description;
 
     if (aggregates.sessionCount >= 10) {
       if (avgSessionLength > 45) {

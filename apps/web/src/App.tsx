@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
-import { useBookStoreController } from "./hooks/useBookStoreController";
-import { useStatsStoreController } from "./hooks/useStatsStoreController";
+import { useBookLibrary } from "./hooks/useBookLibrary";
+import { useReadingStats } from "./hooks/useReadingStats";
 import { useSettingsShallow } from "@/context/SettingsContext";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -54,10 +54,10 @@ const App: React.FC = () => {
   // Library & Stats Hooks
   // When auth is disabled, always treat as persistent (local storage mode)
   const persistent = DISABLE_AUTH ? true : (isSignedIn && !isGuest);
+  const books = useBookStore((state) => state.books);
 
-  useBookStoreController({ persistent });
-  const { startSession, endSession } = useStatsStoreController({
-    persistent,
+  useBookLibrary({ persistent });
+  const { startSession, endSession } = useReadingStats(books, persistent, {
     compute: view === View.STATS,
   });
   const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);

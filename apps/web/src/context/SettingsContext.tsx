@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { settingsService } from "@/services/settingsService";
 import { useAuth } from "@/hooks/useAuth";
+import { DEFAULT_DAILY_GOAL } from "@/types";
 
 type TextAlignment = "left" | "justify" | "center";
 
@@ -111,7 +112,7 @@ export const DEFAULTS: SettingsValues = {
     toggleUI: ["m", "M"],
     close: ["Escape"]
   },
-  dailyGoal: 30,
+  dailyGoal: DEFAULT_DAILY_GOAL,
   weeklyGoal: 150,
   showStreakReminder: true,
   trackingEnabled: true,
