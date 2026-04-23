@@ -27,14 +27,6 @@ export interface Bookmark {
   createdAt: string;
 }
 
-export interface VocabWord {
-  id: string;
-  word: string;
-  definition?: string;
-  context?: string;
-  bookId: string;
-  createdAt: string;
-}
 
 export interface Book {
   id: string;

@@ -1,15 +1,9 @@
-import { logErrorOnce, readJsonSafely } from "./http";
-import { buildAuthHeaders } from "./http";
+import { logErrorOnce, readJsonSafely, buildAuthHeaders } from "./http";
 import { API } from "./api";
 
 type SettingsMap = Record<string, unknown>;
 
-export interface ISettingsService {
-    getItem<T>(key: string, token?: string): Promise<T | null>;
-    setItem<T>(key: string, value: T, token?: string): Promise<void>;
-    getSettings(token?: string): Promise<SettingsMap | null>;
-    saveSettings(settings: SettingsMap, token?: string): Promise<void>;
-}
+
 
 let settingsCache: SettingsMap | null = null;
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -99,7 +93,7 @@ const attachLifecycleHandlers = () => {
     });
 };
 
-export const settingsService: ISettingsService = {
+export const settingsService = {
     async getSettings(token?: string): Promise<SettingsMap | null> {
         if (settingsCache) return settingsCache;
         if (fetchPromise) return fetchPromise;
