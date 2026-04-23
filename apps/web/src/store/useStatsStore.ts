@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import type { ReadingStats } from "@/types";
+import type { ReadingStats, ReadingSession } from "@/types";
 import { DEFAULT_WEEKLY_DATA, DEFAULT_PERSONALITY, DEFAULT_DAILY_GOAL } from "@/types";
-import type { ReadingSession } from "@/services/StatsService";
 
 type StatsStoreState = {
   stats: ReadingStats;

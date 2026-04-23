@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
 import BookCard from "../ui/BookCard";
@@ -6,11 +6,12 @@ import AddBookButton from "../ui/AddBookButton";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useShallow } from "zustand/react/shallow";
-import { LibraryService } from "@/services/LibraryService";
-import { useAuth } from "@/hooks/useAuth";
+
 
 interface LibraryGridProps {
   onSelectBook: (book: Book) => void;
+  addBook: (file: File) => Promise<void>;
+  toggleFavorite: (id: string) => void;
 }
 
 function SkeletonCard() {
@@ -23,6 +24,8 @@ function SkeletonCard() {
 
 function LibraryGrid({
   onSelectBook,
+  addBook,
+  toggleFavorite: onToggleFavorite,
 }: LibraryGridProps) {
   const { searchTerm } = useUIStore(useShallow((state) => ({
     searchTerm: state.searchTerm,
@@ -51,13 +54,7 @@ function LibraryGrid({
     setFilterBy: state.setFilterBy,
   })));
 
-  const { getToken } = useAuth();
-  // We assume persistent is true for logged-in users, but wait, LibraryGrid is mostly used when logged in.
-  // Actually we can just pass persistent = true for now or derive it from useSessionStore if needed.
-  // We don't really need persistent flag for just calling addBook/toggleFavorite since that logic handles it internally based on guest mode.
-  const libraryService = useMemo(() => new LibraryService(getToken, true), [getToken]);
-  const addBook = libraryService.addBook.bind(libraryService);
-  const onToggleFavorite = libraryService.toggleFavorite.bind(libraryService);
+
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);

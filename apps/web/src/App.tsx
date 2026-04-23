@@ -48,18 +48,13 @@ function App() {
     return () => libraryService.cleanupAllObjectUrls();
   }, [libraryService]);
 
-  useEffect(() => {
-    // compute is true if view is STATS
-    // Just force a re-computation if needed, but StatsService listens to store changes itself?
-    // Actually StatsService handles computing internally but useReadingStats used to call an effect.
-    // Let's just bind start/end session
-  }, [books, view, statsService]);
-
   const updateBookProgress = libraryService.updateBookProgress.bind(libraryService);
   const addBookmark = libraryService.addBookmark.bind(libraryService);
   const removeBookmark = libraryService.removeBookmark.bind(libraryService);
   const getBookContent = libraryService.getBookContent.bind(libraryService);
   const reloadBooks = libraryService.loadBooks.bind(libraryService);
+  const addBook = libraryService.addBook.bind(libraryService);
+  const toggleFavorite = libraryService.toggleFavorite.bind(libraryService);
   
   const startSession = statsService.startSession.bind(statsService);
   const endSession = useCallback((endProgressOverride?: number) => {
@@ -203,6 +198,8 @@ function App() {
           {view === View.LIBRARY && (
             <LibraryGrid
               onSelectBook={handleSelectBook}
+              addBook={addBook}
+              toggleFavorite={toggleFavorite}
             />
           )}
           {view === View.SETTINGS && <SettingsView />}
@@ -226,6 +223,6 @@ function App() {
       )}
     </div>
   );
-};
+}
 
 export default App;

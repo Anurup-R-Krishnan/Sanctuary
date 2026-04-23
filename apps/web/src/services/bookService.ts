@@ -1,7 +1,6 @@
 import type { LibraryItemV2 } from "@sanctuary/core";
 import type { Book } from "@/types";
-import { readJsonSafely } from "./http";
-import { buildAuthHeaders, encodeId } from "./utils";
+import { readJsonSafely, buildAuthHeaders, encodeId } from "./http";
 import { API } from "./api";
 import { getBookById } from "@/utils/db";
 

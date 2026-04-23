@@ -127,3 +127,25 @@ export const DEFAULT_BADGES: Badge[] = [
   { id: "night_owl", name: "Night Owl", icon: "🦉", description: "Read after midnight", unlocked: false },
   { id: "early_bird", name: "Early Bird", icon: "🌅", description: "Read before 6 AM", unlocked: false },
 ];
+
+export interface ReadingSession {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  date: string;
+  startTime?: string;
+  localStartHour?: number;
+  duration: number;
+  pagesRead: number;
+}
+
+export type SessionAggregates = {
+  totalReadingTime: number;
+  totalPagesRead: number;
+  nightOwlUnlocked: boolean;
+  earlyBirdUnlocked: boolean;
+  sessionDates: Set<string>;
+  dayTotals: Map<string, { pages: number; minutes: number }>;
+  monthMinutes: Map<string, number>;
+  sessionCount: number;
+};
