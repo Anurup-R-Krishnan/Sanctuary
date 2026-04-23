@@ -12,8 +12,8 @@ export interface ReadingSession {
   bookId: string;
   bookTitle: string;
   date: string;
-  startTime?: string | undefined;
-  localStartHour?: number | undefined;
+  startTime?: string;
+  localStartHour?: number;
   duration: number;
   pagesRead: number;
 }
@@ -57,6 +57,10 @@ export class StatsService {
   private isPersistent: boolean;
   private aggregates = this.createEmptyAggregates();
   private sessionIndex = new Map<string, ReadingSession>();
+  private currentSessionStart: number | null = null;
+  private currentSessionStartTime: string | null = null;
+  private currentSessionBook: string | null = null;
+  private currentSessionStartProgress: number = 0;
 
   constructor(getToken: () => Promise<string | null>, isPersistent: boolean) {
     this.getToken = getToken;
@@ -123,8 +127,8 @@ export class StatsService {
           bookId: row.bookId,
           bookTitle: row.bookTitle,
           date: row.date,
-          startTime: typeof row.startTime === "string" ? row.startTime : undefined,
-          localStartHour: typeof row.localStartHour === "number" ? row.localStartHour : undefined,
+          ...(typeof row.startTime === "string" ? { startTime: row.startTime } : {}),
+          ...(typeof row.localStartHour === "number" ? { localStartHour: row.localStartHour } : {}),
           duration: row.duration,
           pagesRead: row.pagesRead,
         };
@@ -195,6 +199,50 @@ export class StatsService {
     } catch (error) {
       console.warn("Failed to persist remote reading sessions", error);
     }
+  }
+
+  public startSession(bookId: string, startProgress = 0) {
+    const now = Date.now();
+    this.currentSessionStart = now;
+    this.currentSessionStartTime = new Date(now).toISOString();
+    this.currentSessionBook = bookId;
+    this.currentSessionStartProgress = Math.max(0, startProgress);
+  }
+
+  public endSession(books: Book[], endProgressOverride?: number) {
+    if (!this.currentSessionStart || !this.currentSessionBook) return;
+
+    const duration = Math.round((Date.now() - this.currentSessionStart) / 60000);
+    const book = books.find((item) => item.id === this.currentSessionBook);
+    const endProgressSource = endProgressOverride ?? book?.progress ?? 0;
+    const endProgress = Math.max(0, endProgressSource);
+    const pagesRead = Math.max(0, endProgress - this.currentSessionStartProgress);
+
+    if (duration >= 1 || pagesRead > 0) {
+      const now = new Date();
+      const localStartHour = now.getHours() - Math.floor(duration / 60);
+      const normalizedStartHour = ((localStartHour % 24) + 24) % 24;
+
+      const newSession: ReadingSession = {
+        id: crypto.randomUUID(),
+        bookId: this.currentSessionBook,
+        bookTitle: book?.title || "Unknown Book",
+        date: now.toISOString().substring(0, 10),
+        ...(this.currentSessionStartTime ? { startTime: this.currentSessionStartTime } : {}),
+        localStartHour: normalizedStartHour,
+        duration,
+        pagesRead,
+      };
+
+      const currentSessions = useStatsStore.getState().sessions;
+      useStatsStore.getState().addSession(newSession);
+      this.saveSessions([...currentSessions, newSession]);
+    }
+
+    this.currentSessionStart = null;
+    this.currentSessionStartTime = null;
+    this.currentSessionBook = null;
+    this.currentSessionStartProgress = 0;
   }
 
   public computeStats(books: Book[]): ReadingStats {

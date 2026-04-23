@@ -1,7 +1,8 @@
-import React from "react";
+
 import type { IconProps } from "./index";
 
-export const LibraryIcon: React.FC<IconProps> = ({ className }) => (
+export function LibraryIcon({ className }: IconProps) {
+  return (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -16,4 +17,5 @@ export const LibraryIcon: React.FC<IconProps> = ({ className }) => (
     <path d="M8 11h8" />
     <path d="M8 7h6" />
   </svg>
-);
+  );
+}

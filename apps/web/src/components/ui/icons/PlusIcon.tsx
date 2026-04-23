@@ -1,6 +1,7 @@
 import React from "react";
 
-export const PlusIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+export function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
   <svg
     {...props}
     xmlns="http://www.w3.org/2000/svg"
@@ -11,4 +12,5 @@ export const PlusIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
   </svg>
-);
+  );
+}

@@ -1,8 +1,7 @@
 import React from "react";
 
-export const ChevronLeftIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
-  props,
-) => (
+export function ChevronLeftIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
   <svg
     {...props}
     xmlns="http://www.w3.org/2000/svg"
@@ -13,4 +12,5 @@ export const ChevronLeftIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
   </svg>
-);
+  );
+}

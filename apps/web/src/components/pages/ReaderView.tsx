@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Book, Bookmark } from "@/types";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useReaderEngine } from "@/hooks/useReaderEngine";
@@ -15,14 +15,14 @@ interface ReaderViewProps {
     getBookContent: (id: string) => Promise<Blob>;
 }
 
-const ReaderView: React.FC<ReaderViewProps> = ({
+function ReaderView({
     book,
     onClose,
     onUpdateProgress,
     onAddBookmark,
     onRemoveBookmark,
     getBookContent,
-}) => {
+}: ReaderViewProps) {
     // UI State
     const [showUI, setShowUI] = useState(true);
     const [showSettings, setShowSettings] = useState(false);

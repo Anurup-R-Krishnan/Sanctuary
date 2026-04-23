@@ -10,12 +10,12 @@ interface BookCardProps {
   variant?: "default" | "compact" | "featured";
 }
 
-const BookCard: React.FC<BookCardProps> = ({
+function BookCard({
   book,
   onSelect,
   onToggleFavorite,
   variant = "default"
-}) => {
+}: BookCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const reduceMotion = useSettings((state) => state.reduceMotion);

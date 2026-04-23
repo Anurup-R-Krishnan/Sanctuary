@@ -2,7 +2,7 @@ import React from "react";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { Layout, Scroll, EyeOff, Speech, ZapOff, RotateCcw } from "lucide-react";
 
-const ReaderSettings: React.FC = () => {
+function ReaderSettings() {
   const {
     fontSize,
     setFontSize,

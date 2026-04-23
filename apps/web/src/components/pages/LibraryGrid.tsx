@@ -6,21 +6,24 @@ import AddBookButton from "../ui/AddBookButton";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useShallow } from "zustand/react/shallow";
-import { useBookLibrary } from "@/hooks/useBookLibrary";
+import { LibraryService } from "@/services/LibraryService";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LibraryGridProps {
   onSelectBook: (book: Book) => void;
 }
 
-const SkeletonCard: React.FC = () => (
+function SkeletonCard() {
+  return (
   <div className="w-full h-[260px] sm:h-[300px] rounded-xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] overflow-hidden relative">
     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent animate-shimmer" />
   </div>
-);
+  );
+}
 
-const LibraryGrid: React.FC<LibraryGridProps> = ({
+function LibraryGrid({
   onSelectBook,
-}) => {
+}: LibraryGridProps) {
   const { searchTerm } = useUIStore(useShallow((state) => ({
     searchTerm: state.searchTerm,
   })));
@@ -48,7 +51,13 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     setFilterBy: state.setFilterBy,
   })));
 
-  const { addBook, toggleFavorite: onToggleFavorite } = useBookLibrary();
+  const { getToken } = useAuth();
+  // We assume persistent is true for logged-in users, but wait, LibraryGrid is mostly used when logged in.
+  // Actually we can just pass persistent = true for now or derive it from useSessionStore if needed.
+  // We don't really need persistent flag for just calling addBook/toggleFavorite since that logic handles it internally based on guest mode.
+  const libraryService = useMemo(() => new LibraryService(getToken, true), [getToken]);
+  const addBook = libraryService.addBook.bind(libraryService);
+  const onToggleFavorite = libraryService.toggleFavorite.bind(libraryService);
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);

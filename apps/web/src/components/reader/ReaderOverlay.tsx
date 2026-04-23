@@ -1,4 +1,4 @@
-import React from "react";
+
 import type { Book, Bookmark } from "@/types";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import ReaderFooter from "@/components/reader/ReaderFooter";
@@ -36,7 +36,7 @@ interface ReaderOverlayProps {
   onCloseControls: () => void;
 }
 
-const ReaderOverlay: React.FC<ReaderOverlayProps> = (props) => {
+function ReaderOverlay(props: ReaderOverlayProps) {
   const tocId = (parentKey: string, id?: string, href?: string, label?: string) => {
     const stablePart = id || href || label || "item";
     return `${parentKey}:${encodeURIComponent(stablePart)}`;

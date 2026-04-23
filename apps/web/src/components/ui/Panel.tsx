@@ -9,7 +9,8 @@ interface PanelProps {
     side?: "left" | "right";
 }
 
-const Panel: React.FC<PanelProps> = ({ isOpen, onClose, title, children, side = "left" }) => (
+function Panel({ isOpen, onClose, title, children, side = "left" }: PanelProps) {
+  return (
     <>
         <div
             className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
@@ -37,6 +38,7 @@ const Panel: React.FC<PanelProps> = ({ isOpen, onClose, title, children, side = 
             <div className="p-4 overflow-y-auto h-[calc(100%-65px)]">{children}</div>
         </div>
     </>
-);
+  );
+}
 
 export default Panel;

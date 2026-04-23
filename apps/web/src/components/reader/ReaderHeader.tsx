@@ -25,7 +25,7 @@ interface ReaderHeaderProps {
     onToggleFullscreen: () => void;
 }
 
-const ReaderHeader: React.FC<ReaderHeaderProps> = ({
+function ReaderHeader({
     book,
     isBookmarked,
     isFullscreen,
@@ -36,7 +36,7 @@ const ReaderHeader: React.FC<ReaderHeaderProps> = ({
     onToggleSettings,
     onToggleControls,
     onToggleFullscreen,
-}) => {
+}: ReaderHeaderProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
 

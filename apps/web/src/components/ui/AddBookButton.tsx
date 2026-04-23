@@ -6,7 +6,7 @@ interface AddBookButtonProps {
   variant?: "fab" | "inline";
 }
 
-const AddBookButton: React.FC<AddBookButtonProps> = ({ onAddBook, variant = "fab" }) => {
+function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

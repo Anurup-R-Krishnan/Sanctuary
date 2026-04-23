@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun } from "lucide-react";
 import { Theme } from "@/types";
 
@@ -10,11 +10,11 @@ interface HeaderProps {
   isGuest?: boolean;
   onShowLogin?: (() => void) | undefined;
   onSignOut?: (() => void) | undefined;
-  userEmail?: string | undefined;
-  userImage?: string | undefined;
+  userEmail?: string;
+  userImage?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({
+function Header({
   theme,
   onToggleTheme,
   searchTerm,
@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({
   onSignOut,
   userEmail,
   userImage,
-}) => {
+}: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
