@@ -54,7 +54,7 @@ export const SignIn = (props: AuthComponentProps) => {
     return <ClerkSignIn {...props} />;
 };
 
-export const SignUp = (props: AuthComponentProps) => {
+const SignUp = (props: AuthComponentProps) => {
     if (DISABLE_AUTH) {
         return <div className="p-4 text-center text-sm opacity-60">Sign-up disabled in guest mode.</div>;
     }
