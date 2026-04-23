@@ -7,19 +7,16 @@ import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useShallow } from "zustand/react/shallow";
 
+// Extracted Components
+import { SkeletonCard } from "@/components/library/SkeletonCard";
+import { SectionHeader } from "@/components/library/SectionHeader";
+import { HorizontalScroll } from "@/components/library/HorizontalScroll";
+import { DropdownMenu } from "@/components/library/DropdownMenu";
 
 interface LibraryGridProps {
   onSelectBook: (book: Book) => void;
   addBook: (file: File) => Promise<void>;
   toggleFavorite: (id: string) => void;
-}
-
-function SkeletonCard() {
-  return (
-  <div className="w-full h-[260px] sm:h-[300px] rounded-xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] overflow-hidden relative">
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent animate-shimmer" />
-  </div>
-  );
 }
 
 function LibraryGrid({
@@ -53,8 +50,6 @@ function LibraryGrid({
     filterBy: state.filterBy,
     setFilterBy: state.setFilterBy,
   })));
-
-
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -136,78 +131,6 @@ function LibraryGrid({
     );
   }
 
-  const SectionHeader = ({
-    title,
-    count,
-    icon: Icon,
-  }: {
-    title: string;
-    count?: number | undefined;
-    icon?: React.ElementType | undefined;
-  }) => (
-    <div className="flex items-center gap-2 mb-4">
-      {Icon && <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />}
-      <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">{title}</h3>
-      {count !== undefined && (
-        <span className="px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.04] text-[10px] font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
-          {count}
-        </span>
-      )}
-    </div>
-  );
-
-  const HorizontalScroll = ({ books: scrollBooks }: { books: Book[] }) => (
-    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-      {scrollBooks.map((book) => (
-        <div key={book.id} className="flex-shrink-0 w-[140px] sm:w-[160px]">
-          <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} variant="compact" />
-        </div>
-      ))}
-    </div>
-  );
-
-  const DropdownMenu = ({
-    id,
-    show,
-    options,
-    value,
-    onSelect,
-    onClose,
-  }: {
-    id: string;
-    show: boolean;
-    options: { value: string; label: string }[];
-    value: string;
-    onSelect: (v: string) => void;
-    onClose: () => void;
-  }) =>
-    show ? (
-      <div
-        id={id}
-        role="menu"
-        aria-orientation="vertical"
-        className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-20 animate-scaleIn origin-top-right"
-      >
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            role="menuitemradio"
-            aria-checked={value === opt.value}
-            onClick={() => {
-              onSelect(opt.value);
-              onClose();
-            }}
-            className={`w-full text-left px-3 py-2 text-sm transition-colors ${value === opt.value
-              ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
-              : "text-light-text dark:text-dark-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-              }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    ) : null;
-
   return (
     <div className="page-stack">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -260,7 +183,7 @@ function LibraryGrid({
             <DropdownMenu
               id={sortMenuId}
               show={showSortMenu}
-              options={sortOptions as { value: string; label: string }[]}
+              options={sortOptions}
               value={sortBy}
               onSelect={(v) => setSortBy(v as SortOption)}
               onClose={() => setShowSortMenu(false)}
@@ -286,7 +209,7 @@ function LibraryGrid({
             <DropdownMenu
               id={filterMenuId}
               show={showFilterMenu}
-              options={filterOptions as { value: string; label: string }[]}
+              options={filterOptions}
               value={filterBy}
               onSelect={(v) => setFilterBy(v as FilterOption)}
               onClose={() => setShowFilterMenu(false)}
@@ -298,14 +221,14 @@ function LibraryGrid({
       {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
         <section>
           <SectionHeader title="Continue Reading" count={recentBooks.length} icon={Clock} />
-          <HorizontalScroll books={recentBooks.slice(0, 6)} />
+          <HorizontalScroll books={recentBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} />
         </section>
       )}
 
       {favoriteBooks.length > 0 && filterBy === "all" && !searchTerm && (
         <section>
           <SectionHeader title="Favorites" count={favoriteBooks.length} icon={Star} />
-          <HorizontalScroll books={favoriteBooks.slice(0, 6)} />
+          <HorizontalScroll books={favoriteBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} />
         </section>
       )}
 
@@ -321,7 +244,7 @@ function LibraryGrid({
                     <span>{series}</span>
                     <ChevronRight className="w-3 h-3" />
                   </div>
-                  <HorizontalScroll books={seriesBooks} />
+                  <HorizontalScroll books={seriesBooks} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} />
                 </div>
               ))}
           </div>

@@ -7,7 +7,6 @@ import {
     Sun,
     Zap,
     Coffee,
-    Check,
     WandSparkles,
     Bell,
     ChartLine,
@@ -15,92 +14,14 @@ import {
 } from "lucide-react";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
-const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]; onChange: (keys: string[]) => void }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [tempKeys, setTempKeys] = useState<string[]>([]);
+// Extracted Components
+import { ShortcutItem } from "@/components/settings/ShortcutItem";
+import { Toggle } from "@/components/settings/Toggle";
+import { Slider } from "@/components/settings/Slider";
+import { Section } from "@/components/settings/Section";
+import { ColorSwatch } from "@/components/settings/ColorSwatch";
 
-    const startEditing = () => {
-        setTempKeys([...keys]);
-        setIsEditing(true);
-    };
-
-    const cancelEditing = () => {
-        setIsEditing(false);
-        setTempKeys([]);
-    };
-
-    const saveEditing = () => {
-        onChange(tempKeys);
-        setIsEditing(false);
-        setTempKeys([]);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        e.preventDefault();
-        const key = e.key;
-        if (key === "Escape") {
-            cancelEditing();
-        } else if (key === "Enter") {
-            saveEditing();
-        } else if (key === "Backspace") {
-            if (tempKeys.length > 0) {
-                setTempKeys(tempKeys.slice(0, -1));
-            } else {
-                onChange([]);
-                cancelEditing();
-            }
-        } else if (!tempKeys.includes(key)) {
-            setTempKeys([...tempKeys, key]);
-        }
-    };
-
-    const removeKey = (keyToRemove: string) => {
-        const newKeys = keys.filter(k => k !== keyToRemove);
-        onChange(newKeys);
-    };
-
-    return (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all">
-            <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
-            <div className="flex items-center gap-2">
-                {isEditing ? (
-                    <input
-                        type="text"
-                        readOnly
-                        aria-label={`${label} shortcut editor`}
-                        className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[120px] text-center"
-                        onKeyDown={handleKeyDown}
-                        value={tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
-                    />
-                ) : (
-                    <div className="flex items-center gap-1">
-                        {keys.map((key, index) => (
-                            <span key={index} className="relative group">
-                                <kbd className="px-2 py-1 text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded font-mono">
-                                    {key === " " ? "Space" : key}
-                                </kbd>
-                                <button
-                                    onClick={() => removeKey(key)}
-                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                >
-                                    ×
-                                </button>
-                            </span>
-                        ))}
-                        <button
-                            onClick={startEditing}
-                            className="px-2 py-1 text-xs bg-light-accent dark:bg-dark-accent text-white rounded hover:opacity-80 transition-opacity"
-                        >
-                            +
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-type Tab = "typography" | "layout" | "reading" | "colors" | "shortcuts" | "goals";
+type Tab = "colors" | "shortcuts" | "goals";
 
 const COLOR_PRESETS = [
     { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
@@ -108,7 +29,7 @@ const COLOR_PRESETS = [
     { id: "sepia", label: "Sepia", fg: "#5C4B37", bg: "#F4ECD8", accent: "#8B7355", icon: Droplets },
     { id: "dark", label: "Ink", fg: "#e8e6e3", bg: "#1a1a1a", accent: "#d4b58b", icon: Moon },
     { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
-];
+] as const;
 
 function SettingsView() {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
@@ -150,157 +71,6 @@ function SettingsView() {
         { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
         { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
     ];
-
-    // Premium Toggle Component
-    const Toggle = ({ checked, onChange, label, sublabel }: { checked: boolean; onChange: (v: boolean) => void; label: string; sublabel?: string }) => (
-        <button
-            type="button"
-            className="group w-full text-left flex items-center justify-between p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200 cursor-pointer"
-            onClick={() => onChange(!checked)}
-        >
-            <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>
-                {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
-            </div>
-            <div className={`relative w-14 h-8 rounded-full transition-all duration-300 ease-out ${checked
-                    ? "bg-light-accent dark:bg-dark-accent"
-                    : "bg-black/10 dark:bg-white/10"
-                }`}>
-                <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-lg transition-all duration-500 ease-out ${checked ? "left-7 scale-110" : "left-1"
-                    }`}>
-                    {checked && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Check className="w-3 h-3 text-light-accent dark:text-dark-accent" strokeWidth={3} />
-                        </div>
-                    )}
-                </div>
-            </div>
-        </button>
-    );
-
-    // Premium Slider Component
-    const Slider = ({
-        value,
-        onChange,
-        min,
-        max,
-        step = 1,
-        label,
-        displayValue,
-        icon: Icon,
-    }: {
-        value: number;
-        onChange: (v: number) => void;
-        min: number;
-        max: number;
-        step?: number;
-        label: string;
-        displayValue?: string;
-        icon?: React.ElementType;
-    }) => {
-        const percentage = ((value - min) / (max - min)) * 100;
-
-        return (
-            <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        {Icon && (
-                            <div className="p-2 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                                <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-                            </div>
-                        )}
-                        <span className="text-sm font-medium text-light-text dark:text-dark-text">{label}</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10">
-                        <span className="text-sm font-bold text-light-accent dark:text-dark-accent tabular-nums">
-                            {displayValue || value}
-                        </span>
-                    </div>
-                </div>
-                <div className="relative">
-                    <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
-                            style={{ width: `${percentage}%` }}
-                        />
-                    </div>
-                    <input
-                        type="range"
-                        min={min}
-                        max={max}
-                        step={step}
-                        value={value}
-                        onChange={(e) => onChange(parseFloat(e.target.value))}
-                        className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                    />
-                    <div
-                        className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-dark-surface rounded-full shadow-lg border-2 border-light-accent dark:border-dark-accent transition-all duration-300 pointer-events-none"
-                        style={{ left: `calc(${percentage}% - 10px)` }}
-                    />
-                </div>
-            </div>
-        );
-    };
-
-    // Premium Section Component
-    const Section = ({ title, icon: Icon, children }: { title: string; icon?: React.ElementType; children: React.ReactNode }) => (
-        <div className="rounded-3xl border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/80 dark:bg-dark-surface/80">
-            <div className="relative p-6">
-                <div className="flex items-center gap-3 mb-5">
-                    {Icon && (
-                        <div className="p-2.5 rounded-xl bg-light-accent/10 dark:bg-dark-accent/15">
-                            <Icon className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-                        </div>
-                    )}
-                    <h3 className="text-base font-semibold text-light-text dark:text-dark-text">{title}</h3>
-                </div>
-                <div className="space-y-3">{children}</div>
-            </div>
-        </div>
-    );
-
-    // Color Swatch
-    const ColorSwatch = ({
-        preset,
-        isActive,
-        onClick,
-    }: {
-        preset: typeof COLOR_PRESETS[0];
-        isActive: boolean;
-        onClick: () => void;
-    }) => {
-        const Icon = preset.icon;
-        return (
-            <button
-                onClick={onClick}
-                className={`group relative flex flex-col items-center p-4 rounded-2xl border transition-all duration-200 ${isActive
-                        ? "border-light-accent dark:border-dark-accent bg-light-accent/5 dark:bg-dark-accent/10"
-                        : "border-black/[0.06] dark:border-white/[0.06] hover:border-light-accent/30 dark:hover:border-dark-accent/30"
-                    }`}
-            >
-                {/* Color preview */}
-                <div
-                    className="w-16 h-16 rounded-2xl mb-3 flex items-center justify-center border border-black/10 dark:border-white/10 shadow-inner"
-                    style={{ backgroundColor: preset.bg }}
-                >
-                    <span className="text-2xl font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
-                </div>
-
-                {/* Label */}
-                <div className="flex items-center gap-1.5">
-                    <Icon className="w-3.5 h-3.5 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
-                    <span className="text-sm font-medium text-light-text dark:text-dark-text">{preset.label}</span>
-                </div>
-
-                {/* Active indicator */}
-                {isActive && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center shadow-sm">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    </div>
-                )}
-            </button>
-        );
-    };
 
     return (
         <div className="page-narrow page-stack">
@@ -496,7 +266,6 @@ function SettingsView() {
                         </div>
                     </>
                 )}
-
             </div>
         </div>
     );

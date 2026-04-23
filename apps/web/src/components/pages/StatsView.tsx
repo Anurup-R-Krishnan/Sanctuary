@@ -1,19 +1,15 @@
 import React, { useState, useMemo } from "react";
-import type { Badge } from "@/types";
-import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
+import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Star, Users } from "lucide-react";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
 import { useShallow } from "zustand/react/shallow";
 
-const ICON_MAP: Record<string, React.ElementType> = {
-  flame: Flame,
-  trophy: Trophy,
-  book: BookOpen,
-  star: Star,
-  award: Award,
-  zap: Zap,
-  target: Target,
-};
+// Extracted Components
+import { StatCard } from "@/components/stats/StatCard";
+import { ProgressRing } from "@/components/stats/ProgressRing";
+import { BadgeCard } from "@/components/stats/BadgeCard";
+import { BarChart } from "@/components/stats/BarChart";
+import { HeatmapCell } from "@/components/stats/HeatmapCell";
 
 function StatsView() {
   const { stats } = useStatsStore(useShallow((state) => ({
@@ -25,168 +21,15 @@ function StatsView() {
     setDailyGoal: state.setDailyGoal,
     setWeeklyGoal: state.setWeeklyGoal,
   }));
+  
   const onUpdateGoal = (daily: number, weekly: number) => {
     setDailyGoal(daily);
     setWeeklyGoal(weekly);
   };
+  
   const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
-
-  const StatCard = ({
-    icon: Icon,
-    label,
-    value,
-    subtext,
-    accent = false,
-  }: {
-    icon: React.ElementType;
-    label: string;
-    value: string | number;
-    subtext?: string;
-    accent?: boolean;
-  }) => (
-    <div
-      className={`p-4 rounded-xl border transition-colors ${
-        accent
-          ? "bg-gradient-to-br from-light-accent/6 to-amber-500/6 dark:from-dark-accent/8 dark:to-amber-400/8 border-light-accent/15 dark:border-dark-accent/15"
-          : "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`p-2 rounded-lg ${
-            accent ? "bg-light-accent/12 dark:bg-dark-accent/12" : "bg-black/[0.04] dark:bg-white/[0.04]"
-          }`}
-        >
-          <Icon
-            className={`w-4 h-4 ${
-              accent ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted dark:text-dark-text-muted"
-            }`}
-            strokeWidth={1.75}
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide font-medium">
-            {label}
-          </p>
-          <p className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums mt-0.5">{value}</p>
-          {subtext && (
-            <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-0.5">{subtext}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ProgressRing = ({ progress, size = 80, stroke = 6 }: { progress: number; size?: number; stroke?: number }) => {
-    const radius = (size - stroke) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
-    return (
-      <svg width={size} height={size} className="transform -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          className="text-black/[0.04] dark:text-white/[0.04]"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="url(#progressGradient)"
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-700"
-        />
-        <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#b8956c" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-        </defs>
-      </svg>
-    );
-  };
-
-  const HeatmapCell = ({ level }: { level: number }) => {
-    const colors = [
-      "bg-black/[0.03] dark:bg-white/[0.03]",
-      "bg-light-accent/20 dark:bg-dark-accent/20",
-      "bg-light-accent/45 dark:bg-dark-accent/45",
-      "bg-light-accent dark:bg-dark-accent",
-    ];
-    return <div className={`w-2.5 h-2.5 rounded-sm ${colors[level]} transition-colors`} />;
-  };
-
-  const BadgeCard = ({ badge }: { badge: Badge }) => {
-    const IconComponent = ICON_MAP[badge.icon.toLowerCase()] || Award;
-    return (
-      <div
-        className={`p-4 rounded-xl border text-center transition-all ${
-          badge.unlocked
-            ? "bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.04]"
-            : "opacity-35 bg-black/[0.01] dark:bg-white/[0.01] border-black/[0.03] dark:border-white/[0.03]"
-        }`}
-      >
-        <div
-          className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2.5 ${
-            badge.unlocked
-              ? "bg-gradient-to-br from-light-accent/15 to-amber-500/15 dark:from-dark-accent/15 dark:to-amber-400/15"
-              : "bg-black/[0.04] dark:bg-white/[0.04]"
-          }`}
-        >
-          <IconComponent
-            className={`w-5 h-5 ${
-              badge.unlocked ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted/40 dark:text-dark-text-muted/40"
-            }`}
-            strokeWidth={1.75}
-          />
-        </div>
-        <p className="font-semibold text-sm text-light-text dark:text-dark-text">{badge.name}</p>
-        <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5 leading-relaxed">{badge.description}</p>
-        {badge.target && !badge.unlocked && (
-          <div className="mt-2.5">
-            <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all"
-                style={{ width: `${Math.min(100, ((badge.progress || 0) / badge.target) * 100)}%` }}
-              />
-            </div>
-            <p className="text-[9px] text-light-text-muted dark:text-dark-text-muted mt-1 tabular-nums">
-              {badge.progress}/{badge.target}
-            </p>
-          </div>
-        )}
-        {badge.unlocked && (
-          <span className="inline-block mt-2 text-[10px] text-light-accent dark:text-dark-accent font-medium">Unlocked</span>
-        )}
-      </div>
-    );
-  };
-
-  const BarChart = ({ data, maxValue }: { data: { label: string; value: number }[]; maxValue: number }) => (
-    <div className="flex items-end gap-1.5 h-28">
-      {data.map((d) => (
-        <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
-          <div className="w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-t flex-1 flex items-end min-h-0">
-            <div
-              className="w-full bg-gradient-to-t from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-t transition-all duration-500"
-              style={{ height: `${maxValue > 0 ? (d.value / maxValue) * 100 : 0}%` }}
-            />
-          </div>
-          <span className="text-[9px] text-light-text-muted dark:text-dark-text-muted font-medium">{d.label}</span>
-        </div>
-      ))}
-    </div>
-  );
 
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
