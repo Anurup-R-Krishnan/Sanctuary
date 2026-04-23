@@ -1,22 +1,25 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
 
 interface Props { children: ReactNode; }
-interface State { hasError: boolean; error?: Error; }
+interface State { hasError: boolean; error?: Error | null; }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  public override state: State = {
+    hasError: false,
+    error: null,
+  };
 
-  static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("ErrorBoundary caught:", error, info);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-light-primary dark:bg-dark-primary p-6">

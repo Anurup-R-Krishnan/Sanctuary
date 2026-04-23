@@ -13,7 +13,7 @@ import {
     ChartLine,
     Droplets,
 } from "lucide-react";
-import { useSettingsShallow } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 
 const ShortcutItem = ({ label, keys, onChange }: { label: string; keys: string[]; onChange: (keys: string[]) => void }) => {
     const [isEditing, setIsEditing] = useState(false);

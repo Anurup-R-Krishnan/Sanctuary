@@ -16,7 +16,7 @@ interface ReaderOverlayProps {
   readingTime: number;
   isBookmarked: boolean;
   currentCfi: string;
-  toc: Array<{ id?: string; href: string; label: string; subitems?: Array<{ id?: string; href: string; label: string }> }>;
+  toc: Array<{ id?: string | undefined; href: string; label: string; subitems?: Array<{ id?: string | undefined; href: string; label: string }> | undefined }>;
   bookmarks: Bookmark[];
   isFullscreen: boolean;
   onClose: () => void;

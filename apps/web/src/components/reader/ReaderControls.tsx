@@ -9,14 +9,14 @@ import {
     Bookmark as BookmarkIcon,
     X
 } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/store/useSettingsStore";
 import type { Bookmark } from "@/types";
 
 interface TocItem {
     id: string;
     href: string;
     label: string;
-    subitems?: TocItem[];
+    subitems?: TocItem[] | undefined;
 }
 
 interface ReaderControlsProps {

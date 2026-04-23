@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Book, Bookmark } from "@/types";
-import { useSettingsShallow } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useReaderEngine } from "@/hooks/useReaderEngine";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
 import ReaderContent from "@/components/reader/ReaderContent";

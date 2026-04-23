@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import type { Badge } from "@/types";
 import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Award, Star, Users } from "lucide-react";
-import { useSettingsShallow } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
 import { useShallow } from "zustand/react/shallow";
 

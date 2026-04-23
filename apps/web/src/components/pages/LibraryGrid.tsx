@@ -6,6 +6,7 @@ import AddBookButton from "../ui/AddBookButton";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useShallow } from "zustand/react/shallow";
+import { useBookLibrary } from "@/hooks/useBookLibrary";
 
 interface LibraryGridProps {
   onSelectBook: (book: Book) => void;
@@ -29,27 +30,25 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     recentBooks,
     favoriteBooks,
     seriesGroups,
-    addBook,
     isLoading,
     sortBy,
     setSortBy,
     filterBy,
     setFilterBy,
-    toggleFavorite: onToggleFavorite,
   } = useBookStore(useShallow((state) => ({
     books: state.books,
     sortedBooks: state.sortedBooks,
     recentBooks: state.recentBooks,
     favoriteBooks: state.favoriteBooks,
     seriesGroups: state.seriesGroups,
-    addBook: state.addBook,
     isLoading: state.isLoading,
     sortBy: state.sortBy,
     setSortBy: state.setSortBy,
     filterBy: state.filterBy,
     setFilterBy: state.setFilterBy,
-    toggleFavorite: state.toggleFavorite,
   })));
+
+  const { addBook, toggleFavorite: onToggleFavorite } = useBookLibrary();
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -137,8 +136,8 @@ const LibraryGrid: React.FC<LibraryGridProps> = ({
     icon: Icon,
   }: {
     title: string;
-    count?: number;
-    icon?: React.ElementType;
+    count?: number | undefined;
+    icon?: React.ElementType | undefined;
   }) => (
     <div className="flex items-center gap-2 mb-4">
       {Icon && <Icon className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />}

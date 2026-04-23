@@ -147,7 +147,8 @@ export default {
     },
   },
   plugins: [
-    function ({ addUtilities, theme }) {
+    /** @param {{ addUtilities: (utilities: any) => void }} pluginAPI */
+    function ({ addUtilities }) {
       const newUtilities = {
         '.text-balance': {
           'text-wrap': 'balance',

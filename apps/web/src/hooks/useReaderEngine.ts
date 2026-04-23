@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { RefObject } from "react";
 import type { Book } from "@/types";
-import { useSettingsShallow } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 
 interface UseReaderEngineProps {
     book: Book;
@@ -157,7 +157,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
                 // Generate locations
                 bookRef.current.locations.generate(1024).then(() => {
-                    if (mounted) {
+                    if (mounted && bookRef.current) {
                         setTotalPages(Math.max(1, bookRef.current.locations.length()));
                     }
                 }).catch((err: unknown) => console.warn("Location generation failed:", err));
@@ -232,7 +232,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             "source-serif": "'Source Serif Pro', Georgia, serif",
             "inter": "'Inter', system-ui, sans-serif",
         };
-        return fonts[fontPairing] || fonts["merriweather-georgia"];
+        return fonts[fontPairing] || fonts["merriweather-georgia"] || "'Merriweather', Georgia, serif";
     }, [fontPairing]);
 
     // Apply current settings to rendition
@@ -249,13 +249,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 "color": readerForeground,
                 "background-color": readerBackground,
                 "padding-top": `${READER_THEME.pageMarginPx}px`,
-                "padding-bottom": `${READER_THEME.pageMarginPx}px`,
+                "padding-bottom": continuous ? "2em" : `${READER_THEME.pageMarginPx}px`,
                 "padding-left": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
                 "padding-right": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
                 ...(continuous ? {
                     "max-width": `${READER_THEME.textWidthCh}ch`,
                     "margin": "0 auto",
-                    "padding-bottom": "2em",
                 } : {
                     "max-width": "none",
                     "margin": "0",
