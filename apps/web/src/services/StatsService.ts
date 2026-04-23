@@ -1,4 +1,4 @@
-import type { ReadingStats, Book } from "@/types";
+import type { ReadingStats, Book, ReadingSession, SessionAggregates } from "@/types";
 import { DEFAULT_PERSONALITY, DEFAULT_BADGES } from "@/types";
 import { settingsService } from "@/services/settingsService";
 import { useStatsStore } from "@/store/useStatsStore";
@@ -7,27 +7,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 export const SESSIONS_KEY = "sanctuary_reading_sessions";
 export const REMOTE_SESSIONS_KEY = "readingSessions";
 
-export interface ReadingSession {
-  id: string;
-  bookId: string;
-  bookTitle: string;
-  date: string;
-  startTime?: string;
-  localStartHour?: number;
-  duration: number;
-  pagesRead: number;
-}
 
-export type SessionAggregates = {
-  totalReadingTime: number;
-  totalPagesRead: number;
-  nightOwlUnlocked: boolean;
-  earlyBirdUnlocked: boolean;
-  sessionDates: Set<string>;
-  dayTotals: Map<string, { pages: number; minutes: number }>;
-  monthMinutes: Map<string, number>;
-  sessionCount: number;
-};
 
 const toLocalDateKey = (date: Date) => {
   const year = date.getFullYear();
