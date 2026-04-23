@@ -4,8 +4,8 @@ import { settingsService } from "@/services/settingsService";
 import { useStatsStore } from "@/store/useStatsStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
-export const SESSIONS_KEY = "sanctuary_reading_sessions";
-export const REMOTE_SESSIONS_KEY = "readingSessions";
+const SESSIONS_KEY = "sanctuary_reading_sessions";
+const REMOTE_SESSIONS_KEY = "readingSessions";
 
 
 

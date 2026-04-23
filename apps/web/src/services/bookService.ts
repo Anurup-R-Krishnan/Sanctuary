@@ -4,16 +4,7 @@ import { readJsonSafely, buildAuthHeaders, encodeId } from "./http";
 import { API } from "./api";
 import { getBookById } from "@/utils/db";
 
-export interface IBookService {
-    getBooks(token?: string): Promise<Book[]>;
-    getBookContent(id: string, token?: string): Promise<Blob>;
-    addBook(file: File, metadata: Book, token?: string, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }>;
-    uploadBookCover(id: string, coverBlob: Blob, token?: string): Promise<string>;
-    updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void>;
-    updateBookProgress(id: string, progress: number, lastLocation: string, token?: string): Promise<void>;
-}
-
-export const bookService: IBookService = {
+export const bookService = {
     async getBooks(token?: string): Promise<Book[]> {
         const headers = buildAuthHeaders(token);
 

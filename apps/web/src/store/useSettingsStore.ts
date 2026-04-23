@@ -76,9 +76,9 @@ type SettingsActions = {
   resetToDefaults: () => void;
 };
 
-export type Settings = SettingsValues & SettingsActions;
+type Settings = SettingsValues & SettingsActions;
 
-export const DEFAULTS: SettingsValues = {
+const DEFAULTS: SettingsValues = {
   fontSize: 19,
   lineHeight: 1.65,
   textAlignment: "justify",
