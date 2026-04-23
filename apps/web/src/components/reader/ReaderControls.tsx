@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
     List,
     ArrowUp,
@@ -28,14 +28,14 @@ interface ReaderControlsProps {
     onRemoveBookmark: (id: string) => void;
 }
 
-const ReaderControls: React.FC<ReaderControlsProps> = ({
+function ReaderControls({
     toc,
     bookmarks,
     onNavigate,
     onJumpToTop,
     onJumpToBottom,
     onRemoveBookmark,
-}) => {
+}: ReaderControlsProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const [searchQuery, setSearchQuery] = useState("");
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());

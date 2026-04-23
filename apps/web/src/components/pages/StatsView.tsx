@@ -15,7 +15,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   target: Target,
 };
 
-const StatsView: React.FC = () => {
+function StatsView() {
   const { stats } = useStatsStore(useShallow((state) => ({
     stats: state.stats,
   })));

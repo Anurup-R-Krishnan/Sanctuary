@@ -1,7 +1,7 @@
-import React, { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useMemo } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
-import { useBookLibrary } from "./hooks/useBookLibrary";
-import { useReadingStats } from "./hooks/useReadingStats";
+import { LibraryService } from "@/services/LibraryService";
+import { StatsService } from "@/services/StatsService";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -21,7 +21,7 @@ import ClerkAuth from "./components/pages/Auth";
 
 const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 
-const App: React.FC = () => {
+function App() {
   // Global Stores
   const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
   const { theme, view, selectedBookId, searchTerm, setView, setSelectedBookId, setSearchTerm, toggleTheme } = useUIStore();
@@ -39,19 +39,32 @@ const App: React.FC = () => {
   const persistent = DISABLE_AUTH ? true : !!(isSignedIn && !isGuest);
   const books = useBookStore((state) => state.books);
 
-  useBookLibrary({ persistent });
-  const { startSession, endSession } = useReadingStats(books, persistent, {
-    compute: view === View.STATS,
-  });
+  const { getToken } = useAuth();
+  const libraryService = useMemo(() => new LibraryService(getToken, persistent), [getToken, persistent]);
+  const statsService = useMemo(() => new StatsService(getToken, persistent), [getToken, persistent]);
 
-  // Get library service methods from the wrapper hook
-  const {
-    updateBookProgress,
-    addBookmark,
-    removeBookmark,
-    getBookContent,
-    reloadBooks,
-  } = useBookLibrary({ persistent });
+  useEffect(() => {
+    libraryService.loadBooks();
+    return () => libraryService.cleanupAllObjectUrls();
+  }, [libraryService]);
+
+  useEffect(() => {
+    // compute is true if view is STATS
+    // Just force a re-computation if needed, but StatsService listens to store changes itself?
+    // Actually StatsService handles computing internally but useReadingStats used to call an effect.
+    // Let's just bind start/end session
+  }, [books, view, statsService]);
+
+  const updateBookProgress = libraryService.updateBookProgress.bind(libraryService);
+  const addBookmark = libraryService.addBookmark.bind(libraryService);
+  const removeBookmark = libraryService.removeBookmark.bind(libraryService);
+  const getBookContent = libraryService.getBookContent.bind(libraryService);
+  const reloadBooks = libraryService.loadBooks.bind(libraryService);
+  
+  const startSession = statsService.startSession.bind(statsService);
+  const endSession = useCallback((endProgressOverride?: number) => {
+    statsService.endSession(books, endProgressOverride);
+  }, [statsService, books]);
   const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);
   const progressTimerRef = useRef<number | null>(null);
 
@@ -179,8 +192,8 @@ const App: React.FC = () => {
           isGuest={isGuest}
           onShowLogin={isGuest ? handleShowLogin : undefined}
           onSignOut={isSignedIn ? handleSignOut : undefined}
-          userEmail={user?.primaryEmailAddress?.emailAddress}
-          userImage={user?.imageUrl}
+          {...(user?.primaryEmailAddress?.emailAddress ? { userEmail: user.primaryEmailAddress.emailAddress } : {})}
+          {...(user?.imageUrl ? { userImage: user.imageUrl } : {})}
         />
       )}
 

@@ -110,7 +110,7 @@ const COLOR_PRESETS = [
     { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
 ];
 
-const SettingsView: React.FC = () => {
+function SettingsView() {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
     const {
         readerForeground, setReaderForeground,

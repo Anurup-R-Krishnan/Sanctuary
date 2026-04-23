@@ -137,14 +137,16 @@ export class LibraryService {
 
         return {
           ...remoteBook,
-          progress: local.progress,
-          lastLocation: local.lastLocation,
-          lastOpenedAt: local.lastOpenedAt,
-          locationHistory: local.locationHistory,
-          bookmarks: local.bookmarks,
-          isFavorite: local.isFavorite,
-          readingList: local.readingList,
-          completedAt: local.completedAt,
+          ...(local.progress !== undefined ? { progress: local.progress } : {}),
+          ...(local.lastLocation !== undefined ? { lastLocation: local.lastLocation } : {}),
+          ...(local.lastOpenedAt !== undefined ? { lastOpenedAt: local.lastOpenedAt } : {}),
+          ...(local.locationHistory !== undefined ? { locationHistory: local.locationHistory } : {}),
+          ...(local.bookmarks !== undefined ? { bookmarks: local.bookmarks } : {}),
+          ...(local.isFavorite !== undefined ? { isFavorite: local.isFavorite } : {}),
+          ...(local.readingList !== undefined ? { readingList: local.readingList } : {}),
+          ...(local.completedAt !== undefined ? { completedAt: local.completedAt } : {}),
+          ...(local.tags !== undefined ? { tags: local.tags } : {}),
+          ...(local.totalPages !== undefined ? { totalPages: local.totalPages } : {}),
         };
       });
 

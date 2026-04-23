@@ -44,20 +44,20 @@ export interface Book {
   epubBlob: Blob | null;
   progress: number;
   lastLocation: string;
-  genre?: string | undefined;
-  completedAt?: string | undefined;
-  addedAt?: string | undefined;
-  lastOpenedAt?: string | undefined;
-  isFavorite?: boolean | undefined;
-  isIncognito?: boolean | undefined;
-  series?: string | undefined;
-  seriesIndex?: number | undefined;
-  tags?: string[] | undefined;
-  readingList?: "to-read" | "reading" | "finished" | undefined;
-  highlights?: Highlight[] | undefined;
-  bookmarks?: Bookmark[] | undefined;
-  totalPages?: number | undefined;
-  locationHistory?: string[] | undefined;
+  genre?: string;
+  completedAt?: string;
+  addedAt?: string;
+  lastOpenedAt?: string;
+  isFavorite?: boolean;
+  isIncognito?: boolean;
+  series?: string;
+  seriesIndex?: number;
+  tags?: string[];
+  readingList?: "to-read" | "reading" | "finished";
+  highlights?: Highlight[];
+  bookmarks?: Bookmark[];
+  totalPages?: number;
+  locationHistory?: string[];
 }
 
 export interface Badge {

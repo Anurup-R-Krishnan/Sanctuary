@@ -1,4 +1,4 @@
-import React from "react";
+
 import { View } from "@/types";
 import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
 
@@ -8,7 +8,7 @@ interface NavigationProps {
   isReaderActive: boolean;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ activeView, onNavigate, isReaderActive }) => {
+function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps) {
   const navItems = [
     { view: View.LIBRARY, label: "Library", icon: Library, disabled: false },
     { view: View.READER, label: "Reader", icon: BookOpen, disabled: !isReaderActive },

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { User, BookOpen } from "lucide-react";
 import { SignIn } from "@/hooks/useAuth";
 
@@ -6,7 +6,7 @@ interface AuthProps {
   onContinueAsGuest?: () => void;
 }
 
-const Auth: React.FC<AuthProps> = ({ onContinueAsGuest }) => {
+function Auth({ onContinueAsGuest }: AuthProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-light-primary dark:bg-dark-primary relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">

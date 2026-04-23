@@ -1,4 +1,4 @@
-import React from "react";
+
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSettings } from "@/store/useSettingsStore";
 
@@ -12,7 +12,7 @@ interface ReaderFooterProps {
     onPageChange: (page: number) => void;
 }
 
-const ReaderFooter: React.FC<ReaderFooterProps> = ({
+function ReaderFooter({
     currentPage,
     totalPages,
     readingTime,
@@ -20,7 +20,7 @@ const ReaderFooter: React.FC<ReaderFooterProps> = ({
     onNextPage,
     onPrevPage,
     onPageChange,
-}) => {
+}: ReaderFooterProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
     const readerAccent = useSettings((state) => state.readerAccent);

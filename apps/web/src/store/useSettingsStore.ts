@@ -1,9 +1,5 @@
-import type { ReactNode } from "react";
-import React, { useCallback, useEffect, useRef } from "react";
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import { settingsService } from "@/services/settingsService";
-import { useAuth } from "@/hooks/useAuth";
 import { DEFAULT_DAILY_GOAL } from "@/types";
 
 type TextAlignment = "left" | "justify" | "center";
@@ -120,9 +116,9 @@ export const DEFAULTS: SettingsValues = {
   reduceMotion: false
 };
 
-const LOCAL_SETTINGS_KEY = "sanctuary.web.settings.v1";
+export const LOCAL_SETTINGS_KEY = "sanctuary.web.settings.v1";
 
-const pickValues = (state: Settings): SettingsValues => ({
+export const pickValues = (state: Settings): SettingsValues => ({
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
   textAlignment: state.textAlignment,
@@ -153,7 +149,7 @@ const pickValues = (state: Settings): SettingsValues => ({
   reduceMotion: state.reduceMotion
 });
 
-const toRemotePayload = (state: SettingsValues) => ({
+export const toRemotePayload = (state: SettingsValues) => ({
   dailyGoal: state.dailyGoal,
   weeklyGoal: state.weeklyGoal,
   lineHeight: state.lineHeight,
@@ -163,7 +159,7 @@ const toRemotePayload = (state: SettingsValues) => ({
   accent: state.readerAccent
 });
 
-const normalizeStoredSettings = (input: unknown): Partial<SettingsValues> => {
+export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues> => {
   if (!input || typeof input !== "object") return {};
   const raw = input as Record<string, unknown>;
   const out: Partial<SettingsValues> = {};
@@ -175,7 +171,7 @@ const normalizeStoredSettings = (input: unknown): Partial<SettingsValues> => {
   return out;
 };
 
-const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues> => {
+export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues> => {
   if (!input || typeof input !== "object") return {};
   const remote = input as Record<string, unknown>;
   const out: Partial<SettingsValues> = {};
@@ -240,102 +236,3 @@ export function useSettingsShallow<T extends object>(selector: (state: Settings)
   return useSettingsStore(useShallow(selector));
 }
 
-export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { getToken } = useAuth();
-  const hydratedRef = useRef(false);
-  const remoteSaveTimerRef = useRef<number | null>(null);
-  const localSaveTimerRef = useRef<number | null>(null);
-  const tokenCacheRef = useRef<{ value: string | null; expiresAt: number }>({ value: null, expiresAt: 0 });
-  const tokenPromiseRef = useRef<Promise<string | null> | null>(null);
-  const getCachedToken = useCallback(async () => {
-    const now = Date.now();
-    if (tokenCacheRef.current.expiresAt > now) {
-      return tokenCacheRef.current.value;
-    }
-    if (!tokenPromiseRef.current) {
-      tokenPromiseRef.current = getToken()
-        .then((token) => {
-          tokenCacheRef.current = { value: token, expiresAt: Date.now() + 60_000 };
-          return token;
-        })
-        .finally(() => {
-          tokenPromiseRef.current = null;
-        });
-    }
-    return tokenPromiseRef.current;
-  }, [getToken]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const storedRaw = localStorage.getItem(LOCAL_SETTINGS_KEY);
-        if (storedRaw) {
-          const parsed = JSON.parse(storedRaw);
-          useSettingsStore.setState(normalizeStoredSettings(parsed));
-        }
-      } catch (error) {
-        console.warn("Failed to load local settings cache", error);
-      }
-
-      try {
-        const token = await getCachedToken();
-        const remote = await settingsService.getSettings(token || undefined);
-        if (mounted && remote) {
-          useSettingsStore.setState(normalizeRemoteSettings(remote));
-        }
-      } catch (error) {
-        console.warn("Failed to hydrate remote settings", error);
-      } finally {
-        hydratedRef.current = true;
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [getCachedToken]);
-
-  useEffect(() => {
-    const unsubscribe = useSettingsStore.subscribe((state) => {
-      if (!hydratedRef.current) return;
-      const values = pickValues(state);
-
-      if (localSaveTimerRef.current !== null) {
-        window.clearTimeout(localSaveTimerRef.current);
-      }
-      localSaveTimerRef.current = window.setTimeout(() => {
-        try {
-          localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(values));
-        } catch (error) {
-          console.warn("Failed to cache settings locally", error);
-        }
-      }, 150);
-
-      if (remoteSaveTimerRef.current !== null) {
-        window.clearTimeout(remoteSaveTimerRef.current);
-      }
-      remoteSaveTimerRef.current = window.setTimeout(async () => {
-        try {
-          const token = await getCachedToken();
-          await settingsService.saveSettings(toRemotePayload(values), token || undefined);
-        } catch (error) {
-          console.warn("Failed to persist remote settings", error);
-        }
-      }, 700);
-    });
-
-    return () => {
-      unsubscribe();
-      if (localSaveTimerRef.current !== null) {
-        window.clearTimeout(localSaveTimerRef.current);
-      }
-      if (remoteSaveTimerRef.current !== null) {
-        window.clearTimeout(remoteSaveTimerRef.current);
-      }
-    };
-  }, [getCachedToken]);
-
-  return <>{children}</>;
-};

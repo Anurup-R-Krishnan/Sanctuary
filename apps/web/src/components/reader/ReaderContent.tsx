@@ -6,7 +6,7 @@ interface ReaderContentProps {
   isLoading: boolean;
 }
 
-const ReaderContent: React.FC<ReaderContentProps> = ({ containerRef, isLoading }) => {
+function ReaderContent({ containerRef, isLoading }: ReaderContentProps) {
   return (
     <>
       <div ref={containerRef} className="absolute inset-0 overflow-auto" />
