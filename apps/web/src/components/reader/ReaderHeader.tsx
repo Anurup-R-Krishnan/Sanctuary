@@ -10,7 +10,7 @@ import {
     Minimize2,
     MoreHorizontal,
 } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderHeaderProps {
     book: Book;

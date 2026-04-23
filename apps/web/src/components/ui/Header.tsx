@@ -8,10 +8,10 @@ interface HeaderProps {
   searchTerm: string;
   onSearch: (term: string) => void;
   isGuest?: boolean;
-  onShowLogin?: () => void;
-  onSignOut?: () => void;
-  userEmail?: string | null;
-  userImage?: string | null;
+  onShowLogin?: (() => void) | undefined;
+  onSignOut?: (() => void) | undefined;
+  userEmail?: string | undefined;
+  userImage?: string | undefined;
 }
 
 const Header: React.FC<HeaderProps> = ({

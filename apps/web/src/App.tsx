@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
 import { useBookLibrary } from "./hooks/useBookLibrary";
 import { useReadingStats } from "./hooks/useReadingStats";
-import { useSettingsShallow } from "@/context/SettingsContext";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useBookStore } from "@/store/useBookStore";
@@ -10,7 +10,6 @@ import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import type { Book, Bookmark } from "@/types";
 import { Theme, View } from "@/types";
 import { BookOpen } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
 
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
@@ -26,21 +25,7 @@ const App: React.FC = () => {
   // Global Stores
   const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
   const { theme, view, selectedBookId, searchTerm, setView, setSelectedBookId, setSearchTerm, toggleTheme } = useUIStore();
-  const {
-    selectedBook,
-    updateBookProgress,
-    addBookmark,
-    removeBookmark,
-    getBookContent,
-    reloadBooks,
-  } = useBookStore(useShallow((state) => ({
-    selectedBook: state.getBookById(selectedBookId),
-    updateBookProgress: state.updateBookProgress,
-    addBookmark: state.addBookmark,
-    removeBookmark: state.removeBookmark,
-    getBookContent: state.getBookContent,
-    reloadBooks: state.reloadBooks,
-  })));
+  const selectedBook = useBookStore((state) => state.getBookById(selectedBookId));
 
   // Clerk Hooks
   const { isLoaded, isSignedIn, user } = useUser();
@@ -51,15 +36,22 @@ const App: React.FC = () => {
     reduceMotion: state.reduceMotion
   }));
 
-  // Library & Stats Hooks
-  // When auth is disabled, always treat as persistent (local storage mode)
-  const persistent = DISABLE_AUTH ? true : (isSignedIn && !isGuest);
+  const persistent = DISABLE_AUTH ? true : !!(isSignedIn && !isGuest);
   const books = useBookStore((state) => state.books);
 
   useBookLibrary({ persistent });
   const { startSession, endSession } = useReadingStats(books, persistent, {
     compute: view === View.STATS,
   });
+
+  // Get library service methods from the wrapper hook
+  const {
+    updateBookProgress,
+    addBookmark,
+    removeBookmark,
+    getBookContent,
+    reloadBooks,
+  } = useBookLibrary({ persistent });
   const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);
   const progressTimerRef = useRef<number | null>(null);
 

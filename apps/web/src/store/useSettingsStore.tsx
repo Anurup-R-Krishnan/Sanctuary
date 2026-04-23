@@ -195,7 +195,7 @@ const createSetAction = <K extends keyof SettingsValues>(key: K, set: (partial: 
   return (value: SettingsValues[K]) => set({ [key]: value } as Partial<SettingsValues>);
 };
 
-const useSettingsStore = create<Settings>((set) => ({
+export const useSettingsStore = create<Settings>((set) => ({
   ...DEFAULTS,
   setFontSize: createSetAction("fontSize", set),
   setLineHeight: createSetAction("lineHeight", set),

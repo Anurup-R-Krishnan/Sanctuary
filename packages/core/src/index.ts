@@ -99,9 +99,10 @@ export class SanctuaryApiClient {
   }
 
   private async fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+    const baseHeaders = await this.headers();
     const res = await fetch(`${this.options.baseUrl}${path}`, {
       ...init,
-      headers: { ...jsonHeaders, ...init?.headers }
+      headers: { ...baseHeaders, ...init?.headers }
     });
     if (!res.ok) throw new Error(`Request to ${path} failed (${res.status})`);
     return res.json() as Promise<T>;

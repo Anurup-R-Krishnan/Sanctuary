@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderFooterProps {
     currentPage: number;

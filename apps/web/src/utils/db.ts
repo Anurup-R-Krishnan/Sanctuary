@@ -25,8 +25,10 @@ function openDB(): Promise<IDBDatabase> {
     request.onsuccess = () => {
       db = request.result;
       db.onversionchange = () => {
-        db.close();
-        db = undefined;
+        if (db) {
+          db.close();
+          db = undefined;
+        }
       };
       dbPromise = null;
       resolve(db);

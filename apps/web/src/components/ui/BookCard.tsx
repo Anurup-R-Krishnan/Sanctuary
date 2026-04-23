@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { Book } from "@/types";
 import { Star, Clock, BookOpen, Heart } from "lucide-react";
-import { useSettings } from "@/context/SettingsContext";
+import { useSettings } from "@/store/useSettingsStore";
 
 interface BookCardProps {
   book: Book;
@@ -20,7 +20,7 @@ const BookCard: React.FC<BookCardProps> = ({
   const [imageError, setImageError] = useState(false);
   const reduceMotion = useSettings((state) => state.reduceMotion);
 
-  const progressPercentage = Math.round((book.progress / book.totalPages) * 100);
+  const progressPercentage = Math.round((book.progress / (book.totalPages || 100)) * 100);
   const isRecent = book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
   const isCompleted = progressPercentage >= 100;
 
@@ -139,8 +139,8 @@ const BookCard: React.FC<BookCardProps> = ({
               <button
                 onClick={handleFavoriteClick}
                 className={`p-2 rounded-xl transition-all duration-200 ${book.isFavorite
-                    ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
-                    : 'text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
+                  ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
+                  : 'text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
                   }`}
               >
                 <Heart className={`w-5 h-5 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
@@ -217,8 +217,8 @@ const BookCard: React.FC<BookCardProps> = ({
         <button
           onClick={handleFavoriteClick}
           className={`absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 ${book.isFavorite
-              ? 'bg-red-500/90 text-white'
-              : 'bg-black/20 text-white hover:bg-red-500/90'
+            ? 'bg-red-500/90 text-white'
+            : 'bg-black/20 text-white hover:bg-red-500/90'
             } opacity-0 group-hover:opacity-100`}
         >
           <Heart className={`w-4 h-4 ${book.isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
