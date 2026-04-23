@@ -1,14 +1,11 @@
-import { useEffect, useCallback, useRef, useMemo } from "react";
+import { useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
-import { LibraryService } from "@/services/LibraryService";
-import { StatsService } from "@/services/StatsService";
-import { useSettingsShallow } from "@/store/useSettingsStore";
+import { libraryService } from "@/services/LibraryService";
+import { statsService } from "@/services/StatsService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useBookStore } from "@/store/useBookStore";
-import { useReaderProgressStore } from "@/store/useReaderProgressStore";
-import type { Book, Bookmark } from "@/types";
-import { Theme, View } from "@/types";
+import { View, Theme } from "@/types";
 import { BookOpen } from "lucide-react";
 
 import Header from "./components/ui/Header";
@@ -19,61 +16,38 @@ import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
 import ClerkAuth from "./components/pages/Auth";
 
+import { useAppTheme } from "./hooks/useAppTheme";
+import { useProgressSync } from "./hooks/useProgressSync";
+import { useReadingSession } from "./hooks/useReadingSession";
+
 const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 
 function App() {
-  // Global Stores
+  // Auth & Session
   const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
-  const { theme, view, selectedBookId, searchTerm, setView, setSelectedBookId, setSearchTerm, toggleTheme } = useUIStore();
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut, getToken } = useAuth();
+  const isPersistent = DISABLE_AUTH ? true : !!(isSignedIn && !isGuest);
+
+  // Global UI State
+  const { theme, view, selectedBookId, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
   const selectedBook = useBookStore((state) => state.getBookById(selectedBookId));
 
-  // Clerk Hooks
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useAuth();
+  // Custom Hooks (Encapsulated Logic)
+  useAppTheme();
+  const { handleReaderProgress, flushPendingProgress } = useProgressSync(getToken, isPersistent);
+  const { startSession, endSession, addBookmark, removeBookmark } = useReadingSession(getToken, isPersistent, flushPendingProgress);
 
-  // Settings Context
-  const { reduceMotion } = useSettingsShallow((state) => ({
-    reduceMotion: state.reduceMotion
-  }));
-
-  const persistent = DISABLE_AUTH ? true : !!(isSignedIn && !isGuest);
-  const books = useBookStore((state) => state.books);
-
-  const { getToken } = useAuth();
-  const libraryService = useMemo(() => new LibraryService(getToken, persistent), [getToken, persistent]);
-  const statsService = useMemo(() => new StatsService(getToken, persistent), [getToken, persistent]);
-
+  // Initial Data Load
   useEffect(() => {
-    libraryService.loadBooks();
+    libraryService.loadBooks(getToken, isPersistent);
+    statsService.loadSessions(getToken, isPersistent);
     return () => libraryService.cleanupAllObjectUrls();
-  }, [libraryService]);
-
-  const updateBookProgress = libraryService.updateBookProgress.bind(libraryService);
-  const addBookmark = libraryService.addBookmark.bind(libraryService);
-  const removeBookmark = libraryService.removeBookmark.bind(libraryService);
-  const getBookContent = libraryService.getBookContent.bind(libraryService);
-  const reloadBooks = libraryService.loadBooks.bind(libraryService);
-  const addBook = libraryService.addBook.bind(libraryService);
-  const toggleFavorite = libraryService.toggleFavorite.bind(libraryService);
-  
-  const startSession = statsService.startSession.bind(statsService);
-  const endSession = useCallback((endProgressOverride?: number) => {
-    statsService.endSession(books, endProgressOverride);
-  }, [statsService, books]);
-  const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);
-  const progressTimerRef = useRef<number | null>(null);
-
-  const flushPendingProgress = useCallback(async () => {
-    const pending = pendingProgressRef.current;
-    pendingProgressRef.current = null;
-    if (!pending) return;
-    await updateBookProgress(pending.id, pending.progress, pending.location);
-  }, [updateBookProgress]);
+  }, [getToken, isPersistent]);
 
   // Handlers
   const handleShowLogin = useCallback(() => {
     setIsGuest(false);
-    // Clerk handles the rest (redirects to sign in if we render logic correctly)
   }, [setIsGuest]);
 
   const handleSignOut = useCallback(async () => {
@@ -86,70 +60,7 @@ function App() {
     }
   }, [isGuest, setIsGuest, resetSession, signOut]);
 
-  const handleSelectBook = useCallback((book: Book) => {
-    useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
-    setSelectedBookId(book.id);
-    setView(View.READER);
-    startSession(book.id, book.progress);
-  }, [setSelectedBookId, setView, startSession]);
-
-  const handleCloseReader = useCallback(async () => {
-    const activeProgress = useReaderProgressStore.getState().active;
-    if (progressTimerRef.current !== null) {
-      window.clearTimeout(progressTimerRef.current);
-      progressTimerRef.current = null;
-    }
-    await flushPendingProgress();
-    endSession(activeProgress?.progress);
-    useReaderProgressStore.getState().clearActiveBook();
-    setView(View.LIBRARY);
-    setSelectedBookId(null);
-    await reloadBooks();
-  }, [setView, setSelectedBookId, reloadBooks, flushPendingProgress, endSession]);
-
-  const handleAddBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {
-    const next: Bookmark = {
-      ...bookmark,
-      id: `${bookId}:${encodeURIComponent(bookmark.cfi)}`,
-      createdAt: new Date().toISOString(),
-    };
-    addBookmark(bookId, next);
-  }, [addBookmark]);
-
-  const handleReaderProgress = useCallback((id: string, progress: number, location: string) => {
-    useReaderProgressStore.getState().updateActiveProgress(id, progress, location);
-    pendingProgressRef.current = { id, progress, location };
-    if (progressTimerRef.current !== null) {
-      window.clearTimeout(progressTimerRef.current);
-    }
-    progressTimerRef.current = window.setTimeout(() => {
-      progressTimerRef.current = null;
-      void flushPendingProgress();
-    }, 350);
-  }, [flushPendingProgress]);
-
-  useEffect(() => {
-    return () => {
-      if (progressTimerRef.current !== null) {
-        window.clearTimeout(progressTimerRef.current);
-      }
-      void flushPendingProgress();
-      useReaderProgressStore.getState().clearActiveBook();
-    };
-  }, [flushPendingProgress]);
-
-  // Theme Effect
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("dark", theme === Theme.DARK);
-    root.classList.toggle("reduce-motion", reduceMotion);
-
-    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
-    document.body.style.backgroundColor = bgColor;
-    document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
-  }, [theme, reduceMotion]);
-
-  // Render - Loading State (Clerk)
+  // Render Helpers
   if (!DISABLE_AUTH && !isLoaded) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
@@ -167,17 +78,14 @@ function App() {
     );
   }
 
-  // Render - Auth (skip entirely when auth is disabled)
   if (!DISABLE_AUTH && !isSignedIn && !isGuest) {
     return <ClerkAuth onContinueAsGuest={() => setIsGuest(true)} />;
   }
 
   const isReader = view === View.READER;
 
-  // Render - App
   return (
     <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
-      {/* Header */}
       {!isReader && (
         <Header
           theme={theme}
@@ -187,19 +95,18 @@ function App() {
           isGuest={isGuest}
           onShowLogin={isGuest ? handleShowLogin : undefined}
           onSignOut={isSignedIn ? handleSignOut : undefined}
-          {...(user?.primaryEmailAddress?.emailAddress ? { userEmail: user.primaryEmailAddress.emailAddress } : {})}
-          {...(user?.imageUrl ? { userImage: user.imageUrl } : {})}
+          userEmail={user?.primaryEmailAddress?.emailAddress}
+          userImage={user?.imageUrl}
         />
       )}
 
-      {/* Main Content */}
       <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
         <div className={`${isReader ? "" : "page-shell animate-fadeIn"}`}>
           {view === View.LIBRARY && (
             <LibraryGrid
-              onSelectBook={handleSelectBook}
-              addBook={addBook}
-              toggleFavorite={toggleFavorite}
+              onSelectBook={startSession}
+              addBook={(file) => libraryService.addBook(file, getToken, isPersistent)}
+              toggleFavorite={(id) => libraryService.toggleFavorite(id, getToken, isPersistent)}
             />
           )}
           {view === View.SETTINGS && <SettingsView />}
@@ -207,17 +114,16 @@ function App() {
           {view === View.READER && selectedBook && (
             <ReaderView
               book={selectedBook}
-              onClose={handleCloseReader}
+              onClose={endSession}
               onUpdateProgress={handleReaderProgress}
-              onAddBookmark={handleAddBookmark}
+              onAddBookmark={addBookmark}
               onRemoveBookmark={removeBookmark}
-              getBookContent={getBookContent}
+              getBookContent={(id) => libraryService.getBookContent(id, getToken, isPersistent)}
             />
           )}
         </div>
       </main>
 
-      {/* Navigation */}
       {!isReader && (
         <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
       )}

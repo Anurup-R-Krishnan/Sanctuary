@@ -26,83 +26,182 @@ type BookSyncMeta = {
   serverUpdatedAt?: string | undefined;
 };
 
-export class LibraryService {
-  private getToken: () => Promise<string | null>;
-  private isPersistent: boolean;
-  private coverObjectUrlByBookId = new Map<string, string>();
-  private syncMetaByBookId = new Map<string, BookSyncMeta>();
-  private inFlightMutations = new Set<string>();
+// Internal Service State
+const coverObjectUrlByBookId = new Map<string, string>();
+const syncMetaByBookId = new Map<string, BookSyncMeta>();
+const inFlightMutations = new Set<string>();
 
-  constructor(getToken: () => Promise<string | null>, isPersistent: boolean) {
-    this.getToken = getToken;
-    this.isPersistent = isPersistent;
+// Internal Helpers
+const revokeTrackedCoverUrl = (bookId: string) => {
+  const url = coverObjectUrlByBookId.get(bookId);
+  if (!url) return;
+  URL.revokeObjectURL(url);
+  coverObjectUrlByBookId.delete(bookId);
+};
+
+const setTrackedCoverUrl = (bookId: string, url: string) => {
+  const prev = coverObjectUrlByBookId.get(bookId);
+  if (prev && prev !== url) {
+    URL.revokeObjectURL(prev);
   }
+  coverObjectUrlByBookId.set(bookId, url);
+};
 
-  private revokeTrackedCoverUrl(bookId: string) {
-    const url = this.coverObjectUrlByBookId.get(bookId);
-    if (!url) return;
-    URL.revokeObjectURL(url);
-    this.coverObjectUrlByBookId.delete(bookId);
-  }
+const trackCoverBlobForBook = (bookId: string, blob: Blob): string => {
+  const url = URL.createObjectURL(blob);
+  setTrackedCoverUrl(bookId, url);
+  return url;
+};
 
-  private setTrackedCoverUrl(bookId: string, url: string) {
-    const prev = this.coverObjectUrlByBookId.get(bookId);
-    if (prev && prev !== url) {
-      URL.revokeObjectURL(prev);
+const reconcileTrackedCoverUrls = (nextBooks: Book[]) => {
+  const nextCoverById = new Map(nextBooks.map((book) => [book.id, book.coverUrl]));
+  for (const [bookId, trackedUrl] of coverObjectUrlByBookId.entries()) {
+    const nextCover = nextCoverById.get(bookId);
+    if (!nextCover || nextCover !== trackedUrl) {
+      URL.revokeObjectURL(trackedUrl);
+      coverObjectUrlByBookId.delete(bookId);
     }
-    this.coverObjectUrlByBookId.set(bookId, url);
   }
+};
 
-  private trackCoverBlobForBook(bookId: string, blob: Blob): string {
-    const url = URL.createObjectURL(blob);
-    this.setTrackedCoverUrl(bookId, url);
-    return url;
-  }
-
-  private reconcileTrackedCoverUrls(nextBooks: Book[]) {
-    const nextCoverById = new Map(nextBooks.map((book) => [book.id, book.coverUrl]));
-    for (const [bookId, trackedUrl] of this.coverObjectUrlByBookId.entries()) {
-      const nextCover = nextCoverById.get(bookId);
-      if (!nextCover || nextCover !== trackedUrl) {
-        URL.revokeObjectURL(trackedUrl);
-        this.coverObjectUrlByBookId.delete(bookId);
+const extractCoverBlobFromEpubSource = async (source: ArrayBuffer): Promise<Blob | null> => {
+  let bookData: EpubBookHandle | null = null;
+  let coverHref: string | null = null;
+  try {
+    bookData = ePub(source) as unknown as EpubBookHandle;
+    await bookData.ready;
+    coverHref = await bookData.coverUrl();
+    if (!coverHref) return null;
+    const response = await fetch(coverHref);
+    return await response.blob();
+  } catch {
+    return null;
+  } finally {
+    if (coverHref?.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(coverHref);
+      } catch {
+        // no-op
       }
     }
+    bookData?.destroy?.();
+  }
+};
+
+const syncBookUpdate = async (
+  id: string,
+  updater: (book: Book) => Book,
+  remoteSync: (next: Book) => Promise<void>,
+  isPersistent: boolean
+) => {
+  let previousBook: Book | null = null;
+  let nextBook: Book | null = null;
+
+  useBookStore.setState((state) => {
+    const newBooks = state.books.map((book) => {
+      if (book.id !== id) return book;
+      previousBook = book;
+      nextBook = updater(book);
+      return nextBook;
+    });
+    state.updateDerivedState(newBooks);
+    return { books: newBooks };
+  });
+
+  if (!nextBook || !previousBook) return;
+  inFlightMutations.add(id);
+  const previousMeta = syncMetaByBookId.get(id) || {
+    dirty: false,
+    localRevision: 0,
+    lastAckRevision: 0,
+    syncInFlight: false,
+  };
+  const currentRevision = previousMeta.localRevision + 1;
+  syncMetaByBookId.set(id, {
+    ...previousMeta,
+    dirty: true,
+    localRevision: currentRevision,
+    syncInFlight: true,
+  });
+
+  try {
+    await putBookInDb(nextBook);
+  } catch (error) {
+    console.error("Failed to persist local book update:", error);
+    useBookStore.setState((state) => {
+        const revertBooks = state.books.map((book) => (book.id === id ? previousBook! : book));
+        state.updateDerivedState(revertBooks);
+        return { books: revertBooks };
+    });
+    syncMetaByBookId.set(id, {
+      ...previousMeta,
+      syncInFlight: false,
+    });
+    inFlightMutations.delete(id);
+    return;
   }
 
-  public cleanupAllObjectUrls() {
-    for (const url of this.coverObjectUrlByBookId.values()) {
+  if (!isPersistent) {
+    syncMetaByBookId.set(id, {
+      ...previousMeta,
+      dirty: false,
+      localRevision: currentRevision,
+      lastAckRevision: currentRevision,
+      syncInFlight: false,
+    });
+    inFlightMutations.delete(id);
+    return;
+  }
+
+  try {
+    await remoteSync(nextBook);
+    const latestMeta = syncMetaByBookId.get(id);
+    if (latestMeta && latestMeta.localRevision === currentRevision) {
+      syncMetaByBookId.set(id, {
+        ...latestMeta,
+        dirty: false,
+        lastAckRevision: currentRevision,
+        syncInFlight: false,
+      });
+    } else if (latestMeta) {
+      syncMetaByBookId.set(id, {
+        ...latestMeta,
+        syncInFlight: false,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to persist remote book update:", error);
+    useBookStore.setState((state) => {
+        const revertBooks = state.books.map((book) => (book.id === id ? previousBook! : book));
+        state.updateDerivedState(revertBooks);
+        return { books: revertBooks };
+    });
+    await putBookInDb(previousBook).catch((rollbackError) => {
+      console.error("Failed to rollback local book update:", rollbackError);
+    });
+    const latestMeta = syncMetaByBookId.get(id);
+    if (latestMeta) {
+      syncMetaByBookId.set(id, {
+        ...latestMeta,
+        dirty: true,
+        syncInFlight: false,
+      });
+    }
+  } finally {
+    inFlightMutations.delete(id);
+  }
+};
+
+export const libraryService = {
+  cleanupAllObjectUrls() {
+    for (const url of coverObjectUrlByBookId.values()) {
       URL.revokeObjectURL(url);
     }
-    this.coverObjectUrlByBookId.clear();
-  }
+    coverObjectUrlByBookId.clear();
+  },
 
-  private async extractCoverBlobFromEpubSource(source: ArrayBuffer): Promise<Blob | null> {
-    let bookData: EpubBookHandle | null = null;
-    let coverHref: string | null = null;
-    try {
-      bookData = ePub(source) as unknown as EpubBookHandle;
-      await bookData.ready;
-      coverHref = await bookData.coverUrl();
-      if (!coverHref) return null;
-      const response = await fetch(coverHref);
-      return await response.blob();
-    } catch {
-      return null;
-    } finally {
-      if (coverHref?.startsWith("blob:")) {
-        try {
-          URL.revokeObjectURL(coverHref);
-        } catch {
-          // no-op
-        }
-      }
-      bookData?.destroy?.();
-    }
-  }
-
-  public async loadBooks() {
-    if (!this.isPersistent) {
+  async loadBooks(getToken: () => Promise<string | null>, isPersistent: boolean) {
+    if (!isPersistent) {
       this.cleanupAllObjectUrls();
       useBookStore.getState().setBooks([]);
       useBookStore.getState().setIsLoading(false);
@@ -111,21 +210,21 @@ export class LibraryService {
 
     useBookStore.getState().setIsLoading(true);
     try {
-      const token = await this.getToken();
+      const token = await getToken();
       const stored = await bookService.getBooks(token || undefined);
       const booksRef = useBookStore.getState().books;
       const localById = new Map(booksRef.map((book) => [book.id, book]));
       
       const hydrated: Book[] = stored.map((s): Book => {
         const local = localById.get(s.id);
-        const syncMeta = this.syncMetaByBookId.get(s.id);
+        const syncMeta = syncMetaByBookId.get(s.id);
         const remoteBook: Book = {
           ...s,
           coverUrl: s.coverUrl,
           epubBlob: null,
         };
         if (syncMeta) {
-          this.syncMetaByBookId.set(s.id, {
+          syncMetaByBookId.set(s.id, {
             ...syncMeta,
             serverUpdatedAt: s.lastOpenedAt || s.addedAt || syncMeta.serverUpdatedAt,
           });
@@ -133,7 +232,7 @@ export class LibraryService {
 
         if (!local) return remoteBook;
         const hasUnsyncedLocal = !!syncMeta?.dirty || (syncMeta?.localRevision || 0) > (syncMeta?.lastAckRevision || 0);
-        if (!hasUnsyncedLocal && !this.inFlightMutations.has(s.id)) return remoteBook;
+        if (!hasUnsyncedLocal && !inFlightMutations.has(s.id)) return remoteBook;
 
         return {
           ...remoteBook,
@@ -150,119 +249,16 @@ export class LibraryService {
         };
       });
 
-      this.reconcileTrackedCoverUrls(hydrated);
+      reconcileTrackedCoverUrls(hydrated);
       useBookStore.getState().setBooks(hydrated);
     } catch (error) {
       logErrorOnce("books-load", "Failed to load books:", error);
     } finally {
       useBookStore.getState().setIsLoading(false);
     }
-  }
+  },
 
-  private async syncBookUpdate(
-    id: string,
-    updater: (book: Book) => Book,
-    remoteSync: (next: Book) => Promise<void>
-  ) {
-    let previousBook: Book | null = null;
-    let nextBook: Book | null = null;
-
-    useBookStore.setState((state) => {
-      const newBooks = state.books.map((book) => {
-        if (book.id !== id) return book;
-        previousBook = book;
-        nextBook = updater(book);
-        return nextBook;
-      });
-      state.updateDerivedState(newBooks);
-      return { books: newBooks };
-    });
-
-    if (!nextBook || !previousBook) return;
-    this.inFlightMutations.add(id);
-    const previousMeta = this.syncMetaByBookId.get(id) || {
-      dirty: false,
-      localRevision: 0,
-      lastAckRevision: 0,
-      syncInFlight: false,
-    };
-    const currentRevision = previousMeta.localRevision + 1;
-    this.syncMetaByBookId.set(id, {
-      ...previousMeta,
-      dirty: true,
-      localRevision: currentRevision,
-      syncInFlight: true,
-    });
-
-    try {
-      await putBookInDb(nextBook);
-    } catch (error) {
-      console.error("Failed to persist local book update:", error);
-      useBookStore.setState((state) => {
-          const revertBooks = state.books.map((book) => (book.id === id ? previousBook! : book));
-          state.updateDerivedState(revertBooks);
-          return { books: revertBooks };
-      });
-      this.syncMetaByBookId.set(id, {
-        ...previousMeta,
-        syncInFlight: false,
-      });
-      this.inFlightMutations.delete(id);
-      return;
-    }
-
-    if (!this.isPersistent) {
-      this.syncMetaByBookId.set(id, {
-        ...previousMeta,
-        dirty: false,
-        localRevision: currentRevision,
-        lastAckRevision: currentRevision,
-        syncInFlight: false,
-      });
-      this.inFlightMutations.delete(id);
-      return;
-    }
-
-    try {
-      await remoteSync(nextBook);
-      const latestMeta = this.syncMetaByBookId.get(id);
-      if (latestMeta && latestMeta.localRevision === currentRevision) {
-        this.syncMetaByBookId.set(id, {
-          ...latestMeta,
-          dirty: false,
-          lastAckRevision: currentRevision,
-          syncInFlight: false,
-        });
-      } else if (latestMeta) {
-        this.syncMetaByBookId.set(id, {
-          ...latestMeta,
-          syncInFlight: false,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to persist remote book update:", error);
-      useBookStore.setState((state) => {
-          const revertBooks = state.books.map((book) => (book.id === id ? previousBook! : book));
-          state.updateDerivedState(revertBooks);
-          return { books: revertBooks };
-      });
-      await putBookInDb(previousBook).catch((rollbackError) => {
-        console.error("Failed to rollback local book update:", rollbackError);
-      });
-      const latestMeta = this.syncMetaByBookId.get(id);
-      if (latestMeta) {
-        this.syncMetaByBookId.set(id, {
-          ...latestMeta,
-          dirty: true,
-          syncInFlight: false,
-        });
-      }
-    } finally {
-      this.inFlightMutations.delete(id);
-    }
-  }
-
-  public async addBook(file: File) {
+  async addBook(file: File, getToken: () => Promise<string | null>, isPersistent: boolean) {
     const bookId = uuidv4();
     let bookData: EpubBookHandle | null = null;
 
@@ -277,9 +273,9 @@ export class LibraryService {
         ? metadata.creator.join(", ") || "Unknown"
         : metadata.creator || "Unknown";
 
-      const coverBlob = await this.extractCoverBlobFromEpubSource(epubArrayBuffer);
+      const coverBlob = await extractCoverBlobFromEpubSource(epubArrayBuffer);
 
-      const displayCoverUrl = coverBlob ? this.trackCoverBlobForBook(bookId, coverBlob) : "";
+      const displayCoverUrl = coverBlob ? trackCoverBlobForBook(bookId, coverBlob) : "";
       const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
 
       const newBook: Book = {
@@ -312,17 +308,17 @@ export class LibraryService {
             state.updateDerivedState(revertBooks);
             return { books: revertBooks };
         });
-        this.revokeTrackedCoverUrl(newBook.id);
+        revokeTrackedCoverUrl(newBook.id);
         throw error;
       }
 
-      if (!this.isPersistent) return;
+      if (!isPersistent) return;
 
       try {
-        const token = await this.getToken();
+        const token = await getToken();
         const result = await bookService.addBook(file, newBook, token || undefined, coverBlob);
         if (result.coverUrl && result.coverUrl !== newBook.coverUrl) {
-          this.revokeTrackedCoverUrl(newBook.id);
+          revokeTrackedCoverUrl(newBook.id);
           const persistedBook = { ...newBook, coverUrl: result.coverUrl };
           useBookStore.setState((state) => {
             const syncedBooks = state.books.map((book) => (book.id === newBook.id ? persistedBook : book));
@@ -340,7 +336,7 @@ export class LibraryService {
             state.updateDerivedState(revertBooks);
             return { books: revertBooks };
         });
-        this.revokeTrackedCoverUrl(newBook.id);
+        revokeTrackedCoverUrl(newBook.id);
         await deleteBookFromDb(newBook.id).catch((dbError) => {
           console.error("Failed to rollback local EPUB after backend upload failure:", dbError);
         });
@@ -352,10 +348,10 @@ export class LibraryService {
     } finally {
       bookData?.destroy?.();
     }
-  }
+  },
 
-  public async updateBookProgress(id: string, progress: number, lastLocation: string) {
-    await this.syncBookUpdate(
+  async updateBookProgress(id: string, progress: number, lastLocation: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
+    await syncBookUpdate(
       id,
       (book) => {
         const history = [...(book.locationHistory || [])];
@@ -372,46 +368,48 @@ export class LibraryService {
         };
       },
       async () => {
-        const token = await this.getToken();
+        const token = await getToken();
         await bookService.updateBookProgress(id, progress, lastLocation, token || undefined);
-      }
+      },
+      isPersistent
     );
-  }
+  },
 
-  public async updateBook(id: string, updates: Partial<Book>) {
-    await this.syncBookUpdate(
+  async updateBook(id: string, updates: Partial<Book>, getToken: () => Promise<string | null>, isPersistent: boolean) {
+    await syncBookUpdate(
       id,
       (book) => ({ ...book, ...updates }),
       async (nextBook) => {
-        const token = await this.getToken();
+        const token = await getToken();
         await bookService.updateBook(id, nextBook, token || undefined);
-      }
+      },
+      isPersistent
     );
-  }
+  },
 
-  public toggleFavorite(id: string) {
+  toggleFavorite(id: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
     const book = useBookStore.getState().books.find((item) => item.id === id);
     if (!book) return;
-    void this.updateBook(id, { isFavorite: !book.isFavorite });
-  }
+    void this.updateBook(id, { isFavorite: !book.isFavorite }, getToken, isPersistent);
+  },
 
-  public addBookmark(bookId: string, bookmark: Bookmark) {
+  addBookmark(bookId: string, bookmark: Bookmark, getToken: () => Promise<string | null>, isPersistent: boolean) {
     const book = useBookStore.getState().books.find((item) => item.id === bookId);
     if (!book) return;
-    void this.updateBook(bookId, { bookmarks: [...(book.bookmarks || []), bookmark] });
-  }
+    void this.updateBook(bookId, { bookmarks: [...(book.bookmarks || []), bookmark] }, getToken, isPersistent);
+  },
 
-  public removeBookmark(bookId: string, bookmarkId: string) {
+  removeBookmark(bookId: string, bookmarkId: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
     const book = useBookStore.getState().books.find((item) => item.id === bookId);
     if (!book) return;
-    void this.updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((b) => b.id !== bookmarkId) });
-  }
+    void this.updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((b) => b.id !== bookmarkId) }, getToken, isPersistent);
+  },
 
-  public async getBookContent(id: string): Promise<Blob> {
+  async getBookContent(id: string, getToken: () => Promise<string | null>, isPersistent: boolean): Promise<Blob> {
     const existing = useBookStore.getState().books.find((item) => item.id === id);
     if (existing?.epubBlob) return existing.epubBlob;
 
-    const token = await this.getToken();
+    const token = await getToken();
     const blob = await bookService.getBookContent(id, token || undefined);
 
     let updatedBook: Book | null = null;
@@ -433,9 +431,9 @@ export class LibraryService {
 
       if (!_updatedBook.coverUrl) {
         const blobBuffer = await blob.arrayBuffer();
-        const generatedCover = await this.extractCoverBlobFromEpubSource(blobBuffer);
+        const generatedCover = await extractCoverBlobFromEpubSource(blobBuffer);
         if (generatedCover) {
-          const localCoverUrl = this.trackCoverBlobForBook(id, generatedCover);
+          const localCoverUrl = trackCoverBlobForBook(id, generatedCover);
           let localBookWithCover: Book | null = null;
           useBookStore.setState((state) => {
             const coverBooks = state.books.map((book) => {
@@ -454,11 +452,11 @@ export class LibraryService {
             });
           }
 
-          if (this.isPersistent) {
+          if (isPersistent) {
             try {
-              const token = await this.getToken();
+              const token = await getToken();
               const durableCoverUrl = await bookService.uploadBookCover(id, generatedCover, token || undefined);
-              this.revokeTrackedCoverUrl(id);
+              revokeTrackedCoverUrl(id);
               let serverBookWithCover: Book | null = null;
               useBookStore.setState((state) => {
                 const updatedCoverBooks = state.books.map((book) => {
@@ -486,4 +484,4 @@ export class LibraryService {
 
     return blob;
   }
-}
+};
