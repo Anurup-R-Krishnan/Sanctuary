@@ -8,13 +8,13 @@ export const toLocalDateKey = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const toLocalMonthKey = (date: Date): string => {
+const toLocalMonthKey = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
 };
 
-export const dateKeyToEpochDay = (dateKey: string): number | null => {
+const dateKeyToEpochDay = (dateKey: string): number | null => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
   if (!match) return null;
   const year = Number(match[1]);
@@ -60,7 +60,7 @@ export const applySessionToAggregates = (aggregates: SessionAggregates, session:
   aggregates.monthMinutes.set(monthKey, (aggregates.monthMinutes.get(monthKey) || 0) + session.duration);
 };
 
-export const calculateStreak = (sessionDates: Set<string>, now: Date): { current: number; longest: number } => {
+const calculateStreak = (sessionDates: Set<string>, now: Date): { current: number; longest: number } => {
   let current = 0;
   const streakProbe = new Date(now);
   for (let i = 0; i < 365; i++) {
