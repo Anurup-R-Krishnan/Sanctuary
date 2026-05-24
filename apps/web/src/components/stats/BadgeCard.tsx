@@ -3,6 +3,8 @@ import React from "react";
 
 import type { Badge } from "@/types";
 
+import { clampPercent } from "@/utils/number";
+
 const ICON_MAP: Record<string, React.ElementType> = {
   flame: Flame,
   trophy: Trophy,
@@ -19,6 +21,8 @@ interface BadgeCardProps {
 
 export const BadgeCard = ({ badge }: BadgeCardProps) => {
   const IconComponent = ICON_MAP[badge.icon.toLowerCase()] || Award;
+  const progress = badge.target ? clampPercent(((badge.progress || 0) / badge.target) * 100) : 0;
+
   return (
     <div
       className={`p-4 rounded-xl border text-center transition-all ${
@@ -48,7 +52,7 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
           <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
             <div
               className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all"
-              style={{ width: `${Math.min(100, ((badge.progress || 0) / badge.target) * 100)}%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
           <p className="text-[9px] text-light-text-muted dark:text-dark-text-muted mt-1 tabular-nums">
