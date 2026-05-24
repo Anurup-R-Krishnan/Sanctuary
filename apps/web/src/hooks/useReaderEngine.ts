@@ -3,58 +3,16 @@ import type { RefObject } from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 import type { Book } from "@/types";
+import type { EpubBookHandle, EpubLocation, EpubRendition, TocItem } from "@/utils/epub";
 
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import { openEpub } from "@/utils/epub";
 
 interface UseReaderEngineProps {
     book: Book;
     containerRef: RefObject<HTMLDivElement | null>;
     onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
-
-type TocItem = {
-    id?: string;
-    href: string;
-    label: string;
-    subitems?: TocItem[];
-};
-
-type EpubLocation = {
-    start: {
-        cfi: string;
-    };
-};
-
-type EpubNavigation = {
-    toc?: TocItem[];
-};
-
-type EpubLocations = {
-    generate: (chars: number) => Promise<void>;
-    length: () => number;
-    percentageFromCfi: (cfi: string) => number;
-    cfiFromPercentage: (percentage: number) => string | undefined;
-};
-
-type EpubRendition = {
-    display: (target?: string) => Promise<void> | void;
-    next: () => void;
-    prev: () => void;
-    on: (event: "relocated", cb: (location: EpubLocation) => void) => void;
-    destroy: () => void;
-    themes: {
-        default: (styles: Record<string, Record<string, string>>) => void;
-    };
-};
-
-type EpubBookHandle = {
-    loaded: {
-        navigation: Promise<EpubNavigation>;
-    };
-    renderTo: (container: HTMLDivElement, options: Record<string, unknown>) => EpubRendition;
-    locations: EpubLocations;
-    destroy: () => void;
-};
 
 const READER_THEME = {
     textWidthCh: 96,
@@ -102,7 +60,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         startLocationRef.current = book.lastLocation;
     }, [book.id, book.lastLocation]);
 
-    // Initialize ePub
     useEffect(() => {
         let mounted = true;
         const startLocation = startLocationRef.current;
@@ -115,20 +72,17 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 }
 
                 setIsLoading(true);
-                const ePub = (await import("epubjs")).default;
 
                 if (!containerRef.current || !mounted) return;
 
                 const arrayBuffer = await activeBlob.arrayBuffer();
-                bookRef.current = ePub(arrayBuffer) as unknown as EpubBookHandle;
+                bookRef.current = openEpub(arrayBuffer);
 
-                // Extract TOC
                 const navigation = await bookRef.current.loaded.navigation;
                 if (navigation?.toc) {
                     setTocItems(navigation.toc);
                 }
 
-                // Create rendition
                 renditionRef.current = bookRef.current.renderTo(containerRef.current, {
                     width: "100%",
                     height: continuous ? "auto" : "100%",
@@ -136,14 +90,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     flow: continuous ? "scrolled-doc" : "paginated",
                 });
 
-                // Display book
                 if (startLocation) {
                     await renditionRef.current.display(startLocation);
                 } else {
                     await renditionRef.current.display();
                 }
 
-                // Handle location changes
                 renditionRef.current.on("relocated", (location: EpubLocation) => {
                     if (!mounted) return;
                     const cfi = location.start.cfi;
@@ -158,7 +110,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     }
                 });
 
-                // Generate locations
                 bookRef.current.locations.generate(1024).then(() => {
                     if (mounted && bookRef.current) {
                         setTotalPages(Math.max(1, bookRef.current.locations.length()));
@@ -183,7 +134,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         };
     }, [activeBookId, activeBlob, continuous, spread, containerRef]);
 
-    // Navigation methods
     const nextPage = useCallback(() => {
         if (!renditionRef.current) return;
         if (continuous && containerRef.current) {
@@ -224,8 +174,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         if (cfi) renditionRef.current.display(cfi);
     }, [totalPages]);
 
-
-    // Get font family string
     const getFontFamily = useCallback(() => {
         const fonts: Record<string, string> = {
             "merriweather-georgia": "'Merriweather', Georgia, serif",
@@ -237,8 +185,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         };
         return fonts[fontPairing] || fonts["merriweather-georgia"] || "'Merriweather', Georgia, serif";
     }, [fontPairing]);
-
-    // Apply current settings to rendition
     const applyStyles = useCallback(() => {
         if (!renditionRef.current) return;
 
@@ -275,8 +221,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             },
         });
     }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous]);
-
-    // Apply styles when settings change
     useEffect(() => {
         applyStyles();
     }, [applyStyles]);

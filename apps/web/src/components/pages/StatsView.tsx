@@ -6,7 +6,6 @@ import { BadgeCard } from "@/components/stats/BadgeCard";
 import { BarChart } from "@/components/stats/BarChart";
 import { HeatmapCell } from "@/components/stats/HeatmapCell";
 import { ProgressRing } from "@/components/stats/ProgressRing";
-// Extracted Components
 import { StatCard } from "@/components/stats/StatCard";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
