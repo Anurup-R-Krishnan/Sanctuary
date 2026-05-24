@@ -1,24 +1,13 @@
-import ePub from "epubjs";
 import { v4 as uuidv4 } from "uuid";
 
 import type { Book, Bookmark } from "@/types";
+import type { EpubBookHandle } from "@/utils/epub";
 
 import { bookService } from "@/services/bookService";
 import { logErrorOnce } from "@/services/http";
 import { useBookStore } from "@/store/useBookStore";
 import { putBook as putBookInDb, deleteBook as deleteBookFromDb } from "@/utils/db";
-
-type EpubMetadata = {
-  title?: string;
-  creator?: string | string[];
-};
-
-type EpubBookHandle = {
-  ready: Promise<unknown>;
-  loaded: { metadata: Promise<EpubMetadata> };
-  coverUrl: () => Promise<string>;
-  destroy?: () => void;
-};
+import { extractCoverBlobFromEpubSource, openEpub } from "@/utils/epub";
 
 type BookSyncMeta = {
   dirty: boolean;
@@ -28,12 +17,41 @@ type BookSyncMeta = {
   serverUpdatedAt?: string | undefined;
 };
 
-// Internal Service State
 const coverObjectUrlByBookId = new Map<string, string>();
 const syncMetaByBookId = new Map<string, BookSyncMeta>();
 const inFlightMutations = new Set<string>();
 
-// Internal Helpers
+const getInitialSyncMeta = (): BookSyncMeta => ({
+  dirty: false,
+  localRevision: 0,
+  lastAckRevision: 0,
+  syncInFlight: false,
+});
+
+const setBooks = (updater: (books: Book[]) => Book[]) => {
+  useBookStore.setState((state) => {
+    const books = updater(state.books);
+    state.updateDerivedState(books);
+    return { books };
+  });
+};
+
+const replaceBookInStore = (id: string, updater: (book: Book) => Book): Book | null => {
+  let nextBook: Book | null = null;
+  setBooks((books) => books.map((book) => {
+    if (book.id !== id) return book;
+    nextBook = updater(book);
+    return nextBook;
+  }));
+  return nextBook;
+};
+
+const saveBookToDb = async (book: Book, message: string) => {
+  await putBookInDb(book).catch((error) => {
+    console.error(message, error);
+  });
+};
+
 const revokeTrackedCoverUrl = (bookId: string) => {
   const url = coverObjectUrlByBookId.get(bookId);
   if (!url) return;
@@ -67,11 +85,7 @@ const reconcileTrackedCoverUrls = (nextBooks: Book[]) => {
 };
 
 const revertLocalBookState = (id: string, previousBook: Book, meta: BookSyncMeta) => {
-  useBookStore.setState((state) => {
-    const revertBooks = state.books.map((book) => (book.id === id ? previousBook : book));
-    state.updateDerivedState(revertBooks);
-    return { books: revertBooks };
-  });
+  setBooks((books) => books.map((book) => (book.id === id ? previousBook : book)));
   syncMetaByBookId.set(id, {
     ...meta,
     syncInFlight: false,
@@ -80,36 +94,8 @@ const revertLocalBookState = (id: string, previousBook: Book, meta: BookSyncMeta
 };
 
 const revertLocalBookAddition = (id: string) => {
-  useBookStore.setState((state) => {
-    const revertBooks = state.books.filter((book) => book.id !== id);
-    state.updateDerivedState(revertBooks);
-    return { books: revertBooks };
-  });
+  setBooks((books) => books.filter((book) => book.id !== id));
   revokeTrackedCoverUrl(id);
-};
-
-const extractCoverBlobFromEpubSource = async (source: ArrayBuffer): Promise<Blob | null> => {
-  let bookData: EpubBookHandle | null = null;
-  let coverHref: string | null = null;
-  try {
-    bookData = ePub(source) as unknown as EpubBookHandle;
-    await bookData.ready;
-    coverHref = await bookData.coverUrl();
-    if (!coverHref) return null;
-    const response = await fetch(coverHref);
-    return await response.blob();
-  } catch {
-    return null;
-  } finally {
-    if (coverHref?.startsWith("blob:")) {
-      try {
-        URL.revokeObjectURL(coverHref);
-      } catch {
-        // no-op
-      }
-    }
-    bookData?.destroy?.();
-  }
 };
 
 const syncBookUpdate = async (
@@ -119,27 +105,15 @@ const syncBookUpdate = async (
   isPersistent: boolean
 ) => {
   let previousBook: Book | null = null;
-  let nextBook: Book | null = null;
 
-  useBookStore.setState((state) => {
-    const newBooks = state.books.map((book) => {
-      if (book.id !== id) return book;
-      previousBook = book;
-      nextBook = updater(book);
-      return nextBook;
-    });
-    state.updateDerivedState(newBooks);
-    return { books: newBooks };
+  const nextBook = replaceBookInStore(id, (book) => {
+    previousBook = book;
+    return updater(book);
   });
 
   if (!nextBook || !previousBook) return;
   inFlightMutations.add(id);
-  const previousMeta = syncMetaByBookId.get(id) || {
-    dirty: false,
-    localRevision: 0,
-    lastAckRevision: 0,
-    syncInFlight: false,
-  };
+  const previousMeta = syncMetaByBookId.get(id) || getInitialSyncMeta();
   const currentRevision = previousMeta.localRevision + 1;
   syncMetaByBookId.set(id, {
     ...previousMeta,
@@ -275,7 +249,7 @@ export const libraryService = {
 
     try {
       const epubArrayBuffer = await file.arrayBuffer();
-      bookData = ePub(epubArrayBuffer) as unknown as EpubBookHandle;
+      bookData = openEpub(epubArrayBuffer);
       await bookData.ready;
 
       const metadata = await bookData.loaded.metadata;
@@ -305,11 +279,7 @@ export const libraryService = {
         locationHistory: [],
       };
 
-      useBookStore.setState((state) => {
-          const newBooks = [...state.books, newBook];
-          state.updateDerivedState(newBooks);
-          return { books: newBooks };
-      });
+      setBooks((books) => [...books, newBook]);
 
       try {
         await putBookInDb(newBook);
@@ -326,14 +296,8 @@ export const libraryService = {
         if (result.coverUrl && result.coverUrl !== newBook.coverUrl) {
           revokeTrackedCoverUrl(newBook.id);
           const persistedBook = { ...newBook, coverUrl: result.coverUrl };
-          useBookStore.setState((state) => {
-            const syncedBooks = state.books.map((book) => (book.id === newBook.id ? persistedBook : book));
-            state.updateDerivedState(syncedBooks);
-            return { books: syncedBooks };
-          });
-          await putBookInDb(persistedBook).catch((dbError) => {
-            console.error("Failed to persist server cover URL locally:", dbError);
-          });
+          replaceBookInStore(newBook.id, () => persistedBook);
+          await saveBookToDb(persistedBook, "Failed to persist server cover URL locally:");
         }
       } catch (error) {
         console.error("Backend upload failed:", error);
@@ -413,44 +377,20 @@ export const libraryService = {
     const token = await getToken();
     const blob = await bookService.getBookContent(id, token || undefined);
 
-    let updatedBook: Book | null = null;
-    useBookStore.setState((state) => {
-      const newBooks = state.books.map((book) => {
-        if (book.id !== id) return book;
-        updatedBook = { ...book, epubBlob: blob };
-        return updatedBook;
-      });
-      state.updateDerivedState(newBooks);
-      return { books: newBooks };
-    });
+    const updatedBook = replaceBookInStore(id, (book) => ({ ...book, epubBlob: blob }));
 
-    const _updatedBook = updatedBook as Book | null;
-    if (_updatedBook) {
-      await putBookInDb(_updatedBook).catch((error) => {
-        console.error("Failed to cache hydrated book content locally:", error);
-      });
+    if (updatedBook) {
+      await saveBookToDb(updatedBook, "Failed to cache hydrated book content locally:");
 
-      if (!_updatedBook.coverUrl) {
+      if (!updatedBook.coverUrl) {
         const blobBuffer = await blob.arrayBuffer();
         const generatedCover = await extractCoverBlobFromEpubSource(blobBuffer);
         if (generatedCover) {
           const localCoverUrl = trackCoverBlobForBook(id, generatedCover);
-          let localBookWithCover: Book | null = null;
-          useBookStore.setState((state) => {
-            const coverBooks = state.books.map((book) => {
-              if (book.id !== id) return book;
-              localBookWithCover = { ...book, coverUrl: localCoverUrl };
-              return localBookWithCover;
-            });
-            state.updateDerivedState(coverBooks);
-            return { books: coverBooks };
-          });
+          const localBookWithCover = replaceBookInStore(id, (book) => ({ ...book, coverUrl: localCoverUrl }));
           
-          const _localBookWithCover = localBookWithCover as Book | null;
-          if (_localBookWithCover) {
-            await putBookInDb(_localBookWithCover).catch((error) => {
-              console.error("Failed to cache regenerated cover locally:", error);
-            });
+          if (localBookWithCover) {
+            await saveBookToDb(localBookWithCover, "Failed to cache regenerated cover locally:");
           }
 
           if (isPersistent) {
@@ -458,22 +398,10 @@ export const libraryService = {
               const token = await getToken();
               const durableCoverUrl = await bookService.uploadBookCover(id, generatedCover, token || undefined);
               revokeTrackedCoverUrl(id);
-              let serverBookWithCover: Book | null = null;
-              useBookStore.setState((state) => {
-                const updatedCoverBooks = state.books.map((book) => {
-                  if (book.id !== id) return book;
-                  serverBookWithCover = { ...book, coverUrl: durableCoverUrl };
-                  return serverBookWithCover;
-                });
-                state.updateDerivedState(updatedCoverBooks);
-                return { books: updatedCoverBooks };
-              });
+              const serverBookWithCover = replaceBookInStore(id, (book) => ({ ...book, coverUrl: durableCoverUrl }));
               
-              const _serverBookWithCover = serverBookWithCover as Book | null;
-              if (_serverBookWithCover) {
-                await putBookInDb(_serverBookWithCover).catch((error) => {
-                  console.error("Failed to persist durable cover URL locally:", error);
-                });
+              if (serverBookWithCover) {
+                await saveBookToDb(serverBookWithCover, "Failed to persist durable cover URL locally:");
               }
             } catch (error) {
               console.error("Failed to sync regenerated cover to backend:", error);

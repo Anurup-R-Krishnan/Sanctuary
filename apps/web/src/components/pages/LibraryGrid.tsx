@@ -7,7 +7,6 @@ import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { DropdownMenu } from "@/components/library/DropdownMenu";
 import { HorizontalScroll } from "@/components/library/HorizontalScroll";
 import { SectionHeader } from "@/components/library/SectionHeader";
-// Extracted Components
 import { SkeletonCard } from "@/components/library/SkeletonCard";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";

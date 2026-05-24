@@ -17,7 +17,6 @@ import React, { useState } from "react";
 
 import { ColorSwatch } from "@/components/settings/ColorSwatch";
 import { Section } from "@/components/settings/Section";
-// Extracted Components
 import { ShortcutItem } from "@/components/settings/ShortcutItem";
 import { Slider } from "@/components/settings/Slider";
 import { Toggle } from "@/components/settings/Toggle";

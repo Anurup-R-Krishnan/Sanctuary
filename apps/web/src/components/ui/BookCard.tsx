@@ -5,12 +5,23 @@ import type { Book } from "@/types";
 
 import { useSettings } from "@/store/useSettingsStore";
 
+type BookCardVariant = "default" | "compact" | "featured";
+
 interface BookCardProps {
   book: Book;
   onSelect: (book: Book) => void;
   onToggleFavorite?: (id: string) => void;
-  variant?: "default" | "compact" | "featured";
+  variant?: BookCardVariant;
 }
+
+const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+
+const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+const getBookProgressPercent = (book: Book) => {
+  const totalPages = Math.max(1, book.totalPages || 100);
+  return clampPercent((book.progress / totalPages) * 100);
+};
 
 const BookCover = ({
   book,
@@ -26,7 +37,7 @@ const BookCover = ({
   imageLoaded: boolean;
   handleImageLoad: () => void;
   handleImageError: () => void;
-  variant?: "default" | "compact" | "featured";
+  variant?: BookCardVariant;
   reduceMotion?: boolean;
 }) => {
   const isCompact = variant === "compact";
@@ -46,8 +57,11 @@ const BookCover = ({
         <img
           src={book.coverUrl}
           alt={book.title}
-          className={`w-full h-full object-cover transition-all duration-500 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-            } ${!isCompact ? 'group-hover:scale-105' : ''}`}
+          className={cx(
+            "w-full h-full object-cover transition-all duration-500",
+            imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
+            !isCompact && "group-hover:scale-105"
+          )}
           onLoad={handleImageLoad}
           onError={handleImageError}
         />
@@ -73,29 +87,32 @@ const FavoriteButton = ({
 }: {
   isFavorite: boolean;
   onClick: (e: React.MouseEvent) => void;
-  variant?: "default" | "compact" | "featured";
+  variant?: BookCardVariant;
 }) => {
   if (variant === "compact") return null;
 
   const isFeatured = variant === "featured";
   const className = isFeatured
-    ? `p-2 rounded-xl transition-all duration-200 ${isFavorite
-      ? 'text-red-500 bg-red-50 dark:bg-red-950/30'
-      : 'text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
-    }`
-    : `absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 ${isFavorite
-      ? 'bg-red-500/90 text-white'
-      : 'bg-black/20 text-white hover:bg-red-500/90'
-    } opacity-0 group-hover:opacity-100`;
+    ? cx(
+      "p-2 rounded-xl transition-all duration-200",
+      isFavorite
+        ? "text-red-500 bg-red-50 dark:bg-red-950/30"
+        : "text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+    )
+    : cx(
+      "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 opacity-0 group-hover:opacity-100",
+      isFavorite ? "bg-red-500/90 text-white" : "bg-black/20 text-white hover:bg-red-500/90"
+    );
+  const iconClassName = cx(isFeatured ? "w-5 h-5" : "w-4 h-4", isFavorite && "fill-current");
 
   return (
     <button onClick={onClick} className={className}>
-      <Heart className={`w-${isFeatured ? '5' : '4'} h-${isFeatured ? '5' : '4'} ${isFavorite ? 'fill-current' : ''}`} strokeWidth={1.5} />
+      <Heart className={iconClassName} strokeWidth={1.5} />
     </button>
   );
 };
 
-const ProgressBar = ({ progress, variant = "default" }: { progress: number; variant?: "default" | "compact" | "featured" }) => {
+const ProgressBar = ({ progress, variant = "default" }: { progress: number; variant?: BookCardVariant }) => {
   if (progress <= 0) return null;
 
   if (variant === "compact") {
@@ -133,15 +150,18 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
   );
 };
 
-const BookMetadata = ({ title, author, variant = "default" }: { title: string; author: string; variant?: "default" | "compact" | "featured" }) => {
+const BookMetadata = ({ title, author, variant = "default" }: { title: string; author: string; variant?: BookCardVariant }) => {
   const isFeatured = variant === "featured";
   
   return (
     <div className={isFeatured ? "mb-1" : ""}>
-      <h3 className={`${isFeatured ? "text-xl font-bold" : "font-semibold"} text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200`}>
+      <h3 className={cx(
+        isFeatured ? "text-xl font-bold" : "font-semibold",
+        "text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200"
+      )}>
         {title}
       </h3>
-      <p className={`${isFeatured ? "font-medium" : "text-sm"} text-light-text-muted dark:text-dark-text-muted line-clamp-1`}>
+      <p className={cx(isFeatured ? "font-medium" : "text-sm", "text-light-text-muted dark:text-dark-text-muted line-clamp-1")}>
         {author}
       </p>
     </div>
@@ -158,7 +178,7 @@ function BookCard({
   const [imageError, setImageError] = useState(false);
   const reduceMotion = useSettings((state) => state.reduceMotion);
 
-  const progressPercentage = Math.round((book.progress / (book.totalPages || 100)) * 100);
+  const progressPercentage = getBookProgressPercent(book);
   const isRecent = book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
   const isCompleted = progressPercentage >= 100;
 
@@ -195,13 +215,12 @@ function BookCard({
       onKeyDown={(e: React.KeyboardEvent) => handleCardKeyDown(e, book)}
       role="button"
       tabIndex={0}
-      className={
-        isCompact 
-          ? "group flex items-center gap-4 p-3 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer"
-          : isFeatured
-            ? "group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-colors cursor-pointer p-5"
-            : "group relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:border-light-accent/35 dark:hover:border-dark-accent/35 transition-colors cursor-pointer"
-      }
+      className={cx(
+        "group border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface transition-colors cursor-pointer",
+        isCompact && "flex items-center gap-4 p-3 rounded-xl hover:border-light-accent/40 dark:hover:border-dark-accent/40",
+        isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/40 dark:hover:border-dark-accent/40 p-5",
+        !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/35 dark:hover:border-dark-accent/35"
+      )}
     >
       {isCompact ? (
         <>
