@@ -2,8 +2,8 @@ import { create } from "zustand";
 
 interface SessionState {
   isGuest: boolean;
-  setIsGuest: (value: boolean) => void;
   reset: () => void;
+  setIsGuest: (value: boolean) => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({

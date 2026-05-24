@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
     List,
     ArrowUp,
@@ -9,23 +8,26 @@ import {
     Bookmark as BookmarkIcon,
     X
 } from "lucide-react";
-import { useSettings } from "@/store/useSettingsStore";
+import { useState } from "react";
+
 import type { Bookmark } from "@/types";
 
+import { useSettings } from "@/store/useSettingsStore";
+
 interface TocItem {
-    id: string;
     href: string;
+    id: string;
     label: string;
     subitems?: TocItem[] | undefined;
 }
 
 interface ReaderControlsProps {
-    toc: TocItem[];
     bookmarks: Bookmark[];
-    onNavigate: (href: string) => void;
-    onJumpToTop: () => void;
     onJumpToBottom: () => void;
+    onJumpToTop: () => void;
+    onNavigate: (href: string) => void;
     onRemoveBookmark: (id: string) => void;
+    toc: TocItem[];
 }
 
 function ReaderControls({

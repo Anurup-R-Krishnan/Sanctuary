@@ -1,10 +1,12 @@
 import ePub from "epubjs";
 import { v4 as uuidv4 } from "uuid";
+
 import type { Book, Bookmark } from "@/types";
+
 import { bookService } from "@/services/bookService";
-import { putBook as putBookInDb, deleteBook as deleteBookFromDb } from "@/utils/db";
-import { useBookStore } from "@/store/useBookStore";
 import { logErrorOnce } from "@/services/http";
+import { useBookStore } from "@/store/useBookStore";
+import { putBook as putBookInDb, deleteBook as deleteBookFromDb } from "@/utils/db";
 
 type EpubMetadata = {
   title?: string;
@@ -62,6 +64,28 @@ const reconcileTrackedCoverUrls = (nextBooks: Book[]) => {
       coverObjectUrlByBookId.delete(bookId);
     }
   }
+};
+
+const revertLocalBookState = (id: string, previousBook: Book, meta: BookSyncMeta) => {
+  useBookStore.setState((state) => {
+    const revertBooks = state.books.map((book) => (book.id === id ? previousBook : book));
+    state.updateDerivedState(revertBooks);
+    return { books: revertBooks };
+  });
+  syncMetaByBookId.set(id, {
+    ...meta,
+    syncInFlight: false,
+  });
+  inFlightMutations.delete(id);
+};
+
+const revertLocalBookAddition = (id: string) => {
+  useBookStore.setState((state) => {
+    const revertBooks = state.books.filter((book) => book.id !== id);
+    state.updateDerivedState(revertBooks);
+    return { books: revertBooks };
+  });
+  revokeTrackedCoverUrl(id);
 };
 
 const extractCoverBlobFromEpubSource = async (source: ArrayBuffer): Promise<Blob | null> => {
@@ -128,16 +152,7 @@ const syncBookUpdate = async (
     await putBookInDb(nextBook);
   } catch (error) {
     console.error("Failed to persist local book update:", error);
-    useBookStore.setState((state) => {
-        const revertBooks = state.books.map((book) => (book.id === id ? previousBook! : book));
-        state.updateDerivedState(revertBooks);
-        return { books: revertBooks };
-    });
-    syncMetaByBookId.set(id, {
-      ...previousMeta,
-      syncInFlight: false,
-    });
-    inFlightMutations.delete(id);
+    revertLocalBookState(id, previousBook, previousMeta);
     return;
   }
 
@@ -171,11 +186,7 @@ const syncBookUpdate = async (
     }
   } catch (error) {
     console.error("Failed to persist remote book update:", error);
-    useBookStore.setState((state) => {
-        const revertBooks = state.books.map((book) => (book.id === id ? previousBook! : book));
-        state.updateDerivedState(revertBooks);
-        return { books: revertBooks };
-    });
+    revertLocalBookState(id, previousBook, previousMeta);
     await putBookInDb(previousBook).catch((rollbackError) => {
       console.error("Failed to rollback local book update:", rollbackError);
     });
@@ -303,12 +314,7 @@ export const libraryService = {
       try {
         await putBookInDb(newBook);
       } catch (error) {
-        useBookStore.setState((state) => {
-            const revertBooks = state.books.filter((book) => book.id !== newBook.id);
-            state.updateDerivedState(revertBooks);
-            return { books: revertBooks };
-        });
-        revokeTrackedCoverUrl(newBook.id);
+        revertLocalBookAddition(newBook.id);
         throw error;
       }
 
@@ -331,12 +337,7 @@ export const libraryService = {
         }
       } catch (error) {
         console.error("Backend upload failed:", error);
-        useBookStore.setState((state) => {
-            const revertBooks = state.books.filter((book) => book.id !== newBook.id);
-            state.updateDerivedState(revertBooks);
-            return { books: revertBooks };
-        });
-        revokeTrackedCoverUrl(newBook.id);
+        revertLocalBookAddition(newBook.id);
         await deleteBookFromDb(newBook.id).catch((dbError) => {
           console.error("Failed to rollback local EPUB after backend upload failure:", dbError);
         });

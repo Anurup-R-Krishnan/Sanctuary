@@ -1,9 +1,9 @@
 import React from "react";
 
 interface SectionHeaderProps {
-  title: string;
   count?: number;
   icon?: React.ElementType;
+  title: string;
 }
 
 export const SectionHeader = ({

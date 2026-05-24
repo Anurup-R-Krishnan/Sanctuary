@@ -1,19 +1,21 @@
-import React, { useState, useMemo } from "react";
 import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Star, Users } from "lucide-react";
-import { useSettingsShallow } from "@/store/useSettingsStore";
-import { useStatsStore } from "@/store/useStatsStore";
+import React, { useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
-// Extracted Components
-import { StatCard } from "@/components/stats/StatCard";
-import { ProgressRing } from "@/components/stats/ProgressRing";
 import { BadgeCard } from "@/components/stats/BadgeCard";
 import { BarChart } from "@/components/stats/BarChart";
 import { HeatmapCell } from "@/components/stats/HeatmapCell";
+import { ProgressRing } from "@/components/stats/ProgressRing";
+// Extracted Components
+import { StatCard } from "@/components/stats/StatCard";
+import { useSettingsShallow } from "@/store/useSettingsStore";
+import { useStatsStore } from "@/store/useStatsStore";
 
 function StatsView() {
-  const { stats } = useStatsStore(useShallow((state) => ({
+  const { stats, goals, goalsStale } = useStatsStore(useShallow((state) => ({
     stats: state.stats,
+    goals: state.goals,
+    goalsStale: state.goalsStale,
   })));
   const { dailyGoal, weeklyGoal, setDailyGoal, setWeeklyGoal } = useSettingsShallow((state) => ({
     dailyGoal: state.dailyGoal,
@@ -97,6 +99,44 @@ function StatsView() {
               </div>
             </div>
           </div>
+
+          {goals && (
+            <div className="p-5 rounded-xl bg-gradient-to-br from-light-accent/5 to-amber-500/5 dark:from-dark-accent/10 dark:to-amber-500/10 border border-light-accent/10 dark:border-dark-accent/10">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-light-text dark:text-dark-text flex items-center gap-2">
+                  <Target className="w-4 h-4 text-light-accent dark:text-dark-accent" />
+                  Time-based Goals
+                </h3>
+                {goalsStale && <span className="text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 uppercase font-bold tracking-wider">Offline</span>}
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">Daily</span>
+                    <span className="text-xs font-bold text-light-text dark:text-dark-text">{goals.day.totalMinutes} / {goals.day.targetMinutes}m</span>
+                  </div>
+                  <div className="h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, (goals.day.totalMinutes / goals.day.targetMinutes) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">Weekly</span>
+                    <span className="text-xs font-bold text-light-text dark:text-dark-text">{goals.week.totalMinutes} / {goals.week.targetMinutes}m</span>
+                  </div>
+                  <div className="h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, (goals.week.totalMinutes / goals.week.targetMinutes) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard icon={Flame} label="Streak" value={`${stats.currentStreak}d`} subtext={`Best: ${stats.longestStreak}d`} accent />

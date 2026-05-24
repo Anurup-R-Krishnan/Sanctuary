@@ -1,15 +1,16 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderFooterProps {
     currentPage: number;
-    totalPages: number;
+    onNextPage: () => void;
+    onPageChange: (page: number) => void;
+    onPrevPage: () => void;
     readingTime: number;
     showUI: boolean;
-    onNextPage: () => void;
-    onPrevPage: () => void;
-    onPageChange: (page: number) => void;
+    totalPages: number;
 }
 
 function ReaderFooter({

@@ -1,33 +1,55 @@
 {
   "name": "sanctuary-book-reader",
-  "private": true,
   "version": "0.2.0",
+  "private": true,
   "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
+    "betterer": "betterer",
+    "build": "npm run web:build",
+    "depcheck": "depcheck",
+    "depcruise": "depcruise apps packages",
+    "desktop:build": "npm --workspace @sanctuary/desktop run tauri:build",
+    "desktop:dev": "npm --workspace @sanctuary/desktop run tauri:dev",
     "dev": "bash -lc 'npm run web:guest & npm run dev:backend:guest; wait -n; kill 0'",
+    "dev:backend:guest": "wrangler pages dev apps/web/dist --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true",
+    "dev:backend:guest:remote": "bash -lc 'echo \"wrangler pages dev has no --remote in this Wrangler version; running local Pages dev. Use wrangler --remote commands to verify real D1/R2.\"; wrangler pages dev apps/web/dist --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true'",
+    "dev:backend:strict": "wrangler pages dev apps/web/dist --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=false",
     "dev:remote": "bash -lc 'npm run web:guest & npm run dev:backend:guest:remote; wait -n; kill 0'",
     "dev:strict": "bash -lc 'npm run web:strict & npm run dev:backend:strict; wait -n; kill 0'",
-    "web:dev": "npm --workspace @sanctuary/web run dev",
-    "web:guest": "npm --workspace @sanctuary/web run dev:guest",
-    "web:strict": "npm --workspace @sanctuary/web run dev:strict",
-    "web:build": "npm --workspace @sanctuary/web run build",
-    "web:preview": "npm --workspace @sanctuary/web run preview",
-    "dev:backend:guest": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true",
-    "dev:backend:guest:remote": "bash -lc 'echo \"wrangler pages dev has no --remote in this Wrangler version; running local Pages dev. Use wrangler --remote commands to verify real D1/R2.\"; wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=true'",
-    "dev:backend:strict": "wrangler pages dev public --ip 127.0.0.1 --port 8788 -b DISABLE_CLERK_AUTH=false",
-    "build": "npm run web:build",
-    "preview": "npm run web:preview",
+    "jscpd": "jscpd",
+    "knip": "knip",
+    "lhci": "lhci autorun",
     "lint": "eslint . --ext .ts,.tsx",
+    "lint:commits": "commitlint --from=HEAD~1",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "mobile:android": "npm --workspace @sanctuary/mobile run android",
     "mobile:dev": "npm --workspace @sanctuary/mobile run start",
     "mobile:web": "npm --workspace @sanctuary/mobile run web",
-    "mobile:android": "npm --workspace @sanctuary/mobile run android",
-    "desktop:dev": "npm --workspace @sanctuary/desktop run tauri:dev",
-    "desktop:build": "npm --workspace @sanctuary/desktop run tauri:build"
+    "ncu": "ncu",
+    "prepare": "husky",
+    "preview": "npm run web:preview",
+    "secretlint": "secretlint \"{apps,packages,functions}/**/*\"",
+    "size": "npm run build && size-limit",
+    "spellcheck": "cspell \"{apps,packages,functions}/**/*\"",
+    "syncpack": "syncpack list",
+    "web:build": "npm --workspace @sanctuary/web run build",
+    "web:dev": "npm --workspace @sanctuary/web run dev",
+    "web:guest": "npm --workspace @sanctuary/web run dev:guest",
+    "web:preview": "npm --workspace @sanctuary/web run preview",
+    "web:strict": "npm --workspace @sanctuary/web run dev:strict"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "jscpd"
+    ],
+    "package.json": [
+      "sort-package-json"
+    ]
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.1",
@@ -36,19 +58,29 @@
     "@clerk/clerk-react": "^5.60.2",
     "@testsprite/testsprite-mcp": "^0.0.25",
     "epubjs": "^0.3.93",
-    "expo": "51.0.39",
+    "expo": "^51.0.39",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.555.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.3.8",
-    "react-native": "0.84.0",
+    "react-native": "^0.84.0",
     "uuid": "^13.0.0",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@betterer/betterer": "^6.0.0-alpha.1",
+    "@betterer/cli": "latest",
+    "@betterer/eslint": "^6.0.0-alpha.1",
+    "@betterer/regexp": "^6.0.0-alpha.1",
+    "@betterer/typescript": "latest",
     "@cloudflare/workers-types": "^4.20260131.0",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
     "@eslint/js": "^9.21.0",
+    "@lhci/cli": "^0.13.0",
+    "@secretlint/secretlint-rule-preset-recommend": "^9.0.0",
+    "@size-limit/preset-app": "^11.1.6",
     "@tauri-apps/cli": "^2.10.0",
     "@types/bun": "^1.3.6",
     "@types/node": "^22.14.0",
@@ -56,17 +88,57 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
+    "cspell": "^8.17.3",
+    "depcheck": "^1.4.7",
+    "dependency-cruiser": "^16.9.0",
     "eslint": "^10.0.1",
     "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-perfectionist": "^4.9.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "jscpd": "^4.0.9",
+    "knip": "^6.6.3",
+    "lint-staged": "^15.4.3",
+    "npm-check-updates": "^17.1.14",
     "postcss": "^8.4.38",
+    "secretlint": "^9.0.0",
+    "size-limit": "^11.1.6",
+    "sort-package-json": "^2.14.0",
+    "syncpack": "^13.0.2",
     "tailwindcss": "^3.4.13",
-    "typescript": "~5.8.2",
+    "typescript": "^5.8.2",
     "typescript-eslint": "^8.25.0",
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^0.11.3",
     "wrangler": "^4.61.1"
-  }
+  },
+  "jscpd": {
+    "threshold": 0.1,
+    "reporters": [
+      "html",
+      "console",
+      "badge"
+    ],
+    "ignore": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      "out"
+    ],
+    "absolute": true,
+    "gitignore": true
+  },
+  "size-limit": [
+    {
+      "path": "apps/web/dist/assets/*.js",
+      "limit": "200 kB"
+    },
+    {
+      "path": "apps/web/dist/assets/*.css",
+      "limit": "50 kB"
+    }
+  ]
 }

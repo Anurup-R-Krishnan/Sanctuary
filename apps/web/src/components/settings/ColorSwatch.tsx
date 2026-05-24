@@ -1,19 +1,19 @@
-import React from "react";
 import { Check, type LucideIcon } from "lucide-react";
+import React from "react";
 
 interface ColorPreset {
+    accent: string;
+    bg: string;
+    fg: string;
+    icon: LucideIcon;
     id: string;
     label: string;
-    fg: string;
-    bg: string;
-    accent: string;
-    icon: LucideIcon;
 }
 
 interface ColorSwatchProps {
-    preset: ColorPreset;
     isActive: boolean;
     onClick: () => void;
+    preset: ColorPreset;
 }
 
 export const ColorSwatch = ({

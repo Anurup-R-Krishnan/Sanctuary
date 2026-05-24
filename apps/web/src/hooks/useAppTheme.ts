@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useUIStore } from "@/store/useUIStore";
 import { Theme } from "@/types";

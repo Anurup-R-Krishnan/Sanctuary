@@ -1,21 +1,23 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
-import BookCard from "../ui/BookCard";
-import AddBookButton from "../ui/AddBookButton";
-import { useBookStore } from "@/store/useBookStore";
-import { useUIStore } from "@/store/useUIStore";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
+import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
+
+import { DropdownMenu } from "@/components/library/DropdownMenu";
+import { HorizontalScroll } from "@/components/library/HorizontalScroll";
+import { SectionHeader } from "@/components/library/SectionHeader";
 // Extracted Components
 import { SkeletonCard } from "@/components/library/SkeletonCard";
-import { SectionHeader } from "@/components/library/SectionHeader";
-import { HorizontalScroll } from "@/components/library/HorizontalScroll";
-import { DropdownMenu } from "@/components/library/DropdownMenu";
+import { useBookStore } from "@/store/useBookStore";
+import { useUIStore } from "@/store/useUIStore";
+
+import AddBookButton from "../ui/AddBookButton";
+import BookCard from "../ui/BookCard";
 
 interface LibraryGridProps {
-  onSelectBook: (book: Book) => void;
   addBook: (file: File) => Promise<void>;
+  onSelectBook: (book: Book) => void;
   toggleFavorite: (id: string) => void;
 }
 

@@ -1,21 +1,21 @@
+import { BookOpen } from "lucide-react";
 import { useEffect, useCallback } from "react";
+
 import { useUser, useAuth } from "@/hooks/useAuth";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
+import { useBookStore } from "@/store/useBookStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { useBookStore } from "@/store/useBookStore";
-import { View, Theme } from "@/types";
-import { BookOpen } from "lucide-react";
+import { View } from "@/types";
 
-import Header from "./components/ui/Header";
-import Navigation from "./components/ui/Navigation";
+import ClerkAuth from "./components/pages/Auth";
 import LibraryGrid from "./components/pages/LibraryGrid";
 import ReaderView from "./components/pages/ReaderView";
 import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
-import ClerkAuth from "./components/pages/Auth";
-
+import Header from "./components/ui/Header";
+import Navigation from "./components/ui/Navigation";
 import { useAppTheme } from "./hooks/useAppTheme";
 import { useProgressSync } from "./hooks/useProgressSync";
 import { useReadingSession } from "./hooks/useReadingSession";
@@ -42,6 +42,7 @@ function App() {
   useEffect(() => {
     libraryService.loadBooks(getToken, isPersistent);
     statsService.loadSessions(getToken, isPersistent);
+    statsService.fetchGoals(getToken);
     return () => libraryService.cleanupAllObjectUrls();
   }, [getToken, isPersistent]);
 

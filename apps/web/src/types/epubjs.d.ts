@@ -1,14 +1,14 @@
 declare module 'epubjs' {
   export interface Locations {
-    length(): number;
     cfiFromPercentage(percentage: number): string;
     generate(chars: number): Promise<string[]>;
+    length(): number;
   }
 
   export interface NavItem {
     href: string;
-    label: string;
     id?: string;
+    label: string;
   }
 
   export interface Navigation {
@@ -16,20 +16,20 @@ declare module 'epubjs' {
   }
 
   export interface PackagingMetadataObject {
-    title: string;
     creator: string;
     description?: string;
-    publisher?: string;
     language?: string;
+    publisher?: string;
+    title: string;
   }
 
   export interface Location {
-    start: {
+    end: {
       cfi: string;
       href: string;
       percentage: number;
     };
-    end: {
+    start: {
       cfi: string;
       href: string;
       percentage: number;
@@ -37,28 +37,29 @@ declare module 'epubjs' {
   }
 
   export interface Rendition {
-    display(target?: string): Promise<void>;
-    next(): Promise<void>;
-    prev(): Promise<void>;
     destroy(): void;
-    on(event: string, callback: (data: unknown) => void): void;
+    display(target?: string): Promise<void>;
+    location?: Location;
+    next(): Promise<void>;
     off(event: string, callback: (data: unknown) => void): void;
+    on(event: string, callback: (data: unknown) => void): void;
+    prev(): Promise<void>;
     themes: {
       default(styles: Record<string, Record<string, string>>): void;
       register(name: string, styles: Record<string, Record<string, string>>): void;
       select(name: string): void;
     };
-    location?: Location;
   }
 
   export interface Book {
-    ready: Promise<void>;
+    coverUrl(): Promise<string | null>;
+    destroy(): void;
     loaded: {
       metadata: Promise<PackagingMetadataObject>;
     };
-    navigation?: Navigation;
     locations: Locations;
-    coverUrl(): Promise<string | null>;
+    navigation?: Navigation;
+    ready: Promise<void>;
     renderTo(element: HTMLElement, options?: {
       width?: string | number;
       height?: string | number;
@@ -66,7 +67,6 @@ declare module 'epubjs' {
       manager?: string;
       spread?: string;
     }): Rendition;
-    destroy(): void;
   }
 
   function ePub(input: ArrayBuffer | string): Book;

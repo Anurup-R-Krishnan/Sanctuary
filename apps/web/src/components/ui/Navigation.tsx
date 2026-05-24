@@ -1,11 +1,12 @@
 
-import { View } from "@/types";
 import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
+
+import { View } from "@/types";
 
 interface NavigationProps {
   activeView: View;
-  onNavigate: (view: View) => void;
   isReaderActive: boolean;
+  onNavigate: (view: View) => void;
 }
 
 function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps) {

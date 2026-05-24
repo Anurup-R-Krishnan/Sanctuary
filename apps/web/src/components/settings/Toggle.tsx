@@ -1,10 +1,10 @@
-import React from "react";
 import { Check } from "lucide-react";
+import React from "react";
 
 interface ToggleProps {
     checked: boolean;
-    onChange: (v: boolean) => void;
     label: string;
+    onChange: (v: boolean) => void;
     sublabel?: string;
 }
 

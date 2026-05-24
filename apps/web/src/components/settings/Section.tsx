@@ -1,9 +1,9 @@
 import React from "react";
 
 interface SectionProps {
-    title: string;
-    icon?: React.ElementType;
     children: React.ReactNode;
+    icon?: React.ElementType;
+    title: string;
 }
 
 export const Section = ({ title, icon: Icon, children }: SectionProps) => (

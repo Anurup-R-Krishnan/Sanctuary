@@ -1,5 +1,3 @@
-import React from "react";
-import type { Book } from "@/types";
 import {
     ArrowLeft,
     Bookmark,
@@ -10,19 +8,23 @@ import {
     Minimize2,
     MoreHorizontal,
 } from "lucide-react";
+import React from "react";
+
+import type { Book } from "@/types";
+
 import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderHeaderProps {
     book: Book;
     isBookmarked: boolean;
     isFullscreen: boolean;
-    showUI: boolean;
     onClose: () => void;
     onToggleBookmark: () => void;
-    onToggleTOC: () => void;
-    onToggleSettings: () => void;
     onToggleControls: () => void;
     onToggleFullscreen: () => void;
+    onToggleSettings: () => void;
+    onToggleTOC: () => void;
+    showUI: boolean;
 }
 
 function ReaderHeader({

@@ -1,17 +1,17 @@
 import { useEffect, useRef } from "react";
 
 interface UseReaderShortcutsOptions {
+  isEnabled?: boolean;
   nextPage: () => void;
-  prevPage: () => void;
   onClose: () => void;
+  prevPage: () => void;
+  setShowControls: (value: boolean) => void;
+  setShowSettings: (value: boolean) => void;
+  showControls: boolean;
+  showSettings: boolean;
   toggleBookmark: () => void;
   toggleFullscreen: () => void;
   toggleUI: () => void;
-  showSettings: boolean;
-  showControls: boolean;
-  setShowSettings: (value: boolean) => void;
-  setShowControls: (value: boolean) => void;
-  isEnabled?: boolean;
 }
 
 export function useReaderShortcuts(options: UseReaderShortcutsOptions) {

@@ -1,6 +1,7 @@
-import React from "react";
-import { useSettingsShallow } from "@/store/useSettingsStore";
 import { Layout, Scroll, EyeOff, Speech, ZapOff, RotateCcw } from "lucide-react";
+import React from "react";
+
+import { useSettingsShallow } from "@/store/useSettingsStore";
 
 function ReaderSettings() {
   const {

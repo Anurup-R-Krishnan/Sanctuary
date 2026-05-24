@@ -3,7 +3,6 @@ import {
     useAuth as useClerkAuth,
     useUser as useClerkUser,
     SignIn as ClerkSignIn,
-    SignUp as ClerkSignUp,
 } from "@clerk/clerk-react";
 
 const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
@@ -52,11 +51,4 @@ export const SignIn = (props: AuthComponentProps) => {
         return <div className="p-4 text-center text-sm opacity-60">Sign-in disabled in guest mode.</div>;
     }
     return <ClerkSignIn {...props} />;
-};
-
-const SignUp = (props: AuthComponentProps) => {
-    if (DISABLE_AUTH) {
-        return <div className="p-4 text-center text-sm opacity-60">Sign-up disabled in guest mode.</div>;
-    }
-    return <ClerkSignUp {...props} />;
 };

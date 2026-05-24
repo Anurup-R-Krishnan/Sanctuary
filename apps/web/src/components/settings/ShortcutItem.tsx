@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 
 interface ShortcutItemProps {
-    label: string;
     keys: string[];
+    label: string;
     onChange: (keys: string[]) => void;
 }
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
+
 import { DEFAULT_DAILY_GOAL } from "@/types";
 
 type TextAlignment = "left" | "justify" | "center";
@@ -116,7 +117,7 @@ const DEFAULTS: SettingsValues = {
   reduceMotion: false
 };
 
-export const LOCAL_SETTINGS_KEY = "sanctuary.web.settings.v1";
+export const LOCAL_SETTINGS_KEY = "sanctuary.web.settings";
 
 export const pickValues = (state: Settings): SettingsValues => ({
   fontSize: state.fontSize,

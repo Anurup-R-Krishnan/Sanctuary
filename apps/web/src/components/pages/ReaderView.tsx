@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+
 import type { Book, Bookmark } from "@/types";
-import { useSettingsShallow } from "@/store/useSettingsStore";
-import { useReaderEngine } from "@/hooks/useReaderEngine";
-import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
+
 import ReaderContent from "@/components/reader/ReaderContent";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
+import { useReaderEngine } from "@/hooks/useReaderEngine";
+import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 
 interface ReaderViewProps {
     book: Book;
-    onClose: () => void;
-    onUpdateProgress: (id: string, progress: number, location: string) => void;
-    onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
-    onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
     getBookContent: (id: string) => Promise<Blob>;
+    onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
+    onClose: () => void;
+    onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
+    onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
 
 function ReaderView({

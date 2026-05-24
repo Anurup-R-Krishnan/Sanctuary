@@ -1,15 +1,16 @@
 import { create } from "zustand";
+
 import { Theme, View } from "@/types";
 
 interface UIState {
-  theme: Theme;
-  view: View;
-  selectedBookId: string | null;
   searchTerm: string;
-  setView: (view: View) => void;
-  setSelectedBookId: (id: string | null) => void;
+  selectedBookId: string | null;
   setSearchTerm: (value: string) => void;
+  setSelectedBookId: (id: string | null) => void;
+  setView: (view: View) => void;
+  theme: Theme;
   toggleTheme: () => void;
+  view: View;
 }
 
 export const useUIStore = create<UIState>((set) => ({
