@@ -1,5 +1,7 @@
 import React from "react";
+
 import type { Book } from "@/types";
+
 import BookCard from "../ui/BookCard";
 
 interface HorizontalScrollProps {

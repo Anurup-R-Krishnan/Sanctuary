@@ -1,4 +1,5 @@
-import type { ReadingSession, SessionAggregates, Book, ReadingStats, Badge } from "@/types";
+import type { ReadingSession, SessionAggregates, Book, ReadingStats } from "@/types";
+
 import { DEFAULT_PERSONALITY, DEFAULT_BADGES } from "@/types";
 
 export const toLocalDateKey = (date: Date): string => {
@@ -36,7 +37,8 @@ export const createEmptyAggregates = (): SessionAggregates => ({
 });
 
 export const applySessionToAggregates = (aggregates: SessionAggregates, session: ReadingSession): void => {
-  aggregates.totalReadingTime += session.duration;
+  const durationMin = session.duration / 60;
+  aggregates.totalReadingTime += durationMin;
   aggregates.totalPagesRead += session.pagesRead;
   aggregates.sessionCount += 1;
 
@@ -44,7 +46,7 @@ export const applySessionToAggregates = (aggregates: SessionAggregates, session:
 
   const dayAgg = aggregates.dayTotals.get(session.date) || { pages: 0, minutes: 0 };
   dayAgg.pages += session.pagesRead;
-  dayAgg.minutes += session.duration;
+  dayAgg.minutes += durationMin;
   aggregates.dayTotals.set(session.date, dayAgg);
 
   const sessionHour = typeof session.localStartHour === "number"
@@ -57,7 +59,7 @@ export const applySessionToAggregates = (aggregates: SessionAggregates, session:
   }
 
   const monthKey = session.date.slice(0, 7);
-  aggregates.monthMinutes.set(monthKey, (aggregates.monthMinutes.get(monthKey) || 0) + session.duration);
+  aggregates.monthMinutes.set(monthKey, (aggregates.monthMinutes.get(monthKey) || 0) + durationMin);
 };
 
 const calculateStreak = (sessionDates: Set<string>, now: Date): { current: number; longest: number } => {

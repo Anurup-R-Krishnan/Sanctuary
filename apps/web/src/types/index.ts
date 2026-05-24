@@ -11,77 +11,115 @@ export enum View {
 }
 
 export interface Highlight {
-  id: string;
   cfi: string;
-  text: string;
   color: "yellow" | "green" | "blue" | "pink" | "purple";
-  note?: string;
   createdAt: string;
+  id: string;
+  note?: string;
+  text: string;
 }
 
 export interface Bookmark {
-  id: string;
   cfi: string;
-  title: string;
-  note?: string;
   createdAt: string;
+  id: string;
+  note?: string;
+  title: string;
 }
 
+export interface ReaderSettings {
+  autoHideMs?: number;
+  dailyGoal?: number;
+  fontScale?: number;
+  lineHeight?: number;
+  motion?: "full" | "reduced";
+  showPageMeta?: boolean;
+  showProgress?: boolean;
+  tapZones?: boolean;
+  textWidth?: number;
+  themePreset?: string;
+  weeklyGoal?: number;
+}
 
-export interface Book {
-  id: string;
-  title: string;
+export interface LibraryItem {
   author: string;
-  coverUrl: string;
-  epubBlob: Blob | null;
-  progress: number;
-  lastLocation: string;
-  genre?: string;
-  completedAt?: string;
+  bookmarks?: Array<{ cfi: string; title?: string }>;
+  coverUrl?: string | null;
+  favorite?: boolean;
+  id: string;
+  lastLocation?: string | null;
+  progressPercent: number;
+  status?: "to-read" | "reading" | "finished";
+  title: string;
+  totalPages?: number;
+  updatedAt?: string;
+}
+
+export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "lastLocation" | "progressPercent" | "status"> {
   addedAt?: string;
-  lastOpenedAt?: string;
+  bookmarks?: Bookmark[];
+  completedAt?: string;
+  epubBlob: Blob | null;
+  genre?: string;
+  highlights?: Highlight[];
   isFavorite?: boolean;
   isIncognito?: boolean;
+  lastLocation: string;
+  lastOpenedAt?: string;
+  locationHistory?: string[];
+  progress: number; // Mapping progressPercent to progress for consistency with epubjs usage
+  readingList?: "to-read" | "reading" | "finished";
   series?: string;
   seriesIndex?: number;
   tags?: string[];
-  readingList?: "to-read" | "reading" | "finished";
-  highlights?: Highlight[];
-  bookmarks?: Bookmark[];
   totalPages?: number;
-  locationHistory?: string[];
+}
+
+export interface ReadingGoalWindow {
+  goal: number;
+  minutes: number;
+  progressPercent: number;
+  targetMinutes: number;
+  totalMinutes: number;
+}
+
+export interface ReadingGoals {
+  day: ReadingGoalWindow;
+  month: ReadingGoalWindow;
+  week: ReadingGoalWindow;
 }
 
 export interface Badge {
+  description: string;
+  icon: string;
   id: string;
   name: string;
-  icon: string;
-  description: string;
-  unlocked: boolean;
   progress?: number;
   target?: number;
+  unlocked: boolean;
   unlockedAt?: string;
 }
 
 export interface ReadingStats {
+  authorNetwork: { author: string; books: number }[];
+  averageReadingSpeed: number;
+  badges: Badge[];
+  booksCompletedThisMonth: number;
   currentStreak: number;
+  dailyGoal: number;
+  dailyProgress: number;
+  genreDistribution: { genre: string; count: number; color: string }[];
+  goals?: ReadingGoals; // Added goal tracking
+  heatmapData: number[][];
   longestStreak: number;
-  totalBooksRead: number;
+  monthlyData: { month: string; hours: number; books: number }[];
+  personalityDescription: string;
+  readingPersonality: string;
   totalBooksInLibrary: number;
+  totalBooksRead: number;
   totalPagesRead: number;
   totalReadingTime: number;
-  averageReadingSpeed: number;
-  dailyProgress: number;
-  dailyGoal: number;
-  booksCompletedThisMonth: number;
   weeklyData: { day: string; pages: number; minutes: number }[];
-  monthlyData: { month: string; hours: number; books: number }[];
-  heatmapData: number[][];
-  genreDistribution: { genre: string; count: number; color: string }[];
-  authorNetwork: { author: string; books: number }[];
-  badges: Badge[];
-  readingPersonality: string;
-  personalityDescription: string;
 }
 
 export type SortOption = "title" | "author" | "recent" | "progress" | "added";
@@ -121,14 +159,17 @@ export const DEFAULT_BADGES: Badge[] = [
 ];
 
 export interface ReadingSession {
-  id: string;
   bookId: string;
-  bookTitle: string;
+  bookTitle: string; // Additional field used by the web app for UI display
   date: string;
-  startTime?: string;
-  localStartHour?: number;
+  device?: "web" | "ios" | "android" | string;
   duration: number;
+  endedAt?: string;
+  id: string;
+  localStartHour?: number;
   pagesRead: number;
+  startedAt?: string;
+  startTime?: string;
 }
 
 export type SessionAggregates = {

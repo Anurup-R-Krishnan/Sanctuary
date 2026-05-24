@@ -1,15 +1,16 @@
-import { useRef } from "react";
 import { Search, LogOut, LogIn, X, BookOpen, Moon, Sun } from "lucide-react";
+import { useRef } from "react";
+
 import { Theme } from "@/types";
 
 interface HeaderProps {
-  theme: Theme;
-  onToggleTheme: () => void;
-  searchTerm: string;
-  onSearch: (term: string) => void;
   isGuest?: boolean;
+  onSearch: (term: string) => void;
   onShowLogin?: (() => void) | undefined;
   onSignOut?: (() => void) | undefined;
+  onToggleTheme: () => void;
+  searchTerm: string;
+  theme: Theme;
   userEmail?: string;
   userImage?: string;
 }

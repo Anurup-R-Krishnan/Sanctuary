@@ -2,11 +2,11 @@ import React from "react";
 
 interface DropdownMenuProps {
   id: string;
-  show: boolean;
-  options: { value: string; label: string }[];
-  value: string;
-  onSelect: (v: string) => void;
   onClose: () => void;
+  onSelect: (v: string) => void;
+  options: { value: string; label: string }[];
+  show: boolean;
+  value: string;
 }
 
 export const DropdownMenu = ({

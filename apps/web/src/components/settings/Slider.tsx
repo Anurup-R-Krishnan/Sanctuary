@@ -1,14 +1,14 @@
 import React from "react";
 
 interface SliderProps {
-    value: number;
-    onChange: (v: number) => void;
-    min: number;
-    max: number;
-    step?: number;
-    label: string;
     displayValue?: string;
     icon?: React.ElementType;
+    label: string;
+    max: number;
+    min: number;
+    onChange: (v: number) => void;
+    step?: number;
+    value: number;
 }
 
 export const Slider = ({

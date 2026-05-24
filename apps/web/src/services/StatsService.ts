@@ -1,7 +1,8 @@
 import type { ReadingStats, Book, ReadingSession } from "@/types";
+
 import { settingsService } from "@/services/settingsService";
-import { useStatsStore } from "@/store/useStatsStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useStatsStore } from "@/store/useStatsStore";
 import { 
   createEmptyAggregates, 
   applySessionToAggregates, 
@@ -128,15 +129,15 @@ export const statsService = {
   endSession(books: Book[], getToken: () => Promise<string | null>, isPersistent: boolean, endProgressOverride?: number) {
     if (!currentSessionStart || !currentSessionBook) return;
 
-    const duration = Math.round((Date.now() - currentSessionStart) / 60000);
+    const duration = Math.round((Date.now() - currentSessionStart) / 1000);
     const book = books.find((item) => item.id === currentSessionBook);
     const endProgressSource = endProgressOverride ?? book?.progress ?? 0;
     const endProgress = Math.max(0, endProgressSource);
     const pagesRead = Math.max(0, endProgress - currentSessionStartProgress);
 
-    if (duration >= 1 || pagesRead > 0) {
+    if (duration >= 5 || pagesRead > 0) {
       const now = new Date();
-      const localStartHour = now.getHours() - Math.floor(duration / 60);
+      const localStartHour = now.getHours() - Math.floor(duration / 3600);
       const normalizedStartHour = ((localStartHour % 24) + 24) % 24;
 
       const newSession: ReadingSession = {
@@ -144,10 +145,12 @@ export const statsService = {
         bookId: currentSessionBook,
         bookTitle: book?.title || "Unknown Book",
         date: toLocalDateKey(now),
-        ...(currentSessionStartTime ? { startTime: currentSessionStartTime } : {}),
+        startedAt: currentSessionStartTime || now.toISOString(),
+        startTime: currentSessionStartTime || now.toISOString(),
         localStartHour: normalizedStartHour,
         duration,
         pagesRead,
+        device: "web"
       };
 
       const currentSessions = useStatsStore.getState().sessions;
@@ -164,5 +167,20 @@ export const statsService = {
   computeStats(books: Book[]): ReadingStats {
     const dailyGoal = useSettingsStore?.getState()?.dailyGoal || 30;
     return calculateStats(books, aggregates, dailyGoal);
+  },
+
+  async fetchGoals(getToken: () => Promise<string | null>) {
+    try {
+      const token = await getToken();
+      const response = await fetch("/api/goals", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (response.ok) {
+        const goals = await response.json();
+        useStatsStore.getState().setGoals(goals);
+      }
+    } catch (error) {
+      console.warn("Failed to fetch goals", error);
+    }
   }
 };

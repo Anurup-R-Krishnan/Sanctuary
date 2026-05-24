@@ -1,39 +1,40 @@
 
 import type { Book, Bookmark } from "@/types";
-import ReaderHeader from "@/components/reader/ReaderHeader";
-import ReaderFooter from "@/components/reader/ReaderFooter";
-import ReaderSettings from "@/components/reader/ReaderSettings";
+
 import ReaderControls from "@/components/reader/ReaderControls";
+import ReaderFooter from "@/components/reader/ReaderFooter";
+import ReaderHeader from "@/components/reader/ReaderHeader";
+import ReaderSettings from "@/components/reader/ReaderSettings";
 
 interface ReaderOverlayProps {
   book: Book;
-  showUI: boolean;
-  showSettings: boolean;
-  showControls: boolean;
-  isLoading: boolean;
-  currentPage: number;
-  totalPages: number;
-  readingTime: number;
-  isBookmarked: boolean;
-  currentCfi: string;
-  toc: Array<{ id?: string | undefined; href: string; label: string; subitems?: Array<{ id?: string | undefined; href: string; label: string }> | undefined }>;
   bookmarks: Bookmark[];
+  currentCfi: string;
+  currentPage: number;
+  isBookmarked: boolean;
   isFullscreen: boolean;
+  isLoading: boolean;
   onClose: () => void;
+  onCloseControls: () => void;
+  onCloseSettings: () => void;
+  onJumpToBottom: () => void;
+  onJumpToTop: () => void;
+  onNavigate: (href: string) => void;
+  onNextPage: () => void;
+  onPageChange: (page: number) => void;
+  onPrevPage: () => void;
+  onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
   onToggleBookmark: () => void;
-  onToggleTOC: () => void;
-  onToggleSettings: () => void;
   onToggleControls: () => void;
   onToggleFullscreen: () => void;
-  onNextPage: () => void;
-  onPrevPage: () => void;
-  onNavigate: (href: string) => void;
-  onJumpToTop: () => void;
-  onJumpToBottom: () => void;
-  onPageChange: (page: number) => void;
-  onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
-  onCloseSettings: () => void;
-  onCloseControls: () => void;
+  onToggleSettings: () => void;
+  onToggleTOC: () => void;
+  readingTime: number;
+  showControls: boolean;
+  showSettings: boolean;
+  showUI: boolean;
+  toc: Array<{ id?: string | undefined; href: string; label: string; subitems?: Array<{ id?: string | undefined; href: string; label: string }> | undefined }>;
+  totalPages: number;
 }
 
 function ReaderOverlay(props: ReaderOverlayProps) {

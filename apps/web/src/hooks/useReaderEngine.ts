@@ -1,6 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
 import type { RefObject } from "react";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+
 import type { Book } from "@/types";
+
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
 interface UseReaderEngineProps {

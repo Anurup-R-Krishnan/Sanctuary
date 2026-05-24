@@ -1,4 +1,5 @@
 import { create } from "zustand";
+
 import type { Book, FilterOption, SortOption } from "@/types";
 
 type BookStoreState = {

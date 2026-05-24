@@ -1,6 +1,7 @@
 import { useCallback, useRef, useEffect } from "react";
-import { useReaderProgressStore } from "@/store/useReaderProgressStore";
+
 import { libraryService } from "@/services/LibraryService";
+import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 
 export function useProgressSync(getToken: () => Promise<string | null>, isPersistent: boolean) {
   const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);

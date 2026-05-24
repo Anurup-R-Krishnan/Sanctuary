@@ -1,11 +1,11 @@
 import React from "react";
 
 interface StatCardProps {
+  accent?: boolean;
   icon: React.ElementType;
   label: string;
-  value: string | number;
   subtext?: string;
-  accent?: boolean;
+  value: string | number;
 }
 
 export const StatCard = ({

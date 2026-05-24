@@ -1,15 +1,16 @@
-import type { LibraryItemV2 } from "@sanctuary/core";
-import type { Book } from "@/types";
-import { readJsonSafely, buildAuthHeaders, encodeId } from "./http";
-import { API } from "./api";
+import type { Book, LibraryItem } from "@/types";
+
 import { getBookById } from "@/utils/db";
+
+import { API } from "./api";
+import { readJsonSafely, buildAuthHeaders, encodeId } from "./http";
 
 export const bookService = {
     async getBooks(token?: string): Promise<Book[]> {
         const headers = buildAuthHeaders(token);
 
         const res = await fetch(API.LIBRARY, { headers });
-        const books = (await readJsonSafely<LibraryItemV2[] | null>(res, "Failed to fetch books")) || [];
+        const books = (await readJsonSafely<LibraryItem[] | null>(res, "Failed to fetch books")) || [];
         const bookmarkIdFromCfi = (bookId: string, cfi: string) => `${bookId}:${encodeURIComponent(cfi)}`;
         return books.map((b) => ({
             id: b.id,
@@ -98,35 +99,33 @@ export const bookService = {
         return data.coverUrl;
     },
 
-    async updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void> {
+    async _patchBook(id: string, body: unknown, token?: string, errorMsg: string = "Failed to update book"): Promise<void> {
         const headers = { ...buildAuthHeaders(token), "Content-Type": "application/json" };
         const res = await fetch(`${API.LIBRARY}?id=${encodeId(id)}`, {
             method: "PATCH",
             headers,
-            body: JSON.stringify({
-                title: updates.title,
-                author: updates.author,
-                coverUrl: updates.coverUrl,
-                progress: updates.progress,
-                totalPages: updates.totalPages,
-                lastLocation: updates.lastLocation,
-                favorite: updates.isFavorite,
-                bookmarks: updates.bookmarks?.map((bm) => ({ cfi: bm.cfi, title: bm.title })),
-            }),
+            body: JSON.stringify(body),
         });
-        await readJsonSafely<{ success: boolean }>(res, "Failed to update book");
+        await readJsonSafely<{ success: boolean }>(res, errorMsg);
+    },
+
+    async updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void> {
+        return this._patchBook(id, {
+            title: updates.title,
+            author: updates.author,
+            coverUrl: updates.coverUrl,
+            progress: updates.progress,
+            totalPages: updates.totalPages,
+            lastLocation: updates.lastLocation,
+            favorite: updates.isFavorite,
+            bookmarks: updates.bookmarks?.map((bm) => ({ cfi: bm.cfi, title: bm.title })),
+        }, token);
     },
 
     async updateBookProgress(id: string, progress: number, lastLocation: string, token?: string): Promise<void> {
-        const headers = { ...buildAuthHeaders(token), "Content-Type": "application/json" };
-        const res = await fetch(`${API.LIBRARY}?id=${encodeId(id)}`, {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify({
-                progress,
-                lastLocation,
-            }),
-        });
-        await readJsonSafely<{ success: boolean }>(res, "Failed to update reading progress");
+        return this._patchBook(id, {
+            progress,
+            lastLocation,
+        }, token, "Failed to update reading progress");
     }
 };

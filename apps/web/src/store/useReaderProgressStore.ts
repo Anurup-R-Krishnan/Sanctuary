@@ -2,15 +2,15 @@ import { create } from "zustand";
 
 interface ActiveProgress {
   bookId: string;
-  progress: number;
   location: string;
+  progress: number;
 }
 
 interface ReaderProgressState {
   active: ActiveProgress | null;
+  clearActiveBook: () => void;
   setActiveBook: (bookId: string, progress: number, location: string) => void;
   updateActiveProgress: (bookId: string, progress: number, location: string) => void;
-  clearActiveBook: () => void;
 }
 
 export const useReaderProgressStore = create<ReaderProgressState>((set, get) => ({

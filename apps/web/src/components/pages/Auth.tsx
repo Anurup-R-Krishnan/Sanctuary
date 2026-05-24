@@ -1,5 +1,6 @@
 
 import { User, BookOpen } from "lucide-react";
+
 import { SignIn } from "@/hooks/useAuth";
 
 interface AuthProps {

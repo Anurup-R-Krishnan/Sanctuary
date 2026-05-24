@@ -1,6 +1,7 @@
-import React from "react";
-import type { Badge } from "@/types";
 import { Flame, Trophy, BookOpen, Target, Zap, Award, Star } from "lucide-react";
+import React from "react";
+
+import type { Badge } from "@/types";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   flame: Flame,

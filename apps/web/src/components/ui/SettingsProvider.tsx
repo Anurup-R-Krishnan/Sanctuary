@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+
 import { useCallback, useEffect, useRef } from "react";
-import { settingsService } from "@/services/settingsService";
+
 import { useAuth } from "@/hooks/useAuth";
+import { settingsService } from "@/services/settingsService";
 import {
   useSettingsStore,
   LOCAL_SETTINGS_KEY,

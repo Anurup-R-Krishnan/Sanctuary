@@ -1,9 +1,10 @@
-import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+
 import { AlertCircle, RotateCcw } from "lucide-react";
+import { Component } from "react";
 
 interface Props { children: ReactNode; }
-interface State { hasError: boolean; error?: Error | null; }
+interface State { error?: Error | null; hasError: boolean; }
 
 export class ErrorBoundary extends Component<Props, State> {
   public override state: State = {

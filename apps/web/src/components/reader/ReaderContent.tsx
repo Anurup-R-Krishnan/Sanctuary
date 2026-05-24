@@ -1,5 +1,5 @@
-import React from "react";
 import { BookOpen } from "lucide-react";
+import React from "react";
 
 interface ReaderContentProps {
   containerRef: React.RefObject<HTMLDivElement | null>;

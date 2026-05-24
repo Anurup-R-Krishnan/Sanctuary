@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
     Palette,
     Target,
@@ -11,17 +10,20 @@ import {
     Bell,
     ChartLine,
     Droplets,
+    Type,
+    CircleDashed
 } from "lucide-react";
-import { useSettingsShallow } from "@/store/useSettingsStore";
+import React, { useState } from "react";
 
+import { ColorSwatch } from "@/components/settings/ColorSwatch";
+import { Section } from "@/components/settings/Section";
 // Extracted Components
 import { ShortcutItem } from "@/components/settings/ShortcutItem";
-import { Toggle } from "@/components/settings/Toggle";
 import { Slider } from "@/components/settings/Slider";
-import { Section } from "@/components/settings/Section";
-import { ColorSwatch } from "@/components/settings/ColorSwatch";
+import { Toggle } from "@/components/settings/Toggle";
+import { useSettingsShallow } from "@/store/useSettingsStore";
 
-type Tab = "colors" | "shortcuts" | "goals";
+type Tab = "colors" | "typography" | "shortcuts" | "goals";
 
 const COLOR_PRESETS = [
     { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
@@ -37,6 +39,10 @@ function SettingsView() {
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
         readerAccent, setReaderAccent,
+        fontSize, setFontSize,
+        lineHeight, setLineHeight,
+        maxTextWidth, setMaxTextWidth,
+        reduceMotion, setReduceMotion,
         keybinds, setKeybinds,
         dailyGoal, setDailyGoal,
         weeklyGoal, setWeeklyGoal,
@@ -51,6 +57,14 @@ function SettingsView() {
         setReaderBackground: state.setReaderBackground,
         readerAccent: state.readerAccent,
         setReaderAccent: state.setReaderAccent,
+        fontSize: state.fontSize,
+        setFontSize: state.setFontSize,
+        lineHeight: state.lineHeight,
+        setLineHeight: state.setLineHeight,
+        maxTextWidth: state.maxTextWidth,
+        setMaxTextWidth: state.setMaxTextWidth,
+        reduceMotion: state.reduceMotion,
+        setReduceMotion: state.setReduceMotion,
         keybinds: state.keybinds,
         setKeybinds: state.setKeybinds,
         dailyGoal: state.dailyGoal,
@@ -68,6 +82,7 @@ function SettingsView() {
 
     const tabs = [
         { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },
+        { id: "typography" as Tab, label: "Type", icon: Type, description: "Layout" },
         { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
         { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
     ];
@@ -128,12 +143,18 @@ function SettingsView() {
             </div>
 
             {/* Global Interface Toggles */}
-            <div className="mt-4">
+            <div className="mt-4 grid sm:grid-cols-2 gap-4">
                 <Toggle
                     checked={showFloatingCapsule}
                     onChange={setShowFloatingCapsule}
-                    label="Floating Capsule (bottom-right)"
-                    sublabel="Show page/time capsule in reader"
+                    label="Floating Capsule"
+                    sublabel="Show page/time capsule"
+                />
+                <Toggle
+                    checked={reduceMotion}
+                    onChange={setReduceMotion}
+                    label="Reduce Motion"
+                    sublabel="Simplify animations"
                 />
             </div>
 
@@ -187,6 +208,46 @@ function SettingsView() {
                                     </label>
                                 ))}
                             </div>
+                        </Section>
+                    </>
+                )}
+
+                {activeTab === "typography" && (
+                    <>
+                        <Section title="Typography" icon={Type}>
+                            <Slider
+                                label="Font Size"
+                                value={fontSize}
+                                onChange={setFontSize}
+                                min={12}
+                                max={32}
+                                step={1}
+                                displayValue={`${fontSize}px`}
+                            />
+                            <Slider
+                                label="Line Height"
+                                value={lineHeight}
+                                onChange={setLineHeight}
+                                min={1.1}
+                                max={2.2}
+                                step={0.05}
+                                displayValue={lineHeight.toFixed(2)}
+                            />
+                            <Slider
+                                label="Max Text Width"
+                                value={maxTextWidth}
+                                onChange={setMaxTextWidth}
+                                min={40}
+                                max={200}
+                                step={5}
+                                displayValue={`${maxTextWidth}ch`}
+                            />
+                        </Section>
+
+                        <Section title="Interface" icon={CircleDashed}>
+                             <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">
+                                These settings affect the overall interface responsiveness and accessibility.
+                            </p>
                         </Section>
                     </>
                 )}

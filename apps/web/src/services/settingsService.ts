@@ -1,5 +1,5 @@
-import { logErrorOnce, readJsonSafely, buildAuthHeaders } from "./http";
 import { API } from "./api";
+import { logErrorOnce, readJsonSafely, buildAuthHeaders } from "./http";
 
 type SettingsMap = Record<string, unknown>;
 

@@ -1,11 +1,16 @@
 import { create } from "zustand";
-import type { ReadingStats, ReadingSession } from "@/types";
+
+import type { ReadingStats, ReadingSession, ReadingGoals } from "@/types";
+
 import { DEFAULT_WEEKLY_DATA, DEFAULT_PERSONALITY, DEFAULT_DAILY_GOAL } from "@/types";
 
 type StatsStoreState = {
   stats: ReadingStats;
+  goals: ReadingGoals | null;
+  goalsStale: boolean;
   sessions: ReadingSession[];
   setStats: (stats: ReadingStats) => void;
+  setGoals: (goals: ReadingGoals | null, stale?: boolean) => void;
   setSessions: (sessions: ReadingSession[]) => void;
   addSession: (session: ReadingSession) => void;
 };
@@ -33,9 +38,12 @@ const emptyStats: ReadingStats = {
 
 export const useStatsStore = create<StatsStoreState>((set) => ({
   stats: emptyStats,
+  goals: null,
+  goalsStale: false,
   sessions: [],
 
   setStats: (stats) => set({ stats }),
+  setGoals: (goals, stale = false) => set({ goals, goalsStale: stale }),
   setSessions: (sessions) => set({ sessions }),
   addSession: (session) => set((state) => ({ sessions: [...state.sessions, session] })),
 }));
