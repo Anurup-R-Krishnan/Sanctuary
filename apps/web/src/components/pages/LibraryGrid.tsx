@@ -20,6 +20,25 @@ interface LibraryGridProps {
   toggleFavorite: (id: string) => void;
 }
 
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: "recent", label: "Recently Opened" },
+  { value: "title", label: "Title" },
+  { value: "author", label: "Author" },
+  { value: "progress", label: "Progress" },
+  { value: "added", label: "Date Added" },
+];
+
+const FILTER_OPTIONS: { value: FilterOption; label: string }[] = [
+  { value: "all", label: "All Books" },
+  { value: "favorites", label: "Favorites" },
+  { value: "to-read", label: "To Read" },
+  { value: "reading", label: "Reading" },
+  { value: "finished", label: "Finished" },
+];
+
+const getOptionLabel = <T extends string>(options: Array<{ value: T; label: string }>, value: T) =>
+  options.find((option) => option.value === value)?.label || "";
+
 function LibraryGrid({
   onSelectBook,
   addBook,
@@ -59,6 +78,8 @@ function LibraryGrid({
   const filterRef = useRef<HTMLDivElement>(null);
   const sortMenuId = "library-sort-menu";
   const filterMenuId = "library-filter-menu";
+  const sortLabel = getOptionLabel(SORT_OPTIONS, sortBy);
+  const filterLabel = getOptionLabel(FILTER_OPTIONS, filterBy);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -68,22 +89,6 @@ function LibraryGrid({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const sortOptions: { value: SortOption; label: string }[] = [
-    { value: "recent", label: "Recently Opened" },
-    { value: "title", label: "Title" },
-    { value: "author", label: "Author" },
-    { value: "progress", label: "Progress" },
-    { value: "added", label: "Date Added" },
-  ];
-
-  const filterOptions: { value: FilterOption; label: string }[] = [
-    { value: "all", label: "All Books" },
-    { value: "favorites", label: "Favorites" },
-    { value: "to-read", label: "To Read" },
-    { value: "reading", label: "Reading" },
-    { value: "finished", label: "Finished" },
-  ];
 
   const displayBooks = useMemo(() => {
     if (!searchTerm) return sortedBooks;
@@ -171,20 +176,20 @@ function LibraryGrid({
                 setShowSortMenu(!showSortMenu);
                 setShowFilterMenu(false);
               }}
-              aria-label={`Sort by: ${sortOptions.find((o) => o.value === sortBy)?.label}`}
+              aria-label={`Sort by: ${sortLabel}`}
               aria-haspopup="menu"
               aria-expanded={showSortMenu}
               aria-controls={showSortMenu ? sortMenuId : undefined}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
             >
               <SortAsc className="w-4 h-4" />
-              <span className="hidden sm:inline">{sortOptions.find((o) => o.value === sortBy)?.label}</span>
+              <span className="hidden sm:inline">{sortLabel}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
             </button>
             <DropdownMenu
               id={sortMenuId}
               show={showSortMenu}
-              options={sortOptions}
+              options={SORT_OPTIONS}
               value={sortBy}
               onSelect={(v) => setSortBy(v as SortOption)}
               onClose={() => setShowSortMenu(false)}
@@ -197,20 +202,20 @@ function LibraryGrid({
                 setShowFilterMenu(!showFilterMenu);
                 setShowSortMenu(false);
               }}
-              aria-label={`Filter by: ${filterOptions.find((o) => o.value === filterBy)?.label}`}
+              aria-label={`Filter by: ${filterLabel}`}
               aria-haspopup="menu"
               aria-expanded={showFilterMenu}
               aria-controls={showFilterMenu ? filterMenuId : undefined}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
             >
               <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">{filterOptions.find((o) => o.value === filterBy)?.label}</span>
+              <span className="hidden sm:inline">{filterLabel}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
             </button>
             <DropdownMenu
               id={filterMenuId}
               show={showFilterMenu}
-              options={filterOptions}
+              options={FILTER_OPTIONS}
               value={filterBy}
               onSelect={(v) => setFilterBy(v as FilterOption)}
               onClose={() => setShowFilterMenu(false)}

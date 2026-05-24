@@ -23,6 +23,7 @@ import { Toggle } from "@/components/settings/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
 type Tab = "colors" | "typography" | "shortcuts" | "goals";
+type ShortcutKey = "nextPage" | "prevPage" | "toggleBookmark" | "toggleFullscreen" | "toggleUI" | "close";
 
 const COLOR_PRESETS = [
     { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
@@ -30,6 +31,28 @@ const COLOR_PRESETS = [
     { id: "sepia", label: "Sepia", fg: "#5C4B37", bg: "#F4ECD8", accent: "#8B7355", icon: Droplets },
     { id: "dark", label: "Ink", fg: "#e8e6e3", bg: "#1a1a1a", accent: "#d4b58b", icon: Moon },
     { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
+] as const;
+
+const TABS = [
+    { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },
+    { id: "typography" as Tab, label: "Type", icon: Type, description: "Layout" },
+    { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
+    { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
+] as const;
+
+const SHORTCUTS: Array<{ key: ShortcutKey; label: string }> = [
+    { key: "nextPage", label: "Next Page" },
+    { key: "prevPage", label: "Previous Page" },
+    { key: "toggleBookmark", label: "Toggle Bookmark" },
+    { key: "toggleFullscreen", label: "Toggle Fullscreen" },
+    { key: "toggleUI", label: "Toggle UI" },
+    { key: "close", label: "Close/Exit" },
+];
+
+const TYPOGRAPHY_SLIDERS = [
+    { key: "fontSize", label: "Font Size", min: 12, max: 32, step: 1 },
+    { key: "lineHeight", label: "Line Height", min: 1.1, max: 2.2, step: 0.05 },
+    { key: "maxTextWidth", label: "Max Text Width", min: 40, max: 200, step: 5 },
 ] as const;
 
 function SettingsView() {
@@ -79,16 +102,14 @@ function SettingsView() {
         resetToDefaults: state.resetToDefaults,
     }));
 
-    const tabs = [
-        { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },
-        { id: "typography" as Tab, label: "Type", icon: Type, description: "Layout" },
-        { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
-        { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
-    ];
+    const typographyValues = {
+        fontSize: { value: fontSize, onChange: setFontSize, displayValue: `${fontSize}px` },
+        lineHeight: { value: lineHeight, onChange: setLineHeight, displayValue: lineHeight.toFixed(2) },
+        maxTextWidth: { value: maxTextWidth, onChange: setMaxTextWidth, displayValue: `${maxTextWidth}ch` },
+    };
 
     return (
         <div className="page-narrow page-stack">
-            {/* Hero Header */}
             <div className="rounded-3xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
@@ -113,10 +134,9 @@ function SettingsView() {
                 </div>
             </div>
 
-            {/* Premium Tab Navigation */}
             <div className="relative p-1.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-2xl">
                 <div className="flex gap-1">
-                    {tabs.map((tab) => {
+                    {TABS.map((tab) => {
                         const isActive = activeTab === tab.id;
                         return (
                             <button
@@ -141,7 +161,6 @@ function SettingsView() {
                 </div>
             </div>
 
-            {/* Global Interface Toggles */}
             <div className="mt-4 grid sm:grid-cols-2 gap-4">
                 <Toggle
                     checked={showFloatingCapsule}
@@ -157,7 +176,6 @@ function SettingsView() {
                 />
             </div>
 
-            {/* Tab Content */}
             <div className="space-y-6 animate-fadeIn" key={activeTab}>
                 {activeTab === "colors" && (
                     <>
@@ -214,33 +232,21 @@ function SettingsView() {
                 {activeTab === "typography" && (
                     <>
                         <Section title="Typography" icon={Type}>
-                            <Slider
-                                label="Font Size"
-                                value={fontSize}
-                                onChange={setFontSize}
-                                min={12}
-                                max={32}
-                                step={1}
-                                displayValue={`${fontSize}px`}
-                            />
-                            <Slider
-                                label="Line Height"
-                                value={lineHeight}
-                                onChange={setLineHeight}
-                                min={1.1}
-                                max={2.2}
-                                step={0.05}
-                                displayValue={lineHeight.toFixed(2)}
-                            />
-                            <Slider
-                                label="Max Text Width"
-                                value={maxTextWidth}
-                                onChange={setMaxTextWidth}
-                                min={40}
-                                max={200}
-                                step={5}
-                                displayValue={`${maxTextWidth}ch`}
-                            />
+                            {TYPOGRAPHY_SLIDERS.map((slider) => {
+                                const control = typographyValues[slider.key];
+                                return (
+                                    <Slider
+                                        key={slider.key}
+                                        label={slider.label}
+                                        value={control.value}
+                                        onChange={control.onChange}
+                                        min={slider.min}
+                                        max={slider.max}
+                                        step={slider.step}
+                                        displayValue={control.displayValue}
+                                    />
+                                );
+                            })}
                         </Section>
 
                         <Section title="Interface" icon={CircleDashed}>
@@ -259,36 +265,14 @@ function SettingsView() {
                                     Customize keyboard shortcuts for reading navigation.
                                 </div>
                                 <div className="space-y-3">
-                                    <ShortcutItem
-                                        label="Next Page"
-                                        keys={keybinds.nextPage}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, nextPage: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Previous Page"
-                                        keys={keybinds.prevPage}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, prevPage: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Toggle Bookmark"
-                                        keys={keybinds.toggleBookmark}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, toggleBookmark: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Toggle Fullscreen"
-                                        keys={keybinds.toggleFullscreen}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, toggleFullscreen: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Toggle UI"
-                                        keys={keybinds.toggleUI}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, toggleUI: keys })}
-                                    />
-                                    <ShortcutItem
-                                        label="Close/Exit"
-                                        keys={keybinds.close}
-                                        onChange={(keys) => setKeybinds({ ...keybinds, close: keys })}
-                                    />
+                                    {SHORTCUTS.map((shortcut) => (
+                                        <ShortcutItem
+                                            key={shortcut.key}
+                                            label={shortcut.label}
+                                            keys={keybinds[shortcut.key]}
+                                            onChange={(keys) => setKeybinds({ ...keybinds, [shortcut.key]: keys })}
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         </Section>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import type { Book } from "@/types";
 
 import { useSettings } from "@/store/useSettingsStore";
+import { clampPercent } from "@/utils/number";
 
 type BookCardVariant = "default" | "compact" | "featured";
 
@@ -15,8 +16,6 @@ interface BookCardProps {
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
-
-const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
 const getBookProgressPercent = (book: Book) => {
   const totalPages = Math.max(1, book.totalPages || 100);

@@ -9,6 +9,45 @@ import { ProgressRing } from "@/components/stats/ProgressRing";
 import { StatCard } from "@/components/stats/StatCard";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
+import { clampPercent } from "@/utils/number";
+
+type StatsTab = "overview" | "charts" | "badges" | "insights";
+
+const TABS = [
+  { id: "overview" as StatsTab, label: "Overview", icon: BarChart3 },
+  { id: "charts" as StatsTab, label: "Charts", icon: PieChart },
+  { id: "badges" as StatsTab, label: "Badges", icon: Trophy },
+  { id: "insights" as StatsTab, label: "Insights", icon: Zap },
+] as const;
+
+function GoalProgress({
+  colorClassName,
+  label,
+  targetMinutes,
+  totalMinutes,
+}: {
+  colorClassName: string;
+  label: string;
+  targetMinutes: number;
+  totalMinutes: number;
+}) {
+  const progress = targetMinutes > 0 ? clampPercent((totalMinutes / targetMinutes) * 100) : 0;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">{label}</span>
+        <span className="text-xs font-bold text-light-text dark:text-dark-text">{totalMinutes} / {targetMinutes}m</span>
+      </div>
+      <div className="h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${colorClassName}`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 function StatsView() {
   const { stats, goals, goalsStale } = useStatsStore(useShallow((state) => ({
@@ -28,16 +67,29 @@ function StatsView() {
     setWeeklyGoal(weekly);
   };
   
-  const [activeTab, setActiveTab] = useState<"overview" | "charts" | "badges" | "insights">("overview");
+  const [activeTab, setActiveTab] = useState<StatsTab>("overview");
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
-
-  const tabs = [
-    { id: "overview", label: "Overview", icon: BarChart3 },
-    { id: "charts", label: "Charts", icon: PieChart },
-    { id: "badges", label: "Badges", icon: Trophy },
-    { id: "insights", label: "Insights", icon: Zap },
-  ] as const;
+  const dailyProgressPercent = dailyGoal > 0 ? clampPercent((stats.dailyProgress / dailyGoal) * 100) : 0;
+  const activeReadingDays = stats.weeklyData.filter((d) => d.minutes > 0).length;
+  const averageSessionMinutes = stats.totalReadingTime > 0
+    ? Math.round(stats.totalReadingTime / Math.max(activeReadingDays * 4, 1))
+    : 0;
+  const completionRate = stats.totalBooksInLibrary > 0
+    ? `${clampPercent((stats.totalBooksRead / stats.totalBooksInLibrary) * 100)}%`
+    : "N/A";
+  const insights = [
+    { icon: BookOpen, title: "Completion Rate", value: completionRate, desc: "Books finished" },
+    { icon: Clock, title: "Avg Session", value: `${averageSessionMinutes} min`, desc: "Per sitting" },
+    { icon: TrendingUp, title: "Pages/Session", value: `${stats.averageReadingSpeed > 0 ? Math.round(stats.averageReadingSpeed / 2) : 0}`, desc: "Average" },
+    { icon: Target, title: "Today's Goal", value: `${dailyProgressPercent}%`, desc: "Progress" },
+  ];
+  const milestones = [
+    { icon: BookOpen, title: "5 Books", progress: stats.totalBooksRead, target: 5, show: stats.totalBooksRead < 5 },
+    { icon: Flame, title: "7 Day Streak", progress: stats.currentStreak, target: 7, show: stats.currentStreak < 7 },
+    { icon: Calendar, title: "100 Pages", progress: stats.totalPagesRead, target: 100, show: stats.totalPagesRead < 100 },
+    { icon: Clock, title: "10 Hours", progress: stats.totalReadingTime, target: 600, show: stats.totalReadingTime < 600 },
+  ].filter((milestone) => milestone.show);
 
   return (
     <div className="page-narrow page-stack">
@@ -56,7 +108,7 @@ function StatsView() {
       </div>
 
       <div className="flex gap-0.5 p-0.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-lg">
-        {tabs.map((tab) => (
+        {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -80,10 +132,10 @@ function StatsView() {
             </div>
             <div className="flex items-center gap-5">
               <div className="relative">
-                <ProgressRing progress={(stats.dailyProgress / dailyGoal) * 100} size={80} stroke={6} />
+                <ProgressRing progress={dailyProgressPercent} size={80} stroke={6} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-lg font-bold text-light-text dark:text-dark-text tabular-nums">
-                    {Math.round((stats.dailyProgress / dailyGoal) * 100)}%
+                    {dailyProgressPercent}%
                   </span>
                 </div>
               </div>
@@ -109,30 +161,18 @@ function StatsView() {
                 {goalsStale && <span className="text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 uppercase font-bold tracking-wider">Offline</span>}
               </div>
               <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">Daily</span>
-                    <span className="text-xs font-bold text-light-text dark:text-dark-text">{goals.day.totalMinutes} / {goals.day.targetMinutes}m</span>
-                  </div>
-                  <div className="h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(100, (goals.day.totalMinutes / goals.day.targetMinutes) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">Weekly</span>
-                    <span className="text-xs font-bold text-light-text dark:text-dark-text">{goals.week.totalMinutes} / {goals.week.targetMinutes}m</span>
-                  </div>
-                  <div className="h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-amber-500 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(100, (goals.week.totalMinutes / goals.week.targetMinutes) * 100)}%` }}
-                    />
-                  </div>
-                </div>
+                <GoalProgress
+                  label="Daily"
+                  totalMinutes={goals.day.totalMinutes}
+                  targetMinutes={goals.day.targetMinutes}
+                  colorClassName="bg-light-accent dark:bg-dark-accent"
+                />
+                <GoalProgress
+                  label="Weekly"
+                  totalMinutes={goals.week.totalMinutes}
+                  targetMinutes={goals.week.targetMinutes}
+                  colorClassName="bg-amber-500"
+                />
               </div>
             </div>
           )}
@@ -285,32 +325,7 @@ function StatsView() {
           <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
             <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Insights</h3>
             <div className="space-y-3">
-              {[
-                {
-                  icon: BookOpen,
-                  title: "Completion Rate",
-                  value: stats.totalBooksInLibrary > 0 ? `${Math.round((stats.totalBooksRead / stats.totalBooksInLibrary) * 100)}%` : "N/A",
-                  desc: "Books finished",
-                },
-                {
-                  icon: Clock,
-                  title: "Avg Session",
-                  value: `${stats.totalReadingTime > 0 ? Math.round(stats.totalReadingTime / Math.max(stats.weeklyData.filter((d) => d.minutes > 0).length * 4, 1)) : 0} min`,
-                  desc: "Per sitting",
-                },
-                {
-                  icon: TrendingUp,
-                  title: "Pages/Session",
-                  value: `${stats.averageReadingSpeed > 0 ? Math.round(stats.averageReadingSpeed / 2) : 0}`,
-                  desc: "Average",
-                },
-                {
-                  icon: Target,
-                  title: "Today's Goal",
-                  value: `${Math.round((stats.dailyProgress / dailyGoal) * 100)}%`,
-                  desc: "Progress",
-                },
-              ].map((item) => (
+              {insights.map((item) => (
                 <div key={item.title} className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
                     <item.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
@@ -328,14 +343,7 @@ function StatsView() {
           <div className="p-5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
             <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-4">Milestones</h3>
             <div className="space-y-3">
-              {[
-                { icon: BookOpen, title: "5 Books", progress: stats.totalBooksRead, target: 5, show: stats.totalBooksRead < 5 },
-                { icon: Flame, title: "7 Day Streak", progress: stats.currentStreak, target: 7, show: stats.currentStreak < 7 },
-                { icon: Calendar, title: "100 Pages", progress: stats.totalPagesRead, target: 100, show: stats.totalPagesRead < 100 },
-                { icon: Clock, title: "10 Hours", progress: stats.totalReadingTime, target: 600, show: stats.totalReadingTime < 600 },
-              ]
-                .filter((m) => m.show)
-                .map((m) => (
+              {milestones.map((m) => (
                   <div key={m.title} className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
                       <m.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
@@ -350,7 +358,7 @@ function StatsView() {
                       <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all"
-                          style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }}
+                          style={{ width: `${clampPercent((m.progress / m.target) * 100)}%` }}
                         />
                       </div>
                     </div>
