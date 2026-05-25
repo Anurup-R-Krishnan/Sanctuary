@@ -1,23 +1,23 @@
 export interface RelocationPayload {
   cfi: string;
-  href?: string;
-  progress: number;
   chapterTitle: string;
+  href?: string;
   page: number;
+  progress: number;
   totalPages: number;
 }
 
 export interface ProgressSnapshot {
   page: number;
-  totalPages: number;
   progressPercent: number;
+  totalPages: number;
 }
 
 export interface RelocationClockState {
   atMs: number;
+  href?: string;
   page: number;
   totalPages: number;
-  href?: string;
 }
 
 export function normalizeHref(value?: string) {

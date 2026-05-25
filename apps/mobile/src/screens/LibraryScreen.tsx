@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AppState, View, Text, FlatList, Pressable, StyleSheet } from "react-native";
-import { TopBar } from "../components/TopBar";
+
 import { StaleDataNotice } from "../components/StaleDataNotice";
+import { TopBar } from "../components/TopBar";
+import { loadLibraryWithFallback } from "../services/library";
 import { useAppStore } from "../state/useAppStore";
 import { theme } from "../theme/tokens";
-import { loadLibraryWithFallback } from "../services/library";
 
 export function LibraryScreen() {
   const mode = useAppStore((s) => s.theme);
@@ -57,7 +58,7 @@ export function LibraryScreen() {
             <Text style={[styles.progress, { color: c.accent }]}>{item.progressPercent}%</Text>
           </Pressable>
         )}
-        ListEmptyComponent={<Text style={{ color: c.muted, paddingHorizontal: 16 }}>No books yet. Upload in existing web app or API v2.</Text>}
+        ListEmptyComponent={<Text style={{ color: c.muted, paddingHorizontal: 16 }}>No books yet. Upload in existing web app or via the API.</Text>}
       />
     </View>
   );

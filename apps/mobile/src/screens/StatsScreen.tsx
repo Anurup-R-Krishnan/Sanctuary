@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AppState, View, Text, StyleSheet, Pressable } from "react-native";
-import { TopBar } from "../components/TopBar";
+
 import { StaleDataNotice } from "../components/StaleDataNotice";
+import { TopBar } from "../components/TopBar";
 import { useAppStore } from "../state/useAppStore";
+import { sharedStyles } from "../theme/sharedStyles";
 import { theme } from "../theme/tokens";
-import { loadGoalsWithFallback } from "../services/goals";
 
 export function StatsScreen() {
   const mode = useAppStore((s) => s.theme);
@@ -36,10 +37,10 @@ export function StatsScreen() {
   }, [refreshGoals]);
 
   return (
-    <View style={[styles.page, { backgroundColor: c.background }]}> 
+    <View style={[sharedStyles.page, { backgroundColor: c.background }]}> 
       <TopBar />
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: c.text }]}>Reading Stats</Text>
+      <View style={sharedStyles.content}>
+        <Text style={[sharedStyles.title, { color: c.text, marginBottom: 10 }]}>Reading Stats</Text>
         <Text style={[styles.meta, { color: c.muted }]}>Reading now: {active}</Text>
         <Text style={[styles.meta, { color: c.muted }]}>Completed: {completed}</Text>
         <Text style={[styles.meta, { color: c.text, marginTop: 12 }]}>
@@ -56,8 +57,8 @@ export function StatsScreen() {
         {goalsStale && (
           <StaleDataNotice message="Offline stats shown" color={c.muted} cachedAt={goalsCachedAt} />
         )}
-        <Pressable style={[styles.button, { backgroundColor: c.accent }]} onPress={() => void refreshGoals()} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? "Refreshing..." : "Refresh stats"}</Text>
+        <Pressable style={[sharedStyles.button, { backgroundColor: c.accent, marginTop: 14 }]} onPress={() => void refreshGoals()} disabled={loading}>
+          <Text style={sharedStyles.buttonText}>{loading ? "Refreshing..." : "Refresh stats"}</Text>
         </Pressable>
       </View>
     </View>
@@ -65,10 +66,5 @@ export function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1 },
-  content: { padding: 16 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 10 },
-  meta: { fontSize: 16, marginBottom: 8 },
-  button: { marginTop: 14, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, alignSelf: "flex-start" },
-  buttonText: { color: "white", fontWeight: "700" }
+  meta: { fontSize: 16, marginBottom: 8 }
 });

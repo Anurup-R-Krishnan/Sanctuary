@@ -4,11 +4,11 @@ import { SYNC_TIMING } from "@sanctuary/core";
 export type SyncState = "idle" | "syncing" | "error";
 
 export interface SyncQueueOptions<T> {
-  storageKey: string;
-  onStateChange?: (state: SyncState) => void;
-  flush: (items: T[]) => Promise<void>;
-  serialize: (item: T) => unknown;
   deserialize: (item: unknown) => T | null;
+  flush: (items: T[]) => Promise<void>;
+  onStateChange?: (state: SyncState) => void;
+  serialize: (item: T) => unknown;
+  storageKey: string;
 }
 
 export function createSyncQueue<T extends { id: string }>(options: SyncQueueOptions<T>) {

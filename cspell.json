@@ -1,0 +1,38 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "sanctuary",
+    "jscpd",
+    "commitlint",
+    "syncpack",
+    "depcruise",
+    "secretlint",
+    "lhci",
+    "tauri",
+    "epubjs",
+    "zustand",
+    "lucide",
+    "merriweather",
+    "sublabel",
+    "keybinds",
+    "uuidv",
+    "gstatic",
+    "notnull",
+    "dflt",
+    "Menlo",
+    "Csvg",
+    "Crect"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "build",
+    "target",
+    ".betterer.results",
+    "package-lock.json",
+    "**/target/**",
+    "**/dist/**",
+    "**/build/**"
+  ]
+}

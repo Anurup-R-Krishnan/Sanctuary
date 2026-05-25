@@ -14,11 +14,11 @@ export async function listColumns(db: D1Database, table: string): Promise<string
 
 export interface TableColumnInfo {
   cid: number;
-  name: string;
-  type: string;
-  notnull: number;
   dflt_value: string | null;
+  name: string;
+  notnull: number;
   pk: number;
+  type: string;
 }
 
 export async function getTableInfo(db: D1Database, table: string): Promise<TableColumnInfo[]> {

@@ -1,8 +1,9 @@
+import type { ReaderBridgeCommand, ReaderBridgeEvent } from "@sanctuary/reader-webview";
+
+import { readerBridgeBootstrap } from "@sanctuary/reader-webview";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, PanResponder } from "react-native";
 import { WebView } from "react-native-webview";
-import type { ReaderBridgeCommand, ReaderBridgeEvent } from "@sanctuary/reader-webview";
-import { readerBridgeBootstrap } from "@sanctuary/reader-webview";
 
 export interface ReaderBridgeHandle {
   sendCommand: (command: ReaderBridgeCommand) => void;
@@ -10,13 +11,13 @@ export interface ReaderBridgeHandle {
 
 interface ReaderWebViewProps {
   bookUrl?: string | null;
-  initialLocation?: string | null;
   initialBookmarks?: Array<{ cfi: string; title: string }>;
+  initialLocation?: string | null;
+  onBookmarks?: (items: Array<{ cfi: string; title: string }>) => void;
+  onError?: (message: string) => void;
+  onReady?: () => void;
   onRelocated?: (data: { cfi: string; href?: string; progress: number; chapterTitle: string; page: number; totalPages: number }) => void;
   onToc?: (items: Array<{ href: string; label: string }>) => void;
-  onBookmarks?: (items: Array<{ cfi: string; title: string }>) => void;
-  onReady?: () => void;
-  onError?: (message: string) => void;
 }
 
 function safeParseEvent(payload: string): ReaderBridgeEvent | null {
