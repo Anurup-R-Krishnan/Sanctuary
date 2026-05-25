@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable } from "react-native";
+
 import { TopBar } from "../components/TopBar";
 import { useAppStore } from "../state/useAppStore";
+import { sharedStyles } from "../theme/sharedStyles";
 import { theme } from "../theme/tokens";
-import { api } from "../services/api";
 
 export function SettingsScreen() {
   const mode = useAppStore((s) => s.theme);
@@ -14,7 +15,7 @@ export function SettingsScreen() {
   useEffect(() => {
     api.getSettings()
       .then((s) => setMessage(`Preset: ${s.themePreset}, Font: ${s.fontScale}`))
-      .catch(() => setMessage("Unable to load v2 settings"));
+      .catch(() => setMessage("Unable to load settings"));
   }, []);
 
   const applyMinimalPreset = async () => {
@@ -35,7 +36,7 @@ export function SettingsScreen() {
         showPageMeta: true,
         accent: "#B37A4C"
       });
-      setMessage("Preset saved to /api/v2/settings");
+      setMessage("Preset saved to /api/settings");
     } catch {
       setMessage("Failed to save preset");
     } finally {
@@ -44,22 +45,15 @@ export function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.page, { backgroundColor: c.background }]}> 
+    <View style={[sharedStyles.page, { backgroundColor: c.background }]}> 
       <TopBar />
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: c.text }]}>Reader Settings V2</Text>
+      <View style={sharedStyles.content}>
+        <Text style={[sharedStyles.title, { color: c.text }]}>Reader Settings</Text>
         <Text style={{ color: c.muted, marginTop: 8 }}>{message}</Text>
-        <Pressable style={[styles.button, { backgroundColor: c.accent }]} onPress={applyMinimalPreset} disabled={saving}>
-          <Text style={{ color: "white", fontWeight: "700" }}>{saving ? "Saving..." : "Apply Minimal Preset"}</Text>
+        <Pressable style={[sharedStyles.button, { backgroundColor: c.accent }]} onPress={applyMinimalPreset} disabled={saving}>
+          <Text style={sharedStyles.buttonText}>{saving ? "Saving..." : "Apply Minimal Preset"}</Text>
         </Pressable>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  page: { flex: 1 },
-  content: { padding: 16 },
-  title: { fontSize: 24, fontWeight: "700" },
-  button: { marginTop: 20, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignSelf: "flex-start" }
-});

@@ -2,12 +2,12 @@ import React, { useEffect, useRef } from "react";
 import { Animated, View, Text, Pressable, FlatList, StyleSheet } from "react-native";
 
 interface ReaderPanelProps {
-  visible: boolean;
-  title: string;
   items: Array<{ label: string; href?: string; cfi?: string }>;
-  onSelect: (item: { label: string; href?: string; cfi?: string }) => void;
   onClose: () => void;
+  onSelect: (item: { label: string; href?: string; cfi?: string }) => void;
   theme: { surface: string; text: string; muted: string; border: string };
+  title: string;
+  visible: boolean;
 }
 
 export const ReaderPanel: React.FC<ReaderPanelProps> = ({ visible, title, items, onSelect, onClose, theme }) => {

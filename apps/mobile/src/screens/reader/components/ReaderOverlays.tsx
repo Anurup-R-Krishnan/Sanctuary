@@ -1,11 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+
 import { StaleDataNotice } from "../../../components/StaleDataNotice";
 
 interface ReaderOverlaysProps {
-  readerError: string | null;
-  goalsStale: boolean;
   chapterPreview: string | null;
+  goalsStale: boolean;
+  readerError: string | null;
 }
 
 export function ReaderOverlays({ readerError, goalsStale, chapterPreview }: ReaderOverlaysProps) {

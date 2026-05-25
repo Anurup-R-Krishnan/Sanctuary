@@ -1,19 +1,20 @@
+import type { LibraryItem, ReadingGoals } from "@sanctuary/core";
+
 import { create } from "zustand";
-import type { LibraryItemV2, ReadingGoalsV2 } from "@sanctuary/core";
 
 interface AppState {
-  theme: "light" | "dark";
-  library: LibraryItemV2[];
-  libraryStale: boolean;
-  libraryCachedAt: string | null;
-  goals: ReadingGoalsV2 | null;
-  goalsStale: boolean;
+  goals: ReadingGoals | null;
   goalsCachedAt: string | null;
-  selectedBookId: string | null;
-  setTheme: (value: "light" | "dark") => void;
-  setLibrary: (items: LibraryItemV2[], options?: { stale?: boolean; cachedAt?: string | null }) => void;
-  setGoals: (goals: ReadingGoalsV2 | null, options?: { stale?: boolean; cachedAt?: string | null }) => void;
+  goalsStale: boolean;
+  library: LibraryItem[];
+  libraryCachedAt: string | null;
+  libraryStale: boolean;
   selectBook: (bookId: string | null) => void;
+  selectedBookId: string | null;
+  setGoals: (goals: ReadingGoals | null, options?: { stale?: boolean; cachedAt?: string | null }) => void;
+  setLibrary: (items: LibraryItem[], options?: { stale?: boolean; cachedAt?: string | null }) => void;
+  setTheme: (value: "light" | "dark") => void;
+  theme: "light" | "dark";
   updateBookProgress: (bookId: string, progressPercent: number, lastLocation: string) => void;
 }
 

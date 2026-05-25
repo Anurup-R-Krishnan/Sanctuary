@@ -1,21 +1,24 @@
+import type { ReadingSession } from "@sanctuary/core";
+
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Animated, Platform, View, StyleSheet } from "react-native";
-import type { ReadingSessionV2 } from "@sanctuary/core";
-import { LinearGradient } from "expo-linear-gradient";
-import { TopBar } from "../components/TopBar";
-import { ReaderPanel } from "../components/ReaderPanel";
-import { ReaderWebView } from "../reader/ReaderWebView";
+
 import type { ReaderBridgeHandle } from "../reader/ReaderWebView";
-import { ReaderHeader } from "./reader/components/ReaderHeader";
-import { ReaderStatusRows } from "./reader/components/ReaderStatusRows";
-import { ReaderOverlays } from "./reader/components/ReaderOverlays";
-import { useAppStore } from "../state/useAppStore";
-import { theme } from "../theme/tokens";
+
+import { ReaderPanel } from "../components/ReaderPanel";
+import { TopBar } from "../components/TopBar";
+import { ReaderWebView } from "../reader/ReaderWebView";
 import { api } from "../services/api";
-import { createProgressSyncQueue } from "../services/progressSync";
-import { createSessionSyncQueue } from "../services/sessionSync";
 import { loadGoalsWithFallback } from "../services/goals";
 import { loadLibraryWithFallback } from "../services/library";
+import { createProgressSyncQueue } from "../services/progressSync";
+import { createSessionSyncQueue } from "../services/sessionSync";
+import { useAppStore } from "../state/useAppStore";
+import { theme } from "../theme/tokens";
+import { ReaderHeader } from "./reader/components/ReaderHeader";
+import { ReaderOverlays } from "./reader/components/ReaderOverlays";
+import { ReaderStatusRows } from "./reader/components/ReaderStatusRows";
 import {
   findNextChapterLabel,
   toProgressSnapshot,
@@ -24,11 +27,11 @@ import {
 } from "./reader/readerLogic";
 
 interface ActiveSession {
-  id: string;
   bookId: string;
+  id: string;
+  lastPage: number;
   startedAtMs: number;
   startPage: number;
-  lastPage: number;
 }
 
 function createSessionId() {
@@ -142,14 +145,14 @@ export function ReaderScreen() {
     const durationSec = Math.max(0, Math.round((endedAtMs - session.startedAtMs) / 1000));
     const pagesAdvanced = Math.max(0, Math.round(session.lastPage - session.startPage));
     if (durationSec < 5 && pagesAdvanced <= 0) return;
-    const payload: ReadingSessionV2 = {
+    const payload: ReadingSession = {
       id: session.id,
       bookId: session.bookId,
       startedAt: new Date(session.startedAtMs).toISOString(),
       endedAt: new Date(endedAtMs).toISOString(),
-      durationSec,
-      pagesAdvanced,
-      device: Platform.OS === "web" ? "web" : "android"
+      duration: durationSec,
+      pagesRead: pagesAdvanced,
+      device: Platform.OS === "web" ? "web" : (Platform.OS === "ios" ? "ios" : "android")
     };
     sessionSyncRef.current.enqueue(payload);
   };

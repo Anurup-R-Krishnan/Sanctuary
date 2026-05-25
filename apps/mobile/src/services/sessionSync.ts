@@ -1,4 +1,5 @@
-import type { ReadingSessionV2, SanctuaryApiClient } from "@sanctuary/core";
+import type { ReadingSession, SanctuaryApiClient } from "@sanctuary/core";
+
 import { createSyncQueue, type SyncState } from "./syncQueue";
 
 export type { SyncState };
@@ -9,7 +10,7 @@ interface CreateSessionSyncOptions {
 }
 
 export function createSessionSyncQueue(options: CreateSessionSyncOptions) {
-  return createSyncQueue<ReadingSessionV2>({
+  return createSyncQueue<ReadingSession>({
     storageKey: "sanctuary:sessions-queue",
     onStateChange: options.onStateChange,
     flush: async (items) => {
@@ -18,9 +19,9 @@ export function createSessionSyncQueue(options: CreateSessionSyncOptions) {
       }
     },
     serialize: (item) => item,
-    deserialize: (item): ReadingSessionV2 | null => {
-      const s = item as Partial<ReadingSessionV2>;
-      return s?.id && s?.bookId ? (s as ReadingSessionV2) : null;
+    deserialize: (item): ReadingSession | null => {
+      const s = item as Partial<ReadingSession>;
+      return s?.id && s?.bookId ? (s as ReadingSession) : null;
     },
   });
 }

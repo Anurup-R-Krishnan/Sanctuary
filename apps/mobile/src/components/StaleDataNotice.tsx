@@ -2,9 +2,9 @@ import React from "react";
 import { Text, StyleSheet } from "react-native";
 
 interface StaleDataNoticeProps {
-  message: string;
-  color: string;
   cachedAt?: string | null;
+  color: string;
+  message: string;
 }
 
 export function StaleDataNotice({ message, color, cachedAt }: StaleDataNoticeProps) {

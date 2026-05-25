@@ -1,16 +1,17 @@
+import type { LibraryItem, ReadingGoals } from "@sanctuary/core";
+
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import type { LibraryItemV2, ReadingGoalsV2 } from "@sanctuary/core";
 
 interface ReaderHeaderProps {
-  selected?: LibraryItemV2;
-  chapterTitle: string;
-  tocCount: number;
   bookmarkCount: number;
-  goals: ReadingGoalsV2 | null;
+  chapterTitle: string;
+  goals: ReadingGoals | null;
   goalsStale: boolean;
-  onToggleToc: () => void;
   onToggleBookmarks: () => void;
+  onToggleToc: () => void;
+  selected?: LibraryItem;
+  tocCount: number;
 }
 
 export function ReaderHeader({

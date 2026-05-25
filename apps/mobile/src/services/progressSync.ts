@@ -1,16 +1,17 @@
 import type { SanctuaryApiClient } from "@sanctuary/core";
+
 import { createSyncQueue, type SyncState } from "./syncQueue";
 
 export type { SyncState };
 
 export interface ProgressUpdate {
-  id: string;
-  title?: string;
   author?: string;
-  progress?: number;
-  totalPages?: number;
-  lastLocation?: string;
   bookmarks?: Array<{ cfi: string; title: string }>;
+  id: string;
+  lastLocation?: string;
+  progress?: number;
+  title?: string;
+  totalPages?: number;
 }
 
 interface CreateProgressSyncOptions {

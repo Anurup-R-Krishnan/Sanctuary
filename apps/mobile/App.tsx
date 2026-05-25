@@ -1,6 +1,7 @@
-import React from "react";
 import { NavigationContainer, DefaultTheme, DarkTheme } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
+
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { useAppStore } from "./src/state/useAppStore";
 

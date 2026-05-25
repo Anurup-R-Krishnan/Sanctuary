@@ -1,14 +1,15 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+
 import type { SyncState } from "../../../services/progressSync";
 import type { SessionSyncState } from "../../../services/sessionSync";
 
 interface ReaderStatusRowsProps {
-  readingTime: number;
   currentPage: number;
-  totalPages: number;
-  syncState: SyncState;
+  readingTime: number;
   sessionSyncState: SessionSyncState;
+  syncState: SyncState;
+  totalPages: number;
 }
 
 function progressSyncLabel(state: SyncState) {
