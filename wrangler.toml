@@ -3,9 +3,6 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "./apps/web/dist"
 
-[assets]
-directory = "./apps/web/dist"
-
 [[d1_databases]]
 binding = "SANCTUARY_DB"
 database_name = "sanctuary_db"
