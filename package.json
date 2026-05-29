@@ -52,8 +52,6 @@
     ]
   },
   "dependencies": {
-    "@azure/cosmos": "^4.9.1",
-    "@azure/storage-blob": "^12.31.0",
     "@clerk/backend": "^2.31.1",
     "@clerk/clerk-react": "^5.60.2",
     "@testsprite/testsprite-mcp": "^0.0.25",
