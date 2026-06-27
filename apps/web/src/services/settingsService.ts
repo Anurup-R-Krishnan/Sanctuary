@@ -59,14 +59,7 @@ const enqueueSave = async (token?: string) => {
     await drainSaveQueue();
 };
 
-const scheduleSave = (token?: string) => {
-    if (token) pendingSaveToken = token;
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        saveTimeout = null;
-        void enqueueSave();
-    }, 300);
-};
+
 
 const flushOnPageHide = () => {
     if (saveTimeout) {
@@ -124,22 +117,5 @@ export const settingsService = {
     async saveSettings(settings: SettingsMap, token?: string): Promise<void> {
         settingsCache = { ...(settingsCache || {}), ...settings };
         await enqueueSave(token);
-    },
-
-    async getItem<T>(key: string, token?: string): Promise<T | null> {
-        if (!settingsCache) {
-            await this.getSettings(token);
-        }
-        return settingsCache ? (settingsCache[key] as T) : null;
-    },
-
-    async setItem<T>(key: string, value: T, token?: string): Promise<void> {
-        if (!settingsCache) {
-            await this.getSettings(token);
-            if (!settingsCache) settingsCache = {};
-        }
-
-        settingsCache[key] = value;
-        scheduleSave(token);
     }
 };

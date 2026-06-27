@@ -3,18 +3,27 @@ import {
   contentUrl,
   coverKey,
   errorJson,
+  handleOptions,
   json,
   requireUser,
+  CORS_HEADERS,
+  SECURITY_HEADERS,
   type PagesContext,
 } from "../_shared";
-import { ensureBooksSchema } from "../../utils/schemaBootstrap";
+import { getSchemaReady } from "../../utils/schemaCache";
+
+export const onRequestOptions = () => handleOptions();
 
 export async function onRequestGet({ env, params, request }: PagesContext<{ id: string }>): Promise<Response> {
-  return withContentContext(request, env, params as Record<string, string | string[]>, ({ id, user }) => handleGet(env, request, id, user));
+  return withContentContext(request, env, params as Record<string, string | string[]>, ({ id, user }) =>
+    handleGet(env, request, id, user)
+  );
 }
 
 export async function onRequestPut({ env, params, request }: PagesContext<{ id: string }>): Promise<Response> {
-  return withContentContext(request, env, params as Record<string, string | string[]>, ({ id, user }) => handlePut(env, request, id, user));
+  return withContentContext(request, env, params as Record<string, string | string[]>, ({ id, user }) =>
+    handlePut(env, request, id, user)
+  );
 }
 
 async function handleGet(
@@ -31,8 +40,11 @@ async function handleGet(
     if (!cover) return errorJson("Cover not found", 404);
     return new Response(cover.body, {
       headers: {
-        "Cache-Control": "private, max-age=3600",
+        ...CORS_HEADERS,
+        ...SECURITY_HEADERS,
+        "Cache-Control": "private, max-age=86400",
         "Content-Type": cover.httpMetadata?.contentType || "image/jpeg",
+        ...(cover.etag ? { ETag: `"${cover.etag}"` } : {}),
       },
     });
   }
@@ -41,13 +53,24 @@ async function handleGet(
     return json({ url: `${contentUrl(id)}?download=1` });
   }
 
+  const ifNoneMatch = request.headers.get("if-none-match");
   const book = await env.SANCTUARY_BUCKET.get(contentKey(user, id));
   if (!book) return errorJson("Book content not found", 404);
+
+  const etag = book.etag ? `"${book.etag}"` : null;
+  if (etag && ifNoneMatch === etag) {
+    return new Response(null, { status: 304, headers: { ...CORS_HEADERS, ETag: etag } });
+  }
+
   return new Response(book.body, {
     headers: {
-      "Cache-Control": "private, max-age=300",
+      ...CORS_HEADERS,
+      ...SECURITY_HEADERS,
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "private, max-age=600",
       "Content-Disposition": `attachment; filename="${id}.epub"`,
       "Content-Type": book.httpMetadata?.contentType || "application/epub+zip",
+      ...(etag ? { ETag: etag } : {}),
     },
   });
 }
@@ -62,12 +85,10 @@ async function handlePut(
   if (url.searchParams.get("asset") !== "cover") return errorJson("Unsupported content asset", 400);
 
   const contentType = request.headers.get("content-type") || "image/jpeg";
-  await env.SANCTUARY_BUCKET.put(coverKey(user, id), request.body, {
-    httpMetadata: { contentType },
-  });
+  await env.SANCTUARY_BUCKET.put(coverKey(user, id), request.body, { httpMetadata: { contentType } });
 
   const coverUrl = contentUrl(id, "cover");
-  await ensureBooksSchema(env.SANCTUARY_DB);
+  await getSchemaReady(env.SANCTUARY_DB);
   await env.SANCTUARY_DB.prepare("UPDATE books SET cover_url = ?, updated_at = ? WHERE id = ? AND user_id = ?")
     .bind(coverUrl, new Date().toISOString(), id, user)
     .run();
@@ -81,18 +102,9 @@ async function withContentContext(
   params: Record<string, string | string[]>,
   handler: (context: { id: string; user: string }) => Promise<Response>
 ): Promise<Response> {
-  const context = await authorizeContentRequest(request, env, params);
-  return context instanceof Response ? context : handler(context);
-}
-
-async function authorizeContentRequest(
-  request: Request,
-  env: Parameters<typeof requireUser>[1],
-  params: Record<string, string | string[]>
-): Promise<Response | { id: string; user: string }> {
   const user = await requireUser(request, env);
   if (user instanceof Response) return user;
-  return { id: normalizeParam(params.id), user };
+  return handler({ id: normalizeParam(params.id), user });
 }
 
 function normalizeParam(value: string | string[]): string {

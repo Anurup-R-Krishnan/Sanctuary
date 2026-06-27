@@ -50,12 +50,34 @@ export async function ensureSessionsSchema(db: D1Database): Promise<void> {
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL,
       book_id TEXT NOT NULL,
+      book_title TEXT NOT NULL DEFAULT '',
       started_at TEXT NOT NULL,
       ended_at TEXT,
       duration_sec INTEGER NOT NULL DEFAULT 0,
       pages_advanced INTEGER NOT NULL DEFAULT 0,
-      device TEXT NOT NULL DEFAULT 'web'
+      device TEXT NOT NULL DEFAULT 'web',
+      date TEXT NOT NULL DEFAULT '',
+      local_start_hour INTEGER
     )`
+  ).run();
+
+  // Add columns that may be missing from older schema versions.
+  const requiredColumns: Array<{ name: string; sql: string }> = [
+    { name: "book_title", sql: "ALTER TABLE reading_sessions ADD COLUMN book_title TEXT NOT NULL DEFAULT ''" },
+    { name: "date", sql: "ALTER TABLE reading_sessions ADD COLUMN date TEXT NOT NULL DEFAULT ''" },
+    { name: "local_start_hour", sql: "ALTER TABLE reading_sessions ADD COLUMN local_start_hour INTEGER" },
+  ];
+
+  const existingColumns = new Set(await listColumns(db, "reading_sessions"));
+  for (const column of requiredColumns) {
+    if (!existingColumns.has(column.name)) {
+      await db.prepare(column.sql).run();
+    }
+  }
+
+  // Index for fast per-user queries ordered by date.
+  await db.prepare(
+    "CREATE INDEX IF NOT EXISTS idx_sessions_user_date ON reading_sessions(user_id, date DESC)"
   ).run();
 }
 
@@ -116,6 +138,42 @@ export async function ensureBooksSchema(db: D1Database): Promise<void> {
     await db.prepare("CREATE INDEX IF NOT EXISTS idx_books_user_updated ON books(user_id, updated_at DESC)").run();
     await db.prepare("CREATE INDEX IF NOT EXISTS idx_books_user_content_hash ON books(user_id, content_hash)").run();
   }
+
+  // --- FTS5 Virtual Table for Books ---
+  await db.prepare(
+    `CREATE VIRTUAL TABLE IF NOT EXISTS books_fts USING fts5(
+      id UNINDEXED,
+      user_id UNINDEXED,
+      title,
+      author,
+      content='books',
+      content_rowid='rowid'
+    )`
+  ).run();
+
+  // Triggers to keep FTS5 synchronized with books table
+  await db.prepare(
+    `CREATE TRIGGER IF NOT EXISTS books_ai AFTER INSERT ON books BEGIN
+      INSERT INTO books_fts(rowid, id, user_id, title, author)
+      VALUES (new.rowid, new.id, new.user_id, new.title, new.author);
+    END;`
+  ).run();
+
+  await db.prepare(
+    `CREATE TRIGGER IF NOT EXISTS books_ad AFTER DELETE ON books BEGIN
+      INSERT INTO books_fts(books_fts, rowid, id, user_id, title, author)
+      VALUES ('delete', old.rowid, old.id, old.user_id, old.title, old.author);
+    END;`
+  ).run();
+
+  await db.prepare(
+    `CREATE TRIGGER IF NOT EXISTS books_au AFTER UPDATE ON books BEGIN
+      INSERT INTO books_fts(books_fts, rowid, id, user_id, title, author)
+      VALUES ('delete', old.rowid, old.id, old.user_id, old.title, old.author);
+      INSERT INTO books_fts(rowid, id, user_id, title, author)
+      VALUES (new.rowid, new.id, new.user_id, new.title, new.author);
+    END;`
+  ).run();
 }
 
 function createFallbackId(): string {
