@@ -1,6 +1,7 @@
 import type { ReadingStats, Book, ReadingSession } from "@/types";
 
-import { settingsService } from "@/services/settingsService";
+import { API } from "@/services/api";
+import { buildAuthHeaders, readJsonSafely } from "@/services/http";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
 import { 
@@ -11,7 +12,6 @@ import {
 } from "@/utils/stats";
 
 const SESSIONS_KEY = "sanctuary_reading_sessions";
-const REMOTE_SESSIONS_KEY = "readingSessions";
 
 // Internal State (Module Level)
 let aggregates = createEmptyAggregates();
@@ -67,11 +67,25 @@ export const statsService = {
 
     try {
       const token = await getToken();
-      const remote = await settingsService.getItem<ReadingSession[]>(REMOTE_SESSIONS_KEY, token || undefined);
+      const headers = buildAuthHeaders(token || undefined);
+      const res = await fetch(API.SESSIONS, { headers });
+      const remote = await readJsonSafely<ReadingSession[]>(res, "Failed to fetch sessions");
+      
       if (Array.isArray(remote)) {
         const remoteSessions = this.normalizeSessions(remote);
-        useStatsStore.getState().setSessions(remoteSessions);
-        this.rebuildAggregates(remoteSessions);
+        
+        // Merge and deduplicate, preferring remote for overlapping IDs
+        const mergedMap = new Map(localSessions.map((s) => [s.id, s]));
+        for (const s of remoteSessions) {
+          mergedMap.set(s.id, s);
+        }
+        
+        const merged = Array.from(mergedMap.values());
+        merged.sort((a, b) => new Date(b.startTime || b.date).getTime() - new Date(a.startTime || a.date).getTime());
+        
+        useStatsStore.getState().setSessions(merged);
+        this.rebuildAggregates(merged);
+        localStorage.setItem(SESSIONS_KEY, JSON.stringify(merged));
       }
     } catch (error) {
       console.warn("Failed to hydrate remote reading sessions", error);
@@ -107,17 +121,6 @@ export const statsService = {
     sessionIndex = currentIndex;
   },
 
-  async saveSessions(sessions: ReadingSession[], getToken: () => Promise<string | null>, isPersistent: boolean) {
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
-    if (!isPersistent || sessions.length === 0) return;
-    try {
-      const token = await getToken();
-      await settingsService.setItem(REMOTE_SESSIONS_KEY, sessions, token || undefined);
-    } catch (error) {
-      console.warn("Failed to persist remote reading sessions", error);
-    }
-  },
-
   startSession(bookId: string, startProgress = 0) {
     const now = Date.now();
     currentSessionStart = now;
@@ -126,7 +129,7 @@ export const statsService = {
     currentSessionStartProgress = Math.max(0, startProgress);
   },
 
-  endSession(books: Book[], getToken: () => Promise<string | null>, isPersistent: boolean, endProgressOverride?: number) {
+  async endSession(books: Book[], getToken: () => Promise<string | null>, isPersistent: boolean, endProgressOverride?: number) {
     if (!currentSessionStart || !currentSessionBook) return;
 
     const duration = Math.round((Date.now() - currentSessionStart) / 1000);
@@ -139,14 +142,15 @@ export const statsService = {
       const now = new Date();
       const localStartHour = now.getHours() - Math.floor(duration / 3600);
       const normalizedStartHour = ((localStartHour % 24) + 24) % 24;
+      const startedAt = currentSessionStartTime || now.toISOString();
 
       const newSession: ReadingSession = {
         id: crypto.randomUUID(),
         bookId: currentSessionBook,
         bookTitle: book?.title || "Unknown Book",
         date: toLocalDateKey(now),
-        startedAt: currentSessionStartTime || now.toISOString(),
-        startTime: currentSessionStartTime || now.toISOString(),
+        startedAt,
+        startTime: startedAt,
         localStartHour: normalizedStartHour,
         duration,
         pagesRead,
@@ -154,8 +158,35 @@ export const statsService = {
       };
 
       const currentSessions = useStatsStore.getState().sessions;
+      const updatedSessions = [...currentSessions, newSession];
+      
       useStatsStore.getState().addSession(newSession);
-      this.saveSessions([...currentSessions, newSession], getToken, isPersistent);
+      localStorage.setItem(SESSIONS_KEY, JSON.stringify(updatedSessions));
+
+      if (isPersistent) {
+        try {
+          const token = await getToken();
+          const headers = { ...buildAuthHeaders(token || undefined), "Content-Type": "application/json" };
+          
+          await fetch(API.SESSIONS, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              id: newSession.id,
+              bookId: newSession.bookId,
+              bookTitle: newSession.bookTitle,
+              startedAt: newSession.startTime,
+              date: newSession.date,
+              durationSec: newSession.duration,
+              pagesAdvanced: newSession.pagesRead,
+              device: newSession.device,
+              localStartHour: newSession.localStartHour
+            }),
+          });
+        } catch (error) {
+          console.warn("Failed to persist session to backend", error);
+        }
+      }
     }
 
     currentSessionStart = null;
@@ -172,7 +203,7 @@ export const statsService = {
   async fetchGoals(getToken: () => Promise<string | null>) {
     try {
       const token = await getToken();
-      const response = await fetch("/api/goals", {
+      const response = await fetch(API.GOALS, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (response.ok) {

@@ -23,13 +23,26 @@ export interface BookRow {
   updated_at: string;
 }
 
+export const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+} as const;
+
+export const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+} as const;
+
+const BASE_HEADERS = { ...CORS_HEADERS, ...SECURITY_HEADERS };
+
+export const handleOptions = () => new Response(null, { status: 204, headers: CORS_HEADERS });
+
 export const json = (body: unknown, init: ResponseInit = {}) =>
   new Response(JSON.stringify(body), {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
+    headers: { "Content-Type": "application/json", ...BASE_HEADERS, ...init.headers },
   });
 
 export const errorJson = (message: string, status = 400) => json({ error: message }, { status });
@@ -127,3 +140,56 @@ function parseJsonArray(input: string): unknown {
     return [];
   }
 }
+
+// EPUB magic bytes: PK\x03\x04 (ZIP)
+export async function isValidEpub(file: File): Promise<boolean> {
+  const slice = file.slice(0, 4);
+  const buf = await slice.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  return bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
+}
+
+export const MAX_EPUB_BYTES = 150 * 1024 * 1024; // 150 MB
+
+// --- Edge Caching ---
+export async function withEdgeCache(
+  request: Request,
+  cacheKeyModifier: string,
+  fetcher: () => Promise<Response>
+): Promise<Response> {
+  const cache = caches.default;
+  const url = new URL(request.url);
+  url.searchParams.set("_cache", cacheKeyModifier);
+  
+  const cacheKey = new Request(url.toString(), { method: "GET" });
+  const cached = await cache.match(cacheKey);
+  
+  if (cached) {
+    const res = new Response(cached.body, cached);
+    res.headers.set("X-Cache-Status", "HIT");
+    res.headers.set("Access-Control-Allow-Origin", "*");
+    return res;
+  }
+
+  const response = await fetcher();
+  
+  if (response.status === 200) {
+    const responseToCache = new Response(response.clone().body, response);
+    responseToCache.headers.set("Cache-Control", "s-maxage=3600"); 
+    await cache.put(cacheKey, responseToCache);
+  }
+
+  const res = new Response(response.body, response);
+  res.headers.set("X-Cache-Status", "MISS");
+  return res;
+}
+
+export async function purgeEdgeCache(request: Request, cacheKeyModifier: string): Promise<void> {
+  const cache = caches.default;
+  const url = new URL(request.url);
+  url.search = ""; // Strip query params to purge base route
+  url.searchParams.set("_cache", cacheKeyModifier);
+  const cacheKey = new Request(url.toString(), { method: "GET" });
+  await cache.delete(cacheKey);
+}
+

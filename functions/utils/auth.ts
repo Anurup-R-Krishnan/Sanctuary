@@ -1,14 +1,26 @@
+import { verifyToken } from "@clerk/backend";
+
 import type { Env } from "../types";
 
 export async function getUserId(request: Request, env: Env): Promise<string | null> {
-  const authDisabled = env.DISABLE_CLERK_AUTH === "true";
-  if (authDisabled) return "guest-user";
+  if (env.DISABLE_CLERK_AUTH === "true") return "guest-user";
 
-  const auth = request.headers.get("authorization") || "";
+  const auth = request.headers.get("authorization") ?? "";
   if (!auth.startsWith("Bearer ")) return null;
 
-  // Minimal token handling. Replace with Clerk verification middleware if needed.
-  const token = auth.replace("Bearer ", "").trim();
+  const token = auth.slice(7).trim();
   if (!token) return null;
-  return `clerk:${token.slice(0, 16)}`;
+
+  if (!env.CLERK_SECRET_KEY) {
+    console.error("[auth] CLERK_SECRET_KEY not set");
+    return null;
+  }
+
+  try {
+    const payload = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY });
+    return payload.sub ?? null;
+  } catch (err) {
+    console.warn("[auth] Token rejected:", (err as Error)?.message);
+    return null;
+  }
 }
