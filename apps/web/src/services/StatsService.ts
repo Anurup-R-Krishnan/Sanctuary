@@ -75,7 +75,7 @@ export const statsService = {
         const remoteSessions = this.normalizeSessions(remote);
         
         // Merge and deduplicate, preferring remote for overlapping IDs
-        const mergedMap = new Map(localSessions.map((s) => [s.id, s]));
+        const mergedMap = new Map<string, ReadingSession>(localSessions.map((s) => [s.id, s]));
         for (const s of remoteSessions) {
           mergedMap.set(s.id, s);
         }

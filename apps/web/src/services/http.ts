@@ -6,6 +6,13 @@ export function logErrorOnce(key: string, message: string, error: unknown) {
   console.error(message, error);
 }
 
+export class HttpError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
 export async function readJsonSafely<T>(res: Response, fallbackMessage: string): Promise<T> {
   const text = await res.text();
   let parsed: unknown = null;
@@ -23,7 +30,7 @@ export async function readJsonSafely<T>(res: Response, fallbackMessage: string):
     const errMessage = typeof (parsed as { error?: unknown })?.error === "string"
       ? (parsed as { error: string }).error
       : `${fallbackMessage} (${res.status})`;
-    throw new Error(errMessage);
+    throw new HttpError(res.status, errMessage);
   }
   return parsed as T;
 }

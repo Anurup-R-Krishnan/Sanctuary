@@ -85,6 +85,28 @@ async function dbDelete(store: string, key: string): Promise<void> {
   });
 }
 
+async function dbGetAll<T>(store: string): Promise<T[]> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(store, "readonly");
+    bindTxFailure(tx, reject, `Failed to get all from ${store}`);
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve((req.result as T[]) || []);
+    req.onerror = () => reject(new Error(`Failed to get all from ${store}: ${req.error?.message}`));
+  });
+}
+
+async function dbClear(store: string): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(store, "readwrite");
+    bindTxFailure(tx, reject, `Failed to clear ${store}`);
+    const req = tx.objectStore(store).clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(new Error(`Failed to clear ${store}: ${req.error?.message}`));
+  });
+}
+
 export async function putBook(book: Book): Promise<void> {
   return dbPut(BOOKS_STORE, book);
 }
@@ -95,4 +117,12 @@ export async function getBookById(id: string): Promise<Book | null> {
 
 export async function deleteBook(id: string): Promise<void> {
   return dbDelete(BOOKS_STORE, id);
+}
+
+export async function getAllBooks(): Promise<Book[]> {
+  return dbGetAll<Book>(BOOKS_STORE);
+}
+
+export async function clearBooks(): Promise<void> {
+  return dbClear(BOOKS_STORE);
 }

@@ -11,7 +11,10 @@ import {
     ChartLine,
     Droplets,
     Type,
-    CircleDashed
+    CircleDashed,
+    HardDrive,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -22,7 +25,7 @@ import { Slider } from "@/components/settings/Slider";
 import { Toggle } from "@/components/settings/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
-type Tab = "colors" | "typography" | "shortcuts" | "goals";
+type Tab = "colors" | "typography" | "shortcuts" | "goals" | "data";
 type ShortcutKey = "nextPage" | "prevPage" | "toggleBookmark" | "toggleFullscreen" | "toggleUI" | "close";
 
 const COLOR_PRESETS = [
@@ -38,6 +41,7 @@ const TABS = [
     { id: "typography" as Tab, label: "Type", icon: Type, description: "Layout" },
     { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
     { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
+    { id: "data" as Tab, label: "Data", icon: HardDrive, description: "Storage" },
 ] as const;
 
 const SHORTCUTS: Array<{ key: ShortcutKey; label: string }> = [
@@ -106,6 +110,23 @@ function SettingsView() {
         fontSize: { value: fontSize, onChange: setFontSize, displayValue: `${fontSize}px` },
         lineHeight: { value: lineHeight, onChange: setLineHeight, displayValue: lineHeight.toFixed(2) },
         maxTextWidth: { value: maxTextWidth, onChange: setMaxTextWidth, displayValue: `${maxTextWidth}ch` },
+    };
+
+    const handleFactoryReset = async () => {
+        if (!window.confirm("Are you sure you want to completely wipe all local data? This will remove cached books and progress. This action cannot be undone.")) return;
+        localStorage.clear();
+        sessionStorage.clear();
+        try {
+            const { clearBooks } = await import("@/utils/db");
+            await clearBooks();
+        } catch (e) {
+            console.error(e);
+        }
+        if (navigator.serviceWorker) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const r of regs) await r.unregister();
+        }
+        window.location.reload();
     };
 
     return (
@@ -308,6 +329,29 @@ function SettingsView() {
                                 <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Reminders" sublabel="Get notified to maintain your streak" />
                             </Section>
                         </div>
+                    </>
+                )}
+
+                {activeTab === "data" && (
+                    <>
+                        <Section title="Data & Storage" icon={HardDrive}>
+                            <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
+                                <div className="flex items-center gap-3 mb-3 text-red-600 dark:text-red-400">
+                                    <AlertTriangle className="w-5 h-5" />
+                                    <h4 className="font-semibold">Danger Zone</h4>
+                                </div>
+                                <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-5">
+                                    This will permanently delete all locally cached books, reading progress, and settings from this browser. If you are offline, unsynced progress will be lost.
+                                </p>
+                                <button
+                                    onClick={handleFactoryReset}
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors shadow-sm"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Factory Reset Cache
+                                </button>
+                            </div>
+                        </Section>
                     </>
                 )}
             </div>
