@@ -4,9 +4,9 @@ import type { Book, Bookmark } from "@/types";
 import type { EpubBookHandle } from "@/utils/epub";
 
 import { bookService } from "@/services/bookService";
-import { logErrorOnce } from "@/services/http";
+import { logErrorOnce, HttpError } from "@/services/http";
 import { useBookStore } from "@/store/useBookStore";
-import { putBook as putBookInDb, deleteBook as deleteBookFromDb } from "@/utils/db";
+import { putBook as putBookInDb, deleteBook as deleteBookFromDb, getAllBooks } from "@/utils/db";
 import { extractCoverBlobFromEpubSource, openEpub } from "@/utils/epub";
 
 type BookSyncMeta = {
@@ -159,18 +159,24 @@ const syncBookUpdate = async (
       });
     }
   } catch (error) {
-    console.error("Failed to persist remote book update:", error);
-    revertLocalBookState(id, previousBook, previousMeta);
-    await putBookInDb(previousBook).catch((rollbackError) => {
-      console.error("Failed to rollback local book update:", rollbackError);
-    });
-    const latestMeta = syncMetaByBookId.get(id);
-    if (latestMeta) {
-      syncMetaByBookId.set(id, {
-        ...latestMeta,
-        dirty: true,
-        syncInFlight: false,
+    if (error instanceof HttpError && error.status === 404) {
+      console.warn(`Book ${id} not found on server (404). Purging local cache.`);
+      revertLocalBookAddition(id);
+      await deleteBookFromDb(id).catch(console.error);
+    } else {
+      console.error("Failed to persist remote book update:", error);
+      revertLocalBookState(id, previousBook, previousMeta);
+      await putBookInDb(previousBook).catch((rollbackError) => {
+        console.error("Failed to rollback local book update:", rollbackError);
       });
+      const latestMeta = syncMetaByBookId.get(id);
+      if (latestMeta) {
+        syncMetaByBookId.set(id, {
+          ...latestMeta,
+          dirty: true,
+          syncInFlight: false,
+        });
+      }
     }
   } finally {
     inFlightMutations.delete(id);
@@ -236,6 +242,17 @@ export const libraryService = {
 
       reconcileTrackedCoverUrls(hydrated);
       useBookStore.getState().setBooks(hydrated);
+
+      const localDbBooks = await getAllBooks().catch(() => [] as Book[]);
+      const remoteIds = new Set(stored.map((b) => b.id));
+      for (const localBook of localDbBooks) {
+        if (!remoteIds.has(localBook.id) && !inFlightMutations.has(localBook.id)) {
+          await deleteBookFromDb(localBook.id).catch((err) => {
+            console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
+          });
+          revokeTrackedCoverUrl(localBook.id);
+        }
+      }
     } catch (error) {
       logErrorOnce("books-load", "Failed to load books:", error);
     } finally {

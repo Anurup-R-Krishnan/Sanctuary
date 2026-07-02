@@ -88,6 +88,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     height: continuous ? "auto" : "100%",
                     spread: continuous ? "none" : (spread ? "always" : "none"),
                     flow: continuous ? "scrolled-doc" : "paginated",
+                    allowScriptedContent: true,
+                    allowPopups: true,
                 });
 
                 if (startLocation) {

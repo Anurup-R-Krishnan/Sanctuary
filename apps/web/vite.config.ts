@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: path.resolve(__dirname, "../.."),
     server: {
+      headers: {
+        "Permissions-Policy": "unload=self"
+      },
       proxy: {
         "/api": {
           target: apiTarget,
@@ -25,6 +28,23 @@ export default defineConfig(({ mode }) => {
       }
     },
     plugins: [
+      // Patch epub.js: replace deprecated "unload" → "pagehide" to avoid
+      // Chrome Permissions-Policy violations.  Runs at transform time so the
+      // fix survives `bun install` / `npm ci`.
+      {
+        name: "epubjs-patch",
+        transform(code, id) {
+          if (!id.includes("epubjs")) return null;
+          if (!code.includes('"unload"')) return null;
+          return {
+            code: code.replace(
+              /addEventListener\(\s*"unload"/g,
+              'addEventListener("pagehide"'
+            ),
+            map: null,
+          };
+        },
+      },
       react(),
       VitePWA({
       registerType: 'autoUpdate',
