@@ -1,12 +1,12 @@
 {
   "statistics": {
-    "detectionDate": "2026-07-05T10:43:06.522Z",
+    "detectionDate": "2026-07-05T15:06:09.929Z",
     "formats": {
-      "javascript": {
+      "typescript": {
         "sources": {
-          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/pages/SettingsView.tsx": {
-            "lines": 208,
-            "tokens": 1760,
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/vite.config.ts": {
+            "lines": 93,
+            "tokens": 721,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -18,36 +18,8 @@
           }
         },
         "total": {
-          "lines": 208,
-          "tokens": 1760,
-          "sources": 1,
-          "clones": 0,
-          "duplicatedLines": 0,
-          "duplicatedTokens": 0,
-          "percentage": 0,
-          "percentageTokens": 0,
-          "newDuplicatedLines": 0,
-          "newClones": 0
-        }
-      },
-      "tsx": {
-        "sources": {
-          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/pages/SettingsView.tsx": {
-            "lines": 361,
-            "tokens": 3459,
-            "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
-            "newDuplicatedLines": 0,
-            "newClones": 0
-          }
-        },
-        "total": {
-          "lines": 361,
-          "tokens": 3459,
+          "lines": 93,
+          "tokens": 721,
           "sources": 1,
           "clones": 0,
           "duplicatedLines": 0,
@@ -60,9 +32,9 @@
       }
     },
     "total": {
-      "lines": 569,
-      "tokens": 5219,
-      "sources": 2,
+      "lines": 93,
+      "tokens": 721,
+      "sources": 1,
       "clones": 0,
       "duplicatedLines": 0,
       "duplicatedTokens": 0,

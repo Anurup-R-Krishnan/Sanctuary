@@ -26,7 +26,7 @@ services:
     volumes:
       - .:/app
       - /app/.wrangler
-    command: bash -c "npm install -g bun && bun install && npm run dev:backend:guest"
+    command: bash -c "apt-get update && apt-get install -y curl unzip && curl -fsSL https://bun.sh/install | bash && export PATH=\"$$HOME/.bun/bin:$$PATH\" && bun install && npm run dev:backend:guest"
     ports:
       - "8788:8788"
     environment:
