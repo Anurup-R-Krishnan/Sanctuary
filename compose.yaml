@@ -1,0 +1,25 @@
+services:
+  frontend:
+    image: oven/bun:1-debian
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: bash -c "bun install && bun run web:guest"
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_PROXY_TARGET=http://backend:8788
+      - VITE_DISABLE_AUTH=true
+    depends_on:
+      - backend
+
+  backend:
+    image: oven/bun:1-debian
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: bash -c "bun install && bun run dev:backend:guest"
+    ports:
+      - "8788:8788"
+    environment:
+      - DISABLE_CLERK_AUTH=true

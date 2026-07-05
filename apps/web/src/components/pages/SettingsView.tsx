@@ -24,6 +24,7 @@ import { ShortcutItem } from "@/components/settings/ShortcutItem";
 import { Slider } from "@/components/settings/Slider";
 import { Toggle } from "@/components/settings/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import { clearBooks } from "@/utils/db";
 
 type Tab = "colors" | "typography" | "shortcuts" | "goals" | "data";
 type ShortcutKey = "nextPage" | "prevPage" | "toggleBookmark" | "toggleFullscreen" | "toggleUI" | "close";
@@ -117,7 +118,6 @@ function SettingsView() {
         localStorage.clear();
         sessionStorage.clear();
         try {
-            const { clearBooks } = await import("@/utils/db");
             await clearBooks();
         } catch (e) {
             console.error(e);
