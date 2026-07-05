@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 
 import { TopBar } from "../components/TopBar";
+import { api } from "../services/api";
 import { useAppStore } from "../state/useAppStore";
 import { sharedStyles } from "../theme/sharedStyles";
 import { theme } from "../theme/tokens";

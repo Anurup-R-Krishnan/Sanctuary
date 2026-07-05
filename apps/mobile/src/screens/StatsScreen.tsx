@@ -3,6 +3,7 @@ import { AppState, View, Text, StyleSheet, Pressable } from "react-native";
 
 import { StaleDataNotice } from "../components/StaleDataNotice";
 import { TopBar } from "../components/TopBar";
+import { loadGoalsWithFallback } from "../services/goals";
 import { useAppStore } from "../state/useAppStore";
 import { sharedStyles } from "../theme/sharedStyles";
 import { theme } from "../theme/tokens";
