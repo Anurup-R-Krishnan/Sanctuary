@@ -150,8 +150,8 @@ export function ReaderScreen() {
       bookId: session.bookId,
       startedAt: new Date(session.startedAtMs).toISOString(),
       endedAt: new Date(endedAtMs).toISOString(),
-      duration: durationSec,
-      pagesRead: pagesAdvanced,
+      durationSec: durationSec,
+      pagesAdvanced: pagesAdvanced,
       device: Platform.OS === "web" ? "web" : (Platform.OS === "ios" ? "ios" : "android")
     };
     sessionSyncRef.current.enqueue(payload);

@@ -2,7 +2,7 @@ import type { ReadingSession, SanctuaryApiClient } from "@sanctuary/core";
 
 import { createSyncQueue, type SyncState } from "./syncQueue";
 
-export type { SyncState };
+export type { SyncState as SessionSyncState };
 
 interface CreateSessionSyncOptions {
   client: SanctuaryApiClient;
