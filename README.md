@@ -19,13 +19,11 @@ To ensure a pristine, reproducible development environment (bypassing native OS 
 
 1. Start the containers in the background:
    ```bash
-   docker compose up -d
-   # or
    podman-compose up -d
    ```
 2. Verify services are healthy:
    ```bash
-   docker compose ps
+   podman-compose ps
    ```
 3. Access the application:
    - Frontend: `http://localhost:5173`
