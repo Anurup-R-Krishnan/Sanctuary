@@ -85,7 +85,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
             'vendor-epub': ['epubjs'],
-            'vendor-ui': ['framer-motion', 'lucide-react'],
+            'vendor-ui': ['lucide-react'],
           }
         }
       }
