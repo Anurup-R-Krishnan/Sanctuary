@@ -11,15 +11,28 @@ services:
       - VITE_API_PROXY_TARGET=http://backend:8788
       - VITE_DISABLE_AUTH=true
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
-    image: oven/bun:1-debian
+    image: node:22-bookworm
     working_dir: /app
     volumes:
       - .:/app
-    command: bash -c "bun install && bun run dev:backend:guest"
+    command: bash -c "npm install -g bun && bun install && bun run dev:backend:guest"
     ports:
       - "8788:8788"
     environment:
       - DISABLE_CLERK_AUTH=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8788/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
