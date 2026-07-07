@@ -17,6 +17,8 @@ export function useReadingSession(
   const books = useBookStore((state) => state.books);
 
   const startSession = useCallback((book: Book) => {
+    // Clear any stale progress from a previous session before starting a new one
+    useReaderProgressStore.getState().clearActiveBook();
     useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
     setSelectedBookId(book.id);
     setView(View.READER);
@@ -26,13 +28,14 @@ export function useReadingSession(
   const endSession = useCallback(async () => {
     const activeProgress = useReaderProgressStore.getState().active;
     await flushPendingProgress();
-    
-    statsService.endSession(books, getToken, isPersistent, activeProgress?.progress);
+
+    // endSession is fire-and-forget; the optimistic update in syncBookUpdate
+    // already keeps the store current so a full loadBooks() re-fetch is unnecessary.
+    void statsService.endSession(books, getToken, isPersistent, activeProgress?.progress);
     useReaderProgressStore.getState().clearActiveBook();
-    
+
     setView(View.LIBRARY);
     setSelectedBookId(null);
-    await libraryService.loadBooks(getToken, isPersistent);
   }, [books, getToken, isPersistent, flushPendingProgress, setView, setSelectedBookId]);
 
   const addBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {

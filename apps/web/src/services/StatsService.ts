@@ -81,7 +81,7 @@ export const statsService = {
         }
         
         const merged = Array.from(mergedMap.values());
-        merged.sort((a, b) => new Date(b.startTime || b.date).getTime() - new Date(a.startTime || a.date).getTime());
+        merged.sort((a, b) => new Date(b.startedAt || b.date).getTime() - new Date(a.startedAt || a.date).getTime());
         
         useStatsStore.getState().setSessions(merged);
         this.rebuildAggregates(merged);
@@ -135,8 +135,11 @@ export const statsService = {
     const duration = Math.round((Date.now() - currentSessionStart) / 1000);
     const book = books.find((item) => item.id === currentSessionBook);
     const endProgressSource = endProgressOverride ?? book?.progress ?? 0;
-    const endProgress = Math.max(0, endProgressSource);
-    const pagesRead = Math.max(0, endProgress - currentSessionStartProgress);
+    const endProgress = Math.max(0, Math.min(100, endProgressSource));
+    const startProgress = Math.max(0, Math.min(100, currentSessionStartProgress));
+    // progress values are percentages (0-100); convert delta back to page count
+    const totalPages = Math.max(1, book?.totalPages ?? 100);
+    const pagesRead = Math.max(0, Math.round((endProgress - startProgress) / 100 * totalPages));
 
     if (duration >= 5 || pagesRead > 0) {
       const now = new Date();
@@ -150,7 +153,6 @@ export const statsService = {
         bookTitle: book?.title || "Unknown Book",
         date: toLocalDateKey(now),
         startedAt,
-        startTime: startedAt,
         localStartHour: normalizedStartHour,
         duration,
         pagesRead,
@@ -158,8 +160,11 @@ export const statsService = {
       };
 
       const currentSessions = useStatsStore.getState().sessions;
-      const updatedSessions = [...currentSessions, newSession];
-      
+      // Deduplicate by id before writing — guards against StrictMode double-invocation
+      const mergedMap = new Map(currentSessions.map((s) => [s.id, s]));
+      mergedMap.set(newSession.id, newSession);
+      const updatedSessions = Array.from(mergedMap.values());
+
       useStatsStore.getState().addSession(newSession);
       localStorage.setItem(SESSIONS_KEY, JSON.stringify(updatedSessions));
 
@@ -175,7 +180,7 @@ export const statsService = {
               id: newSession.id,
               bookId: newSession.bookId,
               bookTitle: newSession.bookTitle,
-              startedAt: newSession.startTime,
+              startedAt: newSession.startedAt,
               date: newSession.date,
               durationSec: newSession.duration,
               pagesAdvanced: newSession.pagesRead,

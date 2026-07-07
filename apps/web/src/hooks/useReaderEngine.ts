@@ -14,11 +14,16 @@ interface UseReaderEngineProps {
     onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
 
-const READER_THEME = {
-    textWidthCh: 96,
-    pageMarginPx: 28,
-    paragraphSpacingPx: 14,
-} as const;
+const FONT_FAMILIES: Record<string, string> = {
+    "merriweather-georgia": "'Merriweather', Georgia, serif",
+    "crimson-pro": "'Crimson Pro', Georgia, serif",
+    "libre-baskerville": "'Libre Baskerville', Georgia, serif",
+    "lora": "'Lora', Georgia, serif",
+    "source-serif": "'Source Serif Pro', Georgia, serif",
+    "inter": "'Inter', system-ui, sans-serif",
+};
+
+const TEXT_WIDTH_CH = 96;
 
 export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
     const activeBookId = book.id;
@@ -34,11 +39,14 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const bookRef = useRef<EpubBookHandle | null>(null);
     const onUpdateProgressRef = useRef(onUpdateProgress);
     const startLocationRef = useRef(book.lastLocation);
+    // Keep a ref to the latest style builder fn so the "relocated" handler
+    // can reapply styles without a stale closure.
+    const applyStylesRef = useRef<() => void>(() => undefined);
 
     const {
         fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
         readerForeground, readerBackground,
-        continuous, spread, reduceMotion
+        continuous, spread, reduceMotion, pageMargin, paragraphSpacing,
     } = useSettingsShallow((state) => ({
         fontSize: state.fontSize,
         lineHeight: state.lineHeight,
@@ -49,7 +57,9 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         readerBackground: state.readerBackground,
         continuous: state.continuous,
         spread: state.spread,
-        reduceMotion: state.reduceMotion
+        reduceMotion: state.reduceMotion,
+        pageMargin: state.pageMargin,
+        paragraphSpacing: state.paragraphSpacing,
     }));
 
     useEffect(() => {
@@ -60,44 +70,112 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         startLocationRef.current = book.lastLocation;
     }, [book.id, book.lastLocation]);
 
+    // Build the styles object from current settings
+    const buildStyles = useCallback(() => {
+        const fontFamily = FONT_FAMILIES[fontPairing] ?? "'Merriweather', Georgia, serif";
+        return {
+            "body": {
+                "font-family": fontFamily,
+                "font-size": `${fontSize}px`,
+                "line-height": `${lineHeight}`,
+                "color": readerForeground,
+                "background-color": readerBackground,
+                "padding-top": `${pageMargin}px`,
+                "padding-bottom": continuous ? "2em" : `${pageMargin}px`,
+                "padding-left": `${continuous ? pageMargin : 0}px`,
+                "padding-right": `${continuous ? pageMargin : 0}px`,
+                ...(continuous
+                    ? { "max-width": `${TEXT_WIDTH_CH}ch`, "margin": "0 auto" }
+                    : { "max-width": "none", "margin": "0", "padding-bottom": "2em" }
+                ),
+            },
+            "p": {
+                "font-family": "inherit",
+                "font-size": "inherit",
+                "line-height": "inherit",
+                "color": "inherit",
+                "margin-bottom": `${paragraphSpacing}px`,
+                "text-align": textAlignment,
+                "hyphens": hyphenation ? "auto" : "none",
+            },
+        };
+    }, [fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
+        readerForeground, readerBackground, continuous, pageMargin, paragraphSpacing]);
+
+    // Apply styles safely — themes.default() is the stable epubjs API.
+    // Wrapped in try/catch because it can throw if called while a section
+    // is being destroyed (e.g. rapid page turns).
+    const applyStyles = useCallback(() => {
+        if (!renditionRef.current) return;
+        try {
+            renditionRef.current.themes.default(buildStyles());
+        } catch {
+            // Benign — section mid-teardown, next render will reapply
+        }
+    }, [buildStyles]);
+
+    // Keep applyStylesRef current so relocated handler always has latest version
+    useEffect(() => {
+        applyStylesRef.current = applyStyles;
+    }, [applyStyles]);
+
+    // ─── Book initialisation ───────────────────────────────────────────────────
     useEffect(() => {
         let mounted = true;
-        const startLocation = startLocationRef.current;
 
         const init = async () => {
+            // Guard: if no blob yet, nothing to render — clear loading so the
+            // fetching-content overlay (from ReaderView) takes over.
+            if (!activeBlob) {
+                setIsLoading(false);
+                return;
+            }
+
+            setIsLoading(true);
+
+            // Guard: container must be in the DOM
+            if (!containerRef.current || !mounted) {
+                setIsLoading(false);
+                return;
+            }
+
             try {
-                if (!activeBlob) {
-                    setIsLoading(false);
-                    return;
-                }
-
-                setIsLoading(true);
-
-                if (!containerRef.current || !mounted) return;
-
                 const arrayBuffer = await activeBlob.arrayBuffer();
+                if (!mounted) return;
+
                 bookRef.current = openEpub(arrayBuffer);
 
-                const navigation = await bookRef.current.loaded.navigation;
-                if (navigation?.toc) {
-                    setTocItems(navigation.toc);
-                }
+                // Load navigation (non-blocking — we don't await failure)
+                bookRef.current.loaded.navigation
+                    .then((nav) => {
+                        if (mounted && nav?.toc) setTocItems(nav.toc);
+                    })
+                    .catch(() => undefined);
 
-                renditionRef.current = bookRef.current.renderTo(containerRef.current, {
+                renditionRef.current = bookRef.current.renderTo(containerRef.current!, {
                     width: "100%",
                     height: continuous ? "auto" : "100%",
                     spread: continuous ? "none" : (spread ? "always" : "none"),
                     flow: continuous ? "scrolled-doc" : "paginated",
+                    // Required for epubjs internal location scripts to run in the
+                    // srcdoc iframe. The "allow-scripts + allow-same-origin" browser
+                    // info-warning is expected and harmless.
                     allowScriptedContent: true,
-                    allowPopups: true,
                 });
 
-                if (startLocation) {
-                    await renditionRef.current.display(startLocation);
-                } else {
-                    await renditionRef.current.display();
-                }
+                // Set styles BEFORE display() so the first render is already styled
+                renditionRef.current.themes.default(buildStyles());
 
+                const startLocation = startLocationRef.current;
+                await renditionRef.current.display(startLocation || undefined);
+
+                if (!mounted) return;
+
+                // Reapply styles after first display to override any epub-internal CSS
+                applyStylesRef.current();
+
+                // Attach event listener AFTER display so we don't fire on the initial
+                // render before the book is stable.
                 renditionRef.current.on("relocated", (location: EpubLocation) => {
                     if (!mounted) return;
                     const cfi = location.start.cfi;
@@ -106,24 +184,27 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     if (bookRef.current?.locations?.length()) {
                         const percent = bookRef.current.locations.percentageFromCfi(cfi);
                         const generatedPages = Math.max(1, bookRef.current.locations.length());
-                        const page = Math.max(1, Math.ceil(percent * generatedPages));
-                        setCurrentPage(page);
-                        onUpdateProgressRef.current(activeBookId, page, cfi);
+                        setCurrentPage(Math.max(1, Math.ceil(percent * generatedPages)));
+
+                        const progressPercent = Math.max(0, Math.min(100, Math.round(percent * 100)));
+                        onUpdateProgressRef.current(activeBookId, progressPercent, cfi);
                     }
                 });
 
-                bookRef.current.locations.generate(1024).then(() => {
-                    if (mounted && bookRef.current) {
-                        setTotalPages(Math.max(1, bookRef.current.locations.length()));
-                    }
-                }).catch((err: unknown) => console.warn("Location generation failed:", err));
+                // Generate locations in the background (non-blocking)
+                bookRef.current.locations.generate(1024)
+                    .then(() => {
+                        if (mounted && bookRef.current) {
+                            setTotalPages(Math.max(1, bookRef.current.locations.length()));
+                        }
+                    })
+                    .catch((err: unknown) => console.warn("Location generation failed:", err));
 
-                setIsLoading(false);
             } catch (err) {
-                console.error("Init error:", err);
-                if (mounted) {
-                    setIsLoading(false);
-                }
+                console.error("Reader init error:", err);
+            } finally {
+                // Always clear loading, even on error, so the UI doesn't hang
+                if (mounted) setIsLoading(false);
             }
         };
 
@@ -131,20 +212,29 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
         return () => {
             mounted = false;
-            if (renditionRef.current) renditionRef.current.destroy();
-            if (bookRef.current) bookRef.current.destroy();
+            try { renditionRef.current?.destroy(); } catch { /* ignore */ }
+            try { bookRef.current?.destroy?.(); } catch { /* ignore */ }
+            renditionRef.current = null;
+            bookRef.current = null;
         };
-    }, [activeBookId, activeBlob, continuous, spread, containerRef]);
+    }, [activeBookId, activeBlob, continuous, spread, containerRef, buildStyles]);
+    // Note: buildStyles is stable (useCallback with deps) — it only changes when
+    // actual style settings change, which correctly re-triggers the rendition.
 
+    // ─── Live style updates (settings panel changes) ───────────────────────────
+    useEffect(() => {
+        applyStyles();
+    }, [applyStyles]);
+
+    // ─── Navigation ───────────────────────────────────────────────────────────
     const nextPage = useCallback(() => {
         if (!renditionRef.current) return;
         if (continuous && containerRef.current) {
-            const container = containerRef.current;
-            const { scrollTop, scrollHeight, clientHeight } = container;
-            if (scrollTop + clientHeight >= scrollHeight - 50) {
+            const c = containerRef.current;
+            if (c.scrollTop + c.clientHeight >= c.scrollHeight - 50) {
                 renditionRef.current.next();
             } else {
-                container.scrollBy({ top: window.innerHeight * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' });
+                c.scrollBy({ top: window.innerHeight * 0.8, behavior: reduceMotion ? "auto" : "smooth" });
             }
         } else {
             renditionRef.current.next();
@@ -154,11 +244,11 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const prevPage = useCallback(() => {
         if (!renditionRef.current) return;
         if (continuous && containerRef.current) {
-            const container = containerRef.current;
-            if (container.scrollTop <= 0) {
+            const c = containerRef.current;
+            if (c.scrollTop <= 0) {
                 renditionRef.current.prev();
             } else {
-                container.scrollBy({ top: -window.innerHeight * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' });
+                c.scrollBy({ top: -window.innerHeight * 0.8, behavior: reduceMotion ? "auto" : "smooth" });
             }
         } else {
             renditionRef.current.prev();
@@ -166,7 +256,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     }, [continuous, reduceMotion, containerRef]);
 
     const display = useCallback((target: string) => {
-        if (renditionRef.current) renditionRef.current.display(target);
+        renditionRef.current?.display(target);
     }, []);
 
     const goToPage = useCallback((page: number) => {
@@ -175,57 +265,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         const cfi = bookRef.current.locations.cfiFromPercentage(percentage);
         if (cfi) renditionRef.current.display(cfi);
     }, [totalPages]);
-
-    const getFontFamily = useCallback(() => {
-        const fonts: Record<string, string> = {
-            "merriweather-georgia": "'Merriweather', Georgia, serif",
-            "crimson-pro": "'Crimson Pro', Georgia, serif",
-            "libre-baskerville": "'Libre Baskerville', Georgia, serif",
-            "lora": "'Lora', Georgia, serif",
-            "source-serif": "'Source Serif Pro', Georgia, serif",
-            "inter": "'Inter', system-ui, sans-serif",
-        };
-        return fonts[fontPairing] || fonts["merriweather-georgia"] || "'Merriweather', Georgia, serif";
-    }, [fontPairing]);
-    const applyStyles = useCallback(() => {
-        if (!renditionRef.current) return;
-
-        const fontFamily = getFontFamily();
-
-        renditionRef.current.themes.default({
-            "body": {
-                "font-family": fontFamily,
-                "font-size": `${fontSize}px`,
-                "line-height": `${lineHeight}`,
-                "color": readerForeground,
-                "background-color": readerBackground,
-                "padding-top": `${READER_THEME.pageMarginPx}px`,
-                "padding-bottom": continuous ? "2em" : `${READER_THEME.pageMarginPx}px`,
-                "padding-left": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
-                "padding-right": `${continuous ? READER_THEME.pageMarginPx : 0}px`,
-                ...(continuous ? {
-                    "max-width": `${READER_THEME.textWidthCh}ch`,
-                    "margin": "0 auto",
-                } : {
-                    "max-width": "none",
-                    "margin": "0",
-                    "padding-bottom": "2em",
-                }),
-            },
-            "p": {
-                "font-family": "inherit",
-                "font-size": "inherit",
-                "line-height": "inherit",
-                "color": "inherit",
-                "margin-bottom": `${READER_THEME.paragraphSpacingPx}px`,
-                "text-align": textAlignment,
-                "hyphens": hyphenation ? "auto" : "none",
-            },
-        });
-    }, [fontSize, lineHeight, textAlignment, readerForeground, readerBackground, hyphenation, getFontFamily, continuous]);
-    useEffect(() => {
-        applyStyles();
-    }, [applyStyles]);
 
     return {
         isLoading,
