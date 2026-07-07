@@ -36,6 +36,7 @@ export type EpubRendition = {
   on: (event: "relocated", cb: (location: EpubLocation) => void) => void;
   prev: () => void;
   themes: {
+    /** Sets the default theme. Stable API, safe to call before and after display(). */
     default: (styles: Record<string, Record<string, string>>) => void;
   };
 };

@@ -169,7 +169,6 @@ export interface ReadingSession {
   localStartHour?: number;
   pagesRead: number;
   startedAt?: string;
-  startTime?: string;
 }
 
 export type SessionAggregates = {

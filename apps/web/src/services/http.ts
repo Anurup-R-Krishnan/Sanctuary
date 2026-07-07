@@ -29,7 +29,9 @@ export async function readJsonSafely<T>(res: Response, fallbackMessage: string):
   if (!res.ok) {
     const errMessage = typeof (parsed as { error?: unknown })?.error === "string"
       ? (parsed as { error: string }).error
-      : `${fallbackMessage} (${res.status})`;
+      : text
+        ? `${fallbackMessage} (${res.status}): ${text.slice(0, 200)}`
+        : `${fallbackMessage} (${res.status})`;
     throw new HttpError(res.status, errMessage);
   }
   return parsed as T;

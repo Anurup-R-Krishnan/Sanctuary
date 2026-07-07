@@ -60,7 +60,9 @@ export async function onRequestGet({ env, request }: PagesContext): Promise<Resp
     let result;
 
     if (search && search.trim().length > 0) {
-      const safeSearch = search.trim().replace(/"/g, '""') + '*';
+      // FTS5 phrase prefix search: wrap in double-quotes, escape internal quotes by doubling.
+      const safeTerm = search.trim().replace(/"/g, '""');
+      const safeSearch = `"${safeTerm}"*`;
       const query = `
         SELECT b.id, b.title, b.author, b.cover_url, b.content_type, b.progress, b.total_pages,
           b.last_location, b.bookmarks_json, b.is_favorite, b.updated_at
@@ -162,7 +164,8 @@ export async function onRequestPatch({ env, request }: PagesContext): Promise<Re
   const body = await request.json().catch(() => ({}));
   const parseResult = patchSchema.safeParse(body);
   if (!parseResult.success) {
-    return errorJson("Invalid patch payload", 400);
+    console.error("Patch validation failed:", parseResult.error.format());
+    return errorJson("Invalid patch payload: " + JSON.stringify(parseResult.error.format()), 400);
   }
 
   const patch = parseResult.data;

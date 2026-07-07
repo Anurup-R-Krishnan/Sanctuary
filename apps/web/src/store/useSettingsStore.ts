@@ -164,11 +164,35 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (!input || typeof input !== "object") return {};
   const raw = input as Record<string, unknown>;
   const out: Partial<SettingsValues> = {};
-  for (const key of Object.keys(DEFAULTS) as Array<keyof SettingsValues>) {
-    if (raw[key] !== undefined) {
-      (out as Record<string, unknown>)[key] = raw[key];
-    }
-  }
+
+  if (typeof raw.fontSize === "number") out.fontSize = raw.fontSize;
+  if (typeof raw.lineHeight === "number") out.lineHeight = raw.lineHeight;
+  if (raw.textAlignment === "left" || raw.textAlignment === "justify" || raw.textAlignment === "center") out.textAlignment = raw.textAlignment;
+  if (typeof raw.fontPairing === "string") out.fontPairing = raw.fontPairing;
+  if (typeof raw.maxTextWidth === "number") out.maxTextWidth = raw.maxTextWidth;
+  if (typeof raw.hyphenation === "boolean") out.hyphenation = raw.hyphenation;
+  if (typeof raw.pageMargin === "number") out.pageMargin = raw.pageMargin;
+  if (typeof raw.paragraphSpacing === "number") out.paragraphSpacing = raw.paragraphSpacing;
+  if (typeof raw.continuous === "boolean") out.continuous = raw.continuous;
+  if (typeof raw.spread === "boolean") out.spread = raw.spread;
+  if (raw.direction === "ltr" || raw.direction === "rtl") out.direction = raw.direction;
+  if (typeof raw.brightness === "number") out.brightness = raw.brightness;
+  if (typeof raw.grayscale === "boolean") out.grayscale = raw.grayscale;
+  if (typeof raw.showScrollbar === "boolean") out.showScrollbar = raw.showScrollbar;
+  if (typeof raw.showPageCounter === "boolean") out.showPageCounter = raw.showPageCounter;
+  if (raw.progressBarType === "bar" || raw.progressBarType === "none") out.progressBarType = raw.progressBarType;
+  if (raw.barPosition === "top" || raw.barPosition === "bottom") out.barPosition = raw.barPosition;
+  if (typeof raw.showFloatingCapsule === "boolean") out.showFloatingCapsule = raw.showFloatingCapsule;
+  if (typeof raw.readerForeground === "string") out.readerForeground = raw.readerForeground;
+  if (typeof raw.readerBackground === "string") out.readerBackground = raw.readerBackground;
+  if (typeof raw.readerAccent === "string") out.readerAccent = raw.readerAccent;
+  if (typeof raw.dailyGoal === "number") out.dailyGoal = raw.dailyGoal;
+  if (typeof raw.weeklyGoal === "number") out.weeklyGoal = raw.weeklyGoal;
+  if (typeof raw.showStreakReminder === "boolean") out.showStreakReminder = raw.showStreakReminder;
+  if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
+  if (typeof raw.screenReaderMode === "boolean") out.screenReaderMode = raw.screenReaderMode;
+  if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
+
   return out;
 };
 
