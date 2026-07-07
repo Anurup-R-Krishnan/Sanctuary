@@ -4,7 +4,9 @@ import { useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@/hooks/useAuth";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
+import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
+import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { View } from "@/types";
@@ -27,10 +29,11 @@ function App() {
   const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut, getToken } = useAuth();
-  const isPersistent = DISABLE_AUTH ? true : !!(isSignedIn && !isGuest);
+  const isPersistent = DISABLE_AUTH ? false : !!(isSignedIn && !isGuest);
 
   // Global UI State
-  const { theme, view, selectedBookId, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
+  const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
+  const selectedBookId = useReaderProgressStore((state) => state.active?.bookId ?? null);
   const selectedBook = useBookStore((state) => state.getBookById(selectedBookId));
 
   // Custom Hooks (Encapsulated Logic)
@@ -40,6 +43,7 @@ function App() {
 
   // Initial Data Load
   useEffect(() => {
+    syncQueue.init(getToken, isPersistent);
     libraryService.loadBooks(getToken, isPersistent);
     statsService.loadSessions(getToken, isPersistent);
     statsService.fetchGoals(getToken);

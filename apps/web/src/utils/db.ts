@@ -1,9 +1,11 @@
 import type { Book } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 const BOOKS_STORE = "books";
 const VOCAB_STORE = "vocabulary";
+const SESSIONS_STORE = "sessions";
+const MUTATIONS_STORE = "mutations";
 
 let db: IDBDatabase | undefined;
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -40,6 +42,12 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(VOCAB_STORE)) {
         database.createObjectStore(VOCAB_STORE, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(SESSIONS_STORE)) {
+        database.createObjectStore(SESSIONS_STORE, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(MUTATIONS_STORE)) {
+        database.createObjectStore(MUTATIONS_STORE, { keyPath: "id" });
       }
     };
   });
@@ -125,4 +133,54 @@ export async function getAllBooks(): Promise<Book[]> {
 
 export async function clearBooks(): Promise<void> {
   return dbClear(BOOKS_STORE);
+}
+
+async function dbPutAll<T>(store: string, values: T[]): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(store, "readwrite");
+    bindTxFailure(tx, reject, `Failed to save multiple to ${store}`);
+    const objStore = tx.objectStore(store);
+    values.forEach(value => objStore.put(value));
+    tx.oncomplete = () => resolve();
+  });
+}
+
+// Session store helpers
+import type { ReadingSession } from "@/types";
+
+export async function putSession(session: ReadingSession): Promise<void> {
+  return dbPut(SESSIONS_STORE, session);
+}
+
+export async function putSessions(sessions: ReadingSession[]): Promise<void> {
+  return dbPutAll(SESSIONS_STORE, sessions);
+}
+
+export async function getAllSessions(): Promise<ReadingSession[]> {
+  return dbGetAll<ReadingSession>(SESSIONS_STORE);
+}
+
+export async function clearSessions(): Promise<void> {
+  return dbClear(SESSIONS_STORE);
+}
+
+// Mutations store helpers
+export interface SyncMutation {
+  createdAt: number;
+  id: string; // uuid
+  payload: any;
+  type: "SAVE_SESSION" | "SAVE_SETTINGS" | "PATCH_LIBRARY";
+}
+
+export async function putMutation(mutation: SyncMutation): Promise<void> {
+  return dbPut(MUTATIONS_STORE, mutation);
+}
+
+export async function getAllMutations(): Promise<SyncMutation[]> {
+  return dbGetAll<SyncMutation>(MUTATIONS_STORE);
+}
+
+export async function deleteMutation(id: string): Promise<void> {
+  return dbDelete(MUTATIONS_STORE, id);
 }

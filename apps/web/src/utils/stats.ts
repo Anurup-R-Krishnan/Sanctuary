@@ -51,7 +51,7 @@ export const applySessionToAggregates = (aggregates: SessionAggregates, session:
 
   const sessionHour = typeof session.localStartHour === "number"
     ? session.localStartHour
-    : (typeof session.startTime === "string" ? new Date(session.startTime).getHours() : NaN);
+    : (typeof session.startedAt === "string" ? new Date(session.startedAt).getHours() : NaN);
 
   if (!Number.isNaN(sessionHour)) {
     if (sessionHour >= 0 && sessionHour < 5) aggregates.nightOwlUnlocked = true;

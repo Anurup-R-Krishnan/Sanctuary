@@ -13,17 +13,15 @@ export function useReadingSession(
   flushPendingProgress: () => Promise<void>
 ) {
   const setView = useUIStore((state) => state.setView);
-  const setSelectedBookId = useUIStore((state) => state.setSelectedBookId);
   const books = useBookStore((state) => state.books);
 
   const startSession = useCallback((book: Book) => {
     // Clear any stale progress from a previous session before starting a new one
     useReaderProgressStore.getState().clearActiveBook();
     useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
-    setSelectedBookId(book.id);
     setView(View.READER);
     statsService.startSession(book.id, book.progress);
-  }, [setSelectedBookId, setView]);
+  }, [setView]);
 
   const endSession = useCallback(async () => {
     const activeProgress = useReaderProgressStore.getState().active;
@@ -35,8 +33,7 @@ export function useReadingSession(
     useReaderProgressStore.getState().clearActiveBook();
 
     setView(View.LIBRARY);
-    setSelectedBookId(null);
-  }, [books, getToken, isPersistent, flushPendingProgress, setView, setSelectedBookId]);
+  }, [books, getToken, isPersistent, flushPendingProgress, setView]);
 
   const addBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {
     const next: Bookmark = {

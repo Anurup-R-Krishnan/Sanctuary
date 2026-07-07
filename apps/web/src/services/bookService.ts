@@ -4,6 +4,7 @@ import { getBookById } from "@/utils/db";
 
 import { API } from "./api";
 import { readJsonSafely, buildAuthHeaders, encodeId } from "./http";
+import { syncQueue } from "./SyncQueue";
 
 export const bookService = {
     async getBooks(token?: string): Promise<Book[]> {
@@ -99,17 +100,11 @@ export const bookService = {
         return data.coverUrl;
     },
 
-    async _patchBook(id: string, body: unknown, token?: string, errorMsg: string = "Failed to update book"): Promise<void> {
-        const headers = { ...buildAuthHeaders(token), "Content-Type": "application/json" };
-        const res = await fetch(`${API.LIBRARY}?id=${encodeId(id)}`, {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify(body),
-        });
-        await readJsonSafely<{ success: boolean }>(res, errorMsg);
+    async _patchBook(id: string, body: unknown): Promise<void> {
+        syncQueue.enqueue("PATCH_LIBRARY", { id, data: body });
     },
 
-    async updateBook(id: string, updates: Partial<Book>, token?: string): Promise<void> {
+    async updateBook(id: string, updates: Partial<Book>): Promise<void> {
         return this._patchBook(id, {
             title: updates.title,
             author: updates.author,
@@ -119,13 +114,13 @@ export const bookService = {
             lastLocation: updates.lastLocation,
             favorite: updates.isFavorite,
             bookmarks: updates.bookmarks?.map((bm) => ({ cfi: bm.cfi, title: bm.title })),
-        }, token);
+        });
     },
 
-    async updateBookProgress(id: string, progress: number, lastLocation: string, token?: string): Promise<void> {
+    async updateBookProgress(id: string, progress: number, lastLocation: string): Promise<void> {
         return this._patchBook(id, {
             progress,
             lastLocation,
-        }, token, "Failed to update reading progress");
+        });
     }
 };

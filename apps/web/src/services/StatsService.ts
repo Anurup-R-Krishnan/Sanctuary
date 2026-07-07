@@ -2,8 +2,10 @@ import type { ReadingStats, Book, ReadingSession } from "@/types";
 
 import { API } from "@/services/api";
 import { buildAuthHeaders, readJsonSafely } from "@/services/http";
+import { syncQueue } from "@/services/SyncQueue";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
+import { getAllSessions, putSessions, putSession } from "@/utils/db";
 import { 
   createEmptyAggregates, 
   applySessionToAggregates, 
@@ -44,7 +46,7 @@ export const statsService = {
           bookId: row.bookId,
           bookTitle: row.bookTitle,
           date: row.date,
-          ...(typeof row.startTime === "string" ? { startTime: row.startTime } : {}),
+          ...(typeof row.startedAt === "string" ? { startedAt: row.startedAt } : typeof row.startTime === "string" ? { startedAt: row.startTime } : {}),
           ...(typeof row.localStartHour === "number" ? { localStartHour: row.localStartHour } : {}),
           duration: row.duration,
           pagesRead: row.pagesRead,
@@ -55,10 +57,21 @@ export const statsService = {
   },
 
   async loadSessions(getToken: () => Promise<string | null>, isPersistent: boolean) {
-    const savedSessions = localStorage.getItem(SESSIONS_KEY);
-    const localSessions = savedSessions ? this.normalizeSessions(JSON.parse(savedSessions)) : [];
+    // 1. One-time migration from localStorage
+    const legacySaved = localStorage.getItem(SESSIONS_KEY);
+    if (legacySaved) {
+      const legacySessions = this.normalizeSessions(JSON.parse(legacySaved));
+      if (legacySessions.length > 0) {
+        await putSessions(legacySessions);
+      }
+      localStorage.removeItem(SESSIONS_KEY);
+    }
+
+    // 2. Load from IndexedDB
+    const localSessions = await getAllSessions();
     
     if (localSessions.length > 0) {
+      localSessions.sort((a, b) => new Date(b.startedAt || b.date).getTime() - new Date(a.startedAt || a.date).getTime());
       useStatsStore.getState().setSessions(localSessions);
       this.rebuildAggregates(localSessions);
     }
@@ -85,7 +98,7 @@ export const statsService = {
         
         useStatsStore.getState().setSessions(merged);
         this.rebuildAggregates(merged);
-        localStorage.setItem(SESSIONS_KEY, JSON.stringify(merged));
+        await putSessions(merged);
       }
     } catch (error) {
       console.warn("Failed to hydrate remote reading sessions", error);
@@ -163,34 +176,22 @@ export const statsService = {
       // Deduplicate by id before writing — guards against StrictMode double-invocation
       const mergedMap = new Map(currentSessions.map((s) => [s.id, s]));
       mergedMap.set(newSession.id, newSession);
-      const updatedSessions = Array.from(mergedMap.values());
 
       useStatsStore.getState().addSession(newSession);
-      localStorage.setItem(SESSIONS_KEY, JSON.stringify(updatedSessions));
+      await putSession(newSession);
 
       if (isPersistent) {
-        try {
-          const token = await getToken();
-          const headers = { ...buildAuthHeaders(token || undefined), "Content-Type": "application/json" };
-          
-          await fetch(API.SESSIONS, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              id: newSession.id,
-              bookId: newSession.bookId,
-              bookTitle: newSession.bookTitle,
-              startedAt: newSession.startedAt,
-              date: newSession.date,
-              durationSec: newSession.duration,
-              pagesAdvanced: newSession.pagesRead,
-              device: newSession.device,
-              localStartHour: newSession.localStartHour
-            }),
-          });
-        } catch (error) {
-          console.warn("Failed to persist session to backend", error);
-        }
+        syncQueue.enqueue("SAVE_SESSION", {
+          id: newSession.id,
+          bookId: newSession.bookId,
+          bookTitle: newSession.bookTitle,
+          startedAt: newSession.startedAt,
+          date: newSession.date,
+          durationSec: newSession.duration,
+          pagesAdvanced: newSession.pagesRead,
+          device: newSession.device,
+          localStartHour: newSession.localStartHour
+        });
       }
     }
 
