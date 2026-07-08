@@ -114,6 +114,11 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         }
     }, [buildStyles]);
 
+    const buildStylesRef = useRef(buildStyles);
+    useEffect(() => {
+        buildStylesRef.current = buildStyles;
+    }, [buildStyles]);
+
     // Keep applyStylesRef current so relocated handler always has latest version
     useEffect(() => {
         applyStylesRef.current = applyStyles;
@@ -164,7 +169,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 });
 
                 // Set styles BEFORE display() so the first render is already styled
-                const initialStyles = buildStyles();
+                const initialStyles = buildStylesRef.current();
                 renditionRef.current.themes.default(initialStyles);
 
                 const startLocation = startLocationRef.current;
@@ -218,7 +223,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             renditionRef.current = null;
             bookRef.current = null;
         };
-    }, [activeBookId, activeBlob, continuous, spread, containerRef, buildStyles]);
+    }, [activeBookId, activeBlob, continuous, spread, containerRef]);
     // Note: The rendition is re-initialized only when structural options (flow/spread) or the book itself changes.
     // Dynamic style updates are handled by the separate applyStyles effect below.
 
