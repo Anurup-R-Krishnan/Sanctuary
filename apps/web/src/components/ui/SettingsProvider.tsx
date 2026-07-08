@@ -96,16 +96,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
       }, 150);
 
-      if (remoteSaveTimerRef.current !== null) {
-        window.clearTimeout(remoteSaveTimerRef.current);
-      }
-      remoteSaveTimerRef.current = window.setTimeout(async () => {
-        try {
-          await settingsService.saveSettings(toRemotePayload(values));
-        } catch (error) {
-          console.warn("Failed to persist remote settings", error);
+      if (isPersistent) {
+        if (remoteSaveTimerRef.current !== null) {
+          window.clearTimeout(remoteSaveTimerRef.current);
         }
-      }, 700);
+        remoteSaveTimerRef.current = window.setTimeout(async () => {
+          try {
+            await settingsService.saveSettings(toRemotePayload(values));
+          } catch (error) {
+            console.warn("Failed to persist remote settings", error);
+          }
+        }, 700);
+      }
     });
 
     return () => {
@@ -117,7 +119,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         window.clearTimeout(remoteSaveTimerRef.current);
       }
     };
-  }, [getCachedToken]);
+  }, [getCachedToken, isPersistent]);
 
   return <>{children}</>;
 }

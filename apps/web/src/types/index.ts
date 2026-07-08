@@ -46,6 +46,8 @@ export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "last
   addedAt?: string;
   bookmarks?: Bookmark[];
   completedAt?: string;
+  contentHash?: string;
+  coverBlob?: Blob | null;
   epubBlob: Blob | null;
   genre?: string;
   highlights?: Highlight[];
@@ -58,6 +60,7 @@ export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "last
   readingList?: "to-read" | "reading" | "finished";
   series?: string;
   seriesIndex?: number;
+  syncStatus?: "pending" | "synced" | "deleted";
   tags?: string[];
   totalPages?: number;
 }

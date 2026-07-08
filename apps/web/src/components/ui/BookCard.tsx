@@ -1,4 +1,4 @@
-import { Star, Clock, BookOpen, Heart } from "lucide-react";
+import { Star, Clock, BookOpen, Heart, Trash2 } from "lucide-react";
 import React, { useState } from "react";
 
 import type { Book } from "@/types";
@@ -10,6 +10,7 @@ type BookCardVariant = "default" | "compact" | "featured";
 
 interface BookCardProps {
   book: Book;
+  onDelete?: (id: string) => void;
   onSelect: (book: Book) => void;
   onToggleFavorite?: (id: string) => void;
   variant?: BookCardVariant;
@@ -111,6 +112,29 @@ const FavoriteButton = ({
   );
 };
 
+const DeleteButton = ({
+  onClick,
+  variant = "default"
+}: {
+  onClick: (e: React.MouseEvent) => void;
+  variant?: BookCardVariant;
+}) => {
+  if (variant === "compact") return null;
+
+  const isFeatured = variant === "featured";
+  const className = isFeatured
+    ? "p-2 rounded-xl transition-all duration-200 text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+    : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
+  
+  const iconClassName = isFeatured ? "w-5 h-5" : "w-4 h-4";
+
+  return (
+    <button onClick={onClick} className={className} aria-label="Delete book">
+      <Trash2 className={iconClassName} strokeWidth={1.5} />
+    </button>
+  );
+};
+
 const ProgressBar = ({ progress, variant = "default" }: { progress: number; variant?: BookCardVariant }) => {
   if (progress <= 0) return null;
 
@@ -171,6 +195,7 @@ function BookCard({
   book,
   onSelect,
   onToggleFavorite,
+  onDelete,
   variant = "default"
 }: BookCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -187,6 +212,12 @@ function BookCard({
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleFavorite?.(book.id);
+  };
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete "${book.title}"?`)) {
+      onDelete?.(book.id);
+    }
   };
   const handleCardKeyDown = (e: React.KeyboardEvent, selectedBook: Book) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -243,7 +274,10 @@ function BookCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4 mb-3">
               <BookMetadata title={book.title} author={book.author} variant="featured" />
-              <FavoriteButton isFavorite={!!book.isFavorite} onClick={handleFavoriteClick} variant="featured" />
+              <div className="flex items-center gap-2">
+                <FavoriteButton isFavorite={!!book.isFavorite} onClick={handleFavoriteClick} variant="featured" />
+                {onDelete && <DeleteButton onClick={handleDeleteClick} variant="featured" />}
+              </div>
             </div>
             <div className="space-y-3">
               <ProgressBar progress={progressPercentage} variant="featured" />
@@ -269,6 +303,7 @@ function BookCard({
           <div className="relative">
             <BookCover {...commonCoverProps} variant="default" />
             <FavoriteButton isFavorite={!!book.isFavorite} onClick={handleFavoriteClick} variant="default" />
+            {onDelete && <DeleteButton onClick={handleDeleteClick} variant="default" />}
             <ProgressBar progress={progressPercentage} variant="default" />
             <div className="absolute top-3 left-3 flex flex-col gap-2">
               {isRecent && (

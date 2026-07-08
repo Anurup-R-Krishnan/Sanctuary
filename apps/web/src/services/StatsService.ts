@@ -48,8 +48,8 @@ export const statsService = {
           date: row.date,
           ...(typeof row.startedAt === "string" ? { startedAt: row.startedAt } : typeof row.startTime === "string" ? { startedAt: row.startTime } : {}),
           ...(typeof row.localStartHour === "number" ? { localStartHour: row.localStartHour } : {}),
-          duration: row.duration,
-          pagesRead: row.pagesRead,
+          duration: Math.max(0, Math.min(row.duration, 86400)), // max 24h
+          pagesRead: Math.max(0, row.pagesRead),
         };
         return normalized;
       })
@@ -89,8 +89,27 @@ export const statsService = {
         
         // Merge and deduplicate, preferring remote for overlapping IDs
         const mergedMap = new Map<string, ReadingSession>(localSessions.map((s) => [s.id, s]));
+        const remoteIds = new Set(remoteSessions.map((s) => s.id));
+        
         for (const s of remoteSessions) {
           mergedMap.set(s.id, s);
+        }
+        
+        // Push any local sessions to the server if the server doesn't have them
+        for (const localSession of localSessions) {
+          if (!remoteIds.has(localSession.id)) {
+            syncQueue.enqueue("SAVE_SESSION", {
+              id: localSession.id,
+              bookId: localSession.bookId,
+              bookTitle: localSession.bookTitle,
+              startedAt: localSession.startedAt,
+              date: localSession.date,
+              durationSec: localSession.duration,
+              pagesAdvanced: localSession.pagesRead,
+              device: localSession.device || "web",
+              localStartHour: localSession.localStartHour
+            });
+          }
         }
         
         const merged = Array.from(mergedMap.values());
@@ -145,7 +164,10 @@ export const statsService = {
   async endSession(books: Book[], getToken: () => Promise<string | null>, isPersistent: boolean, endProgressOverride?: number) {
     if (!currentSessionStart || !currentSessionBook) return;
 
-    const duration = Math.round((Date.now() - currentSessionStart) / 1000);
+    let duration = Math.round((Date.now() - currentSessionStart) / 1000);
+    if (duration < 0) duration = 0;
+    if (duration > 86400) duration = 86400; // clamp to 24h maximum per session
+
     const book = books.find((item) => item.id === currentSessionBook);
     const endProgressSource = endProgressOverride ?? book?.progress ?? 0;
     const endProgress = Math.max(0, Math.min(100, endProgressSource));

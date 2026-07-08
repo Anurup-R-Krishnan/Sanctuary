@@ -127,6 +127,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     // ─── Book initialisation ───────────────────────────────────────────────────
     useEffect(() => {
         let mounted = true;
+        const container = containerRef.current;
+        let handleRelocated: ((loc: EpubLocation) => void) | null = null;
 
         const init = async () => {
             // Guard: if no blob yet, nothing to render — clear loading so the
@@ -139,7 +141,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             setIsLoading(true);
 
             // Guard: container must be in the DOM
-            if (!containerRef.current || !mounted) {
+            if (!container || !mounted) {
                 setIsLoading(false);
                 return;
             }
@@ -157,7 +159,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     })
                     .catch(() => undefined);
 
-                renditionRef.current = bookRef.current.renderTo(containerRef.current!, {
+                renditionRef.current = bookRef.current.renderTo(container, {
                     width: "100%",
                     height: continuous ? "auto" : "100%",
                     spread: continuous ? "none" : (spread ? "always" : "none"),
@@ -182,7 +184,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
                 // Attach event listener AFTER display so we don't fire on the initial
                 // render before the book is stable.
-                renditionRef.current.on("relocated", (location: EpubLocation) => {
+                handleRelocated = (location: EpubLocation) => {
                     if (!mounted) return;
                     const cfi = location.start.cfi;
                     setCurrentCfi(cfi);
@@ -195,7 +197,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                         const progressPercent = Math.max(0, Math.min(100, Math.round(percent * 100)));
                         onUpdateProgressRef.current(activeBookId, progressPercent, cfi);
                     }
-                });
+                };
+                renditionRef.current.on("relocated", handleRelocated);
 
                 // Generate locations in the background (non-blocking)
                 bookRef.current.locations.generate(1024)
@@ -218,19 +221,41 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
         return () => {
             mounted = false;
+            if (renditionRef.current && handleRelocated) {
+                try { renditionRef.current.off("relocated", handleRelocated); } catch { /* ignore */ }
+            }
             try { renditionRef.current?.destroy(); } catch { /* ignore */ }
             try { bookRef.current?.destroy?.(); } catch { /* ignore */ }
             renditionRef.current = null;
             bookRef.current = null;
+            if (container) {
+                container.innerHTML = "";
+            }
         };
     }, [activeBookId, activeBlob, continuous, spread, containerRef]);
+    
     // Note: The rendition is re-initialized only when structural options (flow/spread) or the book itself changes.
-    // Dynamic style updates are handled by the separate applyStyles effect below.
-
-    // ─── Live style updates (settings panel changes) ───────────────────────────
     useEffect(() => {
         applyStyles();
     }, [applyStyles]);
+
+    // ─── Resize Observer ───────────────────────────────────────────────────────
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const observer = new ResizeObserver(() => {
+            try {
+                // epub.js rendition resize
+                renditionRef.current?.resize();
+            } catch {
+                // Ignore internal epub.js resize errors
+            }
+        });
+
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [containerRef]);
 
     // ─── Navigation ───────────────────────────────────────────────────────────
     const nextPage = useCallback(() => {

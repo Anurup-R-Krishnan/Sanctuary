@@ -63,6 +63,7 @@ export const bookService = {
                 id: metadata.id,
                 title: metadata.title,
                 author: metadata.author,
+                contentHash: metadata.contentHash,
                 progress: 0,
                 totalPages: Math.max(1, metadata.totalPages || 100),
                 lastLocation: metadata.lastLocation || "",

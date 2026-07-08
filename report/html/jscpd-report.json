@@ -1,12 +1,96 @@
 {
   "statistics": {
-    "detectionDate": "2026-07-08T09:06:29.941Z",
+    "detectionDate": "2026-07-08T10:45:37.787Z",
     "formats": {
       "typescript": {
         "sources": {
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/utils/db.ts": {
+            "lines": 193,
+            "tokens": 2368,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/types/index.ts": {
+            "lines": 172,
+            "tokens": 1973,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/services/bookService.ts": {
+            "lines": 126,
+            "tokens": 1593,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/services/SyncQueue.ts": {
+            "lines": 129,
+            "tokens": 1315,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/services/StatsService.ts": {
+            "lines": 245,
+            "tokens": 2817,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/services/LibraryService.ts": {
+            "lines": 505,
+            "tokens": 5724,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/hooks/useReadingSession.ts": {
+            "lines": 51,
+            "tokens": 603,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
           "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/hooks/useReaderEngine.ts": {
-            "lines": 287,
-            "tokens": 2717,
+            "lines": 312,
+            "tokens": 2951,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -18,9 +102,209 @@
           }
         },
         "total": {
-          "lines": 287,
-          "tokens": 2717,
-          "sources": 1,
+          "lines": 1733,
+          "tokens": 19344,
+          "sources": 8,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "tsx": {
+        "sources": {
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/hooks/useAuth.tsx": {
+            "lines": 45,
+            "tokens": 423,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/ui/SettingsProvider.tsx": {
+            "lines": 124,
+            "tokens": 1219,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/ui/BookCard.tsx": {
+            "lines": 331,
+            "tokens": 3082,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/ui/AddBookButton.tsx": {
+            "lines": 117,
+            "tokens": 890,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/pages/SettingsView.tsx": {
+            "lines": 366,
+            "tokens": 3537,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/pages/LibraryGrid.tsx": {
+            "lines": 354,
+            "tokens": 3421,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/library/HorizontalScroll.tsx": {
+            "lines": 26,
+            "tokens": 236,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/App.tsx": {
+            "lines": 139,
+            "tokens": 1402,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 1502,
+          "tokens": 14210,
+          "sources": 8,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "javascript": {
+        "sources": {
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/ui/BookCard.tsx": {
+            "lines": 263,
+            "tokens": 2459,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/ui/AddBookButton.tsx": {
+            "lines": 62,
+            "tokens": 386,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/pages/SettingsView.tsx": {
+            "lines": 210,
+            "tokens": 1783,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/pages/LibraryGrid.tsx": {
+            "lines": 233,
+            "tokens": 2039,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/components/library/HorizontalScroll.tsx": {
+            "lines": 1,
+            "tokens": 40,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "/home/anuruprkris/Project/sanctuary-book-reader/apps/web/src/App.tsx": {
+            "lines": 59,
+            "tokens": 555,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 828,
+          "tokens": 7262,
+          "sources": 6,
           "clones": 0,
           "duplicatedLines": 0,
           "duplicatedTokens": 0,
@@ -32,9 +316,9 @@
       }
     },
     "total": {
-      "lines": 287,
-      "tokens": 2717,
-      "sources": 1,
+      "lines": 4063,
+      "tokens": 40816,
+      "sources": 22,
       "clones": 0,
       "duplicatedLines": 0,
       "duplicatedTokens": 0,

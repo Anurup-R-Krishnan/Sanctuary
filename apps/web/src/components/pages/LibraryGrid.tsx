@@ -1,4 +1,4 @@
-import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen } from "lucide-react";
+import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
@@ -16,6 +16,7 @@ import BookCard from "../ui/BookCard";
 
 interface LibraryGridProps {
   addBook: (file: File) => Promise<void>;
+  deleteBook: (id: string) => void;
   onSelectBook: (book: Book) => void;
   toggleFavorite: (id: string) => void;
 }
@@ -43,6 +44,7 @@ function LibraryGrid({
   onSelectBook,
   addBook,
   toggleFavorite: onToggleFavorite,
+  deleteBook: onDeleteBook,
 }: LibraryGridProps) {
   const { searchTerm } = useUIStore(useShallow((state) => ({
     searchTerm: state.searchTerm,
@@ -227,14 +229,14 @@ function LibraryGrid({
       {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
         <section>
           <SectionHeader title="Continue Reading" count={recentBooks.length} icon={Clock} />
-          <HorizontalScroll books={recentBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} />
+          <HorizontalScroll books={recentBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
         </section>
       )}
 
       {favoriteBooks.length > 0 && filterBy === "all" && !searchTerm && (
         <section>
           <SectionHeader title="Favorites" count={favoriteBooks.length} icon={Star} />
-          <HorizontalScroll books={favoriteBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} />
+          <HorizontalScroll books={favoriteBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
         </section>
       )}
 
@@ -250,7 +252,7 @@ function LibraryGrid({
                     <span>{series}</span>
                     <ChevronRight className="w-3 h-3" />
                   </div>
-                  <HorizontalScroll books={seriesBooks} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} />
+                  <HorizontalScroll books={seriesBooks} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
                 </div>
               ))}
           </div>
@@ -276,7 +278,7 @@ function LibraryGrid({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
             {displayBooks.map((book) => (
               <div key={book.id}>
-                <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} />
+                <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
               </div>
             ))}
           </div>
@@ -326,6 +328,18 @@ function LibraryGrid({
                     }`}
                 >
                   <Star className={`w-4 h-4 ${book.isFavorite ? "fill-current" : ""}`} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Are you sure you want to delete "${book.title}"?`)) {
+                      onDeleteBook(book.id);
+                    }
+                  }}
+                  className="p-1.5 rounded-lg transition-colors text-light-text-muted/30 dark:text-dark-text-muted/30 hover:text-red-500"
+                  aria-label="Delete book"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </button>
             ))}

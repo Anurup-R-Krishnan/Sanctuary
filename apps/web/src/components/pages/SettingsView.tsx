@@ -14,7 +14,8 @@ import {
     CircleDashed,
     HardDrive,
     Trash2,
-    AlertTriangle
+    AlertTriangle,
+    Loader2
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -62,6 +63,7 @@ const TYPOGRAPHY_SLIDERS = [
 
 function SettingsView() {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
+    const [isResetting, setIsResetting] = useState(false);
     const {
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
@@ -115,18 +117,20 @@ function SettingsView() {
 
     const handleFactoryReset = async () => {
         if (!window.confirm("Are you sure you want to completely wipe all local data? This will remove cached books and progress. This action cannot be undone.")) return;
-        localStorage.clear();
-        sessionStorage.clear();
+        setIsResetting(true);
         try {
+            localStorage.clear();
+            sessionStorage.clear();
             await clearBooks();
+            if (navigator.serviceWorker) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const r of regs) await r.unregister();
+            }
+            window.location.reload();
         } catch (e) {
             console.error(e);
+            setIsResetting(false);
         }
-        if (navigator.serviceWorker) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            for (const r of regs) await r.unregister();
-        }
-        window.location.reload();
     };
 
     return (
@@ -345,10 +349,11 @@ function SettingsView() {
                                 </p>
                                 <button
                                     onClick={handleFactoryReset}
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition-colors shadow-sm"
+                                    disabled={isResetting}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm ${isResetting ? "bg-red-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
                                 >
-                                    <Trash2 className="w-4 h-4" />
-                                    Factory Reset Cache
+                                    {isResetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                    {isResetting ? "Resetting..." : "Factory Reset Cache"}
                                 </button>
                             </div>
                         </Section>

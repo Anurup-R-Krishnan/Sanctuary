@@ -20,6 +20,8 @@ type BookSyncMeta = {
 const coverObjectUrlByBookId = new Map<string, string>();
 const syncMetaByBookId = new Map<string, BookSyncMeta>();
 const inFlightMutations = new Set<string>();
+const pendingImports = new Set<string>();
+const pendingDeletions = new Set<string>();
 
 const getInitialSyncMeta = (): BookSyncMeta => ({
   dirty: false,
@@ -247,10 +249,23 @@ export const libraryService = {
       const remoteIds = new Set(stored.map((b) => b.id));
       for (const localBook of localDbBooks) {
         if (!remoteIds.has(localBook.id) && !inFlightMutations.has(localBook.id)) {
-          await deleteBookFromDb(localBook.id).catch((err) => {
-            console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
-          });
-          revokeTrackedCoverUrl(localBook.id);
+          // INV-SYNC-001: Shield guest books ("pending") from GC and push to cloud.
+          if (localBook.syncStatus === "pending") {
+            console.log(`Transitioning guest book to auth: ${localBook.title}`);
+            const epubFile = new File([localBook.epubBlob!], `${localBook.id}.epub`, { type: "application/epub+zip" });
+            bookService.addBook(epubFile, localBook, token || undefined, localBook.coverBlob)
+              .then(result => {
+                const persistedBook = { ...localBook, syncStatus: "synced" as const, ...(result.coverUrl ? { coverUrl: result.coverUrl } : {}) };
+                replaceBookInStore(localBook.id, () => persistedBook);
+                saveBookToDb(persistedBook, "Failed to persist synced book:");
+              })
+              .catch(e => console.error("Failed to sync guest book to cloud:", e));
+          } else {
+            await deleteBookFromDb(localBook.id).catch((err) => {
+              console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
+            });
+            revokeTrackedCoverUrl(localBook.id);
+          }
         }
       }
     } catch (error) {
@@ -264,8 +279,26 @@ export const libraryService = {
     const bookId = uuidv4();
     let bookData: EpubBookHandle | null = null;
 
+    let importKey: string | null = null;
     try {
       const epubArrayBuffer = await file.arrayBuffer();
+
+      const hashBuffer = await crypto.subtle.digest("SHA-256", epubArrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+      importKey = contentHash;
+      if (pendingImports.has(importKey)) {
+        throw new Error(`The file "${file.name}" is currently being imported.`);
+      }
+      pendingImports.add(importKey);
+
+      const existingBooks = useBookStore.getState().books;
+      const isDuplicate = existingBooks.some(b => b.contentHash === contentHash);
+      if (isDuplicate) {
+        throw new Error(`The exact file "${file.name}" is already in your library.`);
+      }
+
       bookData = openEpub(epubArrayBuffer);
       await bookData.ready;
 
@@ -286,6 +319,9 @@ export const libraryService = {
         author,
         coverUrl: displayCoverUrl,
         epubBlob,
+        coverBlob: coverBlob || null,
+        contentHash,
+        syncStatus: isPersistent ? "synced" : "pending",
         progress: 0,
         lastLocation: "",
         addedAt: new Date().toISOString(),
@@ -326,9 +362,12 @@ export const libraryService = {
       }
     } catch (error) {
       console.error("Error adding book:", error);
-      throw error;
+      if (error instanceof Error && error.message.includes("already in your library")) throw error;
+      if (error instanceof Error && error.message.includes("currently being imported")) throw error;
+      throw new Error(`Failed to import EPUB file: ${error instanceof Error ? error.message : "Invalid format"}`);
     } finally {
       bookData?.destroy?.();
+      if (importKey) pendingImports.delete(importKey);
     }
   },
 
@@ -383,6 +422,42 @@ export const libraryService = {
     const book = useBookStore.getState().books.find((item) => item.id === bookId);
     if (!book) return;
     void this.updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((b) => b.id !== bookmarkId) }, getToken, isPersistent);
+  },
+
+  async deleteBook(id: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
+    if (pendingDeletions.has(id)) return;
+    pendingDeletions.add(id);
+
+    try {
+      const book = useBookStore.getState().books.find((item) => item.id === id);
+      if (!book) return;
+
+      // Optimistically remove from UI
+      useBookStore.getState().setBooks(useBookStore.getState().books.filter((b) => b.id !== id));
+
+      // Cleanup Object URLs to free memory
+      if (book.coverUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(book.coverUrl);
+      }
+      revokeTrackedCoverUrl(id);
+
+      try {
+        // 1. Remove from local IndexedDB
+        await deleteBookFromDb(id);
+
+        // 2. Remove remote if persistent
+        if (isPersistent) {
+          await syncQueue.enqueue("DELETE_LIBRARY", { id });
+        }
+      } catch (error) {
+        // Rollback UI
+        console.error("Failed to delete book:", error);
+        useBookStore.getState().setBooks([...useBookStore.getState().books, book]);
+        throw error;
+      }
+    } finally {
+      pendingDeletions.delete(id);
+    }
   },
 
   async getBookContent(id: string, getToken: () => Promise<string | null>, isPersistent: boolean): Promise<Blob> {

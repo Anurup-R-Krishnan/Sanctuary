@@ -9,9 +9,9 @@ const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 
 const mockAuthState = {
     isLoaded: true,
-    isSignedIn: true as const,
-    userId: "guest",
-    sessionId: "guest-session",
+    isSignedIn: false as const,
+    userId: null,
+    sessionId: null,
     getToken: async () => null as string | null,
     signOut: async () => { },
     orgId: null,
@@ -22,15 +22,8 @@ const mockAuthState = {
 
 const mockUserState = {
     isLoaded: true,
-    isSignedIn: true as const,
-    user: {
-        id: "guest",
-        fullName: "Guest",
-        firstName: "Guest",
-        lastName: "",
-        primaryEmailAddress: { emailAddress: "" },
-        imageUrl: "",
-    },
+    isSignedIn: false as const,
+    user: null,
 };
 
 const authHookImpl: () => ReturnType<typeof useClerkAuth> | typeof mockAuthState = DISABLE_AUTH ? (() => mockAuthState) : useClerkAuth;

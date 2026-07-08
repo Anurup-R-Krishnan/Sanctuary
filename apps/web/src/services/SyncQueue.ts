@@ -32,6 +32,13 @@ async function rawApiCall(mutation: SyncMutation, getToken: () => Promise<string
       body: JSON.stringify(payload.data)
     });
     if (!res.ok) throw new Error(`PATCH_LIBRARY failed: ${res.status}`);
+  } else if (mutation.type === "DELETE_LIBRARY") {
+    const payload = mutation.payload as { id: string };
+    const res = await fetch(`${API.LIBRARY}?id=${encodeURIComponent(payload.id)}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) throw new Error(`DELETE_LIBRARY failed: ${res.status}`);
   } else {
     throw new Error(`Unknown mutation type: ${mutation.type}`);
   }
@@ -71,31 +78,34 @@ class SyncQueueManager {
     this.isProcessing = true;
 
     try {
-      const mutations = await getAllMutations();
-      if (mutations.length === 0) {
-        this.backoffMs = 1200; // reset on empty queue
-        this.isProcessing = false;
-        return;
-      }
-
-      // Sort by creation time (oldest first)
-      mutations.sort((a, b) => a.createdAt - b.createdAt);
-
-      for (const mutation of mutations) {
-        try {
-          await rawApiCall(mutation, this.getToken);
-          await deleteMutation(mutation.id);
-        } catch (error) {
-          // A mutation failed. Halt processing for now.
-          console.warn(`Mutation ${mutation.id} failed, will retry:`, error);
-          this.scheduleRetry();
-          this.isProcessing = false;
-          return;
+      while (this.isPersistent && this.getToken) {
+        const mutations = await getAllMutations();
+        if (mutations.length === 0) {
+          this.backoffMs = 1200; // reset on empty queue
+          break;
         }
-      }
 
-      // If we got here, everything succeeded
-      this.backoffMs = 1200;
+        // Sort by creation time (oldest first)
+        mutations.sort((a, b) => a.createdAt - b.createdAt);
+
+        let processedAny = false;
+        for (const mutation of mutations) {
+          try {
+            await rawApiCall(mutation, this.getToken);
+            await deleteMutation(mutation.id);
+            processedAny = true;
+          } catch (error) {
+            // A mutation failed. Halt processing for now.
+            console.warn(`Mutation ${mutation.id} failed, will retry:`, error);
+            this.scheduleRetry();
+            this.isProcessing = false;
+            return;
+          }
+        }
+
+        // Safety check to prevent infinite loop if deleteMutation/getAllMutations fail to align
+        if (!processedAny) break;
+      }
     } catch (err) {
       console.error("Critical failure reading mutation queue", err);
       this.scheduleRetry();

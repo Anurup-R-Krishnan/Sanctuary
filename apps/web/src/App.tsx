@@ -112,6 +112,7 @@ function App() {
               onSelectBook={startSession}
               addBook={(file) => libraryService.addBook(file, getToken, isPersistent)}
               toggleFavorite={(id) => libraryService.toggleFavorite(id, getToken, isPersistent)}
+              deleteBook={(id) => libraryService.deleteBook(id, getToken, isPersistent)}
             />
           )}
           {view === View.SETTINGS && <SettingsView />}
