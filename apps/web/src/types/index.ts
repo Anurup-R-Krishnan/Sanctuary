@@ -27,19 +27,6 @@ export interface Bookmark {
   title: string;
 }
 
-export interface ReaderSettings {
-  autoHideMs?: number;
-  dailyGoal?: number;
-  fontScale?: number;
-  lineHeight?: number;
-  motion?: "full" | "reduced";
-  showPageMeta?: boolean;
-  showProgress?: boolean;
-  tapZones?: boolean;
-  textWidth?: number;
-  themePreset?: string;
-  weeklyGoal?: number;
-}
 
 export interface LibraryItem {
   author: string;

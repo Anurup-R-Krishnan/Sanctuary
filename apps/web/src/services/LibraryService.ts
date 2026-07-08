@@ -350,8 +350,7 @@ export const libraryService = {
         };
       },
       async () => {
-        const token = await getToken();
-        await bookService.updateBookProgress(id, progress, lastLocation, token || undefined);
+        await bookService.updateBookProgress(id, progress, lastLocation);
       },
       isPersistent
     );
@@ -362,8 +361,7 @@ export const libraryService = {
       id,
       (book) => ({ ...book, ...updates }),
       async (nextBook) => {
-        const token = await getToken();
-        await bookService.updateBook(id, nextBook, token || undefined);
+        await bookService.updateBook(id, nextBook);
       },
       isPersistent
     );

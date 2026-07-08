@@ -171,6 +171,9 @@ Verification procedure: Inspect `ReadingSession` objects in `useStatsStore` and 
 5. **[SAN-005]** Fixed storage fragmentation by migrating session history from `localStorage` into IndexedDB (`SanctuaryReaderDB` v3).
 6. **[SAN-006]** Unified API networking layer via `SyncQueue.ts`, replacing raw `fetch` calls with an offline mutation queue and exponential backoff to prevent data loss.
 7. **[SAN-007]** Eliminated active book state duplication by stripping `selectedBookId` from `useUIStore` and deriving it directly from `useReaderProgressStore`.
+8. **[SAN-008]** Fixed TypeScript compilation errors (`TS2554`) in `SettingsProvider.tsx` and `LibraryService.ts` by removing stale `token` parameters passed to `SyncQueue`-backed services.
+9. **[SAN-009]** Cleaned up dead code and linter warnings, resolving `knip` failures (unused types, dead exports) and replacing an `any` type in `SyncMutation` to satisfy strict ESLint rules.
+10. **[SAN-010]** Fixed guest-mode data leaks where `SettingsProvider` and `StatsService` fetched remote settings (`API.SETTINGS`) and goals (`API.GOALS`) regardless of `isPersistent` state, violating offline invariants and triggering network errors before Clerk authentication resolved.
 
 ## Remaining Risks
 - **None**. All explicit medium-to-high priority architectural risks, state duplications, and data-loss vulnerabilities identified during the recovery audit have been successfully resolved and statically verified via TypeScript compiler bounds.

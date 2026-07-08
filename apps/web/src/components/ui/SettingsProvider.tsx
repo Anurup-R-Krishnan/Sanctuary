@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 
 import { useCallback, useEffect, useRef } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useUser } from "@/hooks/useAuth";
 import { settingsService } from "@/services/settingsService";
+import { useSessionStore } from "@/store/useSessionStore";
 import {
   useSettingsStore,
   LOCAL_SETTINGS_KEY,
@@ -15,6 +16,10 @@ import {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { getToken } = useAuth();
+  const { isSignedIn } = useUser();
+  const { isGuest } = useSessionStore();
+  const isPersistent = import.meta.env.VITE_DISABLE_AUTH !== "true" && !!(isSignedIn && !isGuest);
+
   const hydratedRef = useRef(false);
   const remoteSaveTimerRef = useRef<number | null>(null);
   const localSaveTimerRef = useRef<number | null>(null);
@@ -52,6 +57,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         console.warn("Failed to load local settings cache", error);
       }
 
+      if (!isPersistent) {
+        hydratedRef.current = true;
+        return;
+      }
+
       try {
         const token = await getCachedToken();
         const remote = await settingsService.getSettings(token || undefined);
@@ -68,7 +78,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [getCachedToken]);
+  }, [getCachedToken, isPersistent]);
 
   useEffect(() => {
     const unsubscribe = useSettingsStore.subscribe((state) => {
@@ -91,8 +101,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
       remoteSaveTimerRef.current = window.setTimeout(async () => {
         try {
-          const token = await getCachedToken();
-          await settingsService.saveSettings(toRemotePayload(values), token || undefined);
+          await settingsService.saveSettings(toRemotePayload(values));
         } catch (error) {
           console.warn("Failed to persist remote settings", error);
         }
