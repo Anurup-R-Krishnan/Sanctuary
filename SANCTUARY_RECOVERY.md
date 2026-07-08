@@ -136,6 +136,204 @@ Dependencies: SAN-001
 Regression surface: Reading session sorting and stats aggregates.
 
 Verification procedure: Inspect `ReadingSession` objects in `useStatsStore` and verify `startedAt` exists.
+
+### SAN-005 — Session history fragmentation in localStorage
+
+Severity: HIGH
+
+Status: FIXED
+
+Area: Persistence & Stats
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/utils/db.ts`
+- `apps/web/src/services/StatsService.ts`
+- `apps/web/src/hooks/useReadingSession.ts`
+
+Observed behavior: Reading sessions were stored directly in `localStorage` (`sanctuary_reading_sessions`), separating them from other local persistence records stored in IndexedDB, which led to storage fragmentation, potential data-loss due to size limitations, and sync issues.
+
+Expected behavior: All core offline reading data (books, reading sessions, etc.) should use the IndexedDB layer to guarantee transaction safety, consistency, and storage capacity.
+
+Reproduction: Inspect storage usage during/after a reading session in browser developer tools under `localStorage`.
+
+Evidence: Direct access to `localStorage` for sessions in `StatsService.ts` and lack of a `sessions` store in `utils/db.ts`.
+
+Root cause: Fragmented local storage strategy where session history was stored in `localStorage` rather than being part of the primary IndexedDB schema (`SanctuaryReaderDB`).
+
+Proposed repair: Create a `sessions` object store in IndexedDB schema version 3, migrate existing `localStorage` sessions to IndexedDB, and rewrite `StatsService.ts` and `useReadingSession.ts` to read/write session data via IndexedDB.
+
+Dependencies: None
+
+Regression surface: Reading session storage, history viewing, and stats aggregation.
+
+Verification procedure: Run the web app, check IndexedDB `SanctuaryReaderDB` version is 3, verify that the `sessions` store contains active reading sessions, and verify that stats compile correctly.
+
+### SAN-006 — Missing offline mutation queue for remote synchronization
+
+Severity: CRITICAL
+
+Status: FIXED
+
+Area: Synchronization
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/services/SyncQueue.ts`
+- `apps/web/src/services/LibraryService.ts`
+- `apps/web/src/services/settingsService.ts`
+
+Observed behavior: Remote API operations for library progress, books updates, and settings changes were made as fire-and-forget/immediate fetch requests, causing immediate failures or data loss when the client went offline.
+
+Expected behavior: Mutations targeting remote endpoints should be queued locally in IndexedDB when offline or during transient network errors, then retried with exponential backoff.
+
+Reproduction: Put the browser in offline mode, trigger a settings or progress change, and reload. Observe that changes are lost and not synced once the network is restored.
+
+Evidence: Direct `fetch` calls to `/api/library` and `/api/settings` in `bookService.ts` and `settingsService.ts` without queuing.
+
+Root cause: Lack of an offline mutation queue or sync queue architecture, resulting in immediate remote data loss upon connection drops.
+
+Proposed repair: Implement a robust IndexedDB-backed `SyncQueue` with support for queueing mutations (`SAVE_SESSION`, `SAVE_SETTINGS`, `PATCH_LIBRARY`), retrying with backoff, and processing the queue once network availability returns.
+
+Dependencies: None
+
+Regression surface: Library updates, reading progress sync, settings changes, network request patterns.
+
+Verification procedure: Run build/lint, mock network failures, perform settings updates, observe queue growth in IndexedDB, restore network, and observe successful flush to Cloudflare API.
+
+### SAN-007 — Active book state duplication across UI and Reader stores
+
+Severity: MEDIUM
+
+Status: FIXED
+
+Area: State Management
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/store/useUIStore.ts`
+- `apps/web/src/store/useReaderProgressStore.ts`
+- `apps/web/src/App.tsx`
+
+Observed behavior: The active/selected book ID was tracked in two separate stores: `selectedBookId` in `useUIStore` and `active.bookId` in `useReaderProgressStore`, causing race conditions and out-of-sync UI states during book transitions.
+
+Expected behavior: A single, authoritative store should own the active book state.
+
+Reproduction: Open a book, trigger view transitions, and observe that UI may display details of a different book or reader view crashes.
+
+Evidence: Parallel variables `selectedBookId` in `useUIStore.ts` and `active.bookId` in `useReaderProgressStore.ts`.
+
+Root cause: Redundant state tracking variables in separate stores without clean derivation or synchronized boundaries.
+
+Proposed repair: Remove `selectedBookId` and its setter from `useUIStore`, and instead derive the selected book directly from the reader progress/session store.
+
+Dependencies: None
+
+Regression surface: Book selection, opening reader view, returning to library view.
+
+Verification procedure: Run tests, verify view navigation to reader and settings still operates seamlessly, check that active book matches reader display.
+
+### SAN-008 — TypeScript compilation errors (TS2554) in SettingsProvider and LibraryService
+
+Severity: HIGH
+
+Status: FIXED
+
+Area: Type Safety
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/components/ui/SettingsProvider.tsx`
+- `apps/web/src/services/LibraryService.ts`
+
+Observed behavior: TypeScript compilation failed due to incorrect number of arguments passed to functions, particularly trailing `token` parameters.
+
+Expected behavior: All function calls must strictly adhere to their typescript signatures.
+
+Reproduction: Run `bun run build` or `bun run web:build` and observe compilation failure `TS2554`.
+
+Evidence: Stale `token` arguments passed to `settingsService.saveSettings` and `bookService.updateBookProgress` after sync queue changes.
+
+Root cause: Architectural migration to the `SyncQueue` removed the need to pass explicit Clerk authorization tokens at call-site (since the sync client handles it internally), but the call-sites were not updated.
+
+Proposed repair: Remove the redundant token arguments from settings and library service calls to match the updated method signatures.
+
+Dependencies: SAN-006
+
+Regression surface: Settings saving, library/book progress updates.
+
+Verification procedure: Run `bun run build` and ensure TypeScript compiler finishes with no errors.
+
+### SAN-009 — Dead code, knip failures, and strict ESLint warnings
+
+Severity: MEDIUM
+
+Status: FIXED
+
+Area: Code Quality
+
+Platform: Monorepo
+
+Affected files:
+- `knip.json`
+- `apps/web/src/utils/db.ts`
+- `apps/web/src/types/index.ts`
+
+Observed behavior: Static analysis checks failed (`knip` unused exports/dependencies and ESLint `no-explicit-any` warnings).
+
+Expected behavior: Zero unused exports/dependencies (except ignored ones) and zero ESLint rule violations.
+
+Reproduction: Run `bun run knip` and `bun run lint`.
+
+Evidence: Knip reports unused types like `ReaderSettings` and `clearSessions`, and ESLint errors on `any` in `SyncMutation`.
+
+Root cause: Stale abstractions left behind during successive refactoring iterations, plus the use of unsafe `any` in types.
+
+Proposed repair: Remove the unused `ReaderSettings` interface and `clearSessions` function, add appropriate ignores to `knip.json` for external mobile packages, and replace `any` with `unknown` in `SyncMutation` payload.
+
+Dependencies: None
+
+Regression surface: Static verification tooling only.
+
+Verification procedure: Run `bun run lint` and `bun run knip` to verify clean output.
+
+### SAN-010 — Guest-mode data leak and remote settings/goals fetch errors
+
+Severity: HIGH
+
+Status: FIXED
+
+Area: Authentication & Isolation
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/components/ui/SettingsProvider.tsx`
+- `apps/web/src/services/StatsService.ts`
+- `apps/web/src/App.tsx`
+
+Observed behavior: When running in Guest Mode, `SettingsProvider` and `StatsService` still attempted to make remote API requests for settings and goals. This triggered network errors in the console because no Clerk token was available, and violated the offline-first guest sandbox.
+
+Expected behavior: All remote requests must be completely gated in guest mode (i.e. when `isPersistent` is false).
+
+Reproduction: Disable auth (`DISABLE_AUTH=true`), load the app, and inspect the browser network log. Observe failed network requests to `/api/settings` and `/api/goals`.
+
+Evidence: Missing `isPersistent` guards in `SettingsProvider.tsx` (during remote settings hydration) and `StatsService.fetchGoals`.
+
+Root cause: Incomplete isolation between Guest Mode and Authenticated Mode logic paths in settings hydration and stats endpoints.
+
+Proposed repair: Add conditional guards checking `isPersistent` in both `SettingsProvider` settings fetch/save effects and `StatsService.fetchGoals` call to bypass remote requests entirely when not authenticated.
+
+Dependencies: SAN-003
+
+Regression surface: Application startup in guest/authenticated modes, initial settings hydration.
+
+Verification procedure: Load application in Guest Mode, verify no errors in the console, verify settings load instantly from localStorage.
+
 ## Architectural Findings
 - **State Duplication (Active Book):** The current active book is tracked in both `useUIStore.ts` (`selectedBookId`) and `useReaderProgressStore.ts` (`active.bookId`).
 - **State Duplication (Reading Progress):** Reading progress is tracked inside `useBookStore.ts` (`book.progress`, `book.lastLocation`) and `useReaderProgressStore.ts` (`active.progress`, `active.location`).
