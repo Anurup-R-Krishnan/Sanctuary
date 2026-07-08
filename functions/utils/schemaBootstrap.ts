@@ -136,7 +136,7 @@ export async function ensureBooksSchema(db: D1Database): Promise<void> {
   const hasBooksUserIdIdx = await hasColumn(db, "books", "user_id");
   if (hasBooksUserIdIdx) {
     await db.prepare("CREATE INDEX IF NOT EXISTS idx_books_user_updated ON books(user_id, updated_at DESC)").run();
-    await db.prepare("CREATE INDEX IF NOT EXISTS idx_books_user_content_hash ON books(user_id, content_hash)").run();
+    await db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_books_user_content_hash ON books(user_id, content_hash)").run();
   }
 
   // --- FTS5 Virtual Table for Books ---

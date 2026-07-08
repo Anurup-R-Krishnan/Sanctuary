@@ -33,3 +33,8 @@ apps/mobile/.expo-shared
 apps/mobile/web-build
 apps/desktop/src-tauri/target
 apps/desktop/src-tauri/gen
+
+# Testing Artifacts
+playwright-report/
+test-results/
+*.epub

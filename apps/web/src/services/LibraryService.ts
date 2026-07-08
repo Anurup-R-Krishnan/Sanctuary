@@ -196,9 +196,16 @@ export const libraryService = {
 
   async loadBooks(getToken: () => Promise<string | null>, isPersistent: boolean) {
     if (!isPersistent) {
-      this.cleanupAllObjectUrls();
-      useBookStore.getState().setBooks([]);
-      useBookStore.getState().setIsLoading(false);
+      useBookStore.getState().setIsLoading(true);
+      try {
+        const localDbBooks = await getAllBooks().catch(() => [] as Book[]);
+        reconcileTrackedCoverUrls(localDbBooks);
+        useBookStore.getState().setBooks(localDbBooks);
+      } catch (error) {
+        console.error("Failed to load local books in guest mode:", error);
+      } finally {
+        useBookStore.getState().setIsLoading(false);
+      }
       return;
     }
 
