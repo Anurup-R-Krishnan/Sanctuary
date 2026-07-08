@@ -334,6 +334,162 @@ Regression surface: Application startup in guest/authenticated modes, initial se
 
 Verification procedure: Load application in Guest Mode, verify no errors in the console, verify settings load instantly from localStorage.
 
+### SAN-011 — Broken/misleading Sign Out button in Guest Mode
+
+Severity: LOW
+
+Status: FIXED
+
+Area: Authentication & Isolation
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/hooks/useAuth.tsx`
+
+Observed behavior: When auth was disabled via VITE_DISABLE_AUTH=true, the mock hook still returned `isSignedIn: true` and a mock `"guest"` user. This caused the UI to incorrectly render the "Sign Out" button, which did nothing when clicked.
+
+Expected behavior: In local Guest Mode, `isSignedIn` should be false and there should be no "Sign Out" option, reflecting a true local-only guest experience.
+
+Reproduction: Launch the app with DISABLE_AUTH=true and check the header for a "Sign Out" button.
+
+Evidence: Mock auth state returned `isSignedIn: true` and a hardcoded user payload.
+
+Root cause: Incorrect mock auth state representation for Guest Mode.
+
+Proposed repair: Set `isSignedIn: false` and `user: null` in the mock auth states when DISABLE_AUTH=true is active.
+
+Dependencies: SAN-003
+
+Regression surface: Header buttons rendering.
+
+Verification procedure: Load application in Guest Mode and confirm the "Sign Out" button is absent.
+
+### SAN-012 — SyncQueue race condition where concurrently added mutations get stuck in IndexedDB
+
+Severity: HIGH
+
+Status: FIXED
+
+Area: Persistence & Sync
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/services/SyncQueue.ts`
+
+Observed behavior: When a new mutation was enqueued during an active sync run, the first `processQueue` execution did not see the new mutation since it fetched a snapshot once at the start. Concurrent calls returned immediately because of the `isProcessing = true` lock. Consequently, the newly added mutation remained stuck in IndexedDB until another sync trigger occurred.
+
+Expected behavior: The sync queue must drain all pending mutations sequentially without leaving any mutations stuck in the queue.
+
+Reproduction: Trigger a settings change while a slow network sync is currently running. Inspect IndexedDB mutations store afterwards.
+
+Evidence: `processQueue()` read the database snapshot once and early-exited on concurrent calls.
+
+Root cause: Non-reentrant and non-draining concurrency lock in the sync queue.
+
+Proposed repair: Refactor `processQueue()` to use a reentrant `while` loop that continues draining the IndexedDB queue until it is empty.
+
+Dependencies: SAN-006
+
+Regression surface: Online/offline synchronization reliability.
+
+Verification procedure: Verify that the mutation queue completely drains and all operations are eventually written to the database.
+
+### SAN-013 — Guest Mode library is not loaded from IndexedDB on page refresh, and local cover Object URLs become stale
+
+Severity: CRITICAL
+
+Status: FIXED
+
+Area: Persistence & Sync
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/types/index.ts`
+- `apps/web/src/services/LibraryService.ts`
+
+Observed behavior: On page refresh in Guest Mode, the library list was completely wiped to `[]` because `loadBooks` returned early when `isPersistent` was false. Furthermore, cover Object URLs (`blob:`) stored in IndexedDB became invalid on page reload, leading to broken book covers.
+
+Expected behavior: Guest Mode books must persist across refreshes using IndexedDB, and cover Object URLs must be dynamically re-created on reload.
+
+Reproduction: Import a book in Guest Mode, refresh the page, and observe the library becomes empty.
+
+Evidence: `loadBooks` set books list to empty when `isPersistent` was false, and stored stale blob cover URLs directly.
+
+Root cause: Lack of local persistence loading in Guest Mode's `loadBooks` and lack of cover Object URL lifetime tracking.
+
+Proposed repair: Load local books from IndexedDB inside `loadBooks` when `isPersistent` is false. Add `coverBlob` to the `Book` model to store the cover images, and dynamically regenerate new Object URLs from the cached `coverBlob` or extract them from the EPUB blob on page load.
+
+Dependencies: SAN-003, SAN-005
+
+Regression surface: Guest Mode library loading and cover rendering.
+
+Verification procedure: Import a book in Guest Mode, refresh, and confirm the book and its cover are loaded correctly.
+
+### SAN-014 — Stale closure and unnecessary re-renders in useReadingSession due to subscription to entire books array
+
+Severity: MEDIUM
+
+Status: FIXED
+
+Area: Reader
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/hooks/useReadingSession.ts`
+
+Observed behavior: `useReadingSession` hook subscribed to the entire `books` array from useBookStore. Since book progress updates continuously while reading, the hook and all callbacks were re-created continuously. In addition, `endSession` was vulnerable to stale closures of the `books` array when calculating total pages.
+
+Expected behavior: Hook should not subscribe to the entire books array.
+
+Reproduction: Inspect render counts of reader view and callbacks during progress updates.
+
+Evidence: `const books = useBookStore((state) => state.books)` in hook body.
+
+Root cause: Inappropriate subscription to a rapidly changing global state array.
+
+Proposed repair: Access the books array using non-reactive `useBookStore.getState().books` inside the `endSession` callback, eliminating the subscription.
+
+Dependencies: SAN-002
+
+Regression surface: Reader session ending, page progression.
+
+Verification procedure: Close the reader session and verify reading session is recorded with correct pages read.
+
+### SAN-015 — Settings changes in Guest Mode schedule redundant remote save timers and invoke no-op sync queue enqueues
+
+Severity: LOW
+
+Status: FIXED
+
+Area: Performance & Optimization
+
+Platform: Web
+
+Affected files:
+- `apps/web/src/components/ui/SettingsProvider.tsx`
+
+Observed behavior: In Guest Mode, settings changes still scheduled a 700ms timer to call `settingsService.saveSettings`, which called `syncQueue.enqueue` (which was a no-op). This resulted in redundant CPU timer cycles and object allocations.
+
+Expected behavior: Remote save timers should only be scheduled when persistence is active.
+
+Reproduction: Adjust reader settings in Guest Mode and profile CPU/timers.
+
+Evidence: Missing `isPersistent` check on the subscription remote save callback inside `SettingsProvider`.
+
+Root cause: Missing conditional gating of remote sync scheduling on `isPersistent`.
+
+Proposed repair: Wrap the remote save timer scheduling block in `if (isPersistent)` check and include `isPersistent` in the subscription effect dependencies.
+
+Dependencies: SAN-010
+
+Regression surface: Settings page changes.
+
+Verification procedure: Verify settings save instantly and locally in Guest Mode.
+
 ## Architectural Findings
 - **State Duplication (Active Book):** The current active book is tracked in both `useUIStore.ts` (`selectedBookId`) and `useReaderProgressStore.ts` (`active.bookId`).
 - **State Duplication (Reading Progress):** Reading progress is tracked inside `useBookStore.ts` (`book.progress`, `book.lastLocation`) and `useReaderProgressStore.ts` (`active.progress`, `active.location`).
@@ -372,6 +528,46 @@ Verification procedure: Load application in Guest Mode, verify no errors in the 
 8. **[SAN-008]** Fixed TypeScript compilation errors (`TS2554`) in `SettingsProvider.tsx` and `LibraryService.ts` by removing stale `token` parameters passed to `SyncQueue`-backed services.
 9. **[SAN-009]** Cleaned up dead code and linter warnings, resolving `knip` failures (unused types, dead exports) and replacing an `any` type in `SyncMutation` to satisfy strict ESLint rules.
 10. **[SAN-010]** Fixed guest-mode data leaks where `SettingsProvider` and `StatsService` fetched remote settings (`API.SETTINGS`) and goals (`API.GOALS`) regardless of `isPersistent` state, violating offline invariants and triggering network errors before Clerk authentication resolved.
+11. **[SAN-011]** Fixed broken/misleading Sign Out button in Guest Mode by setting mock auth status to unsigned in when auth is disabled.
+12. **[SAN-012]** Resolved SyncQueue race condition by implementing a reentrant queue draining loop to process mutations concurrently added during active sync.
+13. **[SAN-013]** Restored Guest Mode library persistence and cover Object URL hydration using IndexedDB and dynamic `coverBlob` rendering.
+14. **[SAN-014]** Decoupled `useReadingSession` from direct subscriptions to the entire books array, eliminating stale closures and unnecessary re-renders.
+15. **[SAN-015]** Eliminated redundant remote settings save timers in Guest Mode.
 
 ## Remaining Risks
 - **None**. All explicit medium-to-high priority architectural risks, state duplications, and data-loss vulnerabilities identified during the recovery audit have been successfully resolved and statically verified via TypeScript compiler bounds.
+
+## Product Invariants
+
+### Library & Book Identity
+
+**INV-LIB-001**
+**Invariant:** An exact EPUB binary may correspond to at most one active library item per user.
+**Enforcement points:** Local import pipeline `LibraryService.addBook` via SHA-256 binary hashing.
+**Verification:** Import the exact same binary under different filenames.
+
+**INV-LIB-002**
+**Invariant:** Book deletion is strictly idempotent and must not corrupt historical tracking data.
+**Enforcement points:** `LibraryService.deleteBook` UI state locks and IndexedDB mutations.
+**Verification:** Rapid double-clicking of the delete button must trigger only a single DB deletion. Reading statistics and sessions must explicitly survive the book binary deletion.
+
+### Synchronization & Guest Mode
+
+**INV-SYNC-001**
+**Invariant:** Books and sessions generated in Guest Mode must seamlessly transition to the Cloud without data loss.
+**Enforcement points:** `LibraryService.loadBooks` detects `syncStatus === 'pending'` and orchestrates asynchronous background binary uploads to R2 and D1.
+**Verification:** Import book offline. Sign in. Verify the book remains in the local library and is pushed to the server via the `bookService.addBook` payload.
+
+### Reader Engine Lifecycle
+
+**INV-RDR-001**
+**Invariant:** Reader teardown must not leak `epubjs` Rendition listeners or iframe memory.
+**Enforcement points:** `useReaderEngine.ts` explicitly detaches `on('relocated')` listeners, destroys Book/Rendition objects, and clears `container.innerHTML` sequentially.
+**Verification:** Toggle Reader themes and settings rapidly. Verify zero orphaned iframe elements remain attached to the DOM.
+
+### Reading Session Integrity
+
+**INV-STAT-001**
+**Invariant:** Reading sessions must not record negative durations, overlapping timestamps, or durations exceeding 24 hours.
+**Enforcement points:** `StatsService.ts` sanitizes duration deltas and clamps `pagesRead` during `.endSession`.
+**Verification:** Sleep the host OS for 30 hours, wake, and close the Reader. Verify the session caps at 24 hours.

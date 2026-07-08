@@ -16,6 +16,8 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
     setIsLoading(true);
     try {
       await onAddBook(file);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to add book.");
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +90,9 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
           className={`group flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-200 ${
             isDragging
               ? "bg-light-accent dark:bg-dark-accent scale-110"
-              : "bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:shadow-xl hover:scale-105"
+              : isLoading
+                ? "bg-light-accent dark:bg-dark-accent opacity-50 cursor-not-allowed"
+                : "bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:shadow-xl hover:scale-105"
           }`}
           aria-label="Add book"
         >

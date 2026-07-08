@@ -1,7 +1,7 @@
 import type { Book } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const BOOKS_STORE = "books";
 const VOCAB_STORE = "vocabulary";
 const SESSIONS_STORE = "sessions";
@@ -37,8 +37,19 @@ function openDB(): Promise<IDBDatabase> {
     };
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
+      const oldVersion = event.oldVersion;
+
+      // Force a clean reset for production readiness if migrating from prototype versions
+      if (oldVersion < 5) {
+        if (database.objectStoreNames.contains(BOOKS_STORE)) database.deleteObjectStore(BOOKS_STORE);
+        if (database.objectStoreNames.contains(VOCAB_STORE)) database.deleteObjectStore(VOCAB_STORE);
+        if (database.objectStoreNames.contains(SESSIONS_STORE)) database.deleteObjectStore(SESSIONS_STORE);
+        if (database.objectStoreNames.contains(MUTATIONS_STORE)) database.deleteObjectStore(MUTATIONS_STORE);
+      }
+
       if (!database.objectStoreNames.contains(BOOKS_STORE)) {
-        database.createObjectStore(BOOKS_STORE, { keyPath: "id" });
+        const booksStore = database.createObjectStore(BOOKS_STORE, { keyPath: "id" });
+        booksStore.createIndex("syncStatus", "syncStatus", { unique: false });
       }
       if (!database.objectStoreNames.contains(VOCAB_STORE)) {
         database.createObjectStore(VOCAB_STORE, { keyPath: "id" });
@@ -167,7 +178,7 @@ export interface SyncMutation {
   createdAt: number;
   id: string; // uuid
   payload: unknown;
-  type: "SAVE_SESSION" | "SAVE_SETTINGS" | "PATCH_LIBRARY";
+  type: "SAVE_SESSION" | "SAVE_SETTINGS" | "PATCH_LIBRARY" | "DELETE_LIBRARY";
 }
 
 export async function putMutation(mutation: SyncMutation): Promise<void> {
