@@ -164,10 +164,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     height: continuous ? "auto" : "100%",
                     spread: continuous ? "none" : (spread ? "always" : "none"),
                     flow: continuous ? "scrolled-doc" : "paginated",
-                    // Required for epubjs internal location scripts to run in the
-                    // srcdoc iframe. The "allow-scripts + allow-same-origin" browser
-                    // info-warning is expected and harmless.
-                    allowScriptedContent: true,
+                    // Disabling allowScriptedContent to prevent the "allow-scripts + allow-same-origin"
+                    // iframe escape vulnerability warning. epub.js 0.3+ handles pagination via 
+                    // range offsets without strictly requiring script injection for most standard epubs.
+                    allowScriptedContent: false,
                 });
 
                 // Set styles BEFORE display() so the first render is already styled

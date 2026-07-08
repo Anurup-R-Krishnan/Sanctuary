@@ -34,6 +34,7 @@ const metadataSchema = z.object({
   lastLocation: z.string().nullable().optional(),
   favorite: z.boolean().optional(),
   coverUrl: z.string().nullable().optional(),
+  contentHash: z.string().optional(),
   bookmarks: z.array(bookmarkSchema).optional()
 }).catchall(z.unknown());
 
@@ -137,6 +138,18 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
     coverUrl = contentUrl(id, "cover");
   }
 
+  const contentHash = metadata.contentHash || null;
+  
+  if (contentHash) {
+    const existing = await env.SANCTUARY_DB.prepare(
+      "SELECT id, cover_url FROM books WHERE user_id = ? AND content_hash = ?"
+    ).bind(user, contentHash).first<{id: string, cover_url: string}>();
+
+    if (existing && existing.id !== id) {
+      return json({ success: true, coverUrl: existing.cover_url, duplicateId: existing.id });
+    }
+  }
+
   await env.SANCTUARY_DB.prepare(
     `INSERT INTO books (
       id, user_id, title, author, cover_url, content_hash, content_type,
@@ -150,7 +163,7 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
       bookmarks_json = excluded.bookmarks_json, is_favorite = excluded.is_favorite,
       updated_at = excluded.updated_at`
   )
-    .bind(id, user, title, author, coverUrl, epubKey, contentType, progress, totalPages, lastLocation, bookmarksJson, favorite, now)
+    .bind(id, user, title, author, coverUrl, contentHash, contentType, progress, totalPages, lastLocation, bookmarksJson, favorite, now)
     .run();
 
   await purgeEdgeCache(request, `library-${user}`);

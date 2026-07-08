@@ -400,7 +400,7 @@ Verification procedure: Verify that the mutation queue completely drains and all
 
 Severity: CRITICAL
 
-Status: FIXED
+Status: INCOMPLETELY_FIXED
 
 Area: Persistence & Sync
 
