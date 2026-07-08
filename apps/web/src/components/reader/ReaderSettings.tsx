@@ -1,6 +1,9 @@
 import { Layout, Scroll, EyeOff, Speech, ZapOff, RotateCcw } from "lucide-react";
 import React from "react";
 
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import { Toggle } from "@/components/ui/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
 function ReaderSettings() {
@@ -92,70 +95,42 @@ function ReaderSettings() {
     </div>
   );
 
-  const Toggle = ({
-    checked,
-    onChange,
-    label,
-    icon: Icon,
-  }: {
-    checked: boolean;
-    onChange: (v: boolean) => void;
-    label: string;
-    icon?: React.ElementType;
-  }) => (
-    <button
-      onClick={() => onChange(!checked)}
-      role="switch"
-      aria-checked={checked}
-      className={`flex w-full items-center justify-between rounded-xl border p-3 transition-all duration-200 ${
-        checked
-          ? "border-light-accent bg-light-accent/10 dark:border-dark-accent dark:bg-dark-accent/10"
-          : "border-black/10 bg-transparent hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/5"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        {Icon && <Icon className="h-4 w-4 text-light-text-muted dark:text-dark-text-muted" />}
-        <span className="text-sm text-light-text dark:text-dark-text">{label}</span>
-      </div>
-      <div className={`relative h-5 w-10 rounded-full ${checked ? "bg-light-accent dark:bg-dark-accent" : "bg-black/20 dark:bg-white/20"}`}>
-        <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-transform duration-200 ${checked ? "left-6" : "left-1"}`} />
-      </div>
-    </button>
-  );
+
 
   return (
     <div className="space-y-7 pb-6">
       <section>
         <SectionLabel>Reading Mode</SectionLabel>
         <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/5 p-1 dark:bg-white/5">
-          <button
+          <Button
             onClick={() => setContinuous(false)}
-            className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${
+            variant="nav"
+            className={`gap-2 !rounded-lg px-3 py-2 text-sm transition-all ${
               !continuous ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
             }`}
           >
             <Layout className="h-4 w-4" />
             Paged
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setContinuous(true)}
-            className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm transition-all ${
+            variant="nav"
+            className={`gap-2 !rounded-lg px-3 py-2 text-sm transition-all ${
               continuous ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
             }`}
           >
             <Scroll className="h-4 w-4" />
             Flow
-          </button>
+          </Button>
         </div>
       </section>
 
       <section>
         <SectionLabel>Typography</SectionLabel>
         <div className="space-y-3">
-          <select
+          <Select
             value={fontPairing}
             onChange={(e) => setFontPairing(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-black/5 p-2.5 text-sm text-light-text outline-none focus:ring-2 focus:ring-light-accent dark:border-white/10 dark:bg-white/5 dark:text-dark-text dark:focus:ring-dark-accent"
           >
             <option value="merriweather-georgia">Merriweather</option>
             <option value="crimson-pro">Crimson Pro</option>
@@ -163,7 +138,7 @@ function ReaderSettings() {
             <option value="lora">Lora</option>
             <option value="source-serif">Source Serif</option>
             <option value="inter">Inter (Sans)</option>
-          </select>
+          </Select>
           <Slider label="Size" value={fontSize} min={14} max={30} onChange={setFontSize} formatValue={(v) => `${v}px`} />
           <Slider label="Height" value={lineHeight} min={1.3} max={2.1} step={0.1} onChange={setLineHeight} formatValue={(v) => v.toFixed(1)} />
         </div>
@@ -186,13 +161,14 @@ function ReaderSettings() {
       </section>
 
       <div className="border-t border-black/5 pt-4 dark:border-white/5">
-        <button
+        <Button
           onClick={resetToDefaults}
-          className="flex w-full items-center justify-center gap-2 rounded-xl p-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-900/10"
+          variant="ghost"
+          className="w-full gap-2 p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
         >
           <RotateCcw className="h-4 w-4" />
           Reset Reader Defaults
-        </button>
+        </Button>
       </div>
     </div>
   );

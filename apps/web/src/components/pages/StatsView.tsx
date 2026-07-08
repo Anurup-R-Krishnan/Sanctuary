@@ -7,6 +7,7 @@ import { BarChart } from "@/components/stats/BarChart";
 import { HeatmapCell } from "@/components/stats/HeatmapCell";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { StatCard } from "@/components/stats/StatCard";
+import { Button } from "@/components/ui/Button";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
 import { clampPercent } from "@/utils/number";
@@ -109,10 +110,11 @@ function StatsView() {
 
       <div className="flex gap-0.5 p-0.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-lg">
         {TABS.map((tab) => (
-          <button
+          <Button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-md text-sm font-medium transition-all duration-150 ${
+            variant="nav"
+            className={`flex-1 gap-1.5 py-2 px-2.5 !rounded-md text-sm font-medium ${
               activeTab === tab.id
                 ? "bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text shadow-sm"
                 : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
@@ -120,7 +122,7 @@ function StatsView() {
           >
             <tab.icon className="w-3.5 h-3.5" strokeWidth={1.75} />
             <span className="hidden sm:inline">{tab.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -198,20 +200,20 @@ function StatsView() {
                 Weekly goal: <span className="font-semibold tabular-nums">{weeklyGoal} pages</span>
               </p>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <Button
                   onClick={() => onUpdateGoal(Math.max(5, dailyGoal - 5), Math.max(20, weeklyGoal - 20))}
-                  className="px-2.5 py-1 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                  variant="secondary"
+                  size="sm"
                 >
                   Easier
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={() => onUpdateGoal(dailyGoal + 5, weeklyGoal + 20)}
-                  className="px-2.5 py-1 rounded-lg text-xs border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                  variant="secondary"
+                  size="sm"
                 >
                   Harder
-                </button>
+                </Button>
               </div>
             </div>
           </div>

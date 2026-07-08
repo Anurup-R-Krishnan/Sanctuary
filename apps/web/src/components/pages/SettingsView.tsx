@@ -14,8 +14,7 @@ import {
     CircleDashed,
     HardDrive,
     Trash2,
-    AlertTriangle,
-    Loader2
+    AlertTriangle
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -23,7 +22,9 @@ import { ColorSwatch } from "@/components/settings/ColorSwatch";
 import { Section } from "@/components/settings/Section";
 import { ShortcutItem } from "@/components/settings/ShortcutItem";
 import { Slider } from "@/components/settings/Slider";
-import { Toggle } from "@/components/settings/Toggle";
+import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Dialog";
+import { Toggle } from "@/components/ui/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { clearBooks } from "@/utils/db";
 
@@ -64,6 +65,7 @@ const TYPOGRAPHY_SLIDERS = [
 function SettingsView() {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
     const [isResetting, setIsResetting] = useState(false);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
     const {
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
@@ -115,8 +117,12 @@ function SettingsView() {
         maxTextWidth: { value: maxTextWidth, onChange: setMaxTextWidth, displayValue: `${maxTextWidth}ch` },
     };
 
-    const handleFactoryReset = async () => {
-        if (!window.confirm("Are you sure you want to completely wipe all local data? This will remove cached books and progress. This action cannot be undone.")) return;
+    const handleFactoryResetClick = () => {
+        setShowResetConfirm(true);
+    };
+
+    const executeFactoryReset = async () => {
+        setShowResetConfirm(false);
         setIsResetting(true);
         try {
             localStorage.clear();
@@ -149,13 +155,14 @@ function SettingsView() {
                         </p>
                     </div>
 
-                    <button
+                    <Button
                         onClick={resetToDefaults}
-                        className="group flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white/80 dark:bg-dark-surface/80 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] text-light-text-muted dark:text-dark-text-muted hover:text-light-accent dark:hover:text-dark-accent hover:border-light-accent/30 dark:hover:border-dark-accent/30 transition-all duration-300 shadow-sm hover:shadow-md"
+                        variant="secondary"
+                        className="gap-2.5 px-5 py-3 group shadow-sm hover:shadow-md"
                     >
                         <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
                         <span className="text-sm font-medium">Reset All</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -164,10 +171,11 @@ function SettingsView() {
                     {TABS.map((tab) => {
                         const isActive = activeTab === tab.id;
                         return (
-                            <button
+                            <Button
                                 key={tab.id}
+                                variant="nav"
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all duration-300 ${isActive
+                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 !rounded-xl transition-all duration-300 ${isActive
                                         ? "text-light-accent dark:text-dark-accent"
                                         : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                                     }`}
@@ -180,7 +188,7 @@ function SettingsView() {
                                     <span className="text-sm font-medium hidden sm:inline">{tab.label}</span>
                                 </div>
                                 <span className="relative text-[10px] opacity-60 hidden lg:block">{tab.description}</span>
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>
@@ -347,19 +355,30 @@ function SettingsView() {
                                 <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-5">
                                     This will permanently delete all locally cached books, reading progress, and settings from this browser. If you are offline, unsynced progress will be lost.
                                 </p>
-                                <button
-                                    onClick={handleFactoryReset}
-                                    disabled={isResetting}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-medium transition-colors shadow-sm ${isResetting ? "bg-red-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
+                                <Button
+                                    onClick={handleFactoryResetClick}
+                                    isLoading={isResetting}
+                                    variant="destructive"
+                                    className="gap-2 px-5 shadow-sm"
                                 >
-                                    {isResetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                                    {isResetting ? "Resetting..." : "Factory Reset Cache"}
-                                </button>
+                                    <Trash2 className="w-4 h-4" />
+                                    Factory Reset Cache
+                                </Button>
                             </div>
                         </Section>
                     </>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={showResetConfirm}
+                onClose={() => setShowResetConfirm(false)}
+                onConfirm={executeFactoryReset}
+                title="Wipe Local Data"
+                description="Are you sure you want to completely wipe all local data? This will remove cached books and progress. This action cannot be undone."
+                confirmLabel="Factory Reset"
+                isDestructive
+            />
         </div>
     );
 };

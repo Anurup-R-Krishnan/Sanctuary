@@ -1,10 +1,14 @@
 import { Star, Clock, BookOpen, Heart, Trash2 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 
 import type { Book } from "@/types";
 
 import { useSettings } from "@/store/useSettingsStore";
+import { cx } from "@/utils/cx";
 import { clampPercent } from "@/utils/number";
+
+import { ConfirmDialog } from "./Dialog";
+import { IconButton } from "./IconButton";
 
 type BookCardVariant = "default" | "compact" | "featured";
 
@@ -16,7 +20,7 @@ interface BookCardProps {
   variant?: BookCardVariant;
 }
 
-const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
+
 
 const getBookProgressPercent = (book: Book) => {
   const totalPages = Math.max(1, book.totalPages || 100);
@@ -106,9 +110,14 @@ const FavoriteButton = ({
   const iconClassName = cx(isFeatured ? "w-5 h-5" : "w-4 h-4", isFavorite && "fill-current");
 
   return (
-    <button onClick={onClick} className={className}>
-      <Heart className={iconClassName} strokeWidth={1.5} />
-    </button>
+    <IconButton
+      onClick={onClick}
+      className={className}
+      icon={<Heart className={iconClassName} strokeWidth={1.5} />}
+      label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      variant="ghost"
+      size="md"
+    />
   );
 };
 
@@ -129,9 +138,15 @@ const DeleteButton = ({
   const iconClassName = isFeatured ? "w-5 h-5" : "w-4 h-4";
 
   return (
-    <button onClick={onClick} className={className} aria-label="Delete book">
-      <Trash2 className={iconClassName} strokeWidth={1.5} />
-    </button>
+    <IconButton
+      onClick={onClick}
+      className={className}
+      aria-label="Delete book"
+      label="Delete book"
+      icon={<Trash2 className={iconClassName} strokeWidth={1.5} />}
+      variant="ghost"
+      size="md"
+    />
   );
 };
 
@@ -200,6 +215,7 @@ function BookCard({
 }: BookCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const reduceMotion = useSettings((state) => state.reduceMotion);
 
   const progressPercentage = getBookProgressPercent(book);
@@ -215,10 +231,13 @@ function BookCard({
   };
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete "${book.title}"?`)) {
-      onDelete?.(book.id);
-    }
+    setShowDeleteConfirm(true);
   };
+
+  const handleConfirmDelete = useCallback(() => {
+    setShowDeleteConfirm(false);
+    onDelete?.(book.id);
+  }, [book.id, onDelete]);
   const handleCardKeyDown = (e: React.KeyboardEvent, selectedBook: Book) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -325,6 +344,15 @@ function BookCard({
           </div>
         </>
       )}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Book"
+        description={`Are you sure you want to delete "${book.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        isDestructive
+      />
     </Tag>
   );
 };

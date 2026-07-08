@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 interface DropdownMenuProps {
   id: string;
@@ -16,13 +16,29 @@ export const DropdownMenu = ({
   value,
   onSelect,
   onClose,
-}: DropdownMenuProps) =>
-  show ? (
+}: DropdownMenuProps) => {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!show) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [show, onClose]);
+
+  if (!show) return null;
+
+  return (
     <div
       id={id}
+      ref={menuRef}
       role="menu"
       aria-orientation="vertical"
-      className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-20 animate-scaleIn origin-top-right"
+      className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-50 animate-scaleIn origin-top-right"
     >
       {options.map((opt) => (
         <button
@@ -42,4 +58,5 @@ export const DropdownMenu = ({
         </button>
       ))}
     </div>
-  ) : null;
+  );
+};

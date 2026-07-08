@@ -5,6 +5,7 @@ import ReaderControls from "@/components/reader/ReaderControls";
 import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import ReaderSettings from "@/components/reader/ReaderSettings";
+import { Button } from "@/components/ui/Button";
 
 interface ReaderOverlayProps {
   book: Book;
@@ -92,14 +93,14 @@ function ReaderOverlay(props: ReaderOverlayProps) {
             onJumpToBottom={props.onJumpToBottom}
             onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}
           />
-          <button className="mt-4 w-full btn-secondary" onClick={props.onCloseControls}>Close Panel</button>
+          <Button variant="secondary" className="mt-4 w-full" onClick={props.onCloseControls}>Close Panel</Button>
         </div>
       )}
 
       {props.showSettings && (
         <div className="fixed left-4 top-24 bottom-24 z-50 w-[min(420px,92vw)] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
           <ReaderSettings />
-          <button className="mt-4 w-full btn-secondary" onClick={props.onCloseSettings}>Close Settings</button>
+          <Button variant="secondary" className="mt-4 w-full" onClick={props.onCloseSettings}>Close Settings</Button>
         </div>
       )}
     </>

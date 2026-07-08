@@ -1,6 +1,7 @@
 
 import { User, BookOpen } from "lucide-react";
 
+import { Button } from "@/components/ui/Button";
 import { SignIn } from "@/hooks/useAuth";
 
 interface AuthProps {
@@ -39,15 +40,15 @@ function Auth({ onContinueAsGuest }: AuthProps) {
             </div>
           </div>
 
-          <button
-            type="button"
+          <Button
             onClick={onContinueAsGuest}
             disabled={!onContinueAsGuest}
-            className="btn-secondary w-full"
+            variant="secondary"
+            className="w-full gap-2"
           >
             <User className="h-4 w-4 text-light-text-muted dark:text-dark-text-muted" />
             <span>Continue as guest</span>
-          </button>
+          </Button>
 
           <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-4 text-center">
             Guest data is stored locally on this device

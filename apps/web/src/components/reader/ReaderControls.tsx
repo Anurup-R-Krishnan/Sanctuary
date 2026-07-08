@@ -12,6 +12,9 @@ import { useState } from "react";
 
 import type { Bookmark } from "@/types";
 
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { Input } from "@/components/ui/Input";
 import { useSettings } from "@/store/useSettingsStore";
 
 interface TocItem {
@@ -87,14 +90,14 @@ function ReaderControls({
                     tabIndex={0}
                 >
                     {hasSubs && (
-                        <button
+                        <IconButton
                             onClick={(e) => { e.stopPropagation(); toggleExpand(item.id); }}
-                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-                            aria-label={isExpanded ? "Collapse" : "Expand"}
-                            aria-expanded={isExpanded}
-                        >
-                            {isExpanded ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
-                        </button>
+                            className="mr-1"
+                            label={isExpanded ? "Collapse" : "Expand"}
+                            icon={isExpanded ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
+                            variant="ghost"
+                            size="sm"
+                        />
                     )}
                     {!hasSubs && <div className="w-4" />}
                     <span
@@ -117,29 +120,32 @@ function ReaderControls({
         <div className="flex flex-col h-full pb-4">
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2 mb-6">
-                <button
+                <Button
                     onClick={onJumpToTop}
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                    variant="secondary"
+                    className="gap-2 !p-3 !rounded-xl"
                 >
                     <ArrowUp className="w-4 h-4" />
                     <span className="text-sm font-medium">Top</span>
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={onJumpToBottom}
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                    variant="secondary"
+                    className="gap-2 !p-3 !rounded-xl"
                 >
                     <ArrowDown className="w-4 h-4" />
                     <span className="text-sm font-medium">Bottom</span>
-                </button>
+                </Button>
             </div>
 
             {/* Tabs */}
             <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl mb-4" role="tablist">
-                <button
+                <Button
                     onClick={() => setActiveTab("chapters")}
                     role="tab"
                     aria-selected={activeTab === "chapters"}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
+                    variant="nav"
+                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
                         ? "bg-white dark:bg-white/10 shadow-sm font-medium"
                         : "opacity-60 hover:opacity-100"
                         }`}
@@ -147,12 +153,13 @@ function ReaderControls({
                 >
                     <List className="w-4 h-4" />
                     <span>Chapters</span>
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={() => setActiveTab("bookmarks")}
                     role="tab"
                     aria-selected={activeTab === "bookmarks"}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
+                    variant="nav"
+                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
                         ? "bg-white dark:bg-white/10 shadow-sm font-medium"
                         : "opacity-60 hover:opacity-100"
                         }`}
@@ -160,22 +167,21 @@ function ReaderControls({
                 >
                     <BookmarkIcon className="w-4 h-4" />
                     <span>Bookmarks</span>
-                </button>
+                </Button>
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2">
                 {activeTab === "chapters" ? (
                     <>
-                        <div className="relative mb-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-                            <input
+                        <div className="mb-4">
+                            <Input
                                 type="text"
                                 placeholder="Search chapters..."
                                 aria-label="Search chapters"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border-none text-sm focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent outline-none"
+                                icon={<Search className="w-4 h-4 opacity-40" />}
                             />
                         </div>
                         <div className="space-y-0.5">
@@ -191,20 +197,24 @@ function ReaderControls({
                         {bookmarks.length > 0 ? (
                             bookmarks.map(bm => (
                                 <div key={bm.id} className="group flex items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                                    <button
+                                    <Button
                                         onClick={() => onNavigate(bm.cfi)}
-                                        className="flex-1 text-left"
+                                        variant="ghost"
+                                        className="flex-1 !justify-start !text-left !px-0 !py-0 !rounded-none"
                                     >
-                                        <p className="text-sm font-medium" style={{ color: readerForeground }}>{bm.title}</p>
-                                        <p className="text-xs opacity-60">{new Date(bm.createdAt).toLocaleDateString()}</p>
-                                    </button>
-                                    <button
+                                        <span className="flex flex-col items-start gap-0.5">
+                                            <span className="text-sm font-medium" style={{ color: readerForeground }}>{bm.title}</span>
+                                            <span className="text-xs opacity-60">{new Date(bm.createdAt).toLocaleDateString()}</span>
+                                        </span>
+                                    </Button>
+                                    <IconButton
                                         onClick={() => onRemoveBookmark(bm.id)}
-                                        className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
-                                        aria-label="Remove bookmark"
-                                    >
-                                        <X className="w-4 h-4 text-red-500" />
-                                    </button>
+                                        className="opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-all"
+                                        label="Remove bookmark"
+                                        icon={<X className="w-4 h-4" />}
+                                        variant="ghost"
+                                        size="sm"
+                                    />
                                 </div>
                             ))
                         ) : (

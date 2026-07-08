@@ -3,6 +3,8 @@ import { Library, BookOpen, BarChart3, Settings } from "lucide-react";
 
 import { View } from "@/types";
 
+import { Button } from "./Button";
+
 interface NavigationProps {
   activeView: View;
   isReaderActive: boolean;
@@ -25,23 +27,23 @@ function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps)
           const Icon = item.icon;
 
           return (
-            <button
-              type="button"
+            <Button
               key={item.view}
+              variant="nav"
               onClick={() => !item.disabled && onNavigate(item.view)}
               disabled={item.disabled}
-              className={`h-11 px-3 rounded-xl flex items-center gap-2 text-sm transition-colors ${isActive
+              className={`h-11 px-3 !rounded-xl gap-2 ${isActive
                 ? "bg-light-accent/12 dark:bg-dark-accent/18 text-light-accent dark:text-dark-accent"
                 : item.disabled
-                  ? "text-light-text-muted/40 dark:text-dark-text-muted/40 cursor-not-allowed"
+                  ? "text-light-text-muted/40 dark:text-dark-text-muted/40"
                   : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                 }`}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
             >
               <Icon className="w-4 h-4" />
-              <span className="hidden sm:inline font-medium">{item.label}</span>
-            </button>
+              <span className="hidden sm:inline">{item.label}</span>
+            </Button>
           );
         })}
       </div>

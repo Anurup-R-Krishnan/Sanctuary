@@ -3,6 +3,10 @@ import { useRef } from "react";
 
 import { Theme } from "@/types";
 
+import { Button } from "./Button";
+import { IconButton } from "./IconButton";
+import { Input } from "./Input";
+
 interface HeaderProps {
   isGuest?: boolean;
   onSearch: (term: string) => void;
@@ -43,45 +47,44 @@ function Header({
           </div>
 
           <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-light-text-muted dark:text-dark-text-muted" />
-              <input
-                ref={inputRef}
-                type="text"
-                placeholder="Search books and authors"
-                value={searchTerm}
-                onChange={(e) => onSearch(e.target.value)}
-                className="w-full h-10 pl-10 pr-10 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface text-sm text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted focus:outline-none focus:ring-2 focus:ring-light-accent/30 dark:focus:ring-dark-accent/30"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => onSearch("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
-                  aria-label="Clear search"
-                >
-                  <X className="w-3.5 h-3.5 text-light-text-muted dark:text-dark-text-muted" />
-                </button>
-              )}
-            </div>
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Search books and authors"
+              value={searchTerm}
+              onChange={(e) => onSearch(e.target.value)}
+              icon={<Search className="w-4 h-4" />}
+              rightIcon={
+                searchTerm && (
+                  <IconButton
+                    onClick={() => onSearch("")}
+                    label="Clear search"
+                    icon={<X className="w-4 h-4" />}
+                    variant="ghost"
+                    className="h-8 w-8 !p-0"
+                  />
+                )
+              }
+            />
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <IconButton
               onClick={onToggleTheme}
-              className="h-10 w-10 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface flex items-center justify-center"
-              aria-label="Toggle theme"
-            >
-              {theme === Theme.DARK ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
-            </button>
+              label="Toggle theme"
+              icon={theme === Theme.DARK ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
+              variant="secondary"
+            />
 
             {isGuest ? (
-              <button
+              <Button
                 onClick={onShowLogin}
-                className="h-10 px-3 rounded-xl bg-light-accent dark:bg-dark-accent text-white text-sm font-medium flex items-center gap-1.5"
+                variant="primary"
+                className="gap-1.5"
               >
                 <LogIn className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign In</span>
-              </button>
+              </Button>
             ) : onSignOut ? (
               <div className="flex items-center gap-2">
                 {userImage && <img src={userImage} alt="Profile" className="w-8 h-8 rounded-full" />}
@@ -90,13 +93,14 @@ function Header({
                     {userEmail}
                   </span>
                 )}
-                <button
+                <Button
                   onClick={onSignOut}
-                  className="h-10 px-3 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface text-sm flex items-center gap-1.5"
+                  variant="secondary"
+                  className="gap-1.5"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">Sign Out</span>
-                </button>
+                </Button>
               </div>
             ) : null}
           </div>
