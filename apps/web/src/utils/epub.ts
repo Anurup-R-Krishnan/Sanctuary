@@ -33,8 +33,10 @@ export type EpubRendition = {
   destroy: () => void;
   display: (target?: string) => Promise<void> | void;
   next: () => void;
+  off: (event: string, cb: (...args: unknown[]) => void) => void;
   on: (event: "relocated", cb: (location: EpubLocation) => void) => void;
   prev: () => void;
+  resize: (width?: number, height?: number) => void;
   themes: {
     /** Sets the default theme. Stable API, safe to call before and after display(). */
     default: (styles: Record<string, Record<string, string>>) => void;

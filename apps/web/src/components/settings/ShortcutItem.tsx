@@ -1,4 +1,8 @@
+import { X, Plus } from "lucide-react";
 import React, { useState } from "react";
+
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 
 interface ShortcutItemProps {
     keys: string[];
@@ -58,10 +62,13 @@ export const ShortcutItem = ({ label, keys, onChange }: ShortcutItemProps) => {
                     <input
                         type="text"
                         readOnly
+                        autoFocus
                         aria-label={`${label} shortcut editor`}
                         className="px-3 py-1 text-xs bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[120px] text-center"
                         onKeyDown={handleKeyDown}
-                        value={tempKeys.length === 0 ? "Press keys..." : tempKeys.join(" + ")}
+                        onBlur={cancelEditing}
+                        value={tempKeys.length === 0 ? "Press keys…" : tempKeys.join(" + ")}
+                        onChange={() => {/* controlled via keyDown */}}
                     />
                 ) : (
                     <div className="flex items-center gap-1">
@@ -70,20 +77,25 @@ export const ShortcutItem = ({ label, keys, onChange }: ShortcutItemProps) => {
                                 <kbd className="px-2 py-1 text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded font-mono">
                                     {key === " " ? "Space" : key}
                                 </kbd>
-                                <button
+                                <IconButton
                                     onClick={() => removeKey(key)}
-                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                >
-                                    ×
-                                </button>
+                                    label={`Remove ${key} key binding`}
+                                    icon={<X className="w-2.5 h-2.5" />}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 !p-0 bg-red-500 text-white !rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                />
                             </span>
                         ))}
-                        <button
+                        <Button
                             onClick={startEditing}
-                            className="px-2 py-1 text-xs bg-light-accent dark:bg-dark-accent text-white rounded hover:opacity-80 transition-opacity"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Add key binding for ${label}`}
+                            className="!px-2 !py-1 !rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 text-light-accent dark:text-dark-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/20"
                         >
-                            +
-                        </button>
+                            <Plus className="w-3 h-3" />
+                        </Button>
                     </div>
                 )}
             </div>

@@ -3,6 +3,8 @@ import type { ErrorInfo, ReactNode } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { Component } from "react";
 
+import { Button } from "./Button";
+
 interface Props { children: ReactNode; }
 interface State { error?: Error | null; hasError: boolean; }
 
@@ -30,12 +32,13 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <h2 className="text-xl font-bold text-light-text dark:text-dark-text mb-3">Something went wrong</h2>
             <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">{this.state.error?.message || "An unexpected error occurred"}</p>
-            <button
+            <Button
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 text-white font-medium shadow-lg"
+              variant="primary"
+              className="gap-2 px-6 bg-gradient-to-r from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:opacity-90 transition-opacity border-0 shadow-lg"
             >
               <RotateCcw className="w-4 h-4" /> Reload App
-            </button>
+            </Button>
           </div>
         </div>
       );

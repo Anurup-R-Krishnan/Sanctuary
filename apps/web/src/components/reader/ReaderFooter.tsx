@@ -1,6 +1,6 @@
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { IconButton } from "@/components/ui/IconButton";
 import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderFooterProps {
@@ -34,22 +34,22 @@ function ReaderFooter({
             {/* Floating Navigation Buttons (Desktop) */}
             {!continuous && (
                 <>
-                    <button
+                    <IconButton
                         onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
-                        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group ${showUI ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"}`}
+                        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 p-4 !rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group border-transparent ${showUI ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"}`}
                         style={{ backgroundColor: `${readerBackground}E6`, color: readerForeground }}
-                        aria-label="Previous page"
-                    >
-                        <ChevronLeft className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />
-                    </button>
-                    <button
+                        label="Previous page"
+                        icon={<ChevronLeft className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />}
+                        variant="ghost"
+                    />
+                    <IconButton
                         onClick={(e) => { e.stopPropagation(); onNextPage(); }}
-                        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 p-4 rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group ${showUI ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"}`}
+                        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 p-4 !rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group border-transparent ${showUI ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"}`}
                         style={{ backgroundColor: `${readerBackground}E6`, color: readerForeground }}
-                        aria-label="Next page"
-                    >
-                        <ChevronRight className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />
-                    </button>
+                        label="Next page"
+                        icon={<ChevronRight className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />}
+                        variant="ghost"
+                    />
                 </>
             )}
 
@@ -78,9 +78,12 @@ function ReaderFooter({
                 <div className={`fixed left-1/2 -translate-x-1/2 bottom-6 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
                     <div className="w-[min(880px,92vw)] px-4 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-4" style={{ backgroundColor: `${readerBackground}E8` }}>
                         <div className="flex items-center gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); onPrevPage(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
+                            <IconButton
+                                onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
+                                label="Previous page"
+                                icon={<ChevronLeft className="w-5 h-5" />}
+                                variant="ghost"
+                            />
                         </div>
 
                         <div className="flex-1">
@@ -110,9 +113,12 @@ function ReaderFooter({
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button onClick={(e) => { e.stopPropagation(); onNextPage(); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                            <IconButton
+                                onClick={(e) => { e.stopPropagation(); onNextPage(); }}
+                                label="Next page"
+                                icon={<ChevronRight className="w-5 h-5" />}
+                                variant="ghost"
+                            />
                         </div>
                     </div>
                 </div>

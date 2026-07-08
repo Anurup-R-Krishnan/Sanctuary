@@ -1,11 +1,13 @@
-import { Grid3X3, List, SortAsc, Filter, Star, Clock, ChevronRight, ChevronDown, Search, BookOpen, Trash2 } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { Star, Clock, ChevronRight, Search } from "lucide-react";
+import { useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 
-import { DropdownMenu } from "@/components/library/DropdownMenu";
+import { DeleteBookDialog } from "@/components/library/DeleteBookDialog";
 import { HorizontalScroll } from "@/components/library/HorizontalScroll";
+import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
+import { LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { SectionHeader } from "@/components/library/SectionHeader";
 import { SkeletonCard } from "@/components/library/SkeletonCard";
 import { useBookStore } from "@/store/useBookStore";
@@ -21,24 +23,7 @@ interface LibraryGridProps {
   toggleFavorite: (id: string) => void;
 }
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "recent", label: "Recently Opened" },
-  { value: "title", label: "Title" },
-  { value: "author", label: "Author" },
-  { value: "progress", label: "Progress" },
-  { value: "added", label: "Date Added" },
-];
 
-const FILTER_OPTIONS: { value: FilterOption; label: string }[] = [
-  { value: "all", label: "All Books" },
-  { value: "favorites", label: "Favorites" },
-  { value: "to-read", label: "To Read" },
-  { value: "reading", label: "Reading" },
-  { value: "finished", label: "Finished" },
-];
-
-const getOptionLabel = <T extends string>(options: Array<{ value: T; label: string }>, value: T) =>
-  options.find((option) => option.value === value)?.label || "";
 
 function LibraryGrid({
   onSelectBook,
@@ -76,21 +61,24 @@ function LibraryGrid({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const sortRef = useRef<HTMLDivElement>(null);
-  const filterRef = useRef<HTMLDivElement>(null);
-  const sortMenuId = "library-sort-menu";
-  const filterMenuId = "library-filter-menu";
-  const sortLabel = getOptionLabel(SORT_OPTIONS, sortBy);
-  const filterLabel = getOptionLabel(FILTER_OPTIONS, filterBy);
+  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setShowSortMenu(false);
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilterMenu(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const SORT_LABELS: Record<SortOption, string> = {
+    recent: "Recently Opened",
+    title: "Title",
+    author: "Author",
+    progress: "Progress",
+    added: "Date Added",
+  };
+  const FILTER_LABELS: Record<FilterOption, string> = {
+    all: "All Books",
+    favorites: "Favorites",
+    "to-read": "To Read",
+    reading: "Reading",
+    finished: "Finished",
+  };
+  const sortLabel = SORT_LABELS[sortBy] ?? sortBy;
+  const filterLabel = FILTER_LABELS[filterBy] ?? filterBy;
 
   const displayBooks = useMemo(() => {
     if (!searchTerm) return sortedBooks;
@@ -122,109 +110,26 @@ function LibraryGrid({
   }
 
   if (books.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fadeInUp rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface">
-        <div className="mb-8 flex items-center justify-center w-20 h-20 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08]">
-          <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-        </div>
-        <h2 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">Your Library Awaits</h2>
-        <p className="text-light-text-muted dark:text-dark-text-muted max-w-sm mx-auto mb-7 text-sm leading-relaxed">
-          Add your first book to begin your reading journey
-        </p>
-        <div className="flex flex-col items-center gap-3">
-          <AddBookButton onAddBook={addBook} variant="inline" />
-          <span className="text-xs text-light-text-muted/50 dark:text-dark-text-muted/50">EPUB format supported</span>
-        </div>
-      </div>
-    );
+    return <LibraryEmptyState onAddBook={addBook} />;
   }
 
   return (
     <div className="page-stack">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Library</h2>
-          <p className="text-light-text-muted dark:text-dark-text-muted mt-1 text-sm">
-            {books.length} {books.length === 1 ? "book" : "books"}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center p-0.5 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-all duration-150 ${viewMode === "grid"
-                ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
-                : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
-                }`}
-              aria-label="Grid view"
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md transition-all duration-150 ${viewMode === "list"
-                ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text"
-                : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"
-                }`}
-              aria-label="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div ref={sortRef} className="relative">
-            <button
-              onClick={() => {
-                setShowSortMenu(!showSortMenu);
-                setShowFilterMenu(false);
-              }}
-              aria-label={`Sort by: ${sortLabel}`}
-              aria-haspopup="menu"
-              aria-expanded={showSortMenu}
-              aria-controls={showSortMenu ? sortMenuId : undefined}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
-            >
-              <SortAsc className="w-4 h-4" />
-              <span className="hidden sm:inline">{sortLabel}</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
-            </button>
-            <DropdownMenu
-              id={sortMenuId}
-              show={showSortMenu}
-              options={SORT_OPTIONS}
-              value={sortBy}
-              onSelect={(v) => setSortBy(v as SortOption)}
-              onClose={() => setShowSortMenu(false)}
-            />
-          </div>
-
-          <div ref={filterRef} className="relative">
-            <button
-              onClick={() => {
-                setShowFilterMenu(!showFilterMenu);
-                setShowSortMenu(false);
-              }}
-              aria-label={`Filter by: ${filterLabel}`}
-              aria-haspopup="menu"
-              aria-expanded={showFilterMenu}
-              aria-controls={showFilterMenu ? filterMenuId : undefined}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition-colors text-sm text-light-text-muted dark:text-dark-text-muted"
-            >
-              <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">{filterLabel}</span>
-              <ChevronDown className={`w-3 h-3 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
-            </button>
-            <DropdownMenu
-              id={filterMenuId}
-              show={showFilterMenu}
-              options={FILTER_OPTIONS}
-              value={filterBy}
-              onSelect={(v) => setFilterBy(v as FilterOption)}
-              onClose={() => setShowFilterMenu(false)}
-            />
-          </div>
-        </div>
-      </div>
+      <LibraryToolbar
+        bookCount={books.length}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortLabel={sortLabel}
+        showSortMenu={showSortMenu}
+        setShowSortMenu={setShowSortMenu}
+        filterBy={filterBy}
+        setFilterBy={setFilterBy}
+        filterLabel={filterLabel}
+        showFilterMenu={showFilterMenu}
+        setShowFilterMenu={setShowFilterMenu}
+      />
 
       {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
         <section>
@@ -285,69 +190,31 @@ function LibraryGrid({
         ) : (
           <div className="space-y-1.5">
             {displayBooks.map((book) => (
-              <button
-                key={book.id}
-                onClick={() => onSelectBook(book)}
-                className="w-full flex items-center gap-3.5 p-3 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] border border-transparent hover:border-black/[0.04] dark:hover:border-white/[0.04] transition-all duration-150 text-left group"
-              >
-                <img
-                  src={book.coverUrl}
-                  alt={book.title}
-                  className="w-10 h-14 object-cover rounded-lg shadow-sm"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    img.onerror = null;
-                    img.style.visibility = "hidden";
-                  }}
+              <div key={book.id}>
+                <BookCard
+                  book={book}
+                  onSelect={onSelectBook}
+                  onToggleFavorite={onToggleFavorite}
+                  onDelete={onDeleteBook}
+                  variant="compact"
                 />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-light-text dark:text-dark-text truncate group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors">
-                    {book.title}
-                  </h4>
-                  <p className="text-xs text-light-text-muted dark:text-dark-text-muted truncate">{book.author}</p>
-                  <div className="flex items-center gap-2.5 mt-1">
-                    <div className="flex-1 h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden max-w-[80px]">
-                      <div
-                        className="h-full bg-light-accent dark:bg-dark-accent rounded-full"
-                        style={{ width: `${book.progress}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                      {book.progress}%
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(book.id);
-                  }}
-                  className={`p-1.5 rounded-lg transition-colors ${book.isFavorite
-                    ? "text-amber-500"
-                    : "text-light-text-muted/30 dark:text-dark-text-muted/30 hover:text-amber-500"
-                    }`}
-                >
-                  <Star className={`w-4 h-4 ${book.isFavorite ? "fill-current" : ""}`} />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (window.confirm(`Are you sure you want to delete "${book.title}"?`)) {
-                      onDeleteBook(book.id);
-                    }
-                  }}
-                  className="p-1.5 rounded-lg transition-colors text-light-text-muted/30 dark:text-dark-text-muted/30 hover:text-red-500"
-                  aria-label="Delete book"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </button>
+              </div>
             ))}
           </div>
         )}
       </section>
 
       <AddBookButton onAddBook={addBook} />
+
+      <DeleteBookDialog
+        isOpen={!!bookToDelete}
+        onClose={() => setBookToDelete(null)}
+        book={bookToDelete}
+        onConfirm={(id) => {
+          onDeleteBook(id);
+          setBookToDelete(null);
+        }}
+      />
     </div>
   );
 };

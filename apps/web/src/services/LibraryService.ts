@@ -5,6 +5,7 @@ import type { EpubBookHandle } from "@/utils/epub";
 
 import { bookService } from "@/services/bookService";
 import { logErrorOnce, HttpError } from "@/services/http";
+import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
 import { putBook as putBookInDb, deleteBook as deleteBookFromDb, getAllBooks } from "@/utils/db";
 import { extractCoverBlobFromEpubSource, openEpub } from "@/utils/epub";
