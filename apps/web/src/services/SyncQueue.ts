@@ -25,10 +25,11 @@ async function rawApiCall(mutation: SyncMutation, getToken: () => Promise<string
     });
     if (!res.ok) throw new Error(`SAVE_SETTINGS failed: ${res.status}`);
   } else if (mutation.type === "PATCH_LIBRARY") {
-    const res = await fetch(`${API.LIBRARY}?id=${encodeURIComponent(mutation.payload.id)}`, {
+    const payload = mutation.payload as { id: string; data: unknown };
+    const res = await fetch(`${API.LIBRARY}?id=${encodeURIComponent(payload.id)}`, {
       method: "PATCH",
       headers,
-      body: JSON.stringify(mutation.payload.data)
+      body: JSON.stringify(payload.data)
     });
     if (!res.ok) throw new Error(`PATCH_LIBRARY failed: ${res.status}`);
   } else {

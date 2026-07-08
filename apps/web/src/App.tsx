@@ -46,7 +46,7 @@ function App() {
     syncQueue.init(getToken, isPersistent);
     libraryService.loadBooks(getToken, isPersistent);
     statsService.loadSessions(getToken, isPersistent);
-    statsService.fetchGoals(getToken);
+    statsService.fetchGoals(getToken, isPersistent);
     return () => libraryService.cleanupAllObjectUrls();
   }, [getToken, isPersistent]);
 

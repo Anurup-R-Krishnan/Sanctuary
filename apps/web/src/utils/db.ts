@@ -161,15 +161,12 @@ export async function getAllSessions(): Promise<ReadingSession[]> {
   return dbGetAll<ReadingSession>(SESSIONS_STORE);
 }
 
-export async function clearSessions(): Promise<void> {
-  return dbClear(SESSIONS_STORE);
-}
 
 // Mutations store helpers
 export interface SyncMutation {
   createdAt: number;
   id: string; // uuid
-  payload: any;
+  payload: unknown;
   type: "SAVE_SESSION" | "SAVE_SETTINGS" | "PATCH_LIBRARY";
 }
 

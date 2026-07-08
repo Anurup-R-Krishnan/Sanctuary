@@ -206,7 +206,8 @@ export const statsService = {
     return calculateStats(books, aggregates, dailyGoal);
   },
 
-  async fetchGoals(getToken: () => Promise<string | null>) {
+  async fetchGoals(getToken: () => Promise<string | null>, isPersistent: boolean) {
+    if (!isPersistent) return;
     try {
       const token = await getToken();
       const response = await fetch(API.GOALS, {
