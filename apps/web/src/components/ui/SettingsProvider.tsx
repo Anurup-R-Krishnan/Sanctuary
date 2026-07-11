@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { useCallback, useEffect, useRef } from "react";
 
-import { useAuth, useUser } from "@/hooks/useAuth";
+import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { settingsService } from "@/services/settingsService";
 import { useSessionStore } from "@/store/useSessionStore";
 import {
@@ -15,10 +15,9 @@ import {
 } from "@/store/useSettingsStore";
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { getToken } = useAuth();
-  const { isSignedIn } = useUser();
-  const { isGuest } = useSessionStore();
-  const isPersistent = import.meta.env.VITE_DISABLE_AUTH !== "true" && !!(isSignedIn && !isGuest);
+  const { getToken, isSignedIn } = useSanctuaryAuth();
+  const { mode } = useSessionStore();
+  const isPersistent = import.meta.env.VITE_DISABLE_AUTH !== "true" && !!(isSignedIn && mode !== "guest");
 
   const hydratedRef = useRef(false);
   const remoteSaveTimerRef = useRef<number | null>(null);

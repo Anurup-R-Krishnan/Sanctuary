@@ -103,11 +103,11 @@ export function requiredText(value: unknown, fallback: string): string {
 }
 
 export function contentKey(userId: string, bookId: string): string {
-  return `books/${encodeURIComponent(userId)}/${encodeURIComponent(bookId)}.epub`;
+  return `users/${encodeURIComponent(userId)}/books/${encodeURIComponent(bookId)}/content.epub`;
 }
 
 export function coverKey(userId: string, bookId: string): string {
-  return `covers/${encodeURIComponent(userId)}/${encodeURIComponent(bookId)}`;
+  return `users/${encodeURIComponent(userId)}/books/${encodeURIComponent(bookId)}/cover`;
 }
 
 export function contentUrl(bookId: string, asset?: "cover"): string {

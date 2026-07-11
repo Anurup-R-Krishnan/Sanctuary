@@ -1,7 +1,9 @@
 import { BookOpen } from "lucide-react";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 
-import { useUser, useAuth } from "@/hooks/useAuth";
+import { AuthScreen } from "@/auth/AuthScreen";
+import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+import { MigrationDialog } from "@/components/ui/MigrationDialog";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
 import { syncQueue } from "@/services/SyncQueue";
@@ -11,7 +13,6 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { View } from "@/types";
 
-import ClerkAuth from "./components/pages/Auth";
 import LibraryGrid from "./components/pages/LibraryGrid";
 import ReaderView from "./components/pages/ReaderView";
 import SettingsView from "./components/pages/SettingsView";
@@ -26,10 +27,13 @@ const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 
 function App() {
   // Auth & Session
-  const { isGuest, setIsGuest, reset: resetSession } = useSessionStore();
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut, getToken } = useAuth();
-  const isPersistent = DISABLE_AUTH ? false : !!(isSignedIn && !isGuest);
+  const { mode, reset: resetSession } = useSessionStore();
+  const { isLoaded, isSignedIn, user, getToken, signOut } = useSanctuaryAuth();
+  
+  const [explicitGuest, setExplicitGuest] = useState(DISABLE_AUTH);
+
+  const isGuest = mode === "guest";
+  const isPersistent = mode === "authenticated";
 
   // Global UI State
   const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
@@ -43,27 +47,26 @@ function App() {
 
   // Initial Data Load
   useEffect(() => {
+    if (mode === "initializing") return;
     syncQueue.init(getToken, isPersistent);
     libraryService.loadBooks(getToken, isPersistent);
     statsService.loadSessions(getToken, isPersistent);
     statsService.fetchGoals(getToken, isPersistent);
     return () => libraryService.cleanupAllObjectUrls();
-  }, [getToken, isPersistent]);
+  }, [getToken, isPersistent, mode]);
 
   // Handlers
   const handleShowLogin = useCallback(() => {
-    setIsGuest(false);
-  }, [setIsGuest]);
+    setExplicitGuest(false);
+  }, []);
 
   const handleSignOut = useCallback(async () => {
-    if (isGuest) {
-      setIsGuest(false);
-      resetSession();
-    } else {
+    if (isSignedIn) {
       await signOut();
-      resetSession();
     }
-  }, [isGuest, setIsGuest, resetSession, signOut]);
+    setExplicitGuest(false);
+    resetSession();
+  }, [isSignedIn, signOut, resetSession]);
 
   // Render Helpers
   if (!DISABLE_AUTH && !isLoaded) {
@@ -83,14 +86,15 @@ function App() {
     );
   }
 
-  if (!DISABLE_AUTH && !isSignedIn && !isGuest) {
-    return <ClerkAuth onContinueAsGuest={() => setIsGuest(true)} />;
+  if (!DISABLE_AUTH && !isSignedIn && !explicitGuest) {
+    return <AuthScreen onContinueAsGuest={() => setExplicitGuest(true)} />;
   }
 
   const isReader = view === View.READER;
 
   return (
     <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
+      <MigrationDialog />
       {!isReader && (
         <Header
           theme={theme}
@@ -100,8 +104,8 @@ function App() {
           isGuest={isGuest}
           onShowLogin={isGuest ? handleShowLogin : undefined}
           onSignOut={isSignedIn ? handleSignOut : undefined}
-          userEmail={user?.primaryEmailAddress?.emailAddress}
-          userImage={user?.imageUrl}
+          userEmail={user?.email || undefined}
+          userImage={user?.imageUrl || undefined}
         />
       )}
 
