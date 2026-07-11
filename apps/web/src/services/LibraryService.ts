@@ -257,18 +257,9 @@ export const libraryService = {
       const remoteIds = new Set(stored.map((b) => b.id));
       for (const localBook of localDbBooks) {
         if (!remoteIds.has(localBook.id) && !inFlightMutations.has(localBook.id)) {
-          // INV-SYNC-001: Shield guest books ("pending") from GC and push to cloud.
-          if (localBook.syncStatus === "pending") {
-            console.log(`Transitioning guest book to auth: ${localBook.title}`);
-            const epubFile = new File([localBook.epubBlob!], `${localBook.id}.epub`, { type: "application/epub+zip" });
-            bookService.addBook(epubFile, localBook, token || undefined, localBook.coverBlob)
-              .then(result => {
-                const persistedBook = { ...localBook, syncStatus: "synced" as const, ...(result.coverUrl ? { coverUrl: result.coverUrl } : {}) };
-                replaceBookInStore(localBook.id, () => persistedBook);
-                saveBookToDb(persistedBook, "Failed to persist synced book:");
-              })
-              .catch(e => console.error("Failed to sync guest book to cloud:", e));
-          } else {
+          // INV-SYNC-001: Shield guest books ("pending") from GC.
+          // The MigrationDialog handles migrating them explicitly.
+          if (localBook.syncStatus !== "pending") {
             await deleteBookFromDb(localBook.id).catch((err) => {
               console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
             });
@@ -281,6 +272,18 @@ export const libraryService = {
     } finally {
       useBookStore.getState().setIsLoading(false);
     }
+  },
+
+  async _migrateBook(file: File, localBook: Book, token?: string) {
+    const result = await bookService.addBook(file, localBook, token, localBook.coverBlob);
+    const persistedBook = { 
+      ...localBook, 
+      syncStatus: "synced" as const, 
+      ...(result.coverUrl ? { coverUrl: result.coverUrl } : {}) 
+    };
+    replaceBookInStore(localBook.id, () => persistedBook);
+    await saveBookToDb(persistedBook, "Failed to persist synced book:");
+    return persistedBook;
   },
 
   async addBook(file: File, getToken: () => Promise<string | null>, isPersistent: boolean) {
