@@ -5,6 +5,7 @@ import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderFooterProps {
     currentPage: number;
+    estimatedMinutesRemaining?: number | null;
     onNextPage: () => void;
     onPageChange: (page: number) => void;
     onPrevPage: () => void;
@@ -19,6 +20,7 @@ function ReaderFooter({
     onNextPage,
     onPrevPage,
     onPageChange,
+    estimatedMinutesRemaining,
 }: ReaderFooterProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
@@ -105,6 +107,16 @@ function ReaderFooter({
                                 <span className="tabular-nums">{totalPages}</span>
                                 <span>•</span>
                                 <span>{progressPercent}%</span>
+                                {estimatedMinutesRemaining !== undefined && estimatedMinutesRemaining !== null && (
+                                    <>
+                                        <span>•</span>
+                                        <span>
+                                            {estimatedMinutesRemaining < 1 
+                                                ? "< 1 min left" 
+                                                : `${Math.round(estimatedMinutesRemaining)} mins left`}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
 

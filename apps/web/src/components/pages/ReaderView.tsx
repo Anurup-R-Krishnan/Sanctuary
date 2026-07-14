@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+import type { ReaderEngineRef } from "@/components/reader/ReaderEngineHost";
 import type { Book, Bookmark } from "@/types";
+import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
+import type { TocItem } from "@/utils/epub";
 
-import { ReaderEngineHost, ReaderEngineState, ReaderEngineRef } from "@/components/reader/ReaderEngineHost";
+import { ReaderEngineHost } from "@/components/reader/ReaderEngineHost";
+import { ReaderErrorOverlay } from "@/components/reader/ReaderErrorOverlay";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
+import { ReaderSelectionMenu } from "@/components/reader/ReaderSelectionMenu";
+import { useReaderAnnotations } from "@/hooks/useReaderAnnotations";
+import { useReaderSearch } from "@/hooks/useReaderSearch";
+import { useReaderSessionStats } from "@/hooks/useReaderSessionStats";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
+import { useReaderSpeech } from "@/hooks/useReaderSpeech";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
@@ -31,6 +40,8 @@ function ReaderView({
     const [showUI, setShowUI] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showControls, setShowControls] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
+    const [showAnnotations, setShowAnnotations] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false); // Local optimistic state
 
@@ -109,18 +120,51 @@ function ReaderView({
         grayscale: state.grayscale,
     }));
 
-    // Reader Engine
-    const [engineState, setEngineState] = useState<ReaderEngineState>({
-        isLoading: true,
-        currentCfi: "",
-        totalPages: 100,
-        currentPage: 1,
+    // Reader Engine State
+    const [engineState, setEngineState] = useState<{
+        status: ReaderStatus;
+        error: ReaderError | null;
+        position: ReaderPosition;
+        tocItems: TocItem[];
+        selection: ReaderSelection | null;
+    }>({
+        status: "idle",
+        error: null,
+        position: { cfi: "", href: "", chapterLabel: "", bookProgress: 0, chapterProgress: 0, location: 1, totalLocations: 1, displayedPage: 1, displayedPages: 1 },
         tocItems: [],
+        selection: null,
     });
 
-    const { isLoading: engineLoading, currentCfi, totalPages, currentPage, tocItems } = engineState;
+    const { status, error, position, tocItems, selection } = engineState;
+    const { cfi: currentCfi, totalLocations, location: currentPage } = position;
 
-    const isLoading = engineLoading || isFetchingContent;
+    const isLoading = status === "loading-book" || status === "loading-navigation" || status === "restoring-location" || status === "generating-locations" || isFetchingContent;
+
+    // Feature Hooks
+    const { searchState, performSearch, clearSearch, goToResult, nextResult, prevResult } = useReaderSearch({
+        epubBook: engineRef.current?.epubBook ?? null,
+        display: (target) => engineRef.current?.display(target),
+    });
+
+    const { annotations, addAnnotation, removeAnnotation } = useReaderAnnotations({
+        bookId: book.id,
+        rendition: engineRef.current?.rendition ?? null,
+        clearSelection: () => engineRef.current?.clearSelection(),
+    });
+
+    const { speak, stop: stopSpeech } = useReaderSpeech();
+
+    const { trackLocationProgress, stats: sessionStats } = useReaderSessionStats(book.id, totalLocations);
+    
+    // Track reading speed
+    useEffect(() => {
+        if (currentPage > 0) trackLocationProgress(currentPage);
+    }, [currentPage, trackLocationProgress]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => stopSpeech();
+    }, [stopSpeech]);
 
     // Bookmark sync
     useEffect(() => {
@@ -189,14 +233,20 @@ function ReaderView({
     useReaderShortcuts({
         nextPage: () => engineRef.current?.nextPage(),
         prevPage: () => engineRef.current?.prevPage(),
+        goToStart: () => engineRef.current?.display("0"),
+        goToEnd: () => engineRef.current?.goToPage(totalLocations),
         onClose,
         toggleBookmark: handleToggleBookmark,
         toggleFullscreen: handleToggleFullscreen,
         toggleUI: () => setShowUI(prev => !prev),
         showSettings,
         showControls,
+        showSearch,
         setShowSettings,
         setShowControls,
+        setShowSearch,
+        clearSelection: () => engineRef.current?.clearSelection(),
+        hasSelection: !!selection,
         isEnabled: true,
     });
 
@@ -213,7 +263,7 @@ function ReaderView({
                 setShowUI(true);
                 return;
             }
-            if (showUI && !showSettings && !showControls) {
+            if (showUI && !showSettings && !showControls && !showSearch && !showAnnotations && !selection) {
                 if (Date.now() - lastMouseMoveRef.current > 3000) {
                     setShowUI(false);
                 }
@@ -227,7 +277,7 @@ function ReaderView({
             document.removeEventListener("mousemove", handleMove);
             document.removeEventListener("touchstart", handleMove);
         };
-    }, [showUI, showSettings, showControls, screenReaderMode]);
+    }, [showUI, showSettings, showControls, showSearch, showAnnotations, selection, screenReaderMode]);
 
     return (
         <div
@@ -269,36 +319,84 @@ function ReaderView({
 
             <ReaderOverlay
                 book={book}
+                bookmarks={book.bookmarks || []}
+                annotations={annotations}
                 showUI={showUI}
                 showSettings={showSettings}
                 showControls={showControls}
+                showSearch={showSearch}
+                showAnnotations={showAnnotations}
                 isLoading={isLoading}
                 currentPage={currentPage} // Engine provides 1-based page
-                totalPages={totalPages}
+                totalPages={totalLocations}
                 isBookmarked={isBookmarked}
                 currentCfi={currentCfi}
                 toc={tocItems}
-                bookmarks={book.bookmarks || []}
                 isFullscreen={isFullscreen}
+                estimatedMinutesRemaining={sessionStats.estimatedMinutesRemaining}
 
                 onClose={onClose}
                 onToggleBookmark={handleToggleBookmark}
-                onToggleTOC={() => setShowControls(true)}
-                onToggleSettings={() => setShowSettings(!showSettings)}
-                onToggleControls={() => setShowControls(!showControls)}
+                onToggleTOC={() => { setShowControls(!showControls); setShowSearch(false); setShowAnnotations(false); setShowSettings(false); }}
+                onToggleSettings={() => { setShowSettings(!showSettings); setShowControls(false); setShowSearch(false); setShowAnnotations(false); }}
+                onToggleSearch={() => { setShowSearch(!showSearch); setShowControls(false); setShowSettings(false); setShowAnnotations(false); }}
+                onToggleAnnotations={() => { setShowAnnotations(!showAnnotations); setShowControls(false); setShowSettings(false); setShowSearch(false); }}
                 onToggleFullscreen={handleToggleFullscreen}
 
                 onNextPage={() => engineRef.current?.nextPage()}
                 onPrevPage={() => engineRef.current?.prevPage()}
                 onNavigate={handleNavigate}
-                onJumpToTop={() => { engineRef.current?.display("0"); }} // Jump to start
-                onJumpToBottom={() => { engineRef.current?.goToPage(totalPages); }}
+                onJumpToTop={() => { engineRef.current?.display("0"); }}
+                onJumpToBottom={() => { engineRef.current?.goToPage(totalLocations); }}
                 onPageChange={handlePageChange}
-
                 onRemoveBookmark={onRemoveBookmark}
+
                 onCloseSettings={() => setShowSettings(false)}
                 onCloseControls={() => setShowControls(false)}
+                onCloseSearch={() => setShowSearch(false)}
+                onCloseAnnotations={() => setShowAnnotations(false)}
+                onDeleteAnnotation={removeAnnotation}
+
+                searchState={searchState}
+                onSearch={performSearch}
+                onClearSearch={clearSearch}
+                onNextSearchResult={nextResult}
+                onPrevSearchResult={prevResult}
+                onGoToSearchResult={goToResult}
             />
+
+            <ReaderSelectionMenu
+                selection={selection}
+                onHighlight={(color) => addAnnotation(selection!, "highlight", color)}
+                onUnderline={() => addAnnotation(selection!, "underline")}
+                onAddNote={() => {
+                    const note = window.prompt("Add a note:");
+                    if (note !== null) {
+                        addAnnotation(selection!, "note", undefined, note);
+                    }
+                }}
+                onCopy={() => {
+                    navigator.clipboard.writeText(selection!.text);
+                    engineRef.current?.clearSelection();
+                }}
+                onSpeak={() => {
+                    speak(selection!.text);
+                    engineRef.current?.clearSelection();
+                }}
+            />
+
+            {error && (
+                <ReaderErrorOverlay 
+                    error={error} 
+                    onRetry={() => {
+                        // Triggers a reload by unmounting and remounting the book blob 
+                        // via a small hack on the hydrated state if needed, or by reloading the page.
+                        // In a real app we'd trigger the engine initialization again.
+                        window.location.reload(); 
+                    }} 
+                    onClose={onClose} 
+                />
+            )}
         </div>
     );
 };

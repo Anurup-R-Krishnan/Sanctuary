@@ -201,7 +201,13 @@ export const libraryService = {
     if (!isPersistent) {
       useBookStore.getState().setIsLoading(true);
       try {
-        const localDbBooks = await getAllBooks().catch(() => [] as Book[]);
+        const rawLocalBooks = await getAllBooks().catch(() => [] as Book[]);
+        const localDbBooks = rawLocalBooks.map(book => {
+          if (book.coverBlob) {
+             book.coverUrl = trackCoverBlobForBook(book.id, book.coverBlob);
+          }
+          return book;
+        });
         reconcileTrackedCoverUrls(localDbBooks);
         useBookStore.getState().setBooks(localDbBooks);
       } catch (error) {
@@ -221,9 +227,14 @@ export const libraryService = {
       const hydrated: Book[] = stored.map((s): Book => {
         const local = localById.get(s.id);
         const syncMeta = syncMetaByBookId.get(s.id);
+        const localCoverUrl = local?.coverBlob && !s.coverUrl 
+            ? trackCoverBlobForBook(s.id, local.coverBlob) 
+            : s.coverUrl;
+
         const remoteBook: Book = {
           ...s,
-          coverUrl: s.coverUrl || "",
+          coverUrl: localCoverUrl || "",
+          coverBlob: local?.coverBlob || null,
           progress: s.progressPercent || 0,
           epubBlob: null,
           contentHash: "",
@@ -265,8 +276,14 @@ export const libraryService = {
       reconcileTrackedCoverUrls(hydrated);
       useBookStore.getState().setBooks(hydrated);
 
-      const localDbBooks = await getAllBooks().catch(() => [] as Book[]);
       const remoteIds = new Set(stored.map((b) => b.id));
+      const rawLocalBooks = await getAllBooks().catch(() => [] as Book[]);
+      const localDbBooks = rawLocalBooks.map(book => {
+          if (book.coverBlob && !remoteIds.has(book.id)) {
+              book.coverUrl = trackCoverBlobForBook(book.id, book.coverBlob);
+          }
+          return book;
+      });
       for (const localBook of localDbBooks) {
         if (!remoteIds.has(localBook.id) && !inFlightMutations.has(localBook.id)) {
           // INV-SYNC-001: Shield guest books ("pending") from GC.

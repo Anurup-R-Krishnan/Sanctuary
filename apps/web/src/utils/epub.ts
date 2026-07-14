@@ -27,14 +27,60 @@ export type EpubLocations = {
   generate: (chars: number) => Promise<void>;
   length: () => number;
   percentageFromCfi: (cfi: string) => number;
+  locationFromCfi?: (cfi: string) => number;
+  save?: () => string;
+  load?: (locations: string) => void;
 };
 
+export interface EpubSearchMatch {
+  cfi?: string;
+  excerpt?: string;
+}
+
+export interface EpubSpineSection {
+  find?(query: string): EpubSearchMatch[];
+  href?: string;
+  load?(loader: unknown): Promise<unknown>;
+  unload?(): void;
+}
+
+export interface EpubSpineApi {
+  each(callback: (section: EpubSpineSection) => void): void;
+}
+
+export interface EpubAnnotationsApi {
+  highlight(
+    cfiRange: string,
+    data?: Record<string, unknown>,
+    callback?: (event: MouseEvent) => void,
+    className?: string,
+    styles?: Record<string, string>,
+  ): void;
+  remove(cfiRange: string, type?: string): void;
+  underline?(
+    cfiRange: string,
+    data?: Record<string, unknown>,
+    callback?: (event: MouseEvent) => void,
+    className?: string,
+    styles?: Record<string, string>,
+  ): void;
+}
+
+export interface EpubContentsLike {
+  document?: Document;
+  window?: Window;
+}
+
 export type EpubRendition = {
+  annotations?: EpubAnnotationsApi;
   destroy: () => void;
   display: (target?: string) => Promise<void> | void;
+  getContents?(): EpubContentsLike[];
   next: () => void;
   off: (event: string, cb: (...args: unknown[]) => void) => void;
-  on: (event: "relocated", cb: (location: EpubLocation) => void) => void;
+  on(event: "relocated", cb: (location: EpubLocation) => void): void;
+  on(event: "selected", cb: (cfiRange: string, contents: EpubContentsLike) => void): void;
+  on(event: string, cb: (...args: unknown[]) => void): void;
   prev: () => void;
   resize: (width?: number, height?: number) => void;
   themes: {
@@ -46,13 +92,24 @@ export type EpubRendition = {
 export type EpubBookHandle = {
   coverUrl: () => Promise<string>;
   destroy?: () => void;
+  load?: unknown;
   loaded: {
     metadata: Promise<EpubMetadata>;
     navigation: Promise<EpubNavigation>;
   };
   locations: EpubLocations;
+  navigation?: {
+    toc?: TocItem[];
+    get?(href: string): TocItem | undefined;
+  };
+  package?: {
+    metadata?: {
+      direction?: "ltr" | "rtl";
+    };
+  };
   ready: Promise<unknown>;
   renderTo: (container: HTMLDivElement, options: Record<string, unknown>) => EpubRendition;
+  spine?: EpubSpineApi;
 };
 
 export function openEpub(source: ArrayBuffer): EpubBookHandle {

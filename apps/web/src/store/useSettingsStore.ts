@@ -43,6 +43,9 @@ type SettingsValues = {
   trackingEnabled: boolean;
   screenReaderMode: boolean;
   reduceMotion: boolean;
+  ttsVoiceURI: string | null;
+  ttsRate: number;
+  ttsPitch: number;
 };
 
 type SettingsActions = {
@@ -74,6 +77,9 @@ type SettingsActions = {
   setTrackingEnabled: (v: boolean) => void;
   setScreenReaderMode: (v: boolean) => void;
   setReduceMotion: (v: boolean) => void;
+  setTtsVoiceURI: (v: string | null) => void;
+  setTtsRate: (v: number) => void;
+  setTtsPitch: (v: number) => void;
   resetToDefaults: () => void;
 };
 
@@ -114,7 +120,10 @@ const DEFAULTS: SettingsValues = {
   showStreakReminder: true,
   trackingEnabled: true,
   screenReaderMode: false,
-  reduceMotion: false
+  reduceMotion: false,
+  ttsVoiceURI: null,
+  ttsRate: 1,
+  ttsPitch: 1
 };
 
 export const LOCAL_SETTINGS_KEY = "sanctuary.web.settings";
@@ -147,7 +156,10 @@ export const pickValues = (state: Settings): SettingsValues => ({
   showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
   screenReaderMode: state.screenReaderMode,
-  reduceMotion: state.reduceMotion
+  reduceMotion: state.reduceMotion,
+  ttsVoiceURI: state.ttsVoiceURI,
+  ttsRate: state.ttsRate,
+  ttsPitch: state.ttsPitch
 });
 
 export const toRemotePayload = (state: SettingsValues) => ({
@@ -192,6 +204,9 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
   if (typeof raw.screenReaderMode === "boolean") out.screenReaderMode = raw.screenReaderMode;
   if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
+  if (typeof raw.ttsVoiceURI === "string" || raw.ttsVoiceURI === null) out.ttsVoiceURI = raw.ttsVoiceURI as string | null;
+  if (typeof raw.ttsRate === "number") out.ttsRate = raw.ttsRate;
+  if (typeof raw.ttsPitch === "number") out.ttsPitch = raw.ttsPitch;
 
   return out;
 };
@@ -246,6 +261,9 @@ export const useSettingsStore = create<Settings>((set) => ({
   setTrackingEnabled: createSetAction("trackingEnabled", set),
   setScreenReaderMode: createSetAction("screenReaderMode", set),
   setReduceMotion: createSetAction("reduceMotion", set),
+  setTtsVoiceURI: createSetAction("ttsVoiceURI", set),
+  setTtsRate: createSetAction("ttsRate", set),
+  setTtsPitch: createSetAction("ttsPitch", set),
   resetToDefaults: () => set(DEFAULTS)
 }));
 

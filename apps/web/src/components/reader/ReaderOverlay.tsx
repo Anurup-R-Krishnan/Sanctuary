@@ -1,36 +1,53 @@
 
 import type { Book, Bookmark } from "@/types";
+import type { ReaderSearchState, ReaderAnnotation } from "@/types/reader";
 
+import { ReaderAnnotationsPanel } from "@/components/reader/ReaderAnnotationsPanel";
 import ReaderControls from "@/components/reader/ReaderControls";
 import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
+import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
 import ReaderSettings from "@/components/reader/ReaderSettings";
 import { Button } from "@/components/ui/Button";
 
 interface ReaderOverlayProps {
+  annotations: ReaderAnnotation[];
   book: Book;
   bookmarks: Bookmark[];
   currentCfi: string;
   currentPage: number;
+  estimatedMinutesRemaining: number | null;
   isBookmarked: boolean;
   isFullscreen: boolean;
   isLoading: boolean;
+  onClearSearch: () => void;
   onClose: () => void;
+  onCloseAnnotations: () => void;
   onCloseControls: () => void;
+  onCloseSearch: () => void;
   onCloseSettings: () => void;
+  onDeleteAnnotation: (id: string) => void;
+  onGoToSearchResult: (index: number) => void;
   onJumpToBottom: () => void;
   onJumpToTop: () => void;
   onNavigate: (href: string) => void;
   onNextPage: () => void;
+  onNextSearchResult: () => void;
   onPageChange: (page: number) => void;
   onPrevPage: () => void;
+  onPrevSearchResult: () => void;
   onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
+  onSearch: (query: string) => void;
+  onToggleAnnotations: () => void;
   onToggleBookmark: () => void;
-  onToggleControls: () => void;
   onToggleFullscreen: () => void;
+  onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleTOC: () => void;
+  searchState: ReaderSearchState;
+  showAnnotations: boolean;
   showControls: boolean;
+  showSearch: boolean;
   showSettings: boolean;
   showUI: boolean;
   toc: Array<{ id?: string | undefined; href: string; label: string; subitems?: Array<{ id?: string | undefined; href: string; label: string }> | undefined }>;
@@ -68,7 +85,8 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleBookmark={props.onToggleBookmark}
         onToggleTOC={props.onToggleTOC}
         onToggleSettings={props.onToggleSettings}
-        onToggleControls={props.onToggleControls}
+        onToggleSearch={props.onToggleSearch}
+        onToggleAnnotations={props.onToggleAnnotations}
         onToggleFullscreen={props.onToggleFullscreen}
       />
 
@@ -79,6 +97,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onNextPage={props.onNextPage}
         onPrevPage={props.onPrevPage}
         onPageChange={props.onPageChange}
+        estimatedMinutesRemaining={props.estimatedMinutesRemaining}
       />
 
       {props.showControls && (
@@ -95,12 +114,31 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         </div>
       )}
 
-      {props.showSettings && (
+    {props.showSettings && (
         <div className="fixed left-4 top-24 bottom-24 z-50 w-[min(420px,92vw)] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
           <ReaderSettings />
           <Button variant="secondary" className="mt-4 w-full" onClick={props.onCloseSettings}>Close Settings</Button>
         </div>
       )}
+
+      <ReaderSearchPanel
+          isOpen={props.showSearch}
+          onClose={props.onCloseSearch}
+          searchState={props.searchState}
+          onSearch={props.onSearch}
+          onClear={props.onClearSearch}
+          onNext={props.onNextSearchResult}
+          onPrev={props.onPrevSearchResult}
+          onGoToResult={props.onGoToSearchResult}
+      />
+
+      <ReaderAnnotationsPanel
+          isOpen={props.showAnnotations}
+          onClose={props.onCloseAnnotations}
+          annotations={props.annotations}
+          onGoToAnnotation={props.onNavigate}
+          onDeleteAnnotation={props.onDeleteAnnotation}
+      />
     </>
   );
 };

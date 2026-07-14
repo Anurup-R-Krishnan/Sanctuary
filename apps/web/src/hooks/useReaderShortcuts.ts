@@ -1,13 +1,19 @@
 import { useEffect, useRef } from "react";
 
 interface UseReaderShortcutsOptions {
+  clearSelection: () => void;
+  goToEnd: () => void;
+  goToStart: () => void;
+  hasSelection: boolean;
   isEnabled?: boolean;
   nextPage: () => void;
   onClose: () => void;
   prevPage: () => void;
   setShowControls: (value: boolean) => void;
+  setShowSearch: (value: boolean) => void;
   setShowSettings: (value: boolean) => void;
   showControls: boolean;
+  showSearch: boolean;
   showSettings: boolean;
   toggleBookmark: () => void;
   toggleFullscreen: () => void;
@@ -26,14 +32,20 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
       const {
         nextPage,
         prevPage,
+        goToStart,
+        goToEnd,
         onClose,
         toggleBookmark,
         toggleFullscreen,
         toggleUI,
         showSettings,
         showControls,
+        showSearch,
         setShowSettings,
         setShowControls,
+        setShowSearch,
+        clearSelection,
+        hasSelection,
         isEnabled,
       } = optionsRef.current;
 
@@ -42,6 +54,13 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
       const target = event.target as HTMLElement | null;
       const isTyping = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       if (isTyping) return;
+
+      // Handle modifiers for search
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setShowSearch(true);
+        return;
+      }
 
       switch (event.key) {
         case "ArrowRight":
@@ -53,6 +72,14 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         case "PageUp":
           event.preventDefault();
           prevPage();
+          return;
+        case "Home":
+          event.preventDefault();
+          goToStart();
+          return;
+        case "End":
+          event.preventDefault();
+          goToEnd();
           return;
         case "b":
         case "B":
@@ -66,7 +93,11 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           return;
         case " ":
           event.preventDefault();
-          nextPage();
+          if (event.shiftKey) {
+            prevPage();
+          } else {
+            nextPage();
+          }
           return;
         case "m":
         case "M":
@@ -84,6 +115,14 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           setShowSettings(!showSettings);
           return;
         case "Escape":
+          if (hasSelection) {
+              clearSelection();
+              return;
+          }
+          if (showSearch) {
+              setShowSearch(false);
+              return;
+          }
           if (showSettings) {
             setShowSettings(false);
             return;

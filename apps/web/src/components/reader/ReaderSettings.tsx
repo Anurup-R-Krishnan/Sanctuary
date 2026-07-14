@@ -1,5 +1,5 @@
 import { Layout, Scroll, EyeOff, Speech, ZapOff, RotateCcw } from "lucide-react";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -32,6 +32,12 @@ function ReaderSettings() {
     textAlignment,
     setTextAlignment,
     resetToDefaults,
+    ttsVoiceURI,
+    setTtsVoiceURI,
+    ttsRate,
+    setTtsRate,
+    ttsPitch,
+    setTtsPitch,
   } = useSettingsShallow((state) => ({
     fontSize: state.fontSize,
     setFontSize: state.setFontSize,
@@ -54,10 +60,25 @@ function ReaderSettings() {
     setMaxTextWidth: state.setMaxTextWidth,
     pageMargin: state.pageMargin,
     setPageMargin: state.setPageMargin,
+    ttsVoiceURI: state.ttsVoiceURI,
+    setTtsVoiceURI: state.setTtsVoiceURI,
+    ttsRate: state.ttsRate,
+    setTtsRate: state.setTtsRate,
+    ttsPitch: state.ttsPitch,
+    setTtsPitch: state.setTtsPitch,
     textAlignment: state.textAlignment,
     setTextAlignment: state.setTextAlignment,
     resetToDefaults: state.resetToDefaults,
   }));
+
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+    const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    return () => { window.speechSynthesis.onvoiceschanged = null; };
+  }, []);
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
@@ -206,6 +227,26 @@ function ReaderSettings() {
         <div className="space-y-2">
           <Toggle label="Screen Reader Mode" checked={screenReaderMode} onChange={setScreenReaderMode} icon={Speech} />
           <Toggle label="Reduce Motion" checked={reduceMotion} onChange={setReduceMotion} icon={ZapOff} />
+        </div>
+      </section>
+
+      <section>
+        <SectionLabel>Text-to-Speech</SectionLabel>
+        <div className="space-y-3">
+          <Select
+            value={ttsVoiceURI || ""}
+            onChange={(e) => setTtsVoiceURI(e.target.value)}
+          >
+            {voices.length === 0 ? (
+                <option value="">Default Voice</option>
+            ) : (
+                voices.map((v) => (
+                    <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>
+                ))
+            )}
+          </Select>
+          <Slider label="Speed" value={ttsRate} min={0.5} max={2.5} step={0.1} onChange={setTtsRate} formatValue={(v) => `${v.toFixed(1)}x`} />
+          <Slider label="Pitch" value={ttsPitch} min={0.5} max={2.0} step={0.1} onChange={setTtsPitch} formatValue={(v) => v.toFixed(1)} />
         </div>
       </section>
 

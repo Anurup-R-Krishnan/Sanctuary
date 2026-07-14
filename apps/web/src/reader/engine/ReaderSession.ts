@@ -1,0 +1,308 @@
+import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
+import type { EpubBookHandle, EpubRendition, EpubLocation, EpubContentsLike, TocItem } from "@/utils/epub";
+
+import { openEpub } from "@/utils/epub";
+
+import { getFileFingerprint, loadCachedLocations, saveCachedLocations } from "../persistence/locationCache";
+
+export interface ReaderSessionOptions {
+    blob: Blob;
+    bookId: string;
+    container: HTMLDivElement;
+    continuous: boolean;
+    initialCfi?: string;
+    spread: boolean;
+    themeStyles: Record<string, Record<string, string>>;
+}
+
+export interface ReaderSessionCallbacks {
+    onError: (error: ReaderError | null) => void;
+    onPositionChange: (position: Partial<ReaderPosition>) => void;
+    onSelection: (selection: ReaderSelection | null) => void;
+    onStatusChange: (status: ReaderStatus) => void;
+    onTocReady: (toc: TocItem[]) => void;
+}
+
+const LOCATION_BREAK_SIZE = 1024;
+const RESIZE_DELAY_MS = 120;
+
+export class ReaderSession {
+    private bookId: string;
+    public epubBook: EpubBookHandle | null = null;
+    public rendition: EpubRendition | null = null;
+    private aborted = false;
+    private displayRequestId = 0;
+    private resizeTimer: number | null = null;
+    private resizeObserver: ResizeObserver | null = null;
+    private container: HTMLDivElement;
+    private callbacks: ReaderSessionCallbacks;
+
+    public totalLocations = 1;
+    public tocItems: TocItem[] = [];
+
+    // History
+    private backHistory: string[] = [];
+    private forwardHistory: string[] = [];
+    private suppressHistory = false;
+    private HISTORY_LIMIT = 100;
+
+    constructor(options: ReaderSessionOptions, callbacks: ReaderSessionCallbacks) {
+        this.bookId = options.bookId;
+        this.container = options.container;
+        this.callbacks = callbacks;
+        this.init(options);
+    }
+
+    private async init(options: ReaderSessionOptions) {
+        this.callbacks.onError(null);
+        this.callbacks.onStatusChange("loading-book");
+
+        const fingerprint = getFileFingerprint(this.bookId, options.blob);
+
+        try {
+            const arrayBuffer = await options.blob.arrayBuffer();
+            if (this.aborted) return;
+
+            this.epubBook = openEpub(arrayBuffer);
+            this.callbacks.onStatusChange("loading-navigation");
+
+            this.epubBook.loaded.navigation.then(nav => {
+                if (this.aborted) return;
+                if (nav?.toc) {
+                    this.tocItems = nav.toc;
+                    this.callbacks.onTocReady(nav.toc);
+                }
+            }).catch(() => undefined);
+
+            let locationsLoadedFromCache = false;
+            if (this.epubBook.locations.load) {
+                const cachedLocations = await loadCachedLocations(this.bookId, fingerprint, LOCATION_BREAK_SIZE);
+                if (cachedLocations) {
+                    this.epubBook.locations.load(cachedLocations);
+                    this.totalLocations = Math.max(1, this.epubBook.locations.length());
+                    locationsLoadedFromCache = this.totalLocations > 1;
+                }
+            }
+
+            const readingDirection = this.epubBook.package?.metadata?.direction ?? "ltr";
+
+            this.rendition = this.epubBook.renderTo(this.container, {
+                width: "100%",
+                height: options.continuous ? "auto" : "100%",
+                spread: options.continuous ? "none" : options.spread ? "always" : "none",
+                flow: options.continuous ? "scrolled-doc" : "paginated",
+                allowScriptedContent: false,
+                direction: readingDirection,
+            });
+
+            if (this.aborted) {
+                this.rendition.destroy();
+                return;
+            }
+
+            this.rendition.themes.default(options.themeStyles);
+
+            this.callbacks.onStatusChange("restoring-location");
+            
+            const startLocation = options.initialCfi || undefined;
+            
+            let displayed = false;
+            if (startLocation) {
+                displayed = await this.safeDisplay(startLocation);
+            }
+            if (!this.aborted && !displayed) {
+                this.callbacks.onError(null);
+                displayed = await this.safeDisplay();
+            }
+
+            if (!displayed || this.aborted) {
+                throw new Error("RENDER_FAILED");
+            }
+
+            this.rendition.on("relocated", (loc: EpubLocation) => this.handleRelocated(loc));
+            this.rendition.on("selected", (cfiRange: string, contents: EpubContentsLike) => this.handleSelected(cfiRange, contents));
+
+            this.setupResizeObserver();
+            this.callbacks.onStatusChange("ready");
+
+            if (!locationsLoadedFromCache) {
+                this.callbacks.onStatusChange("generating-locations");
+                this.epubBook.locations.generate(LOCATION_BREAK_SIZE)
+                    .then(async () => {
+                        if (this.aborted) return;
+                        this.totalLocations = Math.max(1, this.epubBook.locations.length());
+                        if (this.epubBook?.locations.save) {
+                            await saveCachedLocations(this.bookId, fingerprint, LOCATION_BREAK_SIZE, this.epubBook.locations.save());
+                        }
+                        this.callbacks.onStatusChange("ready");
+                    })
+                    .catch(err => {
+                        if (this.aborted) return;
+                        console.warn("Location generation failed:", err);
+                        this.callbacks.onStatusChange("ready");
+                    });
+            }
+        } catch {
+            if (this.aborted) return;
+            this.callbacks.onError({
+                code: "INVALID_EPUB",
+                title: "This EPUB could not be opened",
+                message: "The file may be damaged or use unsupported features.",
+                recoverable: true,
+            });
+            this.callbacks.onStatusChange("error");
+            this.destroy();
+        }
+    }
+
+    private setupResizeObserver() {
+        if (!this.container) return;
+        this.resizeObserver = new ResizeObserver(() => {
+            if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
+            this.resizeTimer = window.setTimeout(() => {
+                this.resizeTimer = null;
+                try {
+                    this.rendition?.resize();
+                } catch { /* ignore transient failures */ }
+            }, RESIZE_DELAY_MS);
+        });
+        this.resizeObserver.observe(this.container);
+    }
+
+    private async safeDisplay(target?: string): Promise<boolean> {
+        if (!this.rendition) return false;
+        const requestId = ++this.displayRequestId;
+        try {
+            await this.rendition.display(target);
+            if (requestId !== this.displayRequestId) return false;
+            return true;
+        } catch {
+            if (requestId !== this.displayRequestId) return false;
+            return false;
+        }
+    }
+
+    public async display(target: string): Promise<boolean> {
+        if (!target.trim()) return false;
+        this.suppressHistory = true;
+        return this.safeDisplay(target);
+    }
+
+    public async next(): Promise<void> {
+        if (!this.rendition) return;
+        try { await this.rendition.next(); } catch { /* Ignore */ }
+    }
+
+    public async prev(): Promise<void> {
+        if (!this.rendition) return;
+        try { await this.rendition.prev(); } catch { /* Ignore */ }
+    }
+
+    private findTocLabel(href: string): string {
+        const normalize = (h: string) => h.split("#")[0].replace(/^\.?\//, "").trim();
+        const target = normalize(href);
+        let bestMatch = "";
+        const visit = (nodes: TocItem[]) => {
+            for (const item of nodes) {
+                const itemHref = typeof item.href === "string" ? normalize(item.href) : "";
+                if (itemHref && (target === itemHref || target.startsWith(itemHref) || itemHref.startsWith(target))) {
+                    const label = typeof item.label === "string" ? item.label.trim() : "";
+                    if (label && itemHref.length >= bestMatch.length) bestMatch = label;
+                }
+                const nested = item.subitems;
+                if (nested?.length) visit(nested);
+            }
+        };
+        visit(this.tocItems);
+        return bestMatch;
+    }
+
+    private handleRelocated(location: unknown) {
+        if (this.aborted || !this.epubBook || typeof location !== "object" || !location) return;
+        const loc = location as { start?: { cfi?: string; href?: string; percentage?: number; displayed?: { page?: number; total?: number } }; end?: { href?: string } };
+        const cfi = loc.start?.cfi;
+        if (!cfi) return;
+
+        const href = loc.start?.href ?? loc.end?.href ?? "";
+        let progressFraction = 0;
+        try {
+            progressFraction = Math.max(0, Math.min(1, this.epubBook.locations.percentageFromCfi(cfi)));
+        } catch {
+            const fallback = typeof loc.start?.percentage === "number" ? loc.start.percentage : 0;
+            progressFraction = Math.max(0, Math.min(1, fallback));
+        }
+
+        let locationIndex = Math.max(1, Math.ceil(progressFraction * this.totalLocations));
+        if (this.epubBook.locations.locationFromCfi) {
+            try {
+                const exactLocation = this.epubBook.locations.locationFromCfi(cfi);
+                if (Number.isFinite(exactLocation)) {
+                    locationIndex = Math.max(1, Math.min(exactLocation + 1, this.totalLocations));
+                }
+            } catch { /* Fall back */ }
+        }
+
+        const displayed = loc.start?.displayed;
+        const page = Math.max(1, displayed?.page ?? 1);
+        const pageTotal = Math.max(page, displayed?.total ?? 1);
+        const chapterFraction = pageTotal > 0 ? Math.max(0, Math.min(1, page / pageTotal)) : 0;
+        const chapterLabel = this.findTocLabel(href);
+
+        if (!this.suppressHistory) {
+            const previous = this.backHistory.at(-1);
+            if (previous !== cfi) {
+                this.backHistory.push(cfi);
+                if (this.backHistory.length > this.HISTORY_LIMIT) this.backHistory.shift();
+            }
+            this.forwardHistory = [];
+        }
+        this.suppressHistory = false;
+
+        this.callbacks.onPositionChange({
+            cfi,
+            href,
+            chapterLabel,
+            bookProgress: Math.round(progressFraction * 100),
+            chapterProgress: Math.round(chapterFraction * 100),
+            location: locationIndex,
+            totalLocations: this.totalLocations,
+            displayedPage: page,
+            displayedPages: pageTotal,
+        });
+    }
+
+    private handleSelected(cfiRange: string, contents: EpubContentsLike) {
+        if (this.aborted) return;
+        const text = contents.window?.getSelection?.()?.toString().trim() ?? "";
+        if (!text) {
+            this.callbacks.onSelection(null);
+            return;
+        }
+        // Grab current href from the event if possible, or fallback
+        this.callbacks.onSelection({
+            cfiRange,
+            text,
+            href: "", // Filled in by hook layer
+            chapterLabel: "", // Filled in by hook layer
+        });
+    }
+
+    public destroy() {
+        this.aborted = true;
+        this.displayRequestId++;
+        if (this.resizeObserver) this.resizeObserver.disconnect();
+        if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
+        
+        if (this.rendition) {
+            try { this.rendition.off("relocated", this.handleRelocated); } catch { /* ignore */ }
+            try { this.rendition.off("selected", this.handleSelected); } catch { /* ignore */ }
+            try { this.rendition.destroy(); } catch { /* ignore */ }
+        }
+        if (this.epubBook) {
+            try { this.epubBook.destroy?.(); } catch { /* ignore */ }
+        }
+        this.rendition = null;
+        this.epubBook = null;
+        if (this.container) this.container.replaceChildren();
+    }
+}

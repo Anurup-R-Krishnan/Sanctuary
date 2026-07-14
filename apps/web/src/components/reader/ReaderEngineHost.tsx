@@ -1,29 +1,31 @@
-import React, { useRef, useImperativeHandle, useEffect, forwardRef, memo } from "react";
+import React, { useRef, useImperativeHandle, forwardRef, memo } from "react";
 
 import type { Book } from "@/types";
-import type { TocItem } from "@/utils/epub";
+import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
+import type { TocItem, EpubRendition, EpubBookHandle } from "@/utils/epub";
 
 import { useReaderEngine } from "@/hooks/useReaderEngine";
 
-export interface ReaderEngineState {
-    isLoading: boolean;
-    currentCfi: string;
-    totalPages: number;
-    currentPage: number;
-    tocItems: TocItem[];
-}
-
 export interface ReaderEngineRef {
+    clearSelection: () => void;
+    display: (target: string) => void;
+    epubBook: EpubBookHandle | null;
+    goToPage: (page: number) => void;
     nextPage: () => void;
     prevPage: () => void;
-    display: (target: string) => void;
-    goToPage: (page: number) => void;
+    rendition: EpubRendition | null;
 }
 
 interface ReaderEngineHostProps {
     book: Book;
+    onEngineStateChange: (state: {
+        status: ReaderStatus;
+        error: ReaderError | null;
+        position: ReaderPosition;
+        tocItems: TocItem[];
+        selection: ReaderSelection | null;
+    }) => void;
     onUpdateProgress: (id: string, progress: number, location: string) => void;
-    onEngineStateChange: (state: ReaderEngineState) => void;
 }
 
 export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHostProps>(({
@@ -34,15 +36,18 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
     const containerRef = useRef<HTMLDivElement>(null);
     
     const {
-        isLoading,
-        currentCfi,
-        totalPages,
-        currentPage,
+        status,
+        error,
+        position,
         tocItems,
+        selection,
         nextPage,
         prevPage,
         display,
         goToPage,
+        clearSelection,
+        _rendition,
+        _epubBook,
     } = useReaderEngine({ book, containerRef, onUpdateProgress });
 
     useImperativeHandle(ref, () => ({
@@ -50,18 +55,24 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
         prevPage,
         display,
         goToPage,
-    }), [nextPage, prevPage, display, goToPage]);
+        clearSelection,
+        rendition: _rendition,
+        epubBook: _epubBook,
+    }), [nextPage, prevPage, display, goToPage, clearSelection, _rendition, _epubBook]);
 
-    // Sync engine state up to the UI shell
-    useEffect(() => {
+    // Sync engine state up to the UI shell.
+    // We use a layout effect equivalent pattern by calling it during render
+    // or using a highly responsive effect to prevent tearing.
+    // To avoid React warnings about updating during render, we use an effect.
+    React.useEffect(() => {
         onEngineStateChange({
-            isLoading,
-            currentCfi,
-            totalPages,
-            currentPage,
+            status,
+            error,
+            position,
             tocItems,
+            selection,
         });
-    }, [isLoading, currentCfi, totalPages, currentPage, tocItems, onEngineStateChange]);
+    }, [status, error, position, tocItems, selection, onEngineStateChange]);
 
     return <div ref={containerRef} className="absolute inset-0 overflow-auto" />;
 }));

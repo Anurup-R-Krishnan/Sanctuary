@@ -6,7 +6,8 @@ import {
     Settings,
     Maximize2,
     Minimize2,
-    MoreHorizontal,
+    Search,
+    Highlighter,
 } from "lucide-react";
 import React from "react";
 
@@ -20,9 +21,10 @@ interface ReaderHeaderProps {
     isBookmarked: boolean;
     isFullscreen: boolean;
     onClose: () => void;
+    onToggleAnnotations: () => void;
     onToggleBookmark: () => void;
-    onToggleControls: () => void;
     onToggleFullscreen: () => void;
+    onToggleSearch: () => void;
     onToggleSettings: () => void;
     onToggleTOC: () => void;
     showUI: boolean;
@@ -37,7 +39,8 @@ function ReaderHeader({
     onToggleBookmark,
     onToggleTOC,
     onToggleSettings,
-    onToggleControls,
+    onToggleSearch,
+    onToggleAnnotations,
     onToggleFullscreen,
 }: ReaderHeaderProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
@@ -101,8 +104,10 @@ function ReaderHeader({
                     />
                     <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
                     <ActionBtn icon={List} label="Contents" onClick={onToggleTOC} />
+                    <ActionBtn icon={Search} label="Search" onClick={onToggleSearch} />
+                    <ActionBtn icon={Highlighter} label="Annotations" onClick={onToggleAnnotations} />
                     <ActionBtn icon={Settings} label="Appearance" onClick={onToggleSettings} />
-                    <ActionBtn icon={MoreHorizontal} label="Utilities" onClick={onToggleControls} />
+
                     <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
                     <ActionBtn 
                         icon={isFullscreen ? Minimize2 : Maximize2} 

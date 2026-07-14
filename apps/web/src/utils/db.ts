@@ -1,11 +1,13 @@
 import type { Book } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const BOOKS_STORE = "books";
 const VOCAB_STORE = "vocabulary";
 const SESSIONS_STORE = "sessions";
 const MUTATIONS_STORE = "mutations";
+const READER_CACHE_STORE = "reader_cache";
+const ANNOTATIONS_STORE = "annotations";
 
 let db: IDBDatabase | undefined;
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -59,6 +61,13 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!database.objectStoreNames.contains(MUTATIONS_STORE)) {
         database.createObjectStore(MUTATIONS_STORE, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(READER_CACHE_STORE)) {
+        database.createObjectStore(READER_CACHE_STORE, { keyPath: "id" });
+      }
+      if (!database.objectStoreNames.contains(ANNOTATIONS_STORE)) {
+        const annStore = database.createObjectStore(ANNOTATIONS_STORE, { keyPath: "id" });
+        annStore.createIndex("bookId", "bookId", { unique: false });
       }
     };
   });
@@ -191,4 +200,34 @@ export async function getAllMutations(): Promise<SyncMutation[]> {
 
 export async function deleteMutation(id: string): Promise<void> {
   return dbDelete(MUTATIONS_STORE, id);
+}
+
+// Reader Cache helpers
+export async function putReaderCache(id: string, payload: unknown): Promise<void> {
+  return dbPut(READER_CACHE_STORE, { id, payload });
+}
+
+export async function getReaderCache<T>(id: string): Promise<T | null> {
+  const result = await dbGet<{ id: string; payload: T }>(READER_CACHE_STORE, id);
+  return result ? result.payload : null;
+}
+
+export async function deleteReaderCache(id: string): Promise<void> {
+  return dbDelete(READER_CACHE_STORE, id);
+}
+
+// Annotations helpers
+import type { ReaderAnnotation } from "@/types/reader";
+
+export async function putAnnotation(annotation: ReaderAnnotation): Promise<void> {
+  return dbPut(ANNOTATIONS_STORE, annotation);
+}
+
+export async function getAnnotationsByBook(bookId: string): Promise<ReaderAnnotation[]> {
+  const all = await dbGetAll<ReaderAnnotation>(ANNOTATIONS_STORE);
+  return all.filter(a => a.bookId === bookId);
+}
+
+export async function deleteAnnotation(id: string): Promise<void> {
+  return dbDelete(ANNOTATIONS_STORE, id);
 }
