@@ -1,13 +1,15 @@
 import { BookOpen, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { libraryService } from "@/services/LibraryService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getAllBooks } from "@/utils/db";
 
 export function MigrationDialog() {
-  const { isLoaded, isSignedIn, getToken } = useSanctuaryAuth();
+  const { isLoaded, isSignedIn } = useSanctuaryAuth();
+  const api = useSanctuaryApi();
   const { mode, setSession } = useSessionStore();
   
   const [pendingBooksCount, setPendingBooksCount] = useState(0);
@@ -37,12 +39,10 @@ export function MigrationDialog() {
       const books = await getAllBooks();
       const pending = books.filter(b => b.syncStatus === "pending");
       
-      const token = await getToken();
-      
       for (const book of pending) {
         if (!book.epubBlob) continue;
         const file = new File([book.epubBlob], `${book.title}.epub`, { type: "application/epub+zip" });
-        await libraryService._migrateBook(file, book, token || undefined);
+        await libraryService._migrateBook(file, book, api);
       }
       
       setShow(false);

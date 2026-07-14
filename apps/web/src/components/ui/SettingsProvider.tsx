@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
+import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { settingsService } from "@/services/settingsService";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -15,32 +16,15 @@ import {
 } from "@/store/useSettingsStore";
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { getToken, isSignedIn } = useSanctuaryAuth();
+  const { isSignedIn } = useSanctuaryAuth();
   const { mode } = useSessionStore();
   const isPersistent = import.meta.env.VITE_DISABLE_AUTH !== "true" && !!(isSignedIn && mode !== "guest");
 
   const hydratedRef = useRef(false);
   const remoteSaveTimerRef = useRef<number | null>(null);
   const localSaveTimerRef = useRef<number | null>(null);
-  const tokenCacheRef = useRef<{ value: string | null; expiresAt: number }>({ value: null, expiresAt: 0 });
-  const tokenPromiseRef = useRef<Promise<string | null> | null>(null);
-  const getCachedToken = useCallback(async () => {
-    const now = Date.now();
-    if (tokenCacheRef.current.expiresAt > now) {
-      return tokenCacheRef.current.value;
-    }
-    if (!tokenPromiseRef.current) {
-      tokenPromiseRef.current = getToken()
-        .then((token) => {
-          tokenCacheRef.current = { value: token, expiresAt: Date.now() + 60_000 };
-          return token;
-        })
-        .finally(() => {
-          tokenPromiseRef.current = null;
-        });
-    }
-    return tokenPromiseRef.current;
-  }, [getToken]);
+
+  const api = useSanctuaryApi();
 
   useEffect(() => {
     let mounted = true;
@@ -62,8 +46,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const token = await getCachedToken();
-        const remote = await settingsService.getSettings(token || undefined);
+        const remote = await settingsService.getSettings(api);
         if (mounted && remote) {
           useSettingsStore.setState(normalizeRemoteSettings(remote));
         }
@@ -77,7 +60,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [getCachedToken, isPersistent]);
+  }, [api, isPersistent]);
 
   useEffect(() => {
     const unsubscribe = useSettingsStore.subscribe((state) => {
@@ -118,7 +101,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         window.clearTimeout(remoteSaveTimerRef.current);
       }
     };
-  }, [getCachedToken, isPersistent]);
+  }, [isPersistent]);
 
   return <>{children}</>;
 }

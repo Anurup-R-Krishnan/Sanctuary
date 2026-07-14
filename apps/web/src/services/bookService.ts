@@ -1,17 +1,16 @@
-import type { Book, LibraryItem } from "@/types";
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
+import type { Book } from "@/types";
 
 import { getBookById } from "@/utils/db";
 
 import { API } from "./api";
-import { readJsonSafely, buildAuthHeaders, encodeId } from "./http";
+import { readJsonSafely, encodeId } from "./http";
 import { syncQueue } from "./SyncQueue";
 
 export const bookService = {
-    async getBooks(token?: string): Promise<Book[]> {
-        const headers = buildAuthHeaders(token);
-
-        const res = await fetch(API.LIBRARY, { headers });
-        const books = (await readJsonSafely<LibraryItem[] | null>(res, "Failed to fetch books")) || [];
+    async getBooks(api: SanctuaryApiClient): Promise<Book[]> {
+        const books = await api.getLibrary();
         const bookmarkIdFromCfi = (bookId: string, cfi: string) => `${bookId}:${encodeURIComponent(cfi)}`;
         return books.map((b) => ({
             id: b.id,
@@ -34,13 +33,11 @@ export const bookService = {
         }));
     },
 
-    async getBookContent(id: string, token?: string): Promise<Blob> {
+    async getBookContent(id: string, api: SanctuaryApiClient): Promise<Blob> {
         const local = await getBookById(id).catch(() => null);
         if (local?.epubBlob) return local.epubBlob;
 
-        const headers = buildAuthHeaders(token);
-
-        const res = await fetch(API.CONTENT(encodeId(id)), { headers });
+        const res = await api.fetchRaw(API.CONTENT(encodeId(id)));
         if (!res.ok) throw new Error("Failed to fetch book content");
         const { url } = await res.json() as { url: string };
 
@@ -49,9 +46,7 @@ export const bookService = {
         return await blobRes.blob();
     },
 
-    async addBook(file: File, metadata: Book, token?: string, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }> {
-        const headers = buildAuthHeaders(token);
-
+    async addBook(file: File, metadata: Book, api: SanctuaryApiClient, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }> {
         const formData = new FormData();
         formData.append("file", file, file.name || `${metadata.id}.epub`);
         if (coverBlob && coverBlob.size > 0) {
@@ -73,27 +68,22 @@ export const bookService = {
         );
 
         try {
-            const res = await fetch(API.LIBRARY, {
+            const res = await api.fetchRaw(API.LIBRARY, {
                 method: "POST",
-                headers,
                 body: formData,
             });
             return await readJsonSafely<{ success: boolean; coverUrl?: string | null }>(res, "Failed to save book");
         } catch (error) {
             // Best-effort cleanup for partial backend writes (binary uploaded, metadata failed).
-            await fetch(`${API.LIBRARY}?id=${encodeId(metadata.id)}`, {
-                method: "DELETE",
-                headers,
-            }).catch(() => undefined);
+            await api.deleteLibraryItem(metadata.id).catch(() => undefined);
             throw error;
         }
     },
 
-    async uploadBookCover(id: string, coverBlob: Blob, token?: string): Promise<string> {
-        const headers = { ...buildAuthHeaders(token), "Content-Type": coverBlob.type || "image/jpeg" };
-        const res = await fetch(`${API.CONTENT(encodeId(id))}?asset=cover`, {
+    async uploadBookCover(id: string, coverBlob: Blob, api: SanctuaryApiClient): Promise<string> {
+        const res = await api.fetchRaw(`${API.CONTENT(encodeId(id))}?asset=cover`, {
             method: "PUT",
-            headers,
+            headers: { "Content-Type": coverBlob.type || "image/jpeg" },
             body: coverBlob,
         });
         const data = await readJsonSafely<{ success: boolean; coverUrl?: string }>(res, "Failed to upload cover");

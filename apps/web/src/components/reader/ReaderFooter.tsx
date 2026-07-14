@@ -8,7 +8,6 @@ interface ReaderFooterProps {
     onNextPage: () => void;
     onPageChange: (page: number) => void;
     onPrevPage: () => void;
-    readingTime: number;
     showUI: boolean;
     totalPages: number;
 }
@@ -16,7 +15,6 @@ interface ReaderFooterProps {
 function ReaderFooter({
     currentPage,
     totalPages,
-    readingTime,
     showUI,
     onNextPage,
     onPrevPage,
@@ -101,14 +99,12 @@ function ReaderFooter({
                                     <div style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }} className="h-full transition-all" />
                                 </div>
                             </div>
-                            <div className="flex justify-center text-xs mt-1 text-light-text-muted dark:text-dark-text-muted gap-3">
+                            <div className="flex justify-center text-xs mt-1 text-light-text-muted dark:text-dark-text-muted gap-3 font-medium">
                                 <span className="tabular-nums">{currentPage}</span>
                                 <span>/</span>
                                 <span className="tabular-nums">{totalPages}</span>
                                 <span>•</span>
-                                <span>{readingTime}m</span>
-                                <span>•</span>
-                                <span>{Math.max(0, totalPages - currentPage)} left</span>
+                                <span>{progressPercent}%</span>
                             </div>
                         </div>
 

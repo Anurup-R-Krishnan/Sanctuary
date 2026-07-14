@@ -1,6 +1,5 @@
 {
   "name": "@sanctuary/desktop",
-  "version": "0.1.0",
   "private": true,
   "scripts": {
     "tauri:dev": "node scripts/run-tauri.mjs dev",

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
 
 function createDummyEpub(filename: string) {
   const source = path.join(process.cwd(), 'e2e/valid_test_book.epub');

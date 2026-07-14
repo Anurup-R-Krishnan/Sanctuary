@@ -30,7 +30,6 @@ interface ReaderOverlayProps {
   onToggleFullscreen: () => void;
   onToggleSettings: () => void;
   onToggleTOC: () => void;
-  readingTime: number;
   showControls: boolean;
   showSettings: boolean;
   showUI: boolean;
@@ -76,7 +75,6 @@ function ReaderOverlay(props: ReaderOverlayProps) {
       <ReaderFooter
         currentPage={props.currentPage}
         totalPages={props.totalPages}
-        readingTime={props.readingTime}
         showUI={props.showUI}
         onNextPage={props.onNextPage}
         onPrevPage={props.onPrevPage}

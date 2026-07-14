@@ -1,13 +1,13 @@
 import { BookOpen } from "lucide-react";
 import { useEffect, useCallback, useState } from "react";
 
+import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
 import { syncQueue } from "@/services/SyncQueue";
-import { useBookStore } from "@/store/useBookStore";
 import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -27,33 +27,51 @@ const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
 
 function App() {
   // Auth & Session
-  const { mode, reset: resetSession } = useSessionStore();
-  const { isLoaded, isSignedIn, user, getToken, signOut } = useSanctuaryAuth();
+  const { mode, reset: resetSession, setSession } = useSessionStore();
+  const { isLoaded, isSignedIn, user, signOut } = useSanctuaryAuth();
+  const api = useSanctuaryApi();
   
   const [explicitGuest, setExplicitGuest] = useState(DISABLE_AUTH);
 
   const isGuest = mode === "guest";
   const isPersistent = mode === "authenticated";
 
+  // Session State Transitions
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isSignedIn && user) {
+      if (mode === "initializing") {
+        setSession("authenticated", user.id);
+      }
+      // If mode is "guest", MigrationDialog handles the transition!
+    } else if (explicitGuest && mode === "initializing") {
+      setSession("guest", null);
+    }
+  }, [isLoaded, isSignedIn, user, mode, explicitGuest, setSession]);
+
   // Global UI State
   const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
   const selectedBookId = useReaderProgressStore((state) => state.active?.bookId ?? null);
-  const selectedBook = useBookStore((state) => state.getBookById(selectedBookId));
 
   // Custom Hooks (Encapsulated Logic)
   useAppTheme();
-  const { handleReaderProgress, flushPendingProgress } = useProgressSync(getToken, isPersistent);
-  const { startSession, endSession, addBookmark, removeBookmark } = useReadingSession(getToken, isPersistent, flushPendingProgress);
+  const { handleReaderProgress, flushPendingProgress } = useProgressSync(api, isPersistent);
+  const { startSession, endSession, addBookmark, removeBookmark } = useReadingSession(api, isPersistent, flushPendingProgress);
 
-  // Initial Data Load
+  // Stable API calls for children to prevent N+1 re-renders
+  const handleGetBookContent = useCallback((id: string) => libraryService.getBookContent(id, api, isPersistent), [api, isPersistent]);
+  const handleAddBook = useCallback((file: File) => libraryService.addBook(file, api, isPersistent), [api, isPersistent]);
+  const handleToggleFavorite = useCallback((id: string) => libraryService.toggleFavorite(id, api, isPersistent), [api, isPersistent]);
+  const handleDeleteBook = useCallback((id: string) => libraryService.deleteBook(id, api, isPersistent), [api, isPersistent]);
+
   useEffect(() => {
     if (mode === "initializing") return;
-    syncQueue.init(getToken, isPersistent);
-    libraryService.loadBooks(getToken, isPersistent);
-    statsService.loadSessions(getToken, isPersistent);
-    statsService.fetchGoals(getToken, isPersistent);
+    syncQueue.init(api, isPersistent);
+    libraryService.loadBooks(api, isPersistent);
+    statsService.loadSessions(api, isPersistent);
+    statsService.fetchGoals(api, isPersistent);
     return () => libraryService.cleanupAllObjectUrls();
-  }, [getToken, isPersistent, mode]);
+  }, [api, isPersistent, mode]);
 
   // Handlers
   const handleShowLogin = useCallback(() => {
@@ -92,6 +110,7 @@ function App() {
 
   const isReader = view === View.READER;
 
+
   return (
     <div className={`min-h-screen font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
       <MigrationDialog />
@@ -114,21 +133,21 @@ function App() {
           {view === View.LIBRARY && (
             <LibraryGrid
               onSelectBook={startSession}
-              addBook={(file) => libraryService.addBook(file, getToken, isPersistent)}
-              toggleFavorite={(id) => libraryService.toggleFavorite(id, getToken, isPersistent)}
-              deleteBook={(id) => libraryService.deleteBook(id, getToken, isPersistent)}
+              addBook={handleAddBook}
+              toggleFavorite={handleToggleFavorite}
+              deleteBook={handleDeleteBook}
             />
           )}
           {view === View.SETTINGS && <SettingsView />}
           {view === View.STATS && <StatsView />}
-          {view === View.READER && selectedBook && (
+          {view === View.READER && selectedBookId && (
             <ReaderView
-              book={selectedBook}
+              bookId={selectedBookId}
               onClose={endSession}
               onUpdateProgress={handleReaderProgress}
               onAddBookmark={addBookmark}
               onRemoveBookmark={removeBookmark}
-              getBookContent={(id) => libraryService.getBookContent(id, getToken, isPersistent)}
+              getBookContent={handleGetBookContent}
             />
           )}
         </div>

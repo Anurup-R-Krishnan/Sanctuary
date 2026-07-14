@@ -46,6 +46,13 @@ export interface ReadingGoalsV2 {
     targetMinutes: number;
     progressPercent: number;
   };
+  month: {
+    startDate: string;
+    endDate: string;
+    totalMinutes: number;
+    targetMinutes: number;
+    progressPercent: number;
+  };
   week: {
     startDate: string;
     endDate: string;
@@ -90,10 +97,14 @@ export interface ApiClientOptions {
 const jsonHeaders = { "Content-Type": "application/json" };
 
 export class SanctuaryApiClient {
-  constructor(private readonly options: ApiClientOptions) {}
+  constructor(public readonly options: ApiClientOptions) {}
+
+  public async getToken(): Promise<string | null> {
+    return this.options.getToken?.() ?? null;
+  }
 
   private async headers() {
-    const token = await this.options.getToken?.();
+    const token = await this.getToken();
     if (!token) return jsonHeaders;
     return { ...jsonHeaders, Authorization: `Bearer ${token}` };
   }
@@ -106,6 +117,25 @@ export class SanctuaryApiClient {
     });
     if (!res.ok) throw new Error(`Request to ${path} failed (${res.status})`);
     return res.json() as Promise<T>;
+  }
+
+  public async fetchRaw(path: string, init?: RequestInit): Promise<Response> {
+    const baseHeaders = await this.headers();
+    
+    // Allow overriding or omitting headers (like Content-Type for FormData)
+    const headers = new Headers(baseHeaders as HeadersInit);
+    if (init?.headers) {
+      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    }
+    // Remove Content-Type if it's undefined (fetch handles FormData boundaries automatically)
+    if (init?.body instanceof FormData) {
+      headers.delete("Content-Type");
+    }
+
+    return fetch(`${this.options.baseUrl}${path}`, {
+      ...init,
+      headers
+    });
   }
 
   async getSettings(): Promise<ReaderSettingsV2> {
@@ -138,6 +168,12 @@ export class SanctuaryApiClient {
     await this.fetchJson<void>(`/api/library?id=${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: JSON.stringify(payload)
+    });
+  }
+
+  async deleteLibraryItem(id: string): Promise<void> {
+    await this.fetchJson<void>(`/api/library?id=${encodeURIComponent(id)}`, {
+      method: "DELETE"
     });
   }
 

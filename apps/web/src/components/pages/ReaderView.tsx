@@ -6,10 +6,11 @@ import ReaderContent from "@/components/reader/ReaderContent";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
 import { useReaderEngine } from "@/hooks/useReaderEngine";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
+import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
 interface ReaderViewProps {
-    book: Book;
+    bookId: string;
     getBookContent: (id: string) => Promise<Blob>;
     onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
     onClose: () => void;
@@ -18,67 +19,89 @@ interface ReaderViewProps {
 }
 
 function ReaderView({
-    book,
+    bookId,
     onClose,
     onUpdateProgress,
     onAddBookmark,
     onRemoveBookmark,
     getBookContent,
 }: ReaderViewProps) {
+    const book = useBookStore((state) => state.getBookById(bookId));
+
     // UI State
     const [showUI, setShowUI] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showControls, setShowControls] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false); // Local optimistic state
-    const [readingTime, setReadingTime] = useState(0);
 
     const rootRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const lastMouseMoveRef = useRef<number>(Date.now());
+    
+    // We only need a stable reference to the initial book for hydration.
+    // If book is undefined (deleted while reading?), fallback to a dummy or handle it.
     const latestBookRef = useRef(book);
 
     // Local hydrated book state (for lazy loading content)
-    const [hydratedBook, setHydratedBook] = useState<Book>(book);
+    const [hydratedBook, setHydratedBook] = useState<Book | undefined>(book);
     const [isFetchingContent, setIsFetchingContent] = useState(false);
     const [contentError, setContentError] = useState<string | null>(null);
 
     useEffect(() => {
-        latestBookRef.current = book;
+        if (book) {
+            latestBookRef.current = book;
+        }
     }, [book]);
 
-    // Sync prop to local state and fetch content if missing
+    const isFetchingRef = useRef(false);
+
+    // Fetch content if missing (runs ONLY when bookId changes or blob is missing)
     useEffect(() => {
         let isMounted = true;
         const activeBook = latestBookRef.current;
-        setHydratedBook((prev) => ({
-            ...activeBook,
-            epubBlob: activeBook.epubBlob || (prev.id === activeBook.id ? prev.epubBlob : null),
-        }));
+        if (!activeBook) return;
+
         setContentError(null);
-        if (!activeBook.epubBlob) {
-            setIsFetchingContent(true);
-            getBookContent(activeBook.id)
-                .then(blob => {
-                    if (isMounted) {
-                        setHydratedBook(prev => ({ ...prev, epubBlob: blob }));
-                        setContentError(null);
-                    }
-                })
-                .catch(err => {
-                    console.error("Failed to load book content:", err);
-                    if (isMounted) {
-                        setContentError("Book content is unavailable on this device.");
-                    }
-                })
-                .finally(() => {
-                    if (isMounted) setIsFetchingContent(false);
-                });
-        }
+        
+        // If we already have the blob, do nothing.
+        setHydratedBook((prev) => {
+            if (prev?.epubBlob && prev.id === activeBook.id) return prev;
+            return activeBook;
+        });
+
+        // Only fetch if we don't have it in our local hydrated state
+        setHydratedBook((prev) => {
+            if (!prev?.epubBlob && !isFetchingRef.current) {
+                isFetchingRef.current = true;
+                setIsFetchingContent(true);
+                getBookContent(activeBook.id)
+                    .then(blob => {
+                        if (isMounted) {
+                            setHydratedBook(curr => curr ? { ...curr, epubBlob: blob } : undefined);
+                            setContentError(null);
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Failed to load book content:", err);
+                        if (isMounted) {
+                            setContentError("Book content is unavailable on this device.");
+                        }
+                    })
+                    .finally(() => {
+                        if (isMounted) {
+                            setIsFetchingContent(false);
+                            isFetchingRef.current = false;
+                        }
+                    });
+            }
+            return prev;
+        });
+
         return () => {
             isMounted = false;
         };
-    }, [book.id, book.epubBlob, getBookContent]);
+    }, [bookId, getBookContent]); // Note: book is NOT a dependency here! Only bookId!
 
     // Settings
     const { screenReaderMode, brightness, grayscale } = useSettingsShallow((state) => ({
@@ -180,11 +203,7 @@ function ReaderView({
         isEnabled: true,
     });
 
-    // Reading Time
-    useEffect(() => {
-        const remaining = Math.max(0, totalPages - currentPage);
-        setReadingTime(remaining * 2);
-    }, [currentPage, totalPages]);
+
 
     // UI Visibility Auto-hide
     useEffect(() => {
@@ -254,7 +273,6 @@ function ReaderView({
                 isLoading={isLoading}
                 currentPage={currentPage} // Engine provides 1-based page
                 totalPages={totalPages}
-                readingTime={readingTime}
                 isBookmarked={isBookmarked}
                 currentCfi={currentCfi}
                 toc={tocItems}

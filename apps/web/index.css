@@ -688,3 +688,12 @@
     box-shadow: none !important;
   }
 }
+
+
+/* Hide Clerk Development Badge */
+div[class*="cl-internal-"][style*="bottom:"],
+div[class*="cl-internal-"][style*="position: fixed"],
+div.cl-devMode {
+  display: none !important;
+}
+
