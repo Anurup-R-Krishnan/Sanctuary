@@ -2,9 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 import type { Book, Bookmark } from "@/types";
 
-import ReaderContent from "@/components/reader/ReaderContent";
+import { ReaderEngineHost, ReaderEngineState, ReaderEngineRef } from "@/components/reader/ReaderEngineHost";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
-import { useReaderEngine } from "@/hooks/useReaderEngine";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
@@ -36,7 +35,7 @@ function ReaderView({
     const [isBookmarked, setIsBookmarked] = useState(false); // Local optimistic state
 
     const rootRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const engineRef = useRef<ReaderEngineRef>(null);
     const lastMouseMoveRef = useRef<number>(Date.now());
     
     // We only need a stable reference to the initial book for hydration.
@@ -111,17 +110,15 @@ function ReaderView({
     }));
 
     // Reader Engine
-    const {
-        isLoading: engineLoading,
-        currentCfi,
-        totalPages,
-        currentPage,
-        tocItems,
-        nextPage,
-        prevPage,
-        display,
-        goToPage,
-    } = useReaderEngine({ book: hydratedBook, containerRef, onUpdateProgress });
+    const [engineState, setEngineState] = useState<ReaderEngineState>({
+        isLoading: true,
+        currentCfi: "",
+        totalPages: 100,
+        currentPage: 1,
+        tocItems: [],
+    });
+
+    const { isLoading: engineLoading, currentCfi, totalPages, currentPage, tocItems } = engineState;
 
     const isLoading = engineLoading || isFetchingContent;
 
@@ -158,12 +155,12 @@ function ReaderView({
 
     const handleNavigate = useCallback((href: string) => {
         setShowControls(false);
-        display(href);
-    }, [display]);
+        engineRef.current?.display(href);
+    }, []);
 
     const handlePageChange = useCallback((page: number) => {
-        goToPage(page);
-    }, [goToPage]);
+        engineRef.current?.goToPage(page);
+    }, []);
 
     useEffect(() => {
         const root = rootRef.current;
@@ -190,8 +187,8 @@ function ReaderView({
 
     // Shortcuts
     useReaderShortcuts({
-        nextPage,
-        prevPage,
+        nextPage: () => engineRef.current?.nextPage(),
+        prevPage: () => engineRef.current?.prevPage(),
         onClose,
         toggleBookmark: handleToggleBookmark,
         toggleFullscreen: handleToggleFullscreen,
@@ -250,7 +247,12 @@ function ReaderView({
             className="absolute inset-0"
             style={{ filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }}
         >
-            <ReaderContent containerRef={containerRef} />
+            <ReaderEngineHost 
+                ref={engineRef}
+                book={hydratedBook} 
+                onUpdateProgress={onUpdateProgress} 
+                onEngineStateChange={setEngineState} 
+            />
         </div>
 
         {/* Loading overlay — outside the filter div so it renders at full brightness */}
@@ -286,11 +288,11 @@ function ReaderView({
                 onToggleControls={() => setShowControls(!showControls)}
                 onToggleFullscreen={handleToggleFullscreen}
 
-                onNextPage={nextPage}
-                onPrevPage={prevPage}
+                onNextPage={() => engineRef.current?.nextPage()}
+                onPrevPage={() => engineRef.current?.prevPage()}
                 onNavigate={handleNavigate}
-                onJumpToTop={() => { display("0"); }} // Jump to start
-                onJumpToBottom={() => { goToPage(totalPages); }}
+                onJumpToTop={() => { engineRef.current?.display("0"); }} // Jump to start
+                onJumpToBottom={() => { engineRef.current?.goToPage(totalPages); }}
                 onPageChange={handlePageChange}
 
                 onRemoveBookmark={onRemoveBookmark}
