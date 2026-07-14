@@ -1,3 +1,5 @@
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
 import { useCallback } from "react";
 
 import { libraryService } from "@/services/LibraryService";
@@ -8,7 +10,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { View, type Book, type Bookmark } from "@/types";
 
 export function useReadingSession(
-  getToken: () => Promise<string | null>,
+  api: SanctuaryApiClient,
   isPersistent: boolean,
   flushPendingProgress: () => Promise<void>
 ) {
@@ -29,11 +31,11 @@ export function useReadingSession(
     const books = useBookStore.getState().books;
     // endSession is fire-and-forget; the optimistic update in syncBookUpdate
     // already keeps the store current so a full loadBooks() re-fetch is unnecessary.
-    void statsService.endSession(books, getToken, isPersistent, activeProgress?.progress);
+    void statsService.endSession(books, api, isPersistent, activeProgress?.progress);
     useReaderProgressStore.getState().clearActiveBook();
 
     setView(View.LIBRARY);
-  }, [getToken, isPersistent, flushPendingProgress, setView]);
+  }, [api, isPersistent, flushPendingProgress, setView]);
 
   const addBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {
     const next: Bookmark = {
@@ -41,12 +43,12 @@ export function useReadingSession(
       id: `${bookId}:${encodeURIComponent(bookmark.cfi)}`,
       createdAt: new Date().toISOString(),
     };
-    libraryService.addBookmark(bookId, next, getToken, isPersistent);
-  }, [getToken, isPersistent]);
+    libraryService.addBookmark(bookId, next, api, isPersistent);
+  }, [api, isPersistent]);
 
   const removeBookmark = useCallback((bookId: string, bookmarkId: string) => {
-    libraryService.removeBookmark(bookId, bookmarkId, getToken, isPersistent);
-  }, [getToken, isPersistent]);
+    libraryService.removeBookmark(bookId, bookmarkId, api, isPersistent);
+  }, [api, isPersistent]);
 
   return { startSession, endSession, addBookmark, removeBookmark };
 }

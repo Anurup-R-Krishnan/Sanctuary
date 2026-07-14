@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { createEmptyAggregates, applySessionToAggregates, calculateStats } from '@/utils/stats';
+
 import type { ReadingSession } from '@/types';
+
+import { createEmptyAggregates, applySessionToAggregates, calculateStats } from '@/utils/stats';
 
 describe('Reading Sessions and Statistics Integrity', () => {
 

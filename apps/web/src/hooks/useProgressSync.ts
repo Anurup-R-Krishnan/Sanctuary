@@ -1,9 +1,11 @@
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
 import { useCallback, useRef, useEffect } from "react";
 
 import { libraryService } from "@/services/LibraryService";
 import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 
-export function useProgressSync(getToken: () => Promise<string | null>, isPersistent: boolean) {
+export function useProgressSync(api: SanctuaryApiClient, isPersistent: boolean) {
   const pendingProgressRef = useRef<{ id: string; progress: number; location: string } | null>(null);
   const progressTimerRef = useRef<number | null>(null);
 
@@ -11,8 +13,8 @@ export function useProgressSync(getToken: () => Promise<string | null>, isPersis
     const pending = pendingProgressRef.current;
     pendingProgressRef.current = null;
     if (!pending) return;
-    await libraryService.updateBookProgress(pending.id, pending.progress, pending.location, getToken, isPersistent);
-  }, [getToken, isPersistent]);
+    await libraryService.updateBookProgress(pending.id, pending.progress, pending.location, api, isPersistent);
+  }, [api, isPersistent]);
 
   const handleReaderProgress = useCallback((id: string, progress: number, location: string) => {
     useReaderProgressStore.getState().updateActiveProgress(id, progress, location);

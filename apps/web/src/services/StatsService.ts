@@ -1,7 +1,7 @@
-import type { ReadingStats, Book, ReadingSession } from "@/types";
+import type { SanctuaryApiClient } from "@sanctuary/core";
 
-import { API } from "@/services/api";
-import { buildAuthHeaders, readJsonSafely } from "@/services/http";
+import type { ReadingStats, Book, ReadingSession, ReadingGoals } from "@/types";
+
 import { syncQueue } from "@/services/SyncQueue";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
@@ -56,7 +56,7 @@ export const statsService = {
       .filter((row): row is ReadingSession => row !== null);
   },
 
-  async loadSessions(getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async loadSessions(api: SanctuaryApiClient, isPersistent: boolean) {
     // 1. One-time migration from localStorage
     const legacySaved = localStorage.getItem(SESSIONS_KEY);
     if (legacySaved) {
@@ -79,10 +79,7 @@ export const statsService = {
     if (!isPersistent) return;
 
     try {
-      const token = await getToken();
-      const headers = buildAuthHeaders(token || undefined);
-      const res = await fetch(API.SESSIONS, { headers });
-      const remote = await readJsonSafely<ReadingSession[]>(res, "Failed to fetch sessions");
+      const remote = await api.getSessions();
       
       if (Array.isArray(remote)) {
         const remoteSessions = this.normalizeSessions(remote);
@@ -161,7 +158,7 @@ export const statsService = {
     currentSessionStartProgress = Math.max(0, startProgress);
   },
 
-  async endSession(books: Book[], getToken: () => Promise<string | null>, isPersistent: boolean, endProgressOverride?: number) {
+  async endSession(books: Book[], api: SanctuaryApiClient, isPersistent: boolean, endProgressOverride?: number) {
     if (!currentSessionStart || !currentSessionBook) return;
 
     let duration = Math.round((Date.now() - currentSessionStart) / 1000);
@@ -228,17 +225,11 @@ export const statsService = {
     return calculateStats(books, aggregates, dailyGoal);
   },
 
-  async fetchGoals(getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async fetchGoals(api: SanctuaryApiClient, isPersistent: boolean) {
     if (!isPersistent) return;
     try {
-      const token = await getToken();
-      const response = await fetch(API.GOALS, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (response.ok) {
-        const goals = await response.json();
-        useStatsStore.getState().setGoals(goals);
-      }
+      const goals = await api.getGoals();
+      useStatsStore.getState().setGoals(goals as unknown as ReadingGoals);
     } catch (error) {
       console.warn("Failed to fetch goals", error);
     }

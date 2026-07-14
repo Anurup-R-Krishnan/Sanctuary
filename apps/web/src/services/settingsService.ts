@@ -1,5 +1,6 @@
-import { API } from "./api";
-import { logErrorOnce, readJsonSafely, buildAuthHeaders } from "./http";
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
+import { logErrorOnce } from "./http";
 import { syncQueue } from "./SyncQueue";
 
 type SettingsMap = Record<string, unknown>;
@@ -16,19 +17,16 @@ const saveSnapshot = async (snapshot: SettingsMap) => {
 
 
 export const settingsService = {
-    async getSettings(token?: string): Promise<SettingsMap | null> {
+    async getSettings(api: SanctuaryApiClient): Promise<SettingsMap | null> {
         if (settingsCache) return settingsCache;
         if (fetchPromise) return fetchPromise;
 
         fetchPromise = (async () => {
             try {
-                const headers = buildAuthHeaders(token);
-
-                const res = await fetch(API.SETTINGS, { headers });
-                const data = await readJsonSafely<SettingsMap | null>(res, "Failed to fetch settings");
+                const data = await api.getSettings();
                 if (data && typeof data === "object") {
-                    settingsCache = data;
-                    return data;
+                    settingsCache = data as unknown as SettingsMap;
+                    return settingsCache;
                 }
             } catch (error) {
                 logErrorOnce("settings-fetch", "Failed to fetch settings:", error);

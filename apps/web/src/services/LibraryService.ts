@@ -7,6 +7,7 @@ import { bookService } from "@/services/bookService";
 import { logErrorOnce, HttpError } from "@/services/http";
 import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
+import { calculateEpubHash } from "@/utils/crypto";
 import { putBook as putBookInDb, deleteBook as deleteBookFromDb, getAllBooks } from "@/utils/db";
 import { extractCoverBlobFromEpubSource, openEpub } from "@/utils/epub";
 
@@ -186,6 +187,8 @@ const syncBookUpdate = async (
   }
 };
 
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
 export const libraryService = {
   cleanupAllObjectUrls() {
     for (const url of coverObjectUrlByBookId.values()) {
@@ -194,7 +197,7 @@ export const libraryService = {
     coverObjectUrlByBookId.clear();
   },
 
-  async loadBooks(getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async loadBooks(api: SanctuaryApiClient, isPersistent: boolean) {
     if (!isPersistent) {
       useBookStore.getState().setIsLoading(true);
       try {
@@ -211,8 +214,7 @@ export const libraryService = {
 
     useBookStore.getState().setIsLoading(true);
     try {
-      const token = await getToken();
-      const stored = await bookService.getBooks(token || undefined);
+      const stored = await api.getLibrary();
       const booksRef = useBookStore.getState().books;
       const localById = new Map(booksRef.map((book) => [book.id, book]));
       
@@ -221,13 +223,23 @@ export const libraryService = {
         const syncMeta = syncMetaByBookId.get(s.id);
         const remoteBook: Book = {
           ...s,
-          coverUrl: s.coverUrl,
+          coverUrl: s.coverUrl || "",
+          progress: s.progressPercent || 0,
           epubBlob: null,
+          contentHash: "",
+          syncStatus: "synced",
+          addedAt: s.updatedAt,
+          lastOpenedAt: s.updatedAt,
+          readingList: s.status,
+          isFavorite: s.favorite || false,
+          lastLocation: s.lastLocation || "",
+          bookmarks: [],
+          locationHistory: []
         };
         if (syncMeta) {
           syncMetaByBookId.set(s.id, {
             ...syncMeta,
-            serverUpdatedAt: s.lastOpenedAt || s.addedAt || syncMeta.serverUpdatedAt,
+            serverUpdatedAt: s.updatedAt || syncMeta.serverUpdatedAt,
           });
         }
 
@@ -274,8 +286,8 @@ export const libraryService = {
     }
   },
 
-  async _migrateBook(file: File, localBook: Book, token?: string) {
-    const result = await bookService.addBook(file, localBook, token, localBook.coverBlob);
+  async _migrateBook(file: File, localBook: Book, api: SanctuaryApiClient) {
+    const result = await bookService.addBook(file, localBook, api, localBook.coverBlob);
     const persistedBook = { 
       ...localBook, 
       syncStatus: "synced" as const, 
@@ -286,7 +298,7 @@ export const libraryService = {
     return persistedBook;
   },
 
-  async addBook(file: File, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async addBook(file: File, api: SanctuaryApiClient, isPersistent: boolean) {
     const bookId = uuidv4();
     let bookData: EpubBookHandle | null = null;
 
@@ -294,9 +306,7 @@ export const libraryService = {
     try {
       const epubArrayBuffer = await file.arrayBuffer();
 
-      const hashBuffer = await crypto.subtle.digest("SHA-256", epubArrayBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const contentHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+      const contentHash = await calculateEpubHash(epubArrayBuffer);
 
       importKey = contentHash;
       if (pendingImports.has(importKey)) {
@@ -355,8 +365,7 @@ export const libraryService = {
       if (!isPersistent) return;
 
       try {
-        const token = await getToken();
-        const result = await bookService.addBook(file, newBook, token || undefined, coverBlob);
+        const result = await bookService.addBook(file, newBook, api, coverBlob);
         if (result.coverUrl && result.coverUrl !== newBook.coverUrl) {
           revokeTrackedCoverUrl(newBook.id);
           const persistedBook = { ...newBook, coverUrl: result.coverUrl };
@@ -382,7 +391,7 @@ export const libraryService = {
     }
   },
 
-  async updateBookProgress(id: string, progress: number, lastLocation: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async updateBookProgress(id: string, progress: number, lastLocation: string, api: SanctuaryApiClient, isPersistent: boolean) {
     await syncBookUpdate(
       id,
       (book) => {
@@ -400,42 +409,42 @@ export const libraryService = {
         };
       },
       async () => {
-        await bookService.updateBookProgress(id, progress, lastLocation);
+        await api.patchLibraryItem(id, { progress, lastLocation });
       },
       isPersistent
     );
   },
 
-  async updateBook(id: string, updates: Partial<Book>, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async updateBook(id: string, updates: Partial<Book>, api: SanctuaryApiClient, isPersistent: boolean) {
     await syncBookUpdate(
       id,
       (book) => ({ ...book, ...updates }),
       async (nextBook) => {
-        await bookService.updateBook(id, nextBook);
+        await api.patchLibraryItem(id, nextBook);
       },
       isPersistent
     );
   },
 
-  toggleFavorite(id: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  toggleFavorite(id: string, api: SanctuaryApiClient, isPersistent: boolean) {
     const book = useBookStore.getState().books.find((item) => item.id === id);
     if (!book) return;
-    void this.updateBook(id, { isFavorite: !book.isFavorite }, getToken, isPersistent);
+    void this.updateBook(id, { isFavorite: !book.isFavorite }, api, isPersistent);
   },
 
-  addBookmark(bookId: string, bookmark: Bookmark, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  addBookmark(bookId: string, bookmark: Bookmark, api: SanctuaryApiClient, isPersistent: boolean) {
     const book = useBookStore.getState().books.find((item) => item.id === bookId);
     if (!book) return;
-    void this.updateBook(bookId, { bookmarks: [...(book.bookmarks || []), bookmark] }, getToken, isPersistent);
+    void this.updateBook(bookId, { bookmarks: [...(book.bookmarks || []), bookmark] }, api, isPersistent);
   },
 
-  removeBookmark(bookId: string, bookmarkId: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  removeBookmark(bookId: string, bookmarkId: string, api: SanctuaryApiClient, isPersistent: boolean) {
     const book = useBookStore.getState().books.find((item) => item.id === bookId);
     if (!book) return;
-    void this.updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((b) => b.id !== bookmarkId) }, getToken, isPersistent);
+    void this.updateBook(bookId, { bookmarks: (book.bookmarks || []).filter((b) => b.id !== bookmarkId) }, api, isPersistent);
   },
 
-  async deleteBook(id: string, getToken: () => Promise<string | null>, isPersistent: boolean) {
+  async deleteBook(id: string, api: SanctuaryApiClient, isPersistent: boolean) {
     if (pendingDeletions.has(id)) return;
     pendingDeletions.add(id);
 
@@ -471,12 +480,11 @@ export const libraryService = {
     }
   },
 
-  async getBookContent(id: string, getToken: () => Promise<string | null>, isPersistent: boolean): Promise<Blob> {
+  async getBookContent(id: string, api: SanctuaryApiClient, isPersistent: boolean): Promise<Blob> {
     const existing = useBookStore.getState().books.find((item) => item.id === id);
     if (existing?.epubBlob) return existing.epubBlob;
 
-    const token = await getToken();
-    const blob = await bookService.getBookContent(id, token || undefined);
+    const blob = await bookService.getBookContent(id, api);
 
     const updatedBook = replaceBookInStore(id, (book) => ({ ...book, epubBlob: blob }));
 
@@ -496,8 +504,7 @@ export const libraryService = {
 
           if (isPersistent) {
             try {
-              const token = await getToken();
-              const durableCoverUrl = await bookService.uploadBookCover(id, generatedCover, token || undefined);
+              const durableCoverUrl = await bookService.uploadBookCover(id, generatedCover, api);
               revokeTrackedCoverUrl(id);
               const serverBookWithCover = replaceBookInStore(id, (book) => ({ ...book, coverUrl: durableCoverUrl }));
               

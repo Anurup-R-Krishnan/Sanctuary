@@ -1,44 +1,21 @@
 
 
+import type { SanctuaryApiClient, ReadingSession, ReaderSettings } from "@sanctuary/core";
+
 import { putMutation, getAllMutations, deleteMutation, type SyncMutation } from "@/utils/db";
 
-import { API } from "./api";
-import { buildAuthHeaders } from "./http";
-
 // Fallback logic for when the web app wants to run standalone without core API wrappers
-async function rawApiCall(mutation: SyncMutation, getToken: () => Promise<string | null>) {
-  const token = await getToken();
-  const headers = buildAuthHeaders(token || undefined);
-  
+async function rawApiCall(mutation: SyncMutation, api: SanctuaryApiClient) {
   if (mutation.type === "SAVE_SESSION") {
-    const res = await fetch(API.SESSIONS, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(mutation.payload)
-    });
-    if (!res.ok) throw new Error(`SAVE_SESSION failed: ${res.status}`);
+    await api.saveSession(mutation.payload as ReadingSession);
   } else if (mutation.type === "SAVE_SETTINGS") {
-    const res = await fetch(API.SETTINGS, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify(mutation.payload)
-    });
-    if (!res.ok) throw new Error(`SAVE_SETTINGS failed: ${res.status}`);
+    await api.saveSettings(mutation.payload as ReaderSettings);
   } else if (mutation.type === "PATCH_LIBRARY") {
-    const payload = mutation.payload as { id: string; data: unknown };
-    const res = await fetch(`${API.LIBRARY}?id=${encodeURIComponent(payload.id)}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify(payload.data)
-    });
-    if (!res.ok) throw new Error(`PATCH_LIBRARY failed: ${res.status}`);
+    const payload = mutation.payload as { id: string; data: Parameters<SanctuaryApiClient["patchLibraryItem"]>[1] };
+    await api.patchLibraryItem(payload.id, payload.data);
   } else if (mutation.type === "DELETE_LIBRARY") {
     const payload = mutation.payload as { id: string };
-    const res = await fetch(`${API.LIBRARY}?id=${encodeURIComponent(payload.id)}`, {
-      method: "DELETE",
-      headers,
-    });
-    if (!res.ok) throw new Error(`DELETE_LIBRARY failed: ${res.status}`);
+    await api.deleteLibraryItem(payload.id);
   } else {
     throw new Error(`Unknown mutation type: ${mutation.type}`);
   }
@@ -46,13 +23,13 @@ async function rawApiCall(mutation: SyncMutation, getToken: () => Promise<string
 
 class SyncQueueManager {
   private isProcessing = false;
-  private getToken: (() => Promise<string | null>) | null = null;
+  private api: SanctuaryApiClient | null = null;
   private isPersistent = true;
   private retryTimeout: number | null = null;
   private backoffMs = 1200;
 
-  init(getToken: () => Promise<string | null>, isPersistent: boolean) {
-    this.getToken = getToken;
+  init(api: SanctuaryApiClient, isPersistent: boolean) {
+    this.api = api;
     this.isPersistent = isPersistent;
     if (this.isPersistent) {
       this.processQueue();
@@ -74,11 +51,11 @@ class SyncQueueManager {
   }
 
   async processQueue() {
-    if (this.isProcessing || !this.isPersistent || !this.getToken) return;
+    if (this.isProcessing || !this.isPersistent || !this.api) return;
     this.isProcessing = true;
 
     try {
-      while (this.isPersistent && this.getToken) {
+      while (this.isPersistent && this.api) {
         const mutations = await getAllMutations();
         if (mutations.length === 0) {
           this.backoffMs = 1200; // reset on empty queue
@@ -91,7 +68,7 @@ class SyncQueueManager {
         let processedAny = false;
         for (const mutation of mutations) {
           try {
-            await rawApiCall(mutation, this.getToken);
+            await rawApiCall(mutation, this.api);
             await deleteMutation(mutation.id);
             processedAny = true;
           } catch (error) {

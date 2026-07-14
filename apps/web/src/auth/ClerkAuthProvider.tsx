@@ -35,7 +35,17 @@ export function ClerkAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <ClerkProvider 
+      publishableKey={PUBLISHABLE_KEY}
+      appearance={{
+        elements: {
+          footer: "hidden", // Hides the "Secured by Clerk" footer in popovers
+        },
+        layout: {
+          logoPlacement: "none",
+        }
+      }}
+    >
       <ClerkAuthAdapter>{children}</ClerkAuthAdapter>
     </ClerkProvider>
   );
