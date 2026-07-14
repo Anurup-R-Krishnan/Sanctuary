@@ -25,6 +25,12 @@ function ReaderSettings() {
     reduceMotion,
     setReduceMotion,
     readerAccent,
+    maxTextWidth,
+    setMaxTextWidth,
+    pageMargin,
+    setPageMargin,
+    textAlignment,
+    setTextAlignment,
     resetToDefaults,
   } = useSettingsShallow((state) => ({
     fontSize: state.fontSize,
@@ -44,6 +50,12 @@ function ReaderSettings() {
     reduceMotion: state.reduceMotion,
     setReduceMotion: state.setReduceMotion,
     readerAccent: state.readerAccent,
+    maxTextWidth: state.maxTextWidth,
+    setMaxTextWidth: state.setMaxTextWidth,
+    pageMargin: state.pageMargin,
+    setPageMargin: state.setPageMargin,
+    textAlignment: state.textAlignment,
+    setTextAlignment: state.setTextAlignment,
     resetToDefaults: state.resetToDefaults,
   }));
 
@@ -141,6 +153,43 @@ function ReaderSettings() {
           </Select>
           <Slider label="Size" value={fontSize} min={14} max={30} onChange={setFontSize} formatValue={(v) => `${v}px`} />
           <Slider label="Height" value={lineHeight} min={1.3} max={2.1} step={0.1} onChange={setLineHeight} formatValue={(v) => v.toFixed(1)} />
+        </div>
+      </section>
+
+      <section>
+        <SectionLabel>Layout & Alignment</SectionLabel>
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-2 rounded-xl bg-black/5 p-1 dark:bg-white/5">
+            <Button
+              onClick={() => setTextAlignment("left")}
+              variant="nav"
+              className={`!rounded-lg px-2 py-1.5 text-xs transition-all ${
+                textAlignment === "left" ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              Left
+            </Button>
+            <Button
+              onClick={() => setTextAlignment("justify")}
+              variant="nav"
+              className={`!rounded-lg px-2 py-1.5 text-xs transition-all ${
+                textAlignment === "justify" ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              Justify
+            </Button>
+            <Button
+              onClick={() => setTextAlignment("center")}
+              variant="nav"
+              className={`!rounded-lg px-2 py-1.5 text-xs transition-all ${
+                textAlignment === "center" ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              Center
+            </Button>
+          </div>
+          <Slider label="Width" value={maxTextWidth} min={50} max={150} step={5} onChange={setMaxTextWidth} formatValue={(v) => `${v}ch`} />
+          <Slider label="Margin" value={pageMargin} min={0} max={100} step={4} onChange={setPageMargin} formatValue={(v) => `${v}px`} />
         </div>
       </section>
 

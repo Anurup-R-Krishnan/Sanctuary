@@ -23,7 +23,6 @@ const FONT_FAMILIES: Record<string, string> = {
     "inter": "'Inter', system-ui, sans-serif",
 };
 
-const TEXT_WIDTH_CH = 96;
 
 export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
     const activeBookId = book.id;
@@ -46,7 +45,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const {
         fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
         readerForeground, readerBackground,
-        continuous, spread, reduceMotion, pageMargin, paragraphSpacing,
+        continuous, spread, reduceMotion, pageMargin, paragraphSpacing, maxTextWidth,
     } = useSettingsShallow((state) => ({
         fontSize: state.fontSize,
         lineHeight: state.lineHeight,
@@ -60,6 +59,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         reduceMotion: state.reduceMotion,
         pageMargin: state.pageMargin,
         paragraphSpacing: state.paragraphSpacing,
+        maxTextWidth: state.maxTextWidth,
     }));
 
     useEffect(() => {
@@ -85,7 +85,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 "padding-left": `${continuous ? pageMargin : 0}px`,
                 "padding-right": `${continuous ? pageMargin : 0}px`,
                 ...(continuous
-                    ? { "max-width": `${TEXT_WIDTH_CH}ch`, "margin": "0 auto" }
+                    ? { "max-width": `${maxTextWidth}ch`, "margin": "0 auto" }
                     : { "max-width": "none", "margin": "0", "padding-bottom": "2em" }
                 ),
             },
@@ -100,7 +100,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             },
         };
     }, [fontSize, lineHeight, fontPairing, textAlignment, hyphenation,
-        readerForeground, readerBackground, continuous, pageMargin, paragraphSpacing]);
+        readerForeground, readerBackground, continuous, pageMargin, paragraphSpacing, maxTextWidth]);
 
     // Apply styles safely — themes.default() is the stable epubjs API.
     // Wrapped in try/catch because it can throw if called while a section
@@ -164,9 +164,6 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     height: continuous ? "auto" : "100%",
                     spread: continuous ? "none" : (spread ? "always" : "none"),
                     flow: continuous ? "scrolled-doc" : "paginated",
-                    // Disabling allowScriptedContent to prevent the "allow-scripts + allow-same-origin"
-                    // iframe escape vulnerability warning. epub.js 0.3+ handles pagination via 
-                    // range offsets without strictly requiring script injection for most standard epubs.
                     allowScriptedContent: true,
                 });
 
