@@ -167,7 +167,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     // Disabling allowScriptedContent to prevent the "allow-scripts + allow-same-origin"
                     // iframe escape vulnerability warning. epub.js 0.3+ handles pagination via 
                     // range offsets without strictly requiring script injection for most standard epubs.
-                    allowScriptedContent: false,
+                    allowScriptedContent: true,
                 });
 
                 // Set styles BEFORE display() so the first render is already styled
