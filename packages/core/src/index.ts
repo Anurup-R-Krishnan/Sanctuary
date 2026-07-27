@@ -64,31 +64,6 @@ export interface ReadingGoals {
 
 export type ReaderSettingsDefaults = ReaderSettings;
 
-export const readerSettingsDefaults: ReaderSettingsDefaults = {
-  dailyGoal: 30,
-  weeklyGoal: 150,
-  themePreset: "paper",
-  fontScale: 100,
-  lineHeight: 1.6,
-  textWidth: 70,
-  motion: "full",
-  tapZones: true,
-  swipeNav: true,
-  autoHideMs: 4500,
-  showProgress: true,
-  showPageMeta: true,
-  accent: "#B37A4C"
-};
-
-export const colors = {
-  accent: "#B37A4C",
-  accentStrong: "#8E5A35",
-  fg: "#1E1A16",
-  bg: "#FFFDF8",
-  darkFg: "#F4EEE6",
-  darkBg: "#141210"
-} as const;
-
 export interface ApiClientOptions {
   baseUrl: string;
   getToken?: () => Promise<string | null>;
