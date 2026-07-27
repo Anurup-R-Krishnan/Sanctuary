@@ -163,13 +163,44 @@ export const pickValues = (state: Settings): SettingsValues => ({
 });
 
 export const toRemotePayload = (state: SettingsValues) => ({
+  // Typography
+  fontSize: state.fontSize,
+  lineHeight: state.lineHeight,
+  fontPairing: state.fontPairing,
+  maxTextWidth: Math.max(50, Math.min(200, Math.round(state.maxTextWidth))),
+  textWidth: Math.max(50, Math.min(200, Math.round(state.maxTextWidth))),
+  hyphenation: state.hyphenation,
+  pageMargin: state.pageMargin,
+  paragraphSpacing: state.paragraphSpacing,
+  textAlignment: state.textAlignment,
+  // Appearance
+  brightness: state.brightness,
+  grayscale: state.grayscale,
+  readerForeground: state.readerForeground,
+  readerBackground: state.readerBackground,
+  accent: state.readerAccent,
+  // Reader behavior
+  continuous: state.continuous,
+  spread: state.spread,
+  direction: state.direction,
+  showScrollbar: state.showScrollbar,
+  progressBarType: state.progressBarType,
+  barPosition: state.barPosition,
+  showFloatingCapsule: state.showFloatingCapsule,
+  // Goals & tracking
   dailyGoal: state.dailyGoal,
   weeklyGoal: state.weeklyGoal,
-  lineHeight: state.lineHeight,
-  textWidth: Math.max(50, Math.min(120, Math.round(state.maxTextWidth))),
-  motion: state.reduceMotion ? "reduced" : "full",
+  showStreakReminder: state.showStreakReminder,
+  trackingEnabled: state.trackingEnabled,
+  // Accessibility
+  screenReaderMode: state.screenReaderMode,
+  reduceMotion: state.reduceMotion,
+  motion: state.reduceMotion ? "reduced" as const : "full" as const,
   showPageMeta: state.showPageCounter,
-  accent: state.readerAccent
+  // TTS
+  ttsVoiceURI: state.ttsVoiceURI,
+  ttsRate: state.ttsRate,
+  ttsPitch: state.ttsPitch,
 });
 
 export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues> => {
@@ -216,13 +247,65 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   const remote = input as Record<string, unknown>;
   const out: Partial<SettingsValues> = {};
 
+  // ── Goals & tracking ─────────────────────────────────────────────────────
   if (typeof remote.dailyGoal === "number") out.dailyGoal = remote.dailyGoal;
   if (typeof remote.weeklyGoal === "number") out.weeklyGoal = remote.weeklyGoal;
+  if (typeof remote.showStreakReminder === "boolean") out.showStreakReminder = remote.showStreakReminder;
+  if (typeof remote.trackingEnabled === "boolean") out.trackingEnabled = remote.trackingEnabled;
+
+  // ── Typography ────────────────────────────────────────────────────────────
+  if (typeof remote.fontSize === "number") out.fontSize = remote.fontSize;
   if (typeof remote.lineHeight === "number") out.lineHeight = remote.lineHeight;
-  if (typeof remote.textWidth === "number") out.maxTextWidth = remote.textWidth;
-  if (typeof remote.motion === "string") out.reduceMotion = remote.motion === "reduced";
-  if (typeof remote.showPageMeta === "boolean") out.showPageCounter = remote.showPageMeta;
-  if (typeof remote.accent === "string") out.readerAccent = remote.accent;
+  if (typeof remote.fontPairing === "string") out.fontPairing = remote.fontPairing;
+  // maxTextWidth: prefer the new field; fall back to legacy textWidth alias
+  if (typeof remote.maxTextWidth === "number") out.maxTextWidth = remote.maxTextWidth;
+  else if (typeof remote.textWidth === "number") out.maxTextWidth = remote.textWidth;
+  if (typeof remote.hyphenation === "boolean") out.hyphenation = remote.hyphenation;
+  if (typeof remote.pageMargin === "number") out.pageMargin = remote.pageMargin;
+  if (typeof remote.paragraphSpacing === "number") out.paragraphSpacing = remote.paragraphSpacing;
+  if (
+    remote.textAlignment === "left" ||
+    remote.textAlignment === "justify" ||
+    remote.textAlignment === "center"
+  ) out.textAlignment = remote.textAlignment;
+
+  // ── Appearance ────────────────────────────────────────────────────────────
+  if (typeof remote.brightness === "number") out.brightness = remote.brightness;
+  if (typeof remote.grayscale === "boolean") out.grayscale = remote.grayscale;
+  if (typeof remote.readerForeground === "string") out.readerForeground = remote.readerForeground;
+  if (typeof remote.readerBackground === "string") out.readerBackground = remote.readerBackground;
+  // readerAccent: prefer the new field; fall back to legacy accent alias
+  if (typeof remote.readerAccent === "string") out.readerAccent = remote.readerAccent;
+  else if (typeof remote.accent === "string") out.readerAccent = remote.accent;
+
+  // ── Reader behavior ───────────────────────────────────────────────────────
+  if (typeof remote.continuous === "boolean") out.continuous = remote.continuous;
+  if (typeof remote.spread === "boolean") out.spread = remote.spread;
+  if (remote.direction === "ltr" || remote.direction === "rtl") out.direction = remote.direction;
+  if (typeof remote.showScrollbar === "boolean") out.showScrollbar = remote.showScrollbar;
+  if (remote.progressBarType === "bar" || remote.progressBarType === "none") {
+    out.progressBarType = remote.progressBarType;
+  }
+  if (remote.barPosition === "top" || remote.barPosition === "bottom") {
+    out.barPosition = remote.barPosition;
+  }
+  if (typeof remote.showFloatingCapsule === "boolean") out.showFloatingCapsule = remote.showFloatingCapsule;
+  // showPageCounter: prefer the new field; fall back to legacy showPageMeta alias
+  if (typeof remote.showPageCounter === "boolean") out.showPageCounter = remote.showPageCounter;
+  else if (typeof remote.showPageMeta === "boolean") out.showPageCounter = remote.showPageMeta;
+
+  // ── Accessibility ─────────────────────────────────────────────────────────
+  if (typeof remote.screenReaderMode === "boolean") out.screenReaderMode = remote.screenReaderMode;
+  // reduceMotion: prefer the new field; fall back to legacy motion alias
+  if (typeof remote.reduceMotion === "boolean") out.reduceMotion = remote.reduceMotion;
+  else if (typeof remote.motion === "string") out.reduceMotion = remote.motion === "reduced";
+
+  // ── Text-to-speech ────────────────────────────────────────────────────────
+  if (typeof remote.ttsVoiceURI === "string" || remote.ttsVoiceURI === null) {
+    out.ttsVoiceURI = remote.ttsVoiceURI as string | null;
+  }
+  if (typeof remote.ttsRate === "number") out.ttsRate = remote.ttsRate;
+  if (typeof remote.ttsPitch === "number") out.ttsPitch = remote.ttsPitch;
 
   return out;
 };

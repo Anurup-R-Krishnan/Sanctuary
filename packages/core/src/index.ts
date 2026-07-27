@@ -1,19 +1,58 @@
 export type SessionMode = "guest" | "clerk";
 
 export interface ReaderSettings {
-  accent: string;
-  autoHideMs: number;
-  dailyGoal: number;
-  fontScale: number;
-  lineHeight: number;
-  motion: "full" | "reduced";
-  showPageMeta: boolean;
-  showProgress: boolean;
-  swipeNav: boolean;
-  tapZones: boolean;
-  textWidth: number;
-  themePreset: "paper" | "ivory" | "ink";
-  weeklyGoal: number;
+  // Legacy fields (kept for backwards compat — server may still send these)
+  accent?: string;
+  autoHideMs?: number;
+  barPosition?: "top" | "bottom";
+  // Appearance
+  brightness?: number;
+  // Reader behavior
+  continuous?: boolean;
+  dailyGoal?: number;
+  direction?: "ltr" | "rtl";
+  fontPairing?: string;
+  fontScale?: number;
+  // Typography
+  fontSize?: number;
+  grayscale?: boolean;
+  hyphenation?: boolean;
+  lineHeight?: number;
+
+  maxTextWidth?: number;
+  motion?: "full" | "reduced";
+  pageMargin?: number;
+  paragraphSpacing?: number;
+  progressBarType?: "bar" | "none";
+  readerBackground?: string;
+  readerForeground?: string;
+
+  reduceMotion?: boolean;
+  // Accessibility
+  screenReaderMode?: boolean;
+  showFloatingCapsule?: boolean;
+  showPageCounter?: boolean;
+
+  showPageMeta?: boolean;
+  showProgress?: boolean;
+  showScrollbar?: boolean;
+  // Goals & tracking
+  showStreakReminder?: boolean;
+  spread?: boolean;
+  swipeNav?: boolean;
+  tapZones?: boolean;
+  textAlignment?: "left" | "justify" | "center";
+
+  textWidth?: number;
+  themePreset?: "paper" | "ivory" | "ink";
+
+  trackingEnabled?: boolean;
+  ttsPitch?: number;
+  ttsRate?: number;
+
+  // Text-to-speech
+  ttsVoiceURI?: string | null;
+  weeklyGoal?: number;
 }
 
 export interface LibraryItem {
