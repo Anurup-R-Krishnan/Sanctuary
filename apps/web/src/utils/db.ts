@@ -224,8 +224,14 @@ export async function putAnnotation(annotation: ReaderAnnotation): Promise<void>
 }
 
 export async function getAnnotationsByBook(bookId: string): Promise<ReaderAnnotation[]> {
-  const all = await dbGetAll<ReaderAnnotation>(ANNOTATIONS_STORE);
-  return all.filter(a => a.bookId === bookId);
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(ANNOTATIONS_STORE, "readonly");
+    bindTxFailure(tx, reject, `Failed to get annotations for book ${bookId}`);
+    const req = tx.objectStore(ANNOTATIONS_STORE).index("bookId").getAll(bookId);
+    req.onsuccess = () => resolve((req.result as ReaderAnnotation[]) || []);
+    req.onerror = () => reject(new Error(`Failed to get annotations for book ${bookId}: ${req.error?.message}`));
+  });
 }
 
 export async function deleteAnnotation(id: string): Promise<void> {

@@ -17,7 +17,7 @@ export interface ReaderEngineRef {
 }
 
 interface ReaderEngineHostProps {
-    book: Book;
+    book?: Book;
     onEngineStateChange: (state: {
         status: ReaderStatus;
         error: ReaderError | null;

@@ -33,11 +33,8 @@ const getInitialSyncMeta = (): BookSyncMeta => ({
 });
 
 const setBooks = (updater: (books: Book[]) => Book[]) => {
-  useBookStore.setState((state) => {
-    const books = updater(state.books);
-    state.updateDerivedState(books);
-    return { books };
-  });
+  const nextBooks = updater(useBookStore.getState().books);
+  useBookStore.getState().setBooks(nextBooks);
 };
 
 const replaceBookInStore = (id: string, updater: (book: Book) => Book): Book | null => {
@@ -244,7 +241,12 @@ export const libraryService = {
           readingList: s.status,
           isFavorite: s.favorite || false,
           lastLocation: s.lastLocation || "",
-          bookmarks: [],
+          bookmarks: (s.bookmarks || []).map((b: { cfi: string; title?: string }) => ({
+            id: `${s.id}:${encodeURIComponent(b.cfi)}`,
+            cfi: b.cfi,
+            title: b.title || "",
+            createdAt: new Date().toISOString(),
+          })),
           locationHistory: []
         };
         if (syncMeta) {
@@ -437,7 +439,16 @@ export const libraryService = {
       id,
       (book) => ({ ...book, ...updates }),
       async (nextBook) => {
-        await api.patchLibraryItem(id, nextBook);
+        await api.patchLibraryItem(id, {
+          title: nextBook.title,
+          author: nextBook.author,
+          coverUrl: nextBook.coverUrl,
+          progress: nextBook.progress,
+          totalPages: nextBook.totalPages,
+          lastLocation: nextBook.lastLocation,
+          favorite: nextBook.isFavorite,
+          bookmarks: nextBook.bookmarks?.map(b => ({ cfi: b.cfi, title: b.title })),
+        });
       },
       isPersistent
     );

@@ -1,5 +1,5 @@
 import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
-import type { EpubBookHandle, EpubRendition, EpubLocation, EpubContentsLike, TocItem } from "@/utils/epub";
+import type { EpubBookHandle, EpubRendition, EpubContentsLike, TocItem } from "@/utils/epub";
 
 import { openEpub } from "@/utils/epub";
 
@@ -119,8 +119,8 @@ export class ReaderSession {
                 throw new Error("RENDER_FAILED");
             }
 
-            this.rendition.on("relocated", (loc: EpubLocation) => this.handleRelocated(loc));
-            this.rendition.on("selected", (cfiRange: string, contents: EpubContentsLike) => this.handleSelected(cfiRange, contents));
+            this.rendition.on("relocated", this.handleRelocated);
+            this.rendition.on("selected", this.handleSelected);
 
             this.setupResizeObserver();
             this.callbacks.onStatusChange("ready");
@@ -217,7 +217,7 @@ export class ReaderSession {
         return bestMatch;
     }
 
-    private handleRelocated(location: unknown) {
+    private handleRelocated = (location: unknown) => {
         if (this.aborted || !this.epubBook || typeof location !== "object" || !location) return;
         const loc = location as { start?: { cfi?: string; href?: string; percentage?: number; displayed?: { page?: number; total?: number } }; end?: { href?: string } };
         const cfi = loc.start?.cfi;
@@ -271,19 +271,18 @@ export class ReaderSession {
         });
     }
 
-    private handleSelected(cfiRange: string, contents: EpubContentsLike) {
+    private handleSelected = (cfiRange: string, contents: EpubContentsLike) => {
         if (this.aborted) return;
         const text = contents.window?.getSelection?.()?.toString().trim() ?? "";
         if (!text) {
             this.callbacks.onSelection(null);
             return;
         }
-        // Grab current href from the event if possible, or fallback
         this.callbacks.onSelection({
             cfiRange,
             text,
-            href: "", // Filled in by hook layer
-            chapterLabel: "", // Filled in by hook layer
+            href: "",
+            chapterLabel: "",
         });
     }
 

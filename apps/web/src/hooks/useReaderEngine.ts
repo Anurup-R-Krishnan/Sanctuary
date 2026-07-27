@@ -33,6 +33,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
     // Refs
     const sessionRef = useRef<ReaderSession | null>(null);
+    const [renditionReady, setRenditionReady] = useState(0);
     const onUpdateProgressRef = useRef(onUpdateProgress);
     const themeControllerRef = useRef(new ReaderThemeController());
 
@@ -89,7 +90,13 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             spread,
             themeStyles: styles
         }, {
-            onStatusChange: (s) => mounted && setStatus(s),
+            onStatusChange: (s) => {
+                if (!mounted) return;
+                setStatus(s);
+                if (["restoring-location", "ready", "generating-locations"].includes(s)) {
+                    setRenditionReady(n => n + 1);
+                }
+            },
             onError: (err) => mounted && setError(err),
             onTocReady: (toc) => mounted && setTocItems(toc),
             onSelection: (sel) => mounted && setSelection(sel),
@@ -161,7 +168,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         clearSelection,
 
         // Internal Escape Hatch
-        _rendition: sessionRef.current?.rendition ?? null,
-        _epubBook: sessionRef.current?.epubBook ?? null,
+        _rendition: renditionReady >= 0 ? (sessionRef.current?.rendition ?? null) : null,
+        _epubBook: renditionReady >= 0 ? (sessionRef.current?.epubBook ?? null) : null,
     };
 };

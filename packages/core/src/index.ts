@@ -131,6 +131,7 @@ export class SanctuaryApiClient {
     payload: {
       title?: string;
       author?: string;
+      coverUrl?: string | null;
       progress?: number;
       totalPages?: number;
       lastLocation?: string;

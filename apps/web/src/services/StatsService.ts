@@ -30,26 +30,49 @@ export const statsService = {
     return input
       .filter((item): item is Partial<ReadingSession> & Record<string, unknown> => !!item && typeof item === "object")
       .map((row) => {
+        const duration = typeof row.duration === "number"
+          ? row.duration
+          : typeof row.durationSec === "number"
+            ? Math.round(row.durationSec / 60)
+            : undefined;
+
+        const pagesRead = typeof row.pagesRead === "number"
+          ? row.pagesRead
+          : typeof row.pagesAdvanced === "number"
+            ? row.pagesAdvanced
+            : undefined;
+
+        const startedAt = typeof row.startedAt === "string"
+          ? row.startedAt
+          : typeof row.startTime === "string"
+            ? row.startTime
+            : undefined;
+
+        let date = typeof row.date === "string" ? row.date : undefined;
+        if (!date && startedAt) {
+          date = startedAt.split("T")[0];
+        }
+
         if (
           typeof row.id !== "string" ||
           typeof row.bookId !== "string" ||
-          typeof row.bookTitle !== "string" ||
-          typeof row.date !== "string" ||
-          typeof row.duration !== "number" ||
-          typeof row.pagesRead !== "number"
+          duration === undefined ||
+          pagesRead === undefined
         ) {
           return null;
         }
 
+        const bookTitle = typeof row.bookTitle === "string" ? row.bookTitle : "Unknown Book";
+
         const normalized: ReadingSession = {
           id: row.id,
           bookId: row.bookId,
-          bookTitle: row.bookTitle,
-          date: row.date,
-          ...(typeof row.startedAt === "string" ? { startedAt: row.startedAt } : typeof row.startTime === "string" ? { startedAt: row.startTime } : {}),
+          bookTitle,
+          date: date || "",
+          ...(startedAt ? { startedAt } : {}),
           ...(typeof row.localStartHour === "number" ? { localStartHour: row.localStartHour } : {}),
-          duration: Math.max(0, Math.min(row.duration, 86400)), // max 24h
-          pagesRead: Math.max(0, row.pagesRead),
+          duration: Math.max(0, Math.min(duration, 86400)), // max 24h
+          pagesRead: Math.max(0, pagesRead),
         };
         return normalized;
       })
