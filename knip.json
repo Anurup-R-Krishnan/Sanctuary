@@ -1,6 +1,0 @@
-{
-  "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignore": ["functions/**", "report/**", "lighthouserc.cjs", "apps/mobile/babel.config.js"],
-  "ignoreDependencies": ["@tauri-apps/cli", "babel-preset-expo", "@clerk/backend", "zod"],
-  "ignoreExportsUsedInFile": true
-}

@@ -13,6 +13,7 @@ export default tseslint.config(
       "node_modules/**",
       ".wrangler/**",
       "public/**",
+      "apps/desktop/src-tauri/**",
     ],
   },
   {

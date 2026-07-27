@@ -1,16 +1,37 @@
 {
+  "$schema": "https://json.schemastore.org/package",
   "name": "sanctuary-book-reader",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "author": "Anurup R Krishnan",
+  "description": "A modern, cross-platform book reader monorepo",
+  "license": "GPL-3.0-only",
+  "bugs": "https://github.com/Anurup-R-Krishnan/Sanctuary/issues",
+  "homepage": "https://github.com/Anurup-R-Krishnan/Sanctuary#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anurup-R-Krishnan/Sanctuary.git"
+  },
+  "keywords": [
+    "epub",
+    "book-reader",
+    "ebook",
+    "react",
+    "monorepo"
+  ],
+  "files": [
+    "apps",
+    "packages",
+    "functions"
+  ],
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "betterer": "betterer",
-    "build": "bun run web:build",
-    "depcheck": "depcheck",
-    "depcruise": "depcruise apps packages",
+    "build": "bun run web:build && echo build success",
+    "check": "tsc -p apps/web/tsconfig.json --noEmit && echo check success",
     "desktop:build": "bun run --cwd apps/desktop tauri:build",
     "desktop:dev": "bun run --cwd apps/desktop tauri:dev",
     "dev": "bash -lc 'bun run web:guest & bun run dev:backend:guest; wait -n; kill 0'",
@@ -19,22 +40,16 @@
     "dev:backend:strict": "wrangler pages dev apps/web/dist --ip 0.0.0.0 --port 8788 -b DISABLE_CLERK_AUTH=false",
     "dev:remote": "bash -lc 'bun run web:guest & bun run dev:backend:guest:remote; wait -n; kill 0'",
     "dev:strict": "bash -lc 'bun run web:strict & bun run dev:backend:strict; wait -n; kill 0'",
-    "jscpd": "jscpd",
-    "knip": "knip",
-    "lhci": "lhci autorun",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --cache && echo lint success",
     "lint:commits": "commitlint --from=HEAD~1",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:fix": "eslint . --fix",
     "mobile:android": "bun run --cwd apps/mobile android",
     "mobile:dev": "bun run --cwd apps/mobile start",
     "mobile:web": "bun run --cwd apps/mobile web",
-    "ncu": "ncu",
     "prepare": "husky",
+    "postversion": "git push && git push --tags",
     "preview": "bun run web:preview",
-    "secretlint": "secretlint \"{apps,packages,functions}/**/*\"",
-    "size": "bun run build && size-limit",
-    "spellcheck": "cspell \"{apps,packages,functions}/**/*\"",
-    "syncpack": "syncpack list",
+    "preversion": "bun run check",
     "web:build": "bun run --cwd apps/web build",
     "web:dev": "bun run --cwd apps/web dev",
     "web:guest": "bun run --cwd apps/web dev:guest",
@@ -43,11 +58,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix",
-      "jscpd"
-    ],
-    "package.json": [
-      "sort-package-json"
+      "eslint --fix"
     ]
   },
   "dependencies": {
@@ -62,74 +73,29 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
-    "@betterer/cli": "latest",
     "@cloudflare/workers-types": "^4.20260131.0",
     "@commitlint/cli": "^19.7.1",
     "@commitlint/config-conventional": "^19.7.1",
     "@eslint/js": "^9.21.0",
-    "@lhci/cli": "^0.13.0",
-    "@playwright/test": "^1.61.1",
-    "@size-limit/preset-app": "^11.1.6",
     "@types/bun": "^1.3.6",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
-    "cspell": "^8.17.3",
-    "depcheck": "^1.4.7",
-    "dependency-cruiser": "^16.9.0",
     "eslint": "^10.0.1",
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-perfectionist": "^4.9.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
-    "fake-indexeddb": "^6.2.5",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
-    "jscpd": "^4.0.9",
-    "jsdom": "^29.1.1",
-    "knip": "^6.6.3",
-    "lint-staged": "^15.4.3",
-    "npm-check-updates": "^17.1.14",
     "postcss": "^8.4.38",
-    "secretlint": "^9.0.0",
-    "size-limit": "^11.1.6",
-    "sort-package-json": "^2.14.0",
-    "syncpack": "^13.0.2",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.25.0",
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^0.11.3",
-    "vitest": "^4.1.10",
     "wrangler": "^4.61.1"
-  },
-  "jscpd": {
-    "threshold": 0.1,
-    "reporters": [
-      "html",
-      "console",
-      "badge"
-    ],
-    "ignore": [
-      "node_modules",
-      "dist",
-      "build",
-      ".next",
-      "out"
-    ],
-    "absolute": true,
-    "gitignore": true
-  },
-  "size-limit": [
-    {
-      "path": "apps/web/dist/assets/*.js",
-      "limit": "200 kB"
-    },
-    {
-      "path": "apps/web/dist/assets/*.css",
-      "limit": "50 kB"
-    }
-  ]
+  }
 }

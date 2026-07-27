@@ -1,5 +1,0 @@
-{
-  "dependencyTypes": ["dev", "overrides", "peer", "pnpmOverrides", "prod", "resolutions"],
-  "sortAz": ["dependencies", "devDependencies", "peerDependencies", "resolutions"],
-  "sortFirst": ["name", "description", "version", "private", "scripts", "dependencies", "devDependencies", "peerDependencies"]
-}

@@ -1,6 +1,6 @@
 export type SessionMode = "guest" | "clerk";
 
-export interface ReaderSettingsV2 {
+export interface ReaderSettings {
   accent: string;
   autoHideMs: number;
   dailyGoal: number;
@@ -16,7 +16,7 @@ export interface ReaderSettingsV2 {
   weeklyGoal: number;
 }
 
-export interface LibraryItemV2 {
+export interface LibraryItem {
   author: string;
   bookmarks?: Array<{ cfi: string; title: string }>;
   coverUrl?: string | null;
@@ -29,7 +29,7 @@ export interface LibraryItemV2 {
   updatedAt: string;
 }
 
-export interface ReadingSessionV2 {
+export interface ReadingSession {
   bookId: string;
   device: "android" | "desktop" | "web" | "ios" | "mobile" | string;
   durationSec: number;
@@ -39,7 +39,7 @@ export interface ReadingSessionV2 {
   startedAt: string;
 }
 
-export interface ReadingGoalsV2 {
+export interface ReadingGoals {
   day: {
     date: string;
     totalMinutes: number;
@@ -62,7 +62,7 @@ export interface ReadingGoalsV2 {
   };
 }
 
-export type ReaderSettingsDefaults = ReaderSettingsV2;
+export type ReaderSettingsDefaults = ReaderSettings;
 
 export const readerSettingsDefaults: ReaderSettingsDefaults = {
   dailyGoal: 30,
@@ -122,12 +122,10 @@ export class SanctuaryApiClient {
   public async fetchRaw(path: string, init?: RequestInit): Promise<Response> {
     const baseHeaders = await this.headers();
     
-    // Allow overriding or omitting headers (like Content-Type for FormData)
     const headers = new Headers(baseHeaders as HeadersInit);
     if (init?.headers) {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
-    // Remove Content-Type if it's undefined (fetch handles FormData boundaries automatically)
     if (init?.body instanceof FormData) {
       headers.delete("Content-Type");
     }
@@ -138,19 +136,19 @@ export class SanctuaryApiClient {
     });
   }
 
-  async getSettings(): Promise<ReaderSettingsV2> {
-    return this.fetchJson<ReaderSettingsV2>("/api/settings");
+  async getSettings(): Promise<ReaderSettings> {
+    return this.fetchJson<ReaderSettings>("/api/settings");
   }
 
-  async saveSettings(payload: ReaderSettingsV2): Promise<void> {
+  async saveSettings(payload: ReaderSettings): Promise<void> {
     await this.fetchJson<void>("/api/settings", {
       method: "PUT",
       body: JSON.stringify(payload)
     });
   }
 
-  async getLibrary(): Promise<LibraryItemV2[]> {
-    return this.fetchJson<LibraryItemV2[]>("/api/library");
+  async getLibrary(): Promise<LibraryItem[]> {
+    return this.fetchJson<LibraryItem[]>("/api/library");
   }
 
   async patchLibraryItem(
@@ -177,19 +175,19 @@ export class SanctuaryApiClient {
     });
   }
 
-  async getSessions(): Promise<ReadingSessionV2[]> {
-    return this.fetchJson<ReadingSessionV2[]>("/api/sessions");
+  async getSessions(): Promise<ReadingSession[]> {
+    return this.fetchJson<ReadingSession[]>("/api/sessions");
   }
 
-  async saveSession(payload: ReadingSessionV2): Promise<void> {
+  async saveSession(payload: ReadingSession): Promise<void> {
     await this.fetchJson<void>("/api/sessions", {
       method: "POST",
       body: JSON.stringify(payload)
     });
   }
 
-  async getGoals(): Promise<ReadingGoalsV2> {
-    return this.fetchJson<ReadingGoalsV2>("/api/goals");
+  async getGoals(): Promise<ReadingGoals> {
+    return this.fetchJson<ReadingGoals>("/api/goals");
   }
 }
 
@@ -206,8 +204,3 @@ export const SYNC_TIMING = {
   SCHEDULE_DEBOUNCE_MS: 500,
   INIT_SCHEDULE_MS: 150,
 };
-
-export type ReaderSettings = ReaderSettingsV2;
-export type LibraryItem = LibraryItemV2;
-export type ReadingSession = ReadingSessionV2;
-export type ReadingGoals = ReadingGoalsV2;

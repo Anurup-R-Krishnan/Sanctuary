@@ -1,3 +1,9 @@
+import type {
+  ReadingSession as CoreReadingSession,
+} from "@sanctuary/core";
+
+export type { ReaderSettings } from "@sanctuary/core";
+
 export enum Theme {
   LIGHT = "light",
   DARK = "dark",
@@ -27,7 +33,6 @@ export interface Bookmark {
   title: string;
 }
 
-
 export interface LibraryItem {
   author: string;
   bookmarks?: Array<{ cfi: string; title?: string }>;
@@ -56,7 +61,7 @@ export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "last
   lastLocation: string;
   lastOpenedAt?: string;
   locationHistory?: string[];
-  progress: number; // Mapping progressPercent to progress for consistency with epubjs usage
+  progress: number;
   readingList?: "to-read" | "reading" | "finished";
   series?: string;
   seriesIndex?: number;
@@ -99,7 +104,7 @@ export interface ReadingStats {
   dailyGoal: number;
   dailyProgress: number;
   genreDistribution: { genre: string; count: number; color: string }[];
-  goals?: ReadingGoals; // Added goal tracking
+  goals?: ReadingGoals;
   heatmapData: number[][];
   longestStreak: number;
   monthlyData: { month: string; hours: number; books: number }[];
@@ -150,7 +155,7 @@ export const DEFAULT_BADGES: Badge[] = [
 
 export interface ReadingSession {
   bookId: string;
-  bookTitle: string; // Additional field used by the web app for UI display
+  bookTitle: string;
   date: string;
   device?: "web" | "ios" | "android" | string;
   duration: number;
@@ -171,3 +176,29 @@ export type SessionAggregates = {
   monthMinutes: Map<string, number>;
   sessionCount: number;
 };
+
+export function sessionToCore(session: ReadingSession): CoreReadingSession {
+  return {
+    bookId: session.bookId,
+    device: session.device ?? "web",
+    durationSec: session.duration * 60,
+    endedAt: session.endedAt ?? null,
+    id: session.id,
+    pagesAdvanced: session.pagesRead,
+    startedAt: session.startedAt ?? session.date,
+  };
+}
+
+export function sessionFromCore(session: CoreReadingSession, bookTitle: string, date: string): ReadingSession {
+  return {
+    bookId: session.bookId,
+    bookTitle,
+    date,
+    device: session.device,
+    duration: Math.round(session.durationSec / 60),
+    endedAt: session.endedAt ?? undefined,
+    id: session.id,
+    pagesRead: session.pagesAdvanced,
+    startedAt: session.startedAt,
+  };
+}

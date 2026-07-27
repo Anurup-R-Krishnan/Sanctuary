@@ -1,6 +1,7 @@
 # Sanctuary Book Reader
 
-A modern, cross-platform book reader monorepo.
+A modern[![Project license](https://img.shields.io/github/license/Anurup-R-Krishnan/Sanctuary.svg?color=informational)](https://github.com/Anurup-R-Krishnan/Sanctuary/blob/master/LICENSE)
+, cross-platform book reader monorepo.
 
 ## 🚀 Getting Started
 
@@ -59,3 +60,28 @@ Run these from the root directory:
 We use **Husky** to enforce quality:
 - **Pre-commit**: Runs `lint-staged` (ESLint, Prettier, JS-CPD, Sort-Package-JSON).
 - **Commit-msg**: Validates commit messages via **Commitlint** (Conventional Commits).
+
+## Thanks
+
+- [Boxy Svg](https://boxy-svg.com) : simple & effective svg editor
+- [Bun](https://bun.sh) : super fast runtime for JavaScript and TypeScript
+- [C8](https://github.com/bcoe/c8) : simple & effective cli for code coverage
+- [Cloudflare Workers](https://workers.cloudflare.com/) : edge deployment platform
+- [Clerk](https://clerk.com/) : authentication and user management
+- [Dependency-cruiser](https://github.com/sverweij/dependency-cruiser) : handy tool to validate and visualize dependencies
+- [Epub.js](https://github.com/futurepress/epub.js/) : epub rendering library
+- [Eslint](https://eslint.org) : super tool to find & fix problems
+- [Github](https://github.com) : for all their great work year after year, pushing OSS forward
+- [Knip](https://github.com/webpro/knip) : super tool to find unused code
+- [React](https://react.dev) : great library for web and native user interfaces
+- [Repo-checker](https://github.com/Shuunen/repo-checker) : eslint cover /src code and this tool the rest ^^
+- [Shields.io](https://shields.io) : for the nice badges on top of this readme
+- [Svg Omg](https://jakearchibald.github.io/svgomg/) : the great king of svg file size reduction
+- [TailwindCss](https://tailwindcss.com) : awesome lib to produce maintainable style
+- [Vite](https://vitejs.dev) : next generation frontend tooling
+- [Vitest](https://github.com/vitest-dev/vitest) : super fast vite-native testing framework
+- [Zod](https://github.com/colinhacks/zod) : typeScript-first schema validation
+
+## Page views
+
+[![Views Counter](https://views-counter.vercel.app/badge?pageId=Anurup-R-Krishnan%2FSanctuary&leftColor=5c5c5c&rightColor=07a62f&type=total&label=Visitors&style=none)](https://github.com/Kumara2mahe/Views-Counter)
