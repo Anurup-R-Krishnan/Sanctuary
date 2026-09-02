@@ -1,6 +1,18 @@
+packages:
+  - 'apps/web'
+  - 'apps/desktop'
+  - 'packages/*'
+
 allowBuilds:
   '@clerk/shared': set this to true or false
   core-js: set this to true or false
   es5-ext: set this to true or false
   esbuild: set this to true or false
   workerd: set this to true or false
+
+onlyBuiltDependencies:
+  - '@clerk/shared'
+  - core-js
+  - es5-ext
+  - esbuild
+  - workerd
