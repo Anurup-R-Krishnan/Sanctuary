@@ -2,10 +2,7 @@ import {
     Palette,
     Target,
     RotateCcw,
-    Moon,
-    Sun,
     Zap,
-    Coffee,
     WandSparkles,
     Bell,
     ChartLine,
@@ -25,19 +22,12 @@ import { Slider } from "@/components/settings/Slider";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { Toggle } from "@/components/ui/Toggle";
+import { COLOR_PRESETS } from "@/config/readerConfig";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { clearBooks } from "@/utils/db";
 
 type Tab = "colors" | "typography" | "shortcuts" | "goals" | "data";
 type ShortcutKey = "nextPage" | "prevPage" | "toggleBookmark" | "toggleFullscreen" | "toggleUI" | "close";
-
-const COLOR_PRESETS = [
-    { id: "light", label: "Paper", fg: "#1a1a1a", bg: "#ffffff", accent: "#8B7355", icon: Sun },
-    { id: "cream", label: "Ivory", fg: "#2B2B2B", bg: "#FBF8F3", accent: "#8B7355", icon: Coffee },
-    { id: "sepia", label: "Sepia", fg: "#5C4B37", bg: "#F4ECD8", accent: "#8B7355", icon: Droplets },
-    { id: "dark", label: "Ink", fg: "#e8e6e3", bg: "#1a1a1a", accent: "#d4b58b", icon: Moon },
-    { id: "midnight", label: "Midnight", fg: "#c9d1d9", bg: "#0d1117", accent: "#79c0ff", icon: Moon },
-] as const;
 
 const TABS = [
     { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },

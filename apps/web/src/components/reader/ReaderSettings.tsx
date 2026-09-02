@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Toggle } from "@/components/ui/Toggle";
+import { FONT_PAIRINGS } from "@/config/readerConfig";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
 function ReaderSettings() {
@@ -165,12 +166,9 @@ function ReaderSettings() {
             value={fontPairing}
             onChange={(e) => setFontPairing(e.target.value)}
           >
-            <option value="merriweather-georgia">Merriweather</option>
-            <option value="crimson-pro">Crimson Pro</option>
-            <option value="libre-baskerville">Libre Baskerville</option>
-            <option value="lora">Lora</option>
-            <option value="source-serif">Source Serif</option>
-            <option value="inter">Inter (Sans)</option>
+            {FONT_PAIRINGS.map((fp) => (
+              <option key={fp.id} value={fp.id}>{fp.label}</option>
+            ))}
           </Select>
           <Slider label="Size" value={fontSize} min={14} max={30} onChange={setFontSize} formatValue={(v) => `${v}px`} />
           <Slider label="Height" value={lineHeight} min={1.3} max={2.1} step={0.1} onChange={setLineHeight} formatValue={(v) => v.toFixed(1)} />

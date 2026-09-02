@@ -1,5 +1,6 @@
 import type { ReadingSession, SessionAggregates, Book, ReadingStats } from "@/types";
 
+import { GENRE_PALETTE } from "@/config/readerConfig";
 import { DEFAULT_PERSONALITY, DEFAULT_BADGES } from "@/types";
 
 export const toLocalDateKey = (date: Date): string => {
@@ -65,13 +66,16 @@ export const applySessionToAggregates = (aggregates: SessionAggregates, session:
 const calculateStreak = (sessionDates: Set<string>, now: Date): { current: number; longest: number } => {
   let current = 0;
   const streakProbe = new Date(now);
+  // Check today first
+  if (sessionDates.has(toLocalDateKey(streakProbe))) {
+    current++;
+    streakProbe.setDate(streakProbe.getDate() - 1);
+  }
+  // Then check consecutive days backwards
   for (let i = 0; i < 365; i++) {
     const dateStr = toLocalDateKey(streakProbe);
     if (sessionDates.has(dateStr)) {
       current++;
-      streakProbe.setDate(streakProbe.getDate() - 1);
-    } else if (i === 0) {
-      // Check if they read yesterday if they haven't read today
       streakProbe.setDate(streakProbe.getDate() - 1);
     } else {
       break;
@@ -131,8 +135,6 @@ export const calculateStats = (
     monthMinutes,
     totalReadingTime,
     totalPagesRead,
-    nightOwlUnlocked,
-    earlyBirdUnlocked,
     sessionCount
   } = aggregates;
 
@@ -174,70 +176,16 @@ export const calculateStats = (
     heatmapData.push(row);
   }
 
-  const colors = ["#c7a77b", "#8b7355", "#d4b58b", "#a08060", "#e8d5b7", "#6b5344"];
   const genreDistribution = Array.from(genreMap.entries()).map(([genre, count], i) => ({
     genre,
     count,
-    color: colors[i % colors.length]!,
+    color: GENRE_PALETTE[i % GENRE_PALETTE.length]!,
   }));
 
   const authorNetwork = Array.from(authorMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([author, booksCount]) => ({ author, books: booksCount }));
-
-  const badges = DEFAULT_BADGES.map((badge) => {
-    const updatedBadge = { ...badge };
-    switch (badge.id) {
-      case "first_book":
-        updatedBadge.progress = completedBooksCount;
-        updatedBadge.unlocked = completedBooksCount >= 1;
-        break;
-      case "bookworm":
-        updatedBadge.progress = completedBooksCount;
-        updatedBadge.unlocked = completedBooksCount >= 5;
-        break;
-      case "librarian":
-        updatedBadge.progress = completedBooksCount;
-        updatedBadge.unlocked = completedBooksCount >= 25;
-        break;
-      case "streak_3":
-        updatedBadge.progress = currentStreak;
-        updatedBadge.unlocked = longestStreak >= 3;
-        break;
-      case "streak_7":
-        updatedBadge.progress = currentStreak;
-        updatedBadge.unlocked = longestStreak >= 7;
-        break;
-      case "streak_30":
-        updatedBadge.progress = currentStreak;
-        updatedBadge.unlocked = longestStreak >= 30;
-        break;
-      case "hour_1":
-        updatedBadge.progress = totalReadingTime;
-        updatedBadge.unlocked = totalReadingTime >= 60;
-        break;
-      case "hour_10":
-        updatedBadge.progress = totalReadingTime;
-        updatedBadge.unlocked = totalReadingTime >= 600;
-        break;
-      case "pages_100":
-        updatedBadge.progress = totalPagesRead;
-        updatedBadge.unlocked = totalPagesRead >= 100;
-        break;
-      case "pages_1000":
-        updatedBadge.progress = totalPagesRead;
-        updatedBadge.unlocked = totalPagesRead >= 1000;
-        break;
-      case "night_owl":
-        updatedBadge.unlocked = nightOwlUnlocked;
-        break;
-      case "early_bird":
-        updatedBadge.unlocked = earlyBirdUnlocked;
-        break;
-    }
-    return updatedBadge;
-  });
 
   const avgSessionLength = sessionCount > 0 ? totalReadingTime / sessionCount : 0;
   let readingPersonality = DEFAULT_PERSONALITY.personality;
@@ -275,7 +223,7 @@ export const calculateStats = (
     heatmapData,
     genreDistribution,
     authorNetwork,
-    badges,
+    badges: DEFAULT_BADGES,
     readingPersonality,
     personalityDescription,
   };

@@ -1,16 +1,9 @@
-import { Check, type LucideIcon } from "lucide-react";
+import { Check } from "lucide-react";
 import React from "react";
 
-import { Button } from "@/components/ui/Button";
+import type { ColorPreset } from "@/config/readerConfig";
 
-interface ColorPreset {
-    accent: string;
-    bg: string;
-    fg: string;
-    icon: LucideIcon;
-    id: string;
-    label: string;
-}
+import { Button } from "@/components/ui/Button";
 
 interface ColorSwatchProps {
     isActive: boolean;

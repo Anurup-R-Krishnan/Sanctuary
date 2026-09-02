@@ -1,5 +1,5 @@
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 
 import type { ReaderSearchState } from "@/types/reader";
 
@@ -15,6 +15,47 @@ interface ReaderSearchPanelProps {
     onPrev: () => void;
     onSearch: (query: string) => void;
     searchState: ReaderSearchState;
+}
+
+interface SafeHighlightProps {
+    query: string;
+    text: string;
+}
+
+function SafeHighlight({ query, text }: SafeHighlightProps) {
+    const parts = useMemo(() => {
+        if (!query || query.trim().length === 0) {
+            return [<span key="all">{text}</span>];
+        }
+        // Escape regex special characters to avoid injection
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(${escaped})`, "gi");
+        const segments: React.ReactNode[] = [];
+        let lastIndex = 0;
+        let match;
+        let key = 0;
+        const source = text;
+        while ((match = regex.exec(source)) !== null) {
+            if (match.index > lastIndex) {
+                segments.push(<span key={`seg-${key++}`}>{source.slice(lastIndex, match.index)}</span>);
+            }
+            segments.push(
+                <mark key={`mark-${key++}`} className="bg-yellow-200 dark:bg-yellow-900/50 text-inherit rounded-sm px-0.5">
+                    {match[0]}
+                </mark>
+            );
+            lastIndex = regex.lastIndex;
+            if (match.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+        }
+        if (lastIndex < source.length) {
+            segments.push(<span key={`seg-end-${key++}`}>{source.slice(lastIndex)}</span>);
+        }
+        return segments.length > 0 ? segments : [<span key="empty" />];
+    }, [text, query]);
+
+    return <>{parts}</>;
 }
 
 export function ReaderSearchPanel({
@@ -138,16 +179,9 @@ export function ReaderSearchPanel({
                                     <div className="text-xs font-medium text-light-accent dark:text-dark-accent mb-1 truncate">
                                         {result.chapterLabel}
                                     </div>
-                                    <div
-                                        className="text-sm text-light-text dark:text-dark-text line-clamp-3 leading-relaxed"
-                                        dangerouslySetInnerHTML={{
-                                            __html: result.excerpt
-                                                .replace(
-                                                    new RegExp(`(${searchState.query})`, "gi"),
-                                                    `<mark class="bg-yellow-200 dark:bg-yellow-900/50 text-inherit rounded-sm px-0.5">$1</mark>`
-                                                )
-                                        }}
-                                    />
+                                    <div className="text-sm text-light-text dark:text-dark-text line-clamp-3 leading-relaxed">
+                                        <SafeHighlight text={result.excerpt} query={searchState.query} />
+                                    </div>
                                 </button>
                             );
                         })}

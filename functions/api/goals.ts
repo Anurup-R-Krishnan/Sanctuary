@@ -59,7 +59,12 @@ function startOfWeek(date: Date): Date {
 }
 
 function localDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  // Use local date parts instead of toISOString (which is UTC and can return
+  // the wrong calendar date for users in timezones ahead of UTC).
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 function numberOr(value: unknown, fallback: number): number {
