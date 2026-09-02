@@ -39,6 +39,25 @@
     /* Grainy texture overlay logic handled in main app wrapper for better performance */
   }
 
+  /* Keyboard accessibility: ensure every interactive control shows a clear focus ring
+     even if a component forgets to add Tailwind's focus-visible classes. */
+  :focus-visible {
+    outline: 2px solid rgba(184, 149, 108, 0.6);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  .dark :focus-visible {
+    outline-color: rgba(212, 181, 139, 0.7);
+  }
+
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible),
+  input:focus:not(:focus-visible),
+  [tabindex]:focus:not(:focus-visible) {
+    outline: none;
+  }
+
   ::selection {
     background-color: rgba(184, 149, 108, 0.3);
     color: inherit;

@@ -1,5 +1,5 @@
-import { Plus, Upload } from "lucide-react";
-import React, { useRef, useState } from "react";
+import { Plus, Upload, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { Button } from "./Button";
 import { IconButton } from "./IconButton";
@@ -13,14 +13,24 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!errorMessage) return;
+    const t = setTimeout(() => setErrorMessage(null), 5000);
+    return () => clearTimeout(t);
+  }, [errorMessage]);
 
   const handleFile = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith(".epub")) return;
+    if (!file.name.toLowerCase().endsWith(".epub")) {
+      setErrorMessage("Only EPUB files are supported.");
+      return;
+    }
     setIsLoading(true);
     try {
       await onAddBook(file);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to add book.");
+      setErrorMessage(error instanceof Error ? error.message : "Failed to add book.");
     } finally {
       setIsLoading(false);
     }
@@ -49,14 +59,24 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
           className="hidden"
           onChange={handleChange}
         />
-        <Button
-          onClick={() => inputRef.current?.click()}
-          isLoading={isLoading}
-          variant="primary"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          <span>Add Book</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => inputRef.current?.click()}
+            isLoading={isLoading}
+            variant="primary"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            <span>Add Book</span>
+          </Button>
+          {errorMessage && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/40 animate-fadeIn">
+              <span className="text-sm text-red-600 dark:text-red-400">{errorMessage}</span>
+              <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
       </>
     );
   }
@@ -92,6 +112,15 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
 
         {isDragging && (
           <div className="absolute -inset-4 rounded-3xl border-2 border-dashed border-light-accent dark:border-dark-accent animate-pulse pointer-events-none" />
+        )}
+
+        {errorMessage && (
+          <div className="absolute bottom-full right-0 mb-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-light-surface dark:bg-dark-surface border border-red-200 dark:border-red-800/40 shadow-lg animate-slideIn whitespace-nowrap">
+            <span className="text-sm text-red-600 dark:text-red-400">{errorMessage}</span>
+            <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-red-600 ml-1">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
     </>

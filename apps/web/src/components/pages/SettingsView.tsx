@@ -56,6 +56,7 @@ function SettingsView() {
     const [activeTab, setActiveTab] = useState<Tab>("colors");
     const [isResetting, setIsResetting] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [resetError, setResetError] = useState<string | null>(null);
     const {
         readerForeground, setReaderForeground,
         readerBackground, setReaderBackground,
@@ -114,6 +115,7 @@ function SettingsView() {
     const executeFactoryReset = async () => {
         setShowResetConfirm(false);
         setIsResetting(true);
+        setResetError(null);
         try {
             localStorage.clear();
             sessionStorage.clear();
@@ -126,6 +128,7 @@ function SettingsView() {
         } catch (e) {
             console.error(e);
             setIsResetting(false);
+            setResetError("Factory reset failed. Please try again.");
         }
     };
 
@@ -354,6 +357,9 @@ function SettingsView() {
                                     <Trash2 className="w-4 h-4" />
                                     Factory Reset Cache
                                 </Button>
+                                {resetError && (
+                                    <p className="mt-3 text-sm text-red-600 dark:text-red-400 animate-fadeIn">{resetError}</p>
+                                )}
                             </div>
                         </Section>
                     </>

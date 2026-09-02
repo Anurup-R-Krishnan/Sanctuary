@@ -96,8 +96,8 @@ function LibraryGrid({
       <div className="page-stack animate-fadeIn">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <div className="h-8 w-40 rounded-lg bg-black/[0.05] dark:bg-white/[0.08]" />
-            <div className="h-4 w-28 rounded bg-black/[0.04] dark:bg-white/[0.06]" />
+            <div className="h-8 w-40 rounded-lg bg-black/[0.05] dark:bg-white/[0.08] animate-pulse-soft" />
+            <div className="h-4 w-28 rounded bg-black/[0.04] dark:bg-white/[0.06] animate-pulse-soft" />
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
@@ -176,8 +176,14 @@ function LibraryGrid({
           </p>
         )}
         {displayBooks.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-light-text-muted dark:text-dark-text-muted text-sm">No books found</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
+            <div className="w-16 h-16 mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.06]">
+              <Search className="w-7 h-7 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+            </div>
+            <p className="text-light-text dark:text-dark-text font-medium">No books found</p>
+            <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">
+              Try a different search term or clear your query.
+            </p>
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
