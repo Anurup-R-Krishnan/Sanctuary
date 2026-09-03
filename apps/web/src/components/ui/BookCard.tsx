@@ -48,11 +48,10 @@ const BookCover = ({
   const isFeatured = variant === "featured";
 
   const containerClass = isCompact
-    ? "w-12 h-16 rounded overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 flex-shrink-0"
+    ? "w-14 h-20 rounded-lg overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 flex-shrink-0 relative"
     : isFeatured
-      ? "w-20 h-28 rounded-md overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-sm flex-shrink-0"
-      : "w-16 h-24 rounded overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-sm flex-shrink-0";
-
+      ? "w-28 h-40 rounded-xl overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-md flex-shrink-0 relative"
+      : "w-full aspect-[2/3] rounded-t-2xl overflow-hidden bg-light-secondary dark:bg-dark-secondary relative";
 
   return (
     <div className={containerClass}>
@@ -69,10 +68,10 @@ const BookCover = ({
           onError={handleImageError}
         />
       ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center border-l-[3px] border-l-light-accent dark:border-l-dark-accent/70 relative bg-black/[0.02] dark:bg-white/[0.02]">
-          <div className="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent" />
-          <span className="font-serif font-medium text-[0.65rem] leading-tight text-light-text-muted dark:text-dark-text-muted line-clamp-3 z-10">{book.title}</span>
-          {book.author && <span className="font-sans text-[0.5rem] mt-1 text-light-text-muted/60 dark:text-dark-text-muted/60 line-clamp-1 uppercase tracking-wider z-10">{book.author}</span>}
+        <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center border-l-4 border-l-light-accent dark:border-l-dark-accent bg-light-secondary dark:bg-dark-secondary relative">
+          <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent pointer-events-none" />
+          <span className="font-serif font-medium text-xs leading-snug text-light-text dark:text-dark-text line-clamp-4 z-10">{book.title}</span>
+          {book.author && <span className="font-sans text-[0.65rem] mt-2 text-light-text-muted dark:text-dark-text-muted line-clamp-2 uppercase tracking-widest z-10">{book.author}</span>}
         </div>
       )}
     </div>
