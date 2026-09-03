@@ -5,7 +5,7 @@
   "build": {
     "beforeDevCommand": "node scripts/serve-web.mjs",
     "devUrl": "http://127.0.0.1:5174",
-    "beforeBuildCommand": "npm --prefix ../web run build",
+    "beforeBuildCommand": "VITE_DISABLE_AUTH=true npm --prefix ../web run build",
     "frontendDist": "../../web/dist"
   },
   "app": {
