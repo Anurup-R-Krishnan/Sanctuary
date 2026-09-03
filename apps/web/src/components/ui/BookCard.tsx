@@ -1,4 +1,4 @@
-import { Star, Clock, BookOpen, Heart, Trash2 } from "lucide-react";
+import { Star, Clock, Heart, Trash2 } from "lucide-react";
 import React, { useState, useCallback } from "react";
 
 import type { Book } from "@/types";
@@ -53,7 +53,6 @@ const BookCover = ({
       ? "w-20 h-28 rounded-md overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-sm flex-shrink-0"
       : "w-16 h-24 rounded overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-sm flex-shrink-0";
 
-  const iconSize = isCompact ? "w-5 h-5" : isFeatured ? "w-8 h-8" : "w-12 h-12";
 
   return (
     <div className={containerClass}>

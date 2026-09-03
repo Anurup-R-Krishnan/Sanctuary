@@ -1,6 +1,7 @@
 
-import { Settings, Sun, Moon, Type, AlignLeft, AlignJustify, BookOpen, Layers } from "lucide-react";
+import { AlignLeft, AlignJustify, BookOpen, Layers } from "lucide-react";
 import React from "react";
+
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { cx } from "@/utils/cx";
 
@@ -13,8 +14,7 @@ export default function ReaderSettings() {
     fontPairing, setFontPairing,
     textAlignment, setTextAlignment,
     continuous, setContinuous,
-    spread, setSpread,
-  } = useSettingsShallow((state) => ({
+    } = useSettingsShallow((state) => ({
     fontSize: state.fontSize, setFontSize: state.setFontSize,
     lineHeight: state.lineHeight, setLineHeight: state.setLineHeight,
     pageMargin: state.pageMargin, setPageMargin: state.setPageMargin,
@@ -22,10 +22,10 @@ export default function ReaderSettings() {
     fontPairing: state.fontPairing, setFontPairing: state.setFontPairing,
     textAlignment: state.textAlignment, setTextAlignment: state.setTextAlignment,
     continuous: state.continuous, setContinuous: state.setContinuous,
-    spread: state.spread, setSpread: state.setSpread,
+    
   }));
 
-  const Slider = ({ label, value, min, max, step, onChange, format }: any) => (
+  const Slider = ({ label, value, min, max, step, onChange, format }: { label: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void; format?: (v: number) => string }) => (
     <div className="flex flex-wrap items-center gap-3">
       <span className="w-20 text-sm font-medium text-light-text-muted dark:text-dark-text-muted">{label}</span>
       <input 
@@ -39,11 +39,11 @@ export default function ReaderSettings() {
     </div>
   );
 
-  const ButtonGroup = ({ label, options, value, onChange }: any) => (
+  const ButtonGroup = ({ label, options, value, onChange }: { label: string; options: { value: string; label: string; icon?: React.ReactNode }[]; value: string; onChange: (v: string) => void }) => (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-medium text-light-text-muted dark:text-dark-text-muted">{label}</span>
       <div className="flex flex-wrap gap-2">
-        {options.map((opt: any) => (
+        {options.map((opt) => (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
@@ -101,7 +101,7 @@ export default function ReaderSettings() {
           <ButtonGroup 
             label="Layout" 
             value={continuous ? "flow" : "paginated"} 
-            onChange={(v: any) => setContinuous(v === "flow")}
+            onChange={(v: string) => setContinuous(v === "flow")}
             options={[
               { value: "paginated", label: "Pages", icon: <BookOpen className="w-4 h-4" /> },
               { value: "flow", label: "Scroll", icon: <Layers className="w-4 h-4" /> }
