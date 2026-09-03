@@ -91,9 +91,9 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
         onChange={handleChange}
       />
 
-      <div className={`fixed bottom-24 right-6 z-40 transition-transform duration-200 ${isDragging ? "scale-110" : ""}`}>
+      <div className={`fixed bottom-24 right-6 z-40 transition-transform duration-instant ${isDragging ? "scale-110" : ""}`}>
         <IconButton
-          icon={<Plus className={`w-6 h-6 text-white transition-transform duration-200 ${isDragging ? "rotate-45" : "group-hover:rotate-90"}`} />}
+          icon={<Plus className={`w-6 h-6 text-white transition-transform duration-instant ${isDragging ? "rotate-45" : "group-hover:rotate-90"}`} />}
           label="Add book"
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => {
@@ -103,7 +103,7 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           isLoading={isLoading}
-          className={`w-14 h-14 !rounded-2xl shadow-lg border-0 group transition-all duration-200 ${
+          className={`w-14 h-14 !rounded-2xl shadow-lg border-0 group transition-all duration-instant ${
             isDragging
               ? "bg-light-accent dark:bg-dark-accent scale-110"
               : "bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:shadow-xl hover:scale-105"

@@ -57,6 +57,32 @@
   --page-max-width: 84rem;
   --page-gutter: clamp(1rem, 3vw, 2rem);
   --page-gutter-tight: clamp(0.75rem, 2vw, 1.25rem);
+
+  /* Design system semantic tokens (source of truth: web design-tokens spec). */
+  /* Motion */
+  --motion-instant: 150ms;
+  --motion-fast: 160ms;
+  /* Spacing scale (space.1..space.8) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 18px;
+  --space-6: 20px;
+  --space-7: 22px;
+  --space-8: 22px;
+  /* Radius */
+  --radius-xs: 2px;
+  --radius-sm: 7px;
+  /* Typography scale (xs..4xl) */
+  --text-xs: 11.2px;
+  --text-sm: 12.8px;
+  --text-base: 14.4px;
+  --text-lg: 16.2px;
+  --text-xl: 18.2px;
+  --text-2xl: 20.5px;
+  --text-3xl: 23px;
+  --text-4xl: 31.47px;
 }
 
 .dark {
@@ -241,7 +267,7 @@
 
   /* Button Components */
   .btn-primary {
-    @apply relative inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white overflow-hidden transition-all duration-200 ease-out;
+    @apply relative inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white overflow-hidden transition-all duration-instant ease-out;
     background: rgb(var(--accent));
     box-shadow: 0 2px 8px rgba(var(--shadow-color), 0.15);
   }
@@ -266,7 +292,7 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2.5 rounded-2xl bg-light-surface dark:bg-dark-surface px-6 py-3.5 text-sm font-semibold text-light-text dark:text-dark-text border border-black/[0.08] dark:border-white/[0.08] transition-all duration-200 ease-out;
+    @apply inline-flex items-center justify-center gap-2.5 rounded-2xl bg-light-surface dark:bg-dark-surface px-6 py-3.5 text-sm font-semibold text-light-text dark:text-dark-text border border-black/[0.08] dark:border-white/[0.08] transition-all duration-instant ease-out;
     box-shadow: var(--shadow-elevation-low);
   }
 
@@ -277,7 +303,7 @@
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-light-text-muted dark:text-dark-text-muted transition-all duration-150 ease-out;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-light-text-muted dark:text-dark-text-muted transition-all duration-instant ease-out;
   }
 
   .btn-ghost:hover {
@@ -286,7 +312,7 @@
 
   /* Card Components */
   .card {
-    @apply bg-light-surface dark:bg-dark-surface rounded-2xl border border-black/[0.08] dark:border-white/[0.08] transition-colors duration-200;
+    @apply bg-light-surface dark:bg-dark-surface rounded-2xl border border-black/[0.08] dark:border-white/[0.08] transition-colors duration-instant;
     box-shadow: 0 2px 10px rgba(var(--shadow-color), 0.08);
   }
 
@@ -311,7 +337,7 @@
 
   /* Input Components */
   .input {
-    @apply w-full rounded-2xl bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] px-5 py-4 text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 dark:placeholder:text-dark-text-muted/60 transition-all duration-200 ease-out;
+    @apply w-full rounded-2xl bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] px-5 py-4 text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 dark:placeholder:text-dark-text-muted/60 transition-all duration-instant ease-out;
     font-feature-settings: 'tnum';
   }
 
@@ -326,7 +352,7 @@
 
   /* Toggle Components */
   .toggle {
-    @apply relative inline-flex items-center h-7 w-12 rounded-full cursor-pointer transition-all duration-300 ease-out;
+    @apply relative inline-flex items-center h-7 w-12 rounded-full cursor-pointer transition-all duration-fast ease-out;
     /* Use design-system surface tokens instead of raw hex */
     @apply bg-black/[0.14] dark:bg-white/[0.18];
   }
@@ -340,7 +366,7 @@
   }
 
   .toggle-thumb {
-    @apply absolute w-5 h-5 rounded-full bg-white shadow-lg transition-all duration-300 ease-out;
+    @apply absolute w-5 h-5 rounded-full bg-white shadow-lg transition-all duration-fast ease-out;
     left: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }

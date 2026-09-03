@@ -24,7 +24,7 @@ export const Slider = ({
     const percentage = ((value - min) / (max - min)) * 100;
 
     return (
-        <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-200">
+        <div className="group p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-all duration-instant">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     {Icon && (

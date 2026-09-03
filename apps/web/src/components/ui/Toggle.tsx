@@ -21,7 +21,7 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                 aria-checked={checked}
                 onClick={() => onChange(!checked)}
                 className={cx(
-                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-200 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))]",
+                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))]",
                     checked
                         ? "bg-light-accent/10 dark:bg-dark-accent/10 border border-light-accent/20 dark:border-dark-accent/20"
                         : "bg-black/[0.02] dark:bg-white/[0.02] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.04]",
@@ -41,11 +41,11 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                     </div>
                 </div>
                 <div className={cx(
-                    "relative flex-shrink-0 w-12 h-6 rounded-full transition-all duration-300 ease-out",
+                    "relative flex-shrink-0 w-12 h-6 rounded-full transition-all duration-fast ease-out",
                     checked ? "bg-light-accent dark:bg-dark-accent" : "bg-black/20 dark:bg-white/20"
                 )}>
                     <div className={cx(
-                        "absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-300 ease-out flex items-center justify-center",
+                        "absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-fast ease-out flex items-center justify-center",
                         checked ? "left-7" : "left-1"
                     )}>
                         {checked && (

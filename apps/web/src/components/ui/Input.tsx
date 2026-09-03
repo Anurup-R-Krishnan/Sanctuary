@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             "bg-light-surface dark:bg-dark-surface text-sm text-light-text dark:text-dark-text",
             "placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted",
             "focus:outline-none focus:ring-2 focus:ring-light-accent/30 dark:focus:ring-dark-accent/30",
-            "transition-shadow duration-200",
+            "transition-shadow duration-instant",
             icon ? "pl-10" : "pl-4",
             rightIcon ? "pr-10" : "pr-4",
             error && "border-red-500 focus:ring-red-500/30",

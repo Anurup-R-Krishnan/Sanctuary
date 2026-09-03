@@ -54,7 +54,7 @@ function ReaderHeader({
     }) => (
         <IconButton
             onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className={`transition-all duration-200 ${active
+            className={`transition-all duration-instant ${active
                     ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent"
                     : "hover:bg-black/5 dark:hover:bg-white/5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
                 }`}
@@ -71,7 +71,7 @@ function ReaderHeader({
             <div className="relative flex items-start justify-between p-6">
                 <IconButton
                     onClick={(e) => { e.stopPropagation(); onClose(); }}
-                    className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hover:scale-105 transition-all duration-200 group"
+                    className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hover:scale-105 transition-all duration-instant group"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                     label="Close reader"
                     icon={<ArrowLeft className="w-5 h-5 transition-colors" style={{ color: readerForeground }} strokeWidth={2} />}
@@ -80,7 +80,7 @@ function ReaderHeader({
 
                 {/* Center: Title (Floating Capsule) */}
                 <div 
-                    className="absolute left-1/2 -translate-x-1/2 top-6 pointer-events-auto max-w-md px-6 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-all duration-200"
+                    className="absolute left-1/2 -translate-x-1/2 top-6 pointer-events-auto max-w-md px-6 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-col items-center justify-center transition-all duration-instant"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                 >
                     <h1 
@@ -93,7 +93,7 @@ function ReaderHeader({
 
                 {/* Right: Actions (Floating Group) */}
                 <div 
-                    className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-200"
+                    className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-instant"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                 >
                     <ActionBtn 

@@ -44,10 +44,29 @@ export default {
         '100': '25rem',
         '112': '28rem',
         '128': '32rem',
+        // Design-system spacing scale (space.1..space.8), prefixed to avoid
+        // colliding with Tailwind's default 1-8 rem-based scale.
+        'ds-1': '4px',
+        'ds-2': '8px',
+        'ds-3': '12px',
+        'ds-4': '16px',
+        'ds-5': '18px',
+        'ds-6': '20px',
+        'ds-7': '22px',
+        'ds-8': '22px',
       },
       borderRadius: {
         '4xl': '2rem',
         '5xl': '2.5rem',
+        // Design-system radius scale, prefixed to avoid overriding the default
+        // rounded-xs/-sm utilities used across existing components.
+        'ds-xs': '2px',
+        'ds-sm': '7px',
+      },
+      transitionDuration: {
+        // Design-system motion tokens.
+        'instant': '150ms',
+        'fast': '160ms',
       },
       fontSize: {
         '2xs': ['0.625rem', { lineHeight: '0.75rem' }],

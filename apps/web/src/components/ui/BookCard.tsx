@@ -78,7 +78,7 @@ const BookCover = ({
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       )}
       {!isCompact && !isFeatured && !reduceMotion && (
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-instant" />
       )}
     </div>
   );
@@ -98,13 +98,13 @@ const FavoriteButton = ({
   const isFeatured = variant === "featured";
   const className = isFeatured
     ? cx(
-      "p-2 rounded-xl transition-all duration-200",
+      "p-2 rounded-xl transition-all duration-instant",
       isFavorite
         ? "text-red-500 bg-red-50 dark:bg-red-950/30"
         : "text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
     )
     : cx(
-      "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 opacity-0 group-hover:opacity-100",
+      "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-instant opacity-0 group-hover:opacity-100",
       isFavorite ? "bg-red-500/90 text-white" : "bg-black/20 text-white hover:bg-red-500/90"
     );
   const iconClassName = cx(isFeatured ? "w-5 h-5" : "w-4 h-4", isFavorite && "fill-current");
@@ -132,8 +132,8 @@ const DeleteButton = ({
 
   const isFeatured = variant === "featured";
   const className = isFeatured
-    ? "p-2 rounded-xl transition-all duration-200 text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-    : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-xl transition-all duration-200 opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
+    ? "p-2 rounded-xl transition-all duration-instant text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+    : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-xl transition-all duration-instant opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
   
   const iconClassName = isFeatured ? "w-5 h-5" : "w-4 h-4";
 
@@ -195,7 +195,7 @@ const BookMetadata = ({ title, author, variant = "default" }: { title: string; a
     <div className={isFeatured ? "mb-1" : ""}>
       <h3 className={cx(
         isFeatured ? "text-xl font-bold" : "font-semibold",
-        "text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200"
+        "text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
       )}>
         {title}
       </h3>

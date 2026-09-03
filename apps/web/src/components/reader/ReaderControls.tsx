@@ -145,7 +145,7 @@ function ReaderControls({
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     variant="nav"
-                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
+                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "chapters"
                         ? "bg-white dark:bg-white/10 shadow-sm font-medium"
                         : "opacity-60 hover:opacity-100"
                         }`}
@@ -159,7 +159,7 @@ function ReaderControls({
                     role="tab"
                     aria-selected={activeTab === "bookmarks"}
                     variant="nav"
-                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
+                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "bookmarks"
                         ? "bg-white dark:bg-white/10 shadow-sm font-medium"
                         : "opacity-60 hover:opacity-100"
                         }`}
