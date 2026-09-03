@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -25,7 +26,7 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: smooth; /* overridden by @media (prefers-reduced-motion) below */
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -40,26 +41,26 @@
   }
 
   /* Keyboard accessibility: ensure every interactive control shows a clear focus ring
-     even if a component forgets to add Tailwind's focus-visible classes. */
+     even if a component forgets to add Tailwind's focus-visible classes.
+     Opacity of 0.85 ensures ≥ 3:1 against white/dark backgrounds (WCAG SC 1.4.11). */
   :focus-visible {
-    outline: 2px solid rgba(184, 149, 108, 0.6);
+    outline: 2px solid rgba(var(--accent), 0.85);
     outline-offset: 2px;
     border-radius: 6px;
   }
 
   .dark :focus-visible {
-    outline-color: rgba(212, 181, 139, 0.7);
+    outline-color: rgba(var(--accent-dark), 0.9);
   }
 
-  button:focus:not(:focus-visible),
-  a:focus:not(:focus-visible),
-  input:focus:not(:focus-visible),
-  [tabindex]:focus:not(:focus-visible) {
+  /* Components that define focus-visible via Tailwind ring utilities suppress the
+     outline fallback to avoid double-ring rendering. They handle WCAG themselves. */
+  [class*="focus-visible:ring"]:focus-visible {
     outline: none;
   }
 
   ::selection {
-    background-color: rgba(184, 149, 108, 0.3);
+    background-color: rgba(var(--accent), 0.3);
     color: inherit;
   }
 
@@ -277,29 +278,26 @@
 
   .input:focus {
     @apply outline-none bg-white dark:bg-dark-surface border-light-accent/60 dark:border-dark-accent/60;
-    box-shadow: 0 0 0 4px rgba(var(--accent), 0.12), var(--shadow-elevation-low);
+    box-shadow: 0 0 0 4px rgba(var(--accent), 0.14), var(--shadow-elevation-low);
   }
 
   .dark .input:focus {
-    box-shadow: 0 0 0 4px rgba(var(--accent-dark), 0.15), var(--shadow-elevation-low);
+    box-shadow: 0 0 0 4px rgba(var(--accent-dark), 0.16), var(--shadow-elevation-low);
   }
 
   /* Toggle Components */
   .toggle {
     @apply relative inline-flex items-center h-7 w-12 rounded-full cursor-pointer transition-all duration-300 ease-out;
-    background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%);
+    /* Use design-system surface tokens instead of raw hex */
+    @apply bg-black/[0.14] dark:bg-white/[0.18];
   }
 
   .toggle.active {
-    background: linear-gradient(135deg, rgb(var(--accent)) 0%, #d97706 100%);
-  }
-
-  .dark .toggle {
-    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    background: rgb(var(--accent));
   }
 
   .dark .toggle.active {
-    background: linear-gradient(135deg, rgb(var(--accent-dark)) 0%, #f59e0b 100%);
+    background: rgb(var(--accent-dark));
   }
 
   .toggle-thumb {
@@ -661,37 +659,63 @@
   animation-delay: 600ms;
 }
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
+/* Reduced Motion Support
+   — Level 1: OS preference (prefers-reduced-motion) fires unconditionally for all users
+     who set the OS-level accessibility setting. Required for WCAG 2.2 SC 2.2.2 (Pause, Stop, Hide).
+   — Level 2: .reduce-motion class (applied by useAppTheme via in-app setting) catches
+     users who prefer to override only inside Sanctuary without changing the OS setting. */
 
-  .reduce-motion *,
-  .reduce-motion *::before,
-  .reduce-motion *::after {
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 
-  .reduce-motion .animate-float,
-  .reduce-motion .animate-bounce-gentle,
-  .reduce-motion .animate-pulse-soft {
-    animation: none !important;
+  html {
+    scroll-behavior: auto !important;
   }
 }
 
-/* High Contrast Mode */
-@media (prefers-contrast: high) {
+/* In-app "Reduce motion" setting */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.reduce-motion {
+  scroll-behavior: auto !important;
+}
+
+.reduce-motion .animate-float,
+.reduce-motion .animate-bounce-gentle,
+.reduce-motion .animate-pulse-soft {
+  animation: none !important;
+}
+
+/* High Contrast Mode — use opaque borders for legibility at system high-contrast */
+@media (prefers-contrast: more) {
   .card {
-    @apply border-2 border-black/20 dark:border-white/20;
+    @apply border-2 border-black/60 dark:border-white/60;
   }
 
   .btn-primary {
-    @apply border-2 border-black/20;
+    @apply border-2 border-black/60 dark:border-white/60;
   }
 
   .input {
-    @apply border-2 border-black/20 dark:border-white/20;
+    @apply border-2 border-black/60 dark:border-white/60;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--accent)) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
   }
 }
 

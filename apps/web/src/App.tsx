@@ -129,7 +129,7 @@ function App() {
       )}
 
       <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
-        <div className={`${isReader ? "" : "page-shell animate-fadeIn"}`}>
+        <div key={view} className={`${isReader ? "" : "page-shell animate-fadeInUp"}`}>
           {view === View.LIBRARY && (
             <LibraryGrid
               onSelectBook={startSession}

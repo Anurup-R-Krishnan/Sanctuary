@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 
 interface DropdownMenuProps {
   id: string;
@@ -6,6 +6,8 @@ interface DropdownMenuProps {
   onSelect: (v: string) => void;
   options: { value: string; label: string }[];
   show: boolean;
+  /** ID of the button that triggers this menu (for returning focus on close) */
+  triggerId?: string;
   value: string;
 }
 
@@ -16,9 +18,40 @@ export const DropdownMenu = ({
   value,
   onSelect,
   onClose,
+  triggerId,
 }: DropdownMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusedIndexRef = useRef<number>(-1);
 
+  // Initialise itemRefs array to match options length
+  itemRefs.current = Array(options.length).fill(null);
+
+  const focusItem = useCallback((index: number) => {
+    const clamped = Math.max(0, Math.min(options.length - 1, index));
+    focusedIndexRef.current = clamped;
+    itemRefs.current[clamped]?.focus();
+  }, [options.length]);
+
+  // Move initial focus to selected item (or first item) when menu opens
+  useEffect(() => {
+    if (!show) {
+      // Return focus to the trigger button when the menu closes
+      if (triggerId) {
+        document.getElementById(triggerId)?.focus();
+      }
+      return;
+    }
+
+    const selectedIndex = options.findIndex((o) => o.value === value);
+    const initialIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
+    // Defer so the menu renders before we try to focus
+    const id = window.setTimeout(() => focusItem(initialIndex), 16);
+    return () => window.clearTimeout(id);
+  }, [show, options, value, focusItem, triggerId]);
+
+  // Click-outside to close
   useEffect(() => {
     if (!show) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -30,6 +63,39 @@ export const DropdownMenu = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [show, onClose]);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const current = focusedIndexRef.current;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          focusItem(current + 1);
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          focusItem(current - 1);
+          break;
+        case "Home":
+          e.preventDefault();
+          focusItem(0);
+          break;
+        case "End":
+          e.preventDefault();
+          focusItem(options.length - 1);
+          break;
+        case "Escape":
+          e.preventDefault();
+          onClose();
+          break;
+        case "Tab":
+          // Close on Tab so focus doesn't leak into the page behind the menu
+          onClose();
+          break;
+      }
+    },
+    [focusItem, onClose, options.length]
+  );
+
   if (!show) return null;
 
   return (
@@ -38,25 +104,40 @@ export const DropdownMenu = ({
       ref={menuRef}
       role="menu"
       aria-orientation="vertical"
-      className="absolute right-0 top-full mt-1.5 w-40 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-50 animate-scaleIn origin-top-right"
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
+      className="absolute right-0 top-full mt-1.5 w-44 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-50 animate-scaleIn origin-top-right"
     >
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          role="menuitemradio"
-          aria-checked={value === opt.value}
-          onClick={() => {
-            onSelect(opt.value);
-            onClose();
-          }}
-          className={`w-full text-left px-3 py-2 text-sm transition-colors ${value === opt.value
-            ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
-            : "text-light-text dark:text-dark-text hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
-            }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+      {options.map((opt, index) => {
+        const isSelected = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            ref={(el) => {
+              itemRefs.current[index] = el;
+            }}
+            role="menuitemradio"
+            aria-checked={isSelected}
+            tabIndex={-1} // roving tabIndex — keyboard navigated via arrow keys
+            onClick={() => {
+              onSelect(opt.value);
+              onClose();
+            }}
+            onFocus={() => {
+              focusedIndexRef.current = index;
+            }}
+            className={[
+              "w-full text-left px-3 py-2 text-sm transition-colors outline-none",
+              "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))]",
+              isSelected
+                ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
+                : "text-light-text dark:text-dark-text hover:bg-black/[0.04] dark:hover:bg-white/[0.04]",
+            ].join(" ")}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
     </div>
   );
 };

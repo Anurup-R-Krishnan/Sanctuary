@@ -44,6 +44,7 @@ export function ReaderAnnotationsPanel({
                         {sorted.map((item) => (
                             <div key={item.id} className="group relative border-b border-black/5 dark:border-white/5 hover:bg-black-[0.02] dark:hover:bg-white-[0.02] transition-colors">
                                 <button
+                                    type="button"
                                     onClick={() => onGoToAnnotation(item.cfiRange)}
                                     className="w-full text-left p-4 pr-12"
                                 >
@@ -70,9 +71,10 @@ export function ReaderAnnotationsPanel({
                                 </button>
                                 
                                 <button
+                                    type="button"
                                     onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(item.id); }}
                                     className="absolute right-3 top-4 p-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded hover:bg-red-50 dark:hover:bg-red-950/30"
-                                    title="Delete"
+                                    aria-label="Delete annotation"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>

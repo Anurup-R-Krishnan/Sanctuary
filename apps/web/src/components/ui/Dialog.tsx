@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "./Button";
@@ -15,6 +15,17 @@ export interface DialogProps {
   title?: string;
 }
 
+const FOCUSABLE_SELECTORS = [
+  "a[href]",
+  "area[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+  "details > summary",
+].join(", ");
+
 export function Dialog({
   isOpen,
   onClose,
@@ -27,27 +38,86 @@ export function Dialog({
   const overlayRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = React.useState(false);
+  // Keep a ref to the element that had focus before the dialog opened
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  const titleId = useId();
+  const descId = useId();
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
+  // Focus trap & Escape key
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
+    if (!isOpen) {
+      // Restore focus to the element that was focused before the dialog opened
+      previousFocusRef.current?.focus();
+      return;
+    }
+
+    // Save current focus so we can restore it on close
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const el = contentRef.current;
+      if (!el) return;
+
+      if (e.key === "Escape") {
+        e.preventDefault();
         onClose();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        const focusable = Array.from(
+          el.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
+        ).filter((node) => node.offsetParent !== null);
+
+        if (focusable.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden"; // Prevent scrolling
-    }
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+
+    // Move initial focus into the dialog after it renders
+    const id = window.setTimeout(() => {
+      const el = contentRef.current;
+      if (!el) return;
+      const firstFocusable = el.querySelector<HTMLElement>(FOCUSABLE_SELECTORS);
+      if (firstFocusable) {
+        firstFocusable.focus();
+      } else {
+        // Fallback: make the panel itself focusable
+        el.setAttribute("tabindex", "-1");
+        el.focus();
+      }
+    }, 16);
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
+      window.clearTimeout(id);
     };
   }, [isOpen, onClose]);
 
@@ -60,30 +130,31 @@ export function Dialog({
   };
 
   return createPortal(
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
+    // The overlay is presentational only — role/aria live on the content div
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       ref={overlayRef}
       onClick={handleBackdropClick}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? "dialog-title" : undefined}
-      aria-describedby={description ? "dialog-description" : undefined}
     >
       <div
         ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={description ? descId : undefined}
         className="w-full max-w-md rounded-2xl bg-light-primary dark:bg-dark-primary border border-black/[0.08] dark:border-white/[0.08] shadow-2xl overflow-hidden animate-scaleIn"
       >
         {(title || description) && (
           <div className="px-6 py-4 border-b border-black/[0.05] dark:border-white/[0.05] flex justify-between items-start">
             <div>
               {title && (
-                <h2 id="dialog-title" className="text-lg font-bold text-light-text dark:text-dark-text">
+                <h2 id={titleId} className="text-lg font-bold text-light-text dark:text-dark-text">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id="dialog-description" className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1">
+                <p id={descId} className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1">
                   {description}
                 </p>
               )}
@@ -97,7 +168,7 @@ export function Dialog({
             />
           </div>
         )}
-        
+
         <div className="px-6 py-4">
           {children}
         </div>

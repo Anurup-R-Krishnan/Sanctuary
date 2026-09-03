@@ -141,10 +141,10 @@ export function ReaderSearchPanel({
                         {searchState.activeIndex + 1} of {searchState.results.length} matches
                     </span>
                     <div className="flex items-center gap-1">
-                        <button onClick={onPrev} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded">
+                        <button type="button" aria-label="Previous match" onClick={onPrev} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={onNext} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded">
+                        <button type="button" aria-label="Next match" onClick={onNext} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded">
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>

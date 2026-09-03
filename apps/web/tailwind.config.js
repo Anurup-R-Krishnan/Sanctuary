@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
         serif: ['Crimson Pro', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
       },
