@@ -7,6 +7,26 @@ import { SettingsProvider } from '@/components/ui/SettingsProvider';
 import App from './App';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
+// Prevent iframe sandboxing conflicts in epub.js (which cause about:srcdoc script blocking and escaping warnings)
+try {
+  const originalSetAttribute = HTMLIFrameElement.prototype.setAttribute;
+  HTMLIFrameElement.prototype.setAttribute = function(name: string, value: string) {
+    if (name === 'sandbox') return;
+    return originalSetAttribute.call(this, name, value);
+  };
+  Object.defineProperty(HTMLIFrameElement.prototype, 'sandbox', {
+    get() {
+      return (this as { _sandboxClassList?: DOMTokenList })._sandboxClassList || document.createElement('div').classList;
+    },
+    set() {
+      // Ignore sandbox assignment so epub.js iframes render same-origin cleanly without about:srcdoc blocking
+    },
+    configurable: true,
+  });
+} catch {
+  // Prototype property was locked
+}
+
 // Suppress benign iframe sandboxing warnings from epub.js
 const originalWarn = console.warn;
 console.warn = (...args: unknown[]) => {

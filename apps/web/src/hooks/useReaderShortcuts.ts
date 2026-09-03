@@ -64,12 +64,22 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
 
       switch (event.key) {
         case "ArrowRight":
+        case "ArrowDown":
         case "PageDown":
+        case "j":
+        case "J":
+        case "l":
+        case "L":
           event.preventDefault();
           nextPage();
           return;
         case "ArrowLeft":
+        case "ArrowUp":
         case "PageUp":
+        case "k":
+        case "K":
+        case "h":
+        case "H":
           event.preventDefault();
           prevPage();
           return;

@@ -123,6 +123,24 @@ export class ReaderSession {
                 return;
             }
 
+            this.rendition.hooks?.content?.register((contents: EpubContentsLike) => {
+                if (contents.document) {
+                    contents.document.querySelectorAll("script").forEach((s) => s.remove());
+                    contents.document.addEventListener("keydown", (e: KeyboardEvent) => {
+                        window.dispatchEvent(new KeyboardEvent(e.type, {
+                            key: e.key,
+                            code: e.code,
+                            shiftKey: e.shiftKey,
+                            altKey: e.altKey,
+                            ctrlKey: e.ctrlKey,
+                            metaKey: e.metaKey,
+                            bubbles: true,
+                            cancelable: true,
+                        }));
+                    }, { capture: true });
+                }
+            });
+
             this.rendition.themes.default(options.themeStyles);
 
             this.callbacks.onStatusChange("restoring-location");
@@ -227,12 +245,20 @@ export class ReaderSession {
 
     public async next(): Promise<void> {
         if (!this.rendition) return;
-        try { await this.rendition.next(); } catch { /* Ignore */ }
+        try {
+            await this.rendition.next();
+        } catch {
+            this.container.scrollBy({ top: this.container.clientHeight * 0.8, behavior: "smooth" });
+        }
     }
 
     public async prev(): Promise<void> {
         if (!this.rendition) return;
-        try { await this.rendition.prev(); } catch { /* Ignore */ }
+        try {
+            await this.rendition.prev();
+        } catch {
+            this.container.scrollBy({ top: -this.container.clientHeight * 0.8, behavior: "smooth" });
+        }
     }
 
     private findTocLabel(href: string): string {

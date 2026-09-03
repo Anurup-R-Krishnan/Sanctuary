@@ -76,6 +76,14 @@ export type EpubRendition = {
   destroy: () => void;
   display: (target?: string) => Promise<void> | void;
   getContents?(): EpubContentsLike[];
+  hooks?: {
+    content?: {
+      register: (cb: (contents: EpubContentsLike) => void) => void;
+    };
+    unloaded?: {
+      register: (cb: (contents: EpubContentsLike) => void) => void;
+    };
+  };
   next: () => void;
   off: (event: string, cb: (...args: unknown[]) => void) => void;
   on(event: "relocated", cb: (location: EpubLocation) => void): void;
