@@ -19,6 +19,8 @@ const FONT_FAMILIES: Record<string, string> = {
     "lora": "'Lora', Georgia, serif",
     "source-serif": "'Source Serif Pro', Georgia, serif",
     "inter": "'Inter', system-ui, sans-serif",
+    "inter-sf": "'Inter', 'Satoshi', system-ui, sans-serif",
+    "satoshi": "'Satoshi', system-ui, sans-serif",
 };
 
 export class ReaderThemeController {

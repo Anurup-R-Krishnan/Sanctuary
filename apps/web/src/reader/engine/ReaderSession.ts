@@ -33,6 +33,8 @@ export class ReaderSession {
     private aborted = false;
     private displayRequestId = 0;
     private resizeTimer: number | null = null;
+    private lastWidth = 0;
+    private lastHeight = 0;
     private resizeObserver: ResizeObserver | null = null;
     private container: HTMLDivElement;
     private callbacks: ReaderSessionCallbacks;
@@ -88,9 +90,10 @@ export class ReaderSession {
 
             this.rendition = this.epubBook.renderTo(this.container, {
                 width: "100%",
-                height: options.continuous ? "auto" : "100%",
+                height: "100%",
                 spread: options.continuous ? "none" : options.spread ? "always" : "none",
-                flow: options.continuous ? "scrolled-doc" : "paginated",
+                flow: options.continuous ? "scrolled" : "paginated",
+                manager: options.continuous ? "continuous" : "default",
                 allowScriptedContent: true,
                 direction: readingDirection,
             });
@@ -157,7 +160,21 @@ export class ReaderSession {
 
     private setupResizeObserver() {
         if (!this.container) return;
-        this.resizeObserver = new ResizeObserver(() => {
+        this.lastWidth = this.container.clientWidth;
+        this.lastHeight = this.container.clientHeight;
+
+        this.resizeObserver = new ResizeObserver((entries) => {
+            let changed = false;
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect;
+                if (Math.abs(width - this.lastWidth) >= 4 || Math.abs(height - this.lastHeight) >= 4) {
+                    this.lastWidth = width;
+                    this.lastHeight = height;
+                    changed = true;
+                }
+            }
+            if (!changed) return;
+
             if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
             this.resizeTimer = window.setTimeout(() => {
                 this.resizeTimer = null;

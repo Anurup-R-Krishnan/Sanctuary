@@ -63,6 +63,14 @@ function ReaderView({
     useEffect(() => {
         if (book) {
             latestBookRef.current = book;
+            setHydratedBook((prev) => {
+                if (!prev) return book;
+                if (prev.id !== book.id) return book;
+                return {
+                    ...book,
+                    epubBlob: prev.epubBlob || book.epubBlob,
+                };
+            });
         }
     }, [book]);
 
@@ -139,7 +147,7 @@ function ReaderView({
     const { status, error, position, tocItems, selection } = engineState;
     const { cfi: currentCfi, totalLocations, location: currentPage } = position;
 
-    const isLoading = status === "loading-book" || status === "loading-navigation" || status === "restoring-location" || status === "generating-locations" || isFetchingContent;
+    const isLoading = status === "loading-book" || status === "loading-navigation" || status === "restoring-location" || isFetchingContent;
 
     // Feature Hooks
     const { searchState, performSearch, clearSearch, goToResult, nextResult, prevResult } = useReaderSearch({

@@ -75,18 +75,19 @@ function ReaderFooter({
                 </button>
 
                 {/* Centered Bottom Bar */}
-                <div className={`fixed left-1/2 -translate-x-1/2 bottom-6 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
-                    <div className="w-[min(880px,92vw)] px-4 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-wrap items-center gap-4" style={{ backgroundColor: `${readerBackground}E8` }}>
-                        <div className="flex flex-wrap items-center gap-2">
+                <div className={`fixed left-1/2 -translate-x-1/2 bottom-5 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
+                    <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-3" style={{ backgroundColor: `${readerBackground}F0` }}>
+                        <div className="flex items-center shrink-0">
                             <IconButton
                                 onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
                                 label="Previous page"
                                 icon={<ChevronLeft className="w-5 h-5" />}
                                 variant="ghost"
+                                size="sm"
                             />
                         </div>
 
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <div className="relative">
                                 <input
                                     type="range"
@@ -94,14 +95,14 @@ function ReaderFooter({
                                     max={totalPages || 1}
                                     value={currentPage}
                                     onChange={(e) => onPageChange(Number(e.target.value))}
-                                    className="w-full h-2 appearance-none bg-transparent"
+                                    className="w-full h-2 appearance-none bg-transparent cursor-pointer"
                                     aria-label="Page slider"
                                 />
-                                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden pointer-events-none">
                                     <div style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }} className="h-full transition-all" />
                                 </div>
                             </div>
-                            <div className="flex justify-center text-xs mt-1 text-light-text-muted dark:text-dark-text-muted gap-3 font-medium">
+                            <div className="flex justify-center text-xs mt-0.5 text-light-text-muted dark:text-dark-text-muted gap-2 font-medium select-none truncate">
                                 <span className="tabular-nums">{currentPage}</span>
                                 <span>/</span>
                                 <span className="tabular-nums">{totalPages}</span>
@@ -112,20 +113,21 @@ function ReaderFooter({
                                         <span>•</span>
                                         <span>
                                             {estimatedMinutesRemaining < 1 
-                                                ? "< 1 min left" 
-                                                : `${Math.round(estimatedMinutesRemaining)} mins left`}
+                                                ? "< 1m left" 
+                                                : `${Math.round(estimatedMinutesRemaining)}m left`}
                                         </span>
                                     </>
                                 )}
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex items-center shrink-0">
                             <IconButton
                                 onClick={(e) => { e.stopPropagation(); onNextPage(); }}
                                 label="Next page"
                                 icon={<ChevronRight className="w-5 h-5" />}
                                 variant="ghost"
+                                size="sm"
                             />
                         </div>
                     </div>
