@@ -193,6 +193,10 @@
 
   .standard-main {
     @apply transition-all duration-300 ease-out;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding-top: clamp(5.25rem, 8vw, 6rem);
     padding-bottom: clamp(7rem, 10vw, 8.5rem);
     padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
@@ -200,6 +204,8 @@
 
   .reader-main {
     @apply transition-all duration-500 ease-out;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .page-shell {
@@ -745,6 +751,14 @@
 
   html {
     scroll-behavior: auto !important;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 }
 
