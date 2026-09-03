@@ -1,3 +1,5 @@
+import React, { memo } from "react";
+
 import type { Book, Bookmark } from "@/types";
 import type { ReaderSearchState, ReaderAnnotation } from "@/types/reader";
 
@@ -53,7 +55,7 @@ interface ReaderOverlayProps {
   totalPages: number;
 }
 
-export default function ReaderOverlay(props: ReaderOverlayProps) {
+function ReaderOverlay(props: ReaderOverlayProps) {
   const mappedToc = props.toc.map((item, i) => ({
     id: `toc-${i}`,
     href: item.href,
@@ -147,3 +149,5 @@ export default function ReaderOverlay(props: ReaderOverlayProps) {
     </div>
   );
 }
+
+export default memo(ReaderOverlay);

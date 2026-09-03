@@ -36,6 +36,8 @@ export class ReaderSession {
     private lastWidth = 0;
     private lastHeight = 0;
     private resizeObserver: ResizeObserver | null = null;
+    private relocateRaf: number | null = null;
+    private lastRelocatedCfi = "";
     private container: HTMLDivElement;
     private callbacks: ReaderSessionCallbacks;
 
@@ -94,7 +96,7 @@ export class ReaderSession {
                 spread: options.continuous ? "none" : options.spread ? "always" : "none",
                 flow: options.continuous ? "scrolled" : "paginated",
                 manager: options.continuous ? "continuous" : "default",
-                allowScriptedContent: true,
+                allowScriptedContent: false,
                 direction: readingDirection,
             });
 
@@ -240,51 +242,62 @@ export class ReaderSession {
         const cfi = loc.start?.cfi;
         if (!cfi) return;
 
-        const href = loc.start?.href ?? loc.end?.href ?? "";
-        let progressFraction = 0;
-        try {
-            progressFraction = Math.max(0, Math.min(1, this.epubBook.locations.percentageFromCfi(cfi)));
-        } catch {
-            const fallback = typeof loc.start?.percentage === "number" ? loc.start.percentage : 0;
-            progressFraction = Math.max(0, Math.min(1, fallback));
+        if (this.relocateRaf !== null) {
+            cancelAnimationFrame(this.relocateRaf);
         }
 
-        let locationIndex = Math.max(1, Math.ceil(progressFraction * this.totalLocations));
-        if (this.epubBook.locations.locationFromCfi) {
+        this.relocateRaf = requestAnimationFrame(() => {
+            this.relocateRaf = null;
+            if (this.aborted || !this.epubBook) return;
+            if (this.lastRelocatedCfi === cfi) return;
+            this.lastRelocatedCfi = cfi;
+
+            const href = loc.start?.href ?? loc.end?.href ?? "";
+            let progressFraction = 0;
             try {
-                const exactLocation = this.epubBook.locations.locationFromCfi(cfi);
-                if (Number.isFinite(exactLocation)) {
-                    locationIndex = Math.max(1, Math.min(exactLocation + 1, this.totalLocations));
-                }
-            } catch { /* Fall back */ }
-        }
-
-        const displayed = loc.start?.displayed;
-        const page = Math.max(1, displayed?.page ?? 1);
-        const pageTotal = Math.max(page, displayed?.total ?? 1);
-        const chapterFraction = pageTotal > 0 ? Math.max(0, Math.min(1, page / pageTotal)) : 0;
-        const chapterLabel = this.findTocLabel(href);
-
-        if (!this.suppressHistory) {
-            const previous = this.backHistory.at(-1);
-            if (previous !== cfi) {
-                this.backHistory.push(cfi);
-                if (this.backHistory.length > this.HISTORY_LIMIT) this.backHistory.shift();
+                progressFraction = Math.max(0, Math.min(1, this.epubBook.locations.percentageFromCfi(cfi)));
+            } catch {
+                const fallback = typeof loc.start?.percentage === "number" ? loc.start.percentage : 0;
+                progressFraction = Math.max(0, Math.min(1, fallback));
             }
-            this.forwardHistory = [];
-        }
-        this.suppressHistory = false;
 
-        this.callbacks.onPositionChange({
-            cfi,
-            href,
-            chapterLabel,
-            bookProgress: Math.round(progressFraction * 100),
-            chapterProgress: Math.round(chapterFraction * 100),
-            location: locationIndex,
-            totalLocations: this.totalLocations,
-            displayedPage: page,
-            displayedPages: pageTotal,
+            let locationIndex = Math.max(1, Math.ceil(progressFraction * this.totalLocations));
+            if (this.epubBook.locations.locationFromCfi) {
+                try {
+                    const exactLocation = this.epubBook.locations.locationFromCfi(cfi);
+                    if (Number.isFinite(exactLocation)) {
+                        locationIndex = Math.max(1, Math.min(exactLocation + 1, this.totalLocations));
+                    }
+                } catch { /* Fall back */ }
+            }
+
+            const displayed = loc.start?.displayed;
+            const page = Math.max(1, displayed?.page ?? 1);
+            const pageTotal = Math.max(page, displayed?.total ?? 1);
+            const chapterFraction = pageTotal > 0 ? Math.max(0, Math.min(1, page / pageTotal)) : 0;
+            const chapterLabel = this.findTocLabel(href);
+
+            if (!this.suppressHistory) {
+                const previous = this.backHistory.at(-1);
+                if (previous !== cfi) {
+                    this.backHistory.push(cfi);
+                    if (this.backHistory.length > this.HISTORY_LIMIT) this.backHistory.shift();
+                }
+                this.forwardHistory = [];
+            }
+            this.suppressHistory = false;
+
+            this.callbacks.onPositionChange({
+                cfi,
+                href,
+                chapterLabel,
+                bookProgress: Math.round(progressFraction * 100),
+                chapterProgress: Math.round(chapterFraction * 100),
+                location: locationIndex,
+                totalLocations: this.totalLocations,
+                displayedPage: page,
+                displayedPages: pageTotal,
+            });
         });
     }
 
@@ -306,6 +319,10 @@ export class ReaderSession {
     public destroy() {
         this.aborted = true;
         this.displayRequestId++;
+        if (this.relocateRaf !== null) {
+            cancelAnimationFrame(this.relocateRaf);
+            this.relocateRaf = null;
+        }
         if (this.resizeObserver) this.resizeObserver.disconnect();
         if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
         
