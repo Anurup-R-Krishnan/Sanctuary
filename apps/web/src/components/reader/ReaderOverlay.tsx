@@ -1,81 +1,73 @@
-
 import type { Book, Bookmark } from "@/types";
 import type { ReaderSearchState, ReaderAnnotation } from "@/types/reader";
-
 import { ReaderAnnotationsPanel } from "@/components/reader/ReaderAnnotationsPanel";
-import ReaderControls from "@/components/reader/ReaderControls";
-import ReaderFooter from "@/components/reader/ReaderFooter";
-import ReaderHeader from "@/components/reader/ReaderHeader";
 import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
+import ReaderControls from "@/components/reader/ReaderControls";
+import ReaderHeader from "@/components/reader/ReaderHeader";
+import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderSettings from "@/components/reader/ReaderSettings";
 import { Button } from "@/components/ui/Button";
 
 interface ReaderOverlayProps {
-  annotations: ReaderAnnotation[];
   book: Book;
+  annotations: ReaderAnnotation[];
   bookmarks: Bookmark[];
-  currentCfi: string;
-  currentPage: number;
-  estimatedMinutesRemaining: number | null;
   isBookmarked: boolean;
   isFullscreen: boolean;
-  isLoading: boolean;
-  onClearSearch: () => void;
-  onClose: () => void;
-  onCloseAnnotations: () => void;
-  onCloseControls: () => void;
-  onCloseSearch: () => void;
-  onCloseSettings: () => void;
-  onDeleteAnnotation: (id: string) => void;
-  onGoToSearchResult: (index: number) => void;
-  onJumpToBottom: () => void;
-  onJumpToTop: () => void;
-  onNavigate: (href: string) => void;
-  onNextPage: () => void;
-  onNextSearchResult: () => void;
-  onPageChange: (page: number) => void;
-  onPrevPage: () => void;
-  onPrevSearchResult: () => void;
-  onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
-  onSearch: (query: string) => void;
-  onToggleAnnotations: () => void;
-  onToggleBookmark: () => void;
-  onToggleFullscreen: () => void;
-  onToggleSearch: () => void;
-  onToggleSettings: () => void;
-  onToggleTOC: () => void;
-  searchState: ReaderSearchState;
-  showAnnotations: boolean;
+  showUI: boolean;
+  showSettings: boolean;
   showControls: boolean;
   showSearch: boolean;
-  showSettings: boolean;
-  showUI: boolean;
-  toc: Array<{ id?: string | undefined; href: string; label: string; subitems?: Array<{ id?: string | undefined; href: string; label: string }> | undefined }>;
+  showAnnotations: boolean;
+  isLoading: boolean;
+  currentPage: number;
   totalPages: number;
+  currentCfi: string;
+  estimatedMinutesRemaining?: number;
+  toc: Array<{ id?: string; href: string; label: string; subitems?: Array<{ id?: string; href: string; label: string }> }>;
+  onClose: () => void;
+  onToggleBookmark: () => void;
+  onToggleTOC: () => void;
+  onToggleSettings: () => void;
+  onToggleSearch: () => void;
+  onToggleAnnotations: () => void;
+  onToggleFullscreen: () => void;
+  onNextPage: () => void;
+  onPrevPage: () => void;
+  onNavigate: (href: string) => void;
+  onJumpToTop: () => void;
+  onJumpToBottom: () => void;
+  onPageChange: (page: number) => void;
+  onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
+  onCloseSettings: () => void;
+  onCloseControls: () => void;
+  onCloseSearch: () => void;
+  onCloseAnnotations: () => void;
+  onDeleteAnnotation: (cfiRange: string) => void;
+  searchState: ReaderSearchState;
+  onSearch: (q: string) => void;
+  onClearSearch: () => void;
+  onNextSearchResult: () => void;
+  onPrevSearchResult: () => void;
+  onGoToSearchResult: (cfi: string) => void;
 }
 
-function ReaderOverlay(props: ReaderOverlayProps) {
-  const tocId = (parentKey: string, id?: string, href?: string, label?: string) => {
-    const stablePart = id || href || label || "item";
-    return `${parentKey}:${encodeURIComponent(stablePart)}`;
-  };
+export default function ReaderOverlay(props: ReaderOverlayProps) {
+  const mappedToc = props.toc.map((item, i) => ({
+    id: `toc-${i}`,
+    href: item.href,
+    label: item.label,
+    subitems: item.subitems?.map((sub, j) => ({
+      id: `toc-${i}-${j}`,
+      href: sub.href,
+      label: sub.label,
+    }))
+  }));
 
-  const mappedToc = props.toc.map((item) => {
-    const itemId = tocId("toc", item.id, item.href, item.label);
-    return {
-      id: itemId,
-      href: item.href,
-      label: item.label,
-      subitems: item.subitems?.map((sub) => ({
-        id: tocId(itemId, sub.id, sub.href, sub.label),
-        href: sub.href,
-        label: sub.label
-      }))
-    };
-  });
+  const isAnyPanelOpen = props.showControls || props.showSettings || props.showSearch || props.showAnnotations;
 
   return (
-    <>
+    <div className="pointer-events-none absolute inset-0 z-50">
       <ReaderHeader
         book={props.book}
         isBookmarked={props.isBookmarked}
@@ -100,47 +92,57 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         estimatedMinutesRemaining={props.estimatedMinutesRemaining}
       />
 
-      {props.showControls && (
-        <div className="fixed right-4 top-24 bottom-24 z-50 w-[min(420px,92vw)] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
-          <ReaderControls
-            toc={mappedToc}
-            bookmarks={props.bookmarks}
-            onNavigate={(href) => props.onNavigate(href)}
-            onJumpToTop={props.onJumpToTop}
-            onJumpToBottom={props.onJumpToBottom}
-            onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}
-          />
-          <Button variant="secondary" className="mt-4 w-full" onClick={props.onCloseControls}>Close Panel</Button>
+      {isAnyPanelOpen && (
+        <div className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-2xl shadow-2xl border-l border-black/5 dark:border-white/5 pointer-events-auto flex flex-col z-[100] animate-slideInRight">
+          {props.showControls && (
+            <ReaderControls
+              toc={mappedToc}
+              bookmarks={props.bookmarks}
+              onNavigate={(href) => props.onNavigate(href)}
+              onJumpToTop={props.onJumpToTop}
+              onJumpToBottom={props.onJumpToBottom}
+              onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}
+            />
+          )}
+          {props.showSettings && <ReaderSettings />}
+          {props.showSearch && (
+            <ReaderSearchPanel
+              isOpen={props.showSearch}
+              onClose={props.onCloseSearch}
+              searchState={props.searchState}
+              onSearch={props.onSearch}
+              onClear={props.onClearSearch}
+              onNext={props.onNextSearchResult}
+              onPrev={props.onPrevSearchResult}
+              onGoToResult={props.onGoToSearchResult}
+            />
+          )}
+          {props.showAnnotations && (
+            <ReaderAnnotationsPanel
+              isOpen={props.showAnnotations}
+              onClose={props.onCloseAnnotations}
+              annotations={props.annotations}
+              onGoToAnnotation={props.onNavigate}
+              onDeleteAnnotation={props.onDeleteAnnotation}
+            />
+          )}
+
+          <div className="p-4 border-t border-black/5 dark:border-white/5 mt-auto">
+            <Button 
+                variant="secondary" 
+                className="w-full" 
+                onClick={() => {
+                    if (props.showControls) props.onCloseControls();
+                    if (props.showSettings) props.onCloseSettings();
+                    if (props.showSearch) props.onCloseSearch();
+                    if (props.showAnnotations) props.onCloseAnnotations();
+                }}
+            >
+                Close Panel
+            </Button>
+          </div>
         </div>
       )}
-
-    {props.showSettings && (
-        <div className="fixed left-4 top-24 bottom-24 z-50 w-[min(420px,92vw)] rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-xl shadow-2xl p-4 overflow-y-auto">
-          <ReaderSettings />
-          <Button variant="secondary" className="mt-4 w-full" onClick={props.onCloseSettings}>Close Settings</Button>
-        </div>
-      )}
-
-      <ReaderSearchPanel
-          isOpen={props.showSearch}
-          onClose={props.onCloseSearch}
-          searchState={props.searchState}
-          onSearch={props.onSearch}
-          onClear={props.onClearSearch}
-          onNext={props.onNextSearchResult}
-          onPrev={props.onPrevSearchResult}
-          onGoToResult={props.onGoToSearchResult}
-      />
-
-      <ReaderAnnotationsPanel
-          isOpen={props.showAnnotations}
-          onClose={props.onCloseAnnotations}
-          annotations={props.annotations}
-          onGoToAnnotation={props.onNavigate}
-          onDeleteAnnotation={props.onDeleteAnnotation}
-      />
-    </>
+    </div>
   );
-};
-
-export default ReaderOverlay;
+}

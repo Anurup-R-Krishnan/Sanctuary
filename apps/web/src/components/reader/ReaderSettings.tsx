@@ -1,265 +1,114 @@
-import { Layout, Scroll, EyeOff, Speech, ZapOff, RotateCcw } from "lucide-react";
-import React, { useState, useEffect } from "react";
 
-import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
-import { Toggle } from "@/components/ui/Toggle";
-import { FONT_PAIRINGS } from "@/config/readerConfig";
+import { Settings, Sun, Moon, Type, AlignLeft, AlignJustify, BookOpen, Layers } from "lucide-react";
+import React from "react";
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import { cx } from "@/utils/cx";
 
-function ReaderSettings() {
+export default function ReaderSettings() {
   const {
-    fontSize,
-    setFontSize,
-    lineHeight,
-    setLineHeight,
-    fontPairing,
-    setFontPairing,
-    continuous,
-    setContinuous,
-    brightness,
-    setBrightness,
-    grayscale,
-    setGrayscale,
-    screenReaderMode,
-    setScreenReaderMode,
-    reduceMotion,
-    setReduceMotion,
-    readerAccent,
-    maxTextWidth,
-    setMaxTextWidth,
-    pageMargin,
-    setPageMargin,
-    textAlignment,
-    setTextAlignment,
-    resetToDefaults,
-    ttsVoiceURI,
-    setTtsVoiceURI,
-    ttsRate,
-    setTtsRate,
-    ttsPitch,
-    setTtsPitch,
+    fontSize, setFontSize,
+    lineHeight, setLineHeight,
+    pageMargin, setPageMargin,
+    brightness, setBrightness,
+    fontPairing, setFontPairing,
+    textAlignment, setTextAlignment,
+    continuous, setContinuous,
+    spread, setSpread,
   } = useSettingsShallow((state) => ({
-    fontSize: state.fontSize,
-    setFontSize: state.setFontSize,
-    lineHeight: state.lineHeight,
-    setLineHeight: state.setLineHeight,
-    fontPairing: state.fontPairing,
-    setFontPairing: state.setFontPairing,
-    continuous: state.continuous,
-    setContinuous: state.setContinuous,
-    brightness: state.brightness,
-    setBrightness: state.setBrightness,
-    grayscale: state.grayscale,
-    setGrayscale: state.setGrayscale,
-    screenReaderMode: state.screenReaderMode,
-    setScreenReaderMode: state.setScreenReaderMode,
-    reduceMotion: state.reduceMotion,
-    setReduceMotion: state.setReduceMotion,
-    readerAccent: state.readerAccent,
-    maxTextWidth: state.maxTextWidth,
-    setMaxTextWidth: state.setMaxTextWidth,
-    pageMargin: state.pageMargin,
-    setPageMargin: state.setPageMargin,
-    ttsVoiceURI: state.ttsVoiceURI,
-    setTtsVoiceURI: state.setTtsVoiceURI,
-    ttsRate: state.ttsRate,
-    setTtsRate: state.setTtsRate,
-    ttsPitch: state.ttsPitch,
-    setTtsPitch: state.setTtsPitch,
-    textAlignment: state.textAlignment,
-    setTextAlignment: state.setTextAlignment,
-    resetToDefaults: state.resetToDefaults,
+    fontSize: state.fontSize, setFontSize: state.setFontSize,
+    lineHeight: state.lineHeight, setLineHeight: state.setLineHeight,
+    pageMargin: state.pageMargin, setPageMargin: state.setPageMargin,
+    brightness: state.brightness, setBrightness: state.setBrightness,
+    fontPairing: state.fontPairing, setFontPairing: state.setFontPairing,
+    textAlignment: state.textAlignment, setTextAlignment: state.setTextAlignment,
+    continuous: state.continuous, setContinuous: state.setContinuous,
+    spread: state.spread, setSpread: state.setSpread,
   }));
 
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  useEffect(() => {
-    if (!window.speechSynthesis) return;
-    const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
-  }, []);
-
-  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-    <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
-      {children}
-    </p>
+  const Slider = ({ label, value, min, max, step, onChange, format }: any) => (
+    <div className="flex flex-wrap items-center gap-3">
+      <span className="w-20 text-sm font-medium text-light-text-muted dark:text-dark-text-muted">{label}</span>
+      <input 
+        type="range" 
+        min={min} max={max} step={step} 
+        value={value} 
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="flex-1 accent-light-accent dark:accent-dark-accent h-1.5 bg-black/10 dark:bg-white/10 rounded-full appearance-none outline-none cursor-pointer" 
+      />
+      <span className="w-10 text-right text-xs font-mono text-light-text-muted dark:text-dark-text-muted">{format ? format(value) : value}</span>
+    </div>
   );
 
-  const Slider = ({
-    value,
-    min,
-    max,
-    step = 1,
-    onChange,
-    label,
-    formatValue = (v: number) => v,
-  }: {
-    value: number;
-    min: number;
-    max: number;
-    step?: number;
-    onChange: (val: number) => void;
-    label: string;
-    formatValue?: (v: number) => string | number;
-  }) => (
-    <div className="flex flex-wrap items-center gap-3">
-      <span className="w-16 text-sm text-light-text-muted dark:text-dark-text-muted">{label}</span>
-      <div className="relative flex h-8 flex-1 items-center">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value))}
-          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-        />
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-          <div
-            className="h-full transition-all duration-150"
-            style={{ width: `${((value - min) / (max - min)) * 100}%`, backgroundColor: readerAccent }}
+  const ButtonGroup = ({ label, options, value, onChange }: any) => (
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-medium text-light-text-muted dark:text-dark-text-muted">{label}</span>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt: any) => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={cx(
+              "flex-1 py-1.5 px-3 rounded-lg border text-sm transition-colors",
+              value === opt.value
+                ? "bg-light-accent/10 border-light-accent text-light-accent dark:bg-dark-accent/10 dark:border-dark-accent dark:text-dark-accent"
+                : "border-black/10 dark:border-white/10 text-light-text dark:text-dark-text hover:bg-black/5 dark:hover:bg-white/5"
+            )}
+          >
+            {opt.icon && <span className="inline-block mr-2 align-middle">{opt.icon}</span>}
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col overflow-y-auto overflow-x-hidden p-6 gap-8">
+      <div>
+        <h2 className="text-lg font-serif font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Typography</h2>
+        <div className="space-y-5">
+          <Slider label="Size" value={fontSize} min={12} max={32} step={1} onChange={setFontSize} format={(v: number) => v + "px"} />
+          <Slider label="Line Height" value={lineHeight} min={1.2} max={2.5} step={0.05} onChange={setLineHeight} format={(v: number) => v.toFixed(2)} />
+          <Slider label="Margin" value={pageMargin} min={0} max={100} step={5} onChange={setPageMargin} format={(v: number) => v + "%"} />
+          
+          <ButtonGroup 
+            label="Style" 
+            value={fontPairing} 
+            onChange={setFontPairing}
+            options={[
+              { value: "merriweather-georgia", label: "Serif" },
+              { value: "inter-sf", label: "Sans" }
+            ]} 
+          />
+
+          <ButtonGroup 
+            label="Alignment" 
+            value={textAlignment} 
+            onChange={setTextAlignment}
+            options={[
+              { value: "left", label: "Left", icon: <AlignLeft className="w-4 h-4" /> },
+              { value: "justify", label: "Justify", icon: <AlignJustify className="w-4 h-4" /> }
+            ]} 
           />
         </div>
       </div>
-      <span className="w-12 text-right text-xs font-medium tabular-nums text-light-text dark:text-dark-text">
-        {formatValue(value)}
-      </span>
-    </div>
-  );
 
-
-
-  return (
-    <div className="space-y-7 pb-6">
-      <section>
-        <SectionLabel>Reading Mode</SectionLabel>
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-black/5 p-1 dark:bg-white/5">
-          <Button
-            onClick={() => setContinuous(false)}
-            variant="nav"
-            className={`gap-2 !rounded-lg px-3 py-2 text-sm transition-all ${
-              !continuous ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-            }`}
-          >
-            <Layout className="h-4 w-4" />
-            Paged
-          </Button>
-          <Button
-            onClick={() => setContinuous(true)}
-            variant="nav"
-            className={`gap-2 !rounded-lg px-3 py-2 text-sm transition-all ${
-              continuous ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-            }`}
-          >
-            <Scroll className="h-4 w-4" />
-            Flow
-          </Button>
+      <div>
+        <h2 className="text-lg font-serif font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Display</h2>
+        <div className="space-y-5">
+          <Slider label="Brightness" value={brightness} min={50} max={100} step={1} onChange={setBrightness} format={(v: number) => v + "%"} />
+          
+          <ButtonGroup 
+            label="Layout" 
+            value={continuous ? "flow" : "paginated"} 
+            onChange={(v: any) => setContinuous(v === "flow")}
+            options={[
+              { value: "paginated", label: "Pages", icon: <BookOpen className="w-4 h-4" /> },
+              { value: "flow", label: "Scroll", icon: <Layers className="w-4 h-4" /> }
+            ]} 
+          />
         </div>
-      </section>
-
-      <section>
-        <SectionLabel>Typography</SectionLabel>
-        <div className="space-y-3">
-          <Select
-            value={fontPairing}
-            onChange={(e) => setFontPairing(e.target.value)}
-          >
-            {FONT_PAIRINGS.map((fp) => (
-              <option key={fp.id} value={fp.id}>{fp.label}</option>
-            ))}
-          </Select>
-          <Slider label="Size" value={fontSize} min={14} max={30} onChange={setFontSize} formatValue={(v) => `${v}px`} />
-          <Slider label="Height" value={lineHeight} min={1.3} max={2.1} step={0.1} onChange={setLineHeight} formatValue={(v) => v.toFixed(1)} />
-        </div>
-      </section>
-
-      <section>
-        <SectionLabel>Layout & Alignment</SectionLabel>
-        <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2 rounded-xl bg-black/5 p-1 dark:bg-white/5">
-            <Button
-              onClick={() => setTextAlignment("left")}
-              variant="nav"
-              className={`!rounded-lg px-2 py-1.5 text-xs transition-all ${
-                textAlignment === "left" ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-              }`}
-            >
-              Left
-            </Button>
-            <Button
-              onClick={() => setTextAlignment("justify")}
-              variant="nav"
-              className={`!rounded-lg px-2 py-1.5 text-xs transition-all ${
-                textAlignment === "justify" ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-              }`}
-            >
-              Justify
-            </Button>
-            <Button
-              onClick={() => setTextAlignment("center")}
-              variant="nav"
-              className={`!rounded-lg px-2 py-1.5 text-xs transition-all ${
-                textAlignment === "center" ? "bg-white font-medium shadow-sm dark:bg-white/10" : "opacity-70 hover:opacity-100"
-              }`}
-            >
-              Center
-            </Button>
-          </div>
-          <Slider label="Width" value={maxTextWidth} min={50} max={150} step={5} onChange={setMaxTextWidth} formatValue={(v) => `${v}ch`} />
-          <Slider label="Margin" value={pageMargin} min={0} max={100} step={4} onChange={setPageMargin} formatValue={(v) => `${v}px`} />
-        </div>
-      </section>
-
-      <section>
-        <SectionLabel>Appearance</SectionLabel>
-        <div className="space-y-3">
-          <Slider label="Light" value={brightness} min={40} max={130} onChange={setBrightness} formatValue={(v) => `${Math.round(v)}%`} />
-          <Toggle label="Grayscale" checked={grayscale} onChange={setGrayscale} icon={EyeOff} />
-        </div>
-      </section>
-
-      <section>
-        <SectionLabel>Accessibility</SectionLabel>
-        <div className="space-y-2">
-          <Toggle label="Screen Reader Mode" checked={screenReaderMode} onChange={setScreenReaderMode} icon={Speech} />
-          <Toggle label="Reduce Motion" checked={reduceMotion} onChange={setReduceMotion} icon={ZapOff} />
-        </div>
-      </section>
-
-      <section>
-        <SectionLabel>Text-to-Speech</SectionLabel>
-        <div className="space-y-3">
-          <Select
-            value={ttsVoiceURI || ""}
-            onChange={(e) => setTtsVoiceURI(e.target.value)}
-          >
-            {voices.length === 0 ? (
-                <option value="">Default Voice</option>
-            ) : (
-                voices.map((v) => (
-                    <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>
-                ))
-            )}
-          </Select>
-          <Slider label="Speed" value={ttsRate} min={0.5} max={2.5} step={0.1} onChange={setTtsRate} formatValue={(v) => `${v.toFixed(1)}x`} />
-          <Slider label="Pitch" value={ttsPitch} min={0.5} max={2.0} step={0.1} onChange={setTtsPitch} formatValue={(v) => v.toFixed(1)} />
-        </div>
-      </section>
-
-      <div className="border-t border-black/5 pt-4 dark:border-white/5">
-        <Button
-          onClick={resetToDefaults}
-          variant="ghost"
-          className="w-full gap-2 p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Reset Reader Defaults
-        </Button>
       </div>
     </div>
   );
-};
-
-export default ReaderSettings;
+}

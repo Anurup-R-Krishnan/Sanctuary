@@ -108,7 +108,7 @@ export function ReaderSearchPanel({
     if (!isOpen) return null;
 
     return (
-        <div className="absolute right-0 top-0 bottom-0 w-80 bg-light-primary dark:bg-dark-primary shadow-2xl border-l border-black/5 dark:border-white/5 flex flex-col z-[100] animate-slideInRight pointer-events-auto">
+        <div className="flex flex-col h-full w-full">
             {/* Header */}
             <div className="p-4 border-b border-black/5 dark:border-white/5 flex flex-wrap items-center gap-2">
                 <form onSubmit={handleSubmit} className="flex-1 relative">
