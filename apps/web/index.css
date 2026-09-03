@@ -215,8 +215,12 @@
   }
 
   .page-stack {
-    @apply space-y-8;
+    /* Design-system vertical rhythm between page sections (space.8 = 22px). */
     padding-bottom: clamp(3rem, 8vw, 4.5rem);
+  }
+
+  .page-stack > * + * {
+    margin-top: var(--space-8);
   }
 
   /* Glass Effects */
