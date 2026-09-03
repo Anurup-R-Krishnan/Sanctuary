@@ -36,6 +36,7 @@ export class ReaderSession {
     private lastWidth = 0;
     private lastHeight = 0;
     private resizeObserver: ResizeObserver | null = null;
+    private sandboxObserver: MutationObserver | null = null;
     private relocateRaf: number | null = null;
     private lastRelocatedCfi = "";
     private container: HTMLDivElement;
@@ -57,9 +58,26 @@ export class ReaderSession {
         this.init(options);
     }
 
+    private setupSandboxObserver() {
+        if (!this.container) return;
+        this.sandboxObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of Array.from(mutation.addedNodes)) {
+                    if (node instanceof HTMLIFrameElement) {
+                        node.removeAttribute("sandbox");
+                    } else if (node instanceof HTMLElement) {
+                        node.querySelectorAll("iframe").forEach(iframe => iframe.removeAttribute("sandbox"));
+                    }
+                }
+            }
+        });
+        this.sandboxObserver.observe(this.container, { childList: true, subtree: true });
+    }
+
     private async init(options: ReaderSessionOptions) {
         this.callbacks.onError(null);
         this.callbacks.onStatusChange("loading-book");
+        this.setupSandboxObserver();
 
         const fingerprint = getFileFingerprint(this.bookId, options.blob);
 
@@ -96,7 +114,7 @@ export class ReaderSession {
                 spread: options.continuous ? "none" : options.spread ? "always" : "none",
                 flow: options.continuous ? "scrolled" : "paginated",
                 manager: options.continuous ? "continuous" : "default",
-                allowScriptedContent: false,
+                allowScriptedContent: true,
                 direction: readingDirection,
             });
 
@@ -319,6 +337,10 @@ export class ReaderSession {
     public destroy() {
         this.aborted = true;
         this.displayRequestId++;
+        if (this.sandboxObserver) {
+            this.sandboxObserver.disconnect();
+            this.sandboxObserver = null;
+        }
         if (this.relocateRaf !== null) {
             cancelAnimationFrame(this.relocateRaf);
             this.relocateRaf = null;
