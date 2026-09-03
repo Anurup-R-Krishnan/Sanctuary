@@ -82,33 +82,32 @@ function ReaderView({
             return activeBook;
         });
 
-        // Only fetch if we don't have it in our local hydrated state
-        setHydratedBook((prev) => {
-            if (!prev?.epubBlob && !isFetchingRef.current) {
-                isFetchingRef.current = true;
-                setIsFetchingContent(true);
-                getBookContent(activeBook.id)
-                    .then(blob => {
-                        if (isMounted) {
-                            setHydratedBook(curr => curr ? { ...curr, epubBlob: blob } : undefined);
-                            setContentError(null);
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Failed to load book content:", err);
-                        if (isMounted) {
-                            setContentError("Book content is unavailable on this device.");
-                        }
-                    })
-                    .finally(() => {
-                        if (isMounted) {
-                            setIsFetchingContent(false);
-                            isFetchingRef.current = false;
-                        }
-                    });
-            }
-            return prev;
-        });
+// Check if we need to fetch the blob.
+        // We use activeBook to see if it inherently lacked the blob.
+        // We avoid calling async functions and side-effects inside setState!
+        if (!activeBook.epubBlob && !isFetchingRef.current) {
+            isFetchingRef.current = true;
+            setIsFetchingContent(true);
+            getBookContent(activeBook.id)
+                .then(blob => {
+                    if (isMounted) {
+                        setHydratedBook(curr => curr ? { ...curr, epubBlob: blob } : undefined);
+                        setContentError(null);
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load book content:", err);
+                    if (isMounted) {
+                        setContentError("Book content is unavailable on this device.");
+                    }
+                })
+                .finally(() => {
+                    if (isMounted) {
+                        setIsFetchingContent(false);
+                        isFetchingRef.current = false;
+                    }
+                });
+        }
 
         return () => {
             isMounted = false;
