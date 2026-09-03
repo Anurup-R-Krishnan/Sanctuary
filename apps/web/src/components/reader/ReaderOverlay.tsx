@@ -49,7 +49,7 @@ interface ReaderOverlayProps {
   onClearSearch: () => void;
   onNextSearchResult: () => void;
   onPrevSearchResult: () => void;
-  onGoToSearchResult: (cfi: string) => void;
+  onGoToSearchResult: (index: number) => void;
 }
 
 export default function ReaderOverlay(props: ReaderOverlayProps) {
