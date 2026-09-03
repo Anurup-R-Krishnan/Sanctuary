@@ -49,7 +49,6 @@ function ReaderView({
 
     const rootRef = useRef<HTMLDivElement>(null);
     const engineRef = useRef<ReaderEngineRef>(null);
-    const lastMouseMoveRef = useRef<number>(Date.now());
     
     // We only need a stable reference to the initial book for hydration.
     // If book is undefined (deleted while reading?), fallback to a dummy or handle it.
@@ -262,31 +261,59 @@ function ReaderView({
 
 
     // UI Visibility Auto-hide
+    const uiStateRef = useRef({
+        showUI,
+        showSettings,
+        showControls,
+        showSearch,
+        showAnnotations,
+        selection: !!selection,
+        screenReaderMode,
+    });
+
     useEffect(() => {
-        const handleMove = () => {
-            lastMouseMoveRef.current = Date.now();
-            if (!showUI) setShowUI(true);
+        uiStateRef.current = {
+            showUI,
+            showSettings,
+            showControls,
+            showSearch,
+            showAnnotations,
+            selection: !!selection,
+            screenReaderMode,
         };
+    }, [showUI, showSettings, showControls, showSearch, showAnnotations, selection, screenReaderMode]);
+
+    useEffect(() => {
+        let lastMove = Date.now();
+        const handleMove = () => {
+            const now = Date.now();
+            if (now - lastMove < 200) return;
+            lastMove = now;
+            setShowUI(prev => (prev ? prev : true));
+        };
+
         const checkIdle = () => {
-            if (screenReaderMode) {
+            const state = uiStateRef.current;
+            if (state.screenReaderMode) {
                 setShowUI(true);
                 return;
             }
-            if (showUI && !showSettings && !showControls && !showSearch && !showAnnotations && !selection) {
-                if (Date.now() - lastMouseMoveRef.current > 3000) {
+            if (state.showUI && !state.showSettings && !state.showControls && !state.showSearch && !state.showAnnotations && !state.selection) {
+                if (Date.now() - lastMove > 3500) {
                     setShowUI(false);
                 }
             }
         };
+
         const interval = setInterval(checkIdle, 1000);
-        document.addEventListener("mousemove", handleMove);
-        document.addEventListener("touchstart", handleMove);
+        document.addEventListener("mousemove", handleMove, { passive: true });
+        document.addEventListener("touchstart", handleMove, { passive: true });
         return () => {
             clearInterval(interval);
             document.removeEventListener("mousemove", handleMove);
             document.removeEventListener("touchstart", handleMove);
         };
-    }, [showUI, showSettings, showControls, showSearch, showAnnotations, selection, screenReaderMode]);
+    }, []);
 
     // --- Conditional returns AFTER all hooks (Rules of Hooks preserved) ---
     if (!book) {
@@ -338,7 +365,11 @@ function ReaderView({
         {/* Book content with brightness/grayscale filter */}
         <div
             className="absolute inset-0"
-            style={{ filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }}
+            style={
+                brightness < 100 || grayscale
+                    ? { filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }
+                    : undefined
+            }
         >
             <ReaderEngineHost 
                 ref={engineRef}

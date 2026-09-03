@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import type { ReaderSessionStats } from "@/types/reader";
 
@@ -13,14 +13,30 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
     });
 
     const activeSecondsRef = useRef(0);
+    const unsavedSecondsRef = useRef(0);
     const locationsReadRef = useRef(0);
     const lastLocationRef = useRef<number | null>(null);
+
+    const flushReadingTime = useCallback(() => {
+        if (!bookId || unsavedSecondsRef.current === 0) return;
+        const toSave = unsavedSecondsRef.current;
+        unsavedSecondsRef.current = 0;
+        for (let i = 0; i < toSave; i++) {
+            incrementReadingTime(bookId);
+        }
+    }, [bookId]);
 
     // Initial load
     useEffect(() => {
         if (!bookId) return;
         activeSecondsRef.current = 0;
-        setStats(s => ({ ...s, activeSeconds: 0, sessionStartedAt: Date.now() }));
+        unsavedSecondsRef.current = 0;
+        setStats({
+            activeSeconds: 0,
+            sessionStartedAt: Date.now(),
+            estimatedMinutesRemaining: null,
+            locationsPerMinute: null,
+        });
     }, [bookId]);
 
     // Active ticking
@@ -28,46 +44,54 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
         if (!bookId) return;
         
         const tick = () => {
-            // Only tick if the document is visible
             if (document.visibilityState !== "visible") return;
             
             activeSecondsRef.current += 1;
-            incrementReadingTime(bookId);
+            unsavedSecondsRef.current += 1;
 
-            setStats(prev => {
-                const next: ReaderSessionStats = {
-                    ...prev,
-                    activeSeconds: activeSecondsRef.current,
-                };
+            if (unsavedSecondsRef.current >= 15) {
+                flushReadingTime();
+            }
 
-                // Calculate reading speed if we have enough data (e.g. 1 minute)
-                if (activeSecondsRef.current > 60 && locationsReadRef.current > 0) {
-                    const lpm = (locationsReadRef.current / activeSecondsRef.current) * 60;
-                    next.locationsPerMinute = lpm;
+            // Recalculate stats every 10s or when minute estimates change
+            if (activeSecondsRef.current % 10 === 0 && activeSecondsRef.current > 60 && locationsReadRef.current > 0) {
+                const lpm = (locationsReadRef.current / activeSecondsRef.current) * 60;
+                let estimated: number | null = null;
 
-                    if (currentTotalLocations > 0 && lastLocationRef.current !== null) {
-                        const remainingLocations = currentTotalLocations - lastLocationRef.current;
-                        if (remainingLocations > 0 && lpm > 0) {
-                            next.estimatedMinutesRemaining = remainingLocations / lpm;
-                        } else if (remainingLocations <= 0) {
-                            next.estimatedMinutesRemaining = 0;
-                        }
+                if (currentTotalLocations > 0 && lastLocationRef.current !== null) {
+                    const remainingLocations = currentTotalLocations - lastLocationRef.current;
+                    if (remainingLocations > 0 && lpm > 0) {
+                        estimated = Math.round((remainingLocations / lpm) * 10) / 10;
+                    } else if (remainingLocations <= 0) {
+                        estimated = 0;
                     }
                 }
-                
-                return next;
-            });
+
+                setStats(prev => {
+                    if (prev.estimatedMinutesRemaining === estimated && prev.locationsPerMinute === lpm) {
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        activeSeconds: activeSecondsRef.current,
+                        locationsPerMinute: lpm,
+                        estimatedMinutesRemaining: estimated,
+                    };
+                });
+            }
         };
 
         const interval = setInterval(tick, 1000);
-        return () => clearInterval(interval);
-    }, [bookId, currentTotalLocations]);
+        return () => {
+            clearInterval(interval);
+            flushReadingTime();
+        };
+    }, [bookId, currentTotalLocations, flushReadingTime]);
 
     // Track location changes to calculate speed
     const trackLocationProgress = (currentLocation: number) => {
         if (lastLocationRef.current !== null) {
             const diff = currentLocation - lastLocationRef.current;
-            // Only count forward progress, and ignore massive jumps (like jumping to chapter)
             if (diff > 0 && diff < 100) {
                 locationsReadRef.current += diff;
             }
@@ -77,6 +101,6 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
 
     return {
         stats,
-        trackLocationProgress
+        trackLocationProgress,
     };
 };
