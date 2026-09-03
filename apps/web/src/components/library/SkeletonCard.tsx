@@ -9,8 +9,8 @@ import React from "react";
 export function SkeletonCard() {
   return (
     <div className="w-full rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface overflow-hidden">
-      {/* Cover placeholder (aspect ratio matches the real 3/4 cover) */}
-      <div className="relative aspect-[3/4] w-full bg-black/[0.03] dark:bg-white/[0.04]">
+      {/* Cover placeholder (aspect ratio matches the real 2/3 cover) */}
+      <div className="relative aspect-[2/3] w-full bg-black/[0.03] dark:bg-white/[0.04]">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent animate-shimmer" />
       </div>
       {/* Metadata placeholder below the cover */}
