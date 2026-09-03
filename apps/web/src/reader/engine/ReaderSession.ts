@@ -91,7 +91,7 @@ export class ReaderSession {
                 height: options.continuous ? "auto" : "100%",
                 spread: options.continuous ? "none" : options.spread ? "always" : "none",
                 flow: options.continuous ? "scrolled-doc" : "paginated",
-                allowScriptedContent: false,
+                allowScriptedContent: true,
                 direction: readingDirection,
             });
 
