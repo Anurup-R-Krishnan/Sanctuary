@@ -15,27 +15,27 @@ export default {
       colors: {
         // Light theme colors
         light: {
-          primary: '#fefcf8',
-          secondary: '#f8f6f1',
-          surface: '#ffffff',
-          card: '#fdfdfc',
-          accent: 'rgb(184 149 108)',
-          text: '#1a1816',
-          'text-muted': '#6b6560',
-          border: '#e8e6e1',
-          'border-muted': '#f0efea',
+          primary: '#FAF9F5', // oat
+          secondary: '#F1EFE9', // darker oat
+          surface: '#FFFFFF',
+          card: '#F6F5F2',
+          accent: '#A68A64', // muted gold/bronze
+          text: '#1C1917', // stone-900
+          'text-muted': '#78716C', // stone-500
+          border: '#E7E5E0',
+          'border-muted': '#F2F0EB',
         },
         // Dark theme colors
         dark: {
-          primary: '#1c1b1a',
-          secondary: '#232220',
-          surface: '#2c2b29',
-          card: '#32302e',
-          accent: 'rgb(212 181 139)',
-          text: '#e8e6e3',
-          'text-muted': '#9e9a96',
-          border: '#3a3835',
-          'border-muted': '#2f2e2b',
+          primary: '#11100F',
+          secondary: '#1A1817',
+          surface: '#171615',
+          card: '#1C1A19',
+          accent: '#CCA876', // warm muted gold
+          text: '#F5F5F4', // stone-100
+          'text-muted': '#A8A29E', // stone-400
+          border: '#312E2C',
+          'border-muted': '#1F1D1C',
         },
       },
       spacing: {

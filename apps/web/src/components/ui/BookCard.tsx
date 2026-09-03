@@ -48,15 +48,15 @@ const BookCover = ({
   const isFeatured = variant === "featured";
 
   const containerClass = isCompact
-    ? "w-12 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10"
+    ? "w-12 h-16 rounded overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 flex-shrink-0"
     : isFeatured
-      ? "w-20 h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-light-accent/10 to-amber-500/10 dark:from-dark-accent/10 dark:to-amber-400/10 book-spine-shadow"
-      : "w-full h-full object-cover";
+      ? "w-20 h-28 rounded-md overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-sm flex-shrink-0"
+      : "w-16 h-24 rounded overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-sm flex-shrink-0";
 
   const iconSize = isCompact ? "w-5 h-5" : isFeatured ? "w-8 h-8" : "w-12 h-12";
 
   return (
-    <div className={isCompact || isFeatured ? containerClass : "relative aspect-[3/4] overflow-hidden bg-black/[0.03] dark:bg-white/[0.05]"}>
+    <div className={containerClass}>
       {book.coverUrl && !imageError ? (
         <img
           src={book.coverUrl}
@@ -64,21 +64,17 @@ const BookCover = ({
           className={cx(
             "w-full h-full object-cover transition-all duration-500",
             imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
-            !isCompact && "group-hover:scale-105"
+            !reduceMotion && "group-hover:scale-105"
           )}
           onLoad={handleImageLoad}
           onError={handleImageError}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <BookOpen className={`${iconSize} text-light-accent dark:text-dark-accent`} strokeWidth={1.5} />
+        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center border-l-[3px] border-l-light-accent dark:border-l-dark-accent/70 relative bg-black/[0.02] dark:bg-white/[0.02]">
+          <div className="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent" />
+          <span className="font-serif font-medium text-[0.65rem] leading-tight text-light-text-muted dark:text-dark-text-muted line-clamp-3 z-10">{book.title}</span>
+          {book.author && <span className="font-sans text-[0.5rem] mt-1 text-light-text-muted/60 dark:text-dark-text-muted/60 line-clamp-1 uppercase tracking-wider z-10">{book.author}</span>}
         </div>
-      )}
-      {isFeatured && !reduceMotion && (
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      )}
-      {!isCompact && !isFeatured && !reduceMotion && (
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-instant" />
       )}
     </div>
   );
@@ -194,12 +190,11 @@ const BookMetadata = ({ title, author, variant = "default" }: { title: string; a
   return (
     <div className={isFeatured ? "mb-1" : ""}>
       <h3 className={cx(
-        isFeatured ? "text-xl font-bold" : "font-semibold",
-        "text-light-text dark:text-dark-text line-clamp-2 group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
+        isFeatured ? "text-2xl" : "text-lg", "font-serif font-medium text-light-text dark:text-dark-text line-clamp-2 leading-tight tracking-tight group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-200"
       )}>
         {title}
       </h3>
-      <p className={cx(isFeatured ? "font-medium" : "text-sm", "text-light-text-muted dark:text-dark-text-muted line-clamp-1")}>
+      <p className={cx(isFeatured ? "font-medium" : "text-xs", "font-sans uppercase tracking-wider text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1")}>
         {author}
       </p>
     </div>
