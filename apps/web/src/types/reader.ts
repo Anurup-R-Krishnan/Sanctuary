@@ -13,6 +13,7 @@ export interface ReaderError {
     code:
         | "BOOK_DATA_MISSING"
         | "INVALID_EPUB"
+        | "EPUB_INTERNAL_CRASH"
         | "RENDER_FAILED"
         | "NAVIGATION_FAILED"
         | "LOCATION_GENERATION_FAILED"

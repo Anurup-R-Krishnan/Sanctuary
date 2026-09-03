@@ -104,6 +104,8 @@ export type EpubBookHandle = {
   loaded: {
     metadata: Promise<EpubMetadata>;
     navigation: Promise<EpubNavigation>;
+    spine: Promise<EpubSpineApi>;
+    manifest: Promise<Record<string, { href?: string }>>;
   };
   locations: EpubLocations;
   navigation?: {

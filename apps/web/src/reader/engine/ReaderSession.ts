@@ -44,6 +44,7 @@ export class ReaderSession {
 
     public totalLocations = 1;
     public tocItems: TocItem[] = [];
+    private crashListener: ((e: ErrorEvent | PromiseRejectionEvent) => void) | null = null;
 
     private positionUpdateTimer: number | null = null;
     private lastPositionUpdate = 0;
@@ -90,6 +91,46 @@ export class ReaderSession {
 
             this.epubBook = openEpub(arrayBuffer);
             this.callbacks.onStatusChange("loading-navigation");
+            
+            // Catch deferred/detached epub.js inner errors to prevent white-screens
+            const handleEpubCrash = (e: ErrorEvent | PromiseRejectionEvent) => {
+                if (this.aborted) return;
+                const err = e instanceof ErrorEvent ? e.error : e.reason;
+                const msg = err?.message || String(err);
+                if (msg.includes("indexOf") || msg.includes("undefined") || msg.includes("Url") || msg.includes("epub")) {
+                    this.callbacks.onError({
+                        code: "EPUB_INTERNAL_CRASH",
+                        title: "Book Rendering Failed",
+                        message: "The reader engine crashed while processing this book. The file may be missing internal assets or have a malformed manifest.",
+                        recoverable: false,
+                    });
+                    this.callbacks.onStatusChange("error");
+                }
+            };
+            window.addEventListener("error", handleEpubCrash, { capture: true });
+            window.addEventListener("unhandledrejection", handleEpubCrash);
+            this.crashListener = handleEpubCrash;
+
+            // Sanitize spine URLs to prevent indexOf(undefined) crashes in EPUB.js
+            this.epubBook.loaded.spine.then(spine => {
+                if (spine && typeof spine.each === "function") {
+                    spine.each((section: any) => {
+                        if (section.href === undefined) section.href = "";
+                        if (section.url === undefined) section.url = "";
+                    });
+                }
+            }).catch(() => undefined);
+
+            this.epubBook.loaded.manifest.then(manifest => {
+                if (manifest) {
+                    for (const key of Object.keys(manifest)) {
+                        const item = manifest[key];
+                        if (item && typeof item === "object") {
+                            if (item.href === undefined) item.href = "";
+                        }
+                    }
+                }
+            }).catch(() => undefined);
 
             this.epubBook.loaded.navigation.then(nav => {
                 if (this.aborted) return;
@@ -415,6 +456,12 @@ export class ReaderSession {
         if (this.resizeObserver) this.resizeObserver.disconnect();
         if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
         
+        if (this.crashListener) {
+            window.removeEventListener("error", this.crashListener as any, { capture: true });
+            window.removeEventListener("unhandledrejection", this.crashListener as any);
+            this.crashListener = null;
+        }
+
         if (this.rendition) {
             try { this.rendition.off("relocated", this.handleRelocated); } catch { /* ignore */ }
             try { this.rendition.off("selected", this.handleSelected); } catch { /* ignore */ }
