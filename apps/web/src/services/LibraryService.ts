@@ -217,16 +217,18 @@ export const libraryService = {
 
     useBookStore.getState().setIsLoading(true);
     try {
-      const stored = await api.getLibrary();
-      const booksRef = useBookStore.getState().books;
-      const localById = new Map(booksRef.map((book) => [book.id, book]));
+      const [stored, localDbBooks] = await Promise.all([
+        api.getLibrary().catch(() => []),
+        getAllBooks().catch(() => [] as Book[]),
+      ]);
+      const localById = new Map(localDbBooks.map((book) => [book.id, book]));
       
       const hydrated: Book[] = stored.map((s): Book => {
         const local = localById.get(s.id);
         const syncMeta = syncMetaByBookId.get(s.id);
-        const localCoverUrl = local?.coverBlob && !s.coverUrl 
+        const localCoverUrl = local?.coverBlob
             ? trackCoverBlobForBook(s.id, local.coverBlob) 
-            : s.coverUrl;
+            : (s.coverUrl || local?.coverUrl || "");
 
         const remoteBook: Book = {
           ...s,
@@ -279,14 +281,14 @@ export const libraryService = {
       useBookStore.getState().setBooks(hydrated);
 
       const remoteIds = new Set(stored.map((b) => b.id));
-      const rawLocalBooks = await getAllBooks().catch(() => [] as Book[]);
-      const localDbBooks = rawLocalBooks.map(book => {
+      const postSyncBooks = await getAllBooks().catch(() => [] as Book[]);
+      const unmappedLocalBooks = postSyncBooks.map(book => {
           if (book.coverBlob && !remoteIds.has(book.id)) {
               book.coverUrl = trackCoverBlobForBook(book.id, book.coverBlob);
           }
           return book;
       });
-      for (const localBook of localDbBooks) {
+      for (const localBook of unmappedLocalBooks) {
         if (!remoteIds.has(localBook.id) && !inFlightMutations.has(localBook.id)) {
           // INV-SYNC-001: Shield guest books ("pending") from GC.
           // The MigrationDialog handles migrating them explicitly.

@@ -131,20 +131,36 @@ export function revokeObjectUrl(url: string | null | undefined): void {
 
 export async function extractCoverBlobFromEpubSource(source: ArrayBuffer): Promise<Blob | null> {
   let bookData: EpubBookHandle | null = null;
-  let coverHref: string | null = null;
 
   try {
     bookData = openEpub(source);
     await bookData.ready;
-    coverHref = await bookData.coverUrl();
+    
+    // Attempt direct archive extraction first
+    const anyBook = bookData as unknown as { cover?: string; archive?: { getBlob: (path: string) => Promise<Blob> } };
+    if (anyBook.cover && anyBook.archive && typeof anyBook.archive.getBlob === "function") {
+      try {
+        const directBlob = await anyBook.archive.getBlob(anyBook.cover);
+        if (directBlob && directBlob.size > 0) return directBlob;
+      } catch { /* fallback */ }
+    }
+
+    const coverHref = await bookData.coverUrl();
     if (!coverHref) return null;
 
-    const response = await fetch(coverHref);
-    return await response.blob();
-  } catch {
+    if (coverHref.startsWith("blob:") || coverHref.startsWith("data:")) {
+      const response = await fetch(coverHref);
+      if (response.ok) {
+        return await response.blob();
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn("Cover extraction error:", err);
     return null;
   } finally {
-    revokeObjectUrl(coverHref);
-    bookData?.destroy?.();
+    try {
+      bookData?.destroy?.();
+    } catch { /* benign */ }
   }
 }

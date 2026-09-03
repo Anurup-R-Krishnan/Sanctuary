@@ -167,7 +167,6 @@ export class ReaderSession {
             this.callbacks.onStatusChange("ready");
 
             if (!locationsLoadedFromCache) {
-                this.callbacks.onStatusChange("generating-locations");
                 this.epubBook.locations.generate(LOCATION_BREAK_SIZE)
                     .then(async () => {
                         if (this.aborted) return;
@@ -175,12 +174,10 @@ export class ReaderSession {
                         if (this.epubBook?.locations.save) {
                             await saveCachedLocations(this.bookId, fingerprint, LOCATION_BREAK_SIZE, this.epubBook.locations.save());
                         }
-                        this.callbacks.onStatusChange("ready");
                     })
                     .catch(err => {
                         if (this.aborted) return;
                         console.warn("Location generation failed:", err);
-                        this.callbacks.onStatusChange("ready");
                     });
             }
         } catch {
