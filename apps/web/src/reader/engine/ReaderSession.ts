@@ -45,6 +45,9 @@ export class ReaderSession {
     public totalLocations = 1;
     public tocItems: TocItem[] = [];
 
+    private positionUpdateTimer: number | null = null;
+    private lastPositionUpdate = 0;
+
     // History
     private backHistory: string[] = [];
     private forwardHistory: string[] = [];
@@ -242,7 +245,18 @@ export class ReaderSession {
 
     public async next(): Promise<void> {
         if (!this.rendition) return;
+        
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const isContinuous = (this.rendition as any).settings?.flow === "scrolled";
+            if (isContinuous) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const scroller = (this.rendition as any).manager?.container;
+                if (scroller && typeof scroller.scrollBy === "function") {
+                    scroller.scrollBy({ top: scroller.clientHeight * 0.8, behavior: "smooth" });
+                    return;
+                }
+            }
             await this.rendition.next();
         } catch {
             this.container.scrollBy({ top: this.container.clientHeight * 0.8, behavior: "smooth" });
@@ -251,7 +265,18 @@ export class ReaderSession {
 
     public async prev(): Promise<void> {
         if (!this.rendition) return;
+        
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const isContinuous = (this.rendition as any).settings?.flow === "scrolled";
+            if (isContinuous) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const scroller = (this.rendition as any).manager?.container;
+                if (scroller && typeof scroller.scrollBy === "function") {
+                    scroller.scrollBy({ top: -scroller.clientHeight * 0.8, behavior: "smooth" });
+                    return;
+                }
+            }
             await this.rendition.prev();
         } catch {
             this.container.scrollBy({ top: -this.container.clientHeight * 0.8, behavior: "smooth" });
@@ -328,7 +353,7 @@ export class ReaderSession {
             }
             this.suppressHistory = false;
 
-            this.callbacks.onPositionChange({
+            const newPos = {
                 cfi,
                 href,
                 chapterLabel,
@@ -338,7 +363,22 @@ export class ReaderSession {
                 totalLocations: this.totalLocations,
                 displayedPage: page,
                 displayedPages: pageTotal,
-            });
+            };
+
+            const now = Date.now();
+            const timeSince = now - this.lastPositionUpdate;
+            if (timeSince > 250) {
+                this.lastPositionUpdate = now;
+                this.callbacks.onPositionChange(newPos);
+            } else {
+                if (this.positionUpdateTimer !== null) {
+                    window.clearTimeout(this.positionUpdateTimer);
+                }
+                this.positionUpdateTimer = window.setTimeout(() => {
+                    this.lastPositionUpdate = Date.now();
+                    this.callbacks.onPositionChange(newPos);
+                }, 250);
+            }
         });
     }
 
@@ -367,6 +407,10 @@ export class ReaderSession {
         if (this.relocateRaf !== null) {
             cancelAnimationFrame(this.relocateRaf);
             this.relocateRaf = null;
+        }
+        if (this.positionUpdateTimer !== null) {
+            window.clearTimeout(this.positionUpdateTimer);
+            this.positionUpdateTimer = null;
         }
         if (this.resizeObserver) this.resizeObserver.disconnect();
         if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);

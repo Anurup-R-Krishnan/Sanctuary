@@ -89,7 +89,7 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
     }, [bookId, currentTotalLocations, flushReadingTime]);
 
     // Track location changes to calculate speed
-    const trackLocationProgress = (currentLocation: number) => {
+    const trackLocationProgress = useCallback((currentLocation: number) => {
         if (lastLocationRef.current !== null) {
             const diff = currentLocation - lastLocationRef.current;
             if (diff > 0 && diff < 100) {
@@ -97,7 +97,7 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
             }
         }
         lastLocationRef.current = currentLocation;
-    };
+    }, []);
 
     return {
         stats,
