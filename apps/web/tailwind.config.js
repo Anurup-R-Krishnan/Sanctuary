@@ -15,27 +15,27 @@ export default {
       colors: {
         // Light theme colors
         light: {
-          primary: '#FAF9F5', // oat
-          secondary: '#F1EFE9', // darker oat
-          surface: '#FFFFFF',
-          card: '#F6F5F2',
-          accent: '#A68A64', // muted gold/bronze
-          text: '#1C1917', // stone-900
-          'text-muted': '#78716C', // stone-500
-          border: '#E7E5E0',
-          'border-muted': '#F2F0EB',
+          primary: '#FFFFFF', // pure white
+          secondary: '#FAFAFA', // zinc-50
+          surface: '#F4F4F5', // zinc-100
+          card: '#FFFFFF',
+          accent: '#0055FF', // electric blue pop
+          text: '#09090B', // zinc-950
+          'text-muted': '#71717A', // zinc-500
+          border: '#E4E4E7', // zinc-200
+          'border-muted': '#F4F4F5',
         },
         // Dark theme colors
         dark: {
-          primary: '#11100F',
-          secondary: '#1A1817',
-          surface: '#171615',
-          card: '#1C1A19',
-          accent: '#CCA876', // warm muted gold
-          text: '#F5F5F4', // stone-100
-          'text-muted': '#A8A29E', // stone-400
-          border: '#312E2C',
-          'border-muted': '#1F1D1C',
+          primary: '#09090B', // zinc-950
+          secondary: '#18181B', // zinc-900
+          surface: '#27272A', // zinc-800
+          card: '#18181B',
+          accent: '#3377FF', // electric blue pop
+          text: '#FAFAFA', // zinc-50
+          'text-muted': '#A1A1AA', // zinc-400
+          border: '#27272A', // zinc-800
+          'border-muted': '#18181B',
         },
       },
       spacing: {

@@ -57,7 +57,7 @@ export const DropdownMenu = ({
     const tid = window.setTimeout(() => focusItem(initialIndex), 16);
     return () => window.clearTimeout(tid);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [show]); // intentionally only on show toggle — focusItem/value/options are stable within an open session
+  }, [show]); // intentionally only on show toggle - focusItem/value/options are stable within an open session
 
   // Click-outside to close
   useEffect(() => {

@@ -379,7 +379,7 @@ function ReaderView({
             />
         </div>
 
-        {/* Loading overlay — outside the filter div so it renders at full brightness */}
+        {/* Loading overlay - outside the filter div so it renders at full brightness */}
         {isLoading && (
             <div className="absolute inset-0 z-40 flex items-center justify-center bg-light-primary dark:bg-dark-primary">
                 <div className="flex items-center gap-3 text-light-text dark:text-dark-text">
