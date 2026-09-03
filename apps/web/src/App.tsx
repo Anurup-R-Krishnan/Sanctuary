@@ -129,18 +129,25 @@ function App() {
       )}
 
       <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
-        <div key={view} className={`${isReader ? "" : "page-shell animate-fadeInUp"}`}>
-          {view === View.LIBRARY && (
-            <LibraryGrid
-              onSelectBook={startSession}
-              addBook={handleAddBook}
-              toggleFavorite={handleToggleFavorite}
-              deleteBook={handleDeleteBook}
-            />
-          )}
-          {view === View.SETTINGS && <SettingsView />}
-          {view === View.STATS && <StatsView />}
-          {view === View.READER && selectedBookId && (
+        {([View.LIBRARY, View.SETTINGS, View.STATS] as View[]).map((v) => (
+          <div
+            key={v}
+            className={`${isReader ? "" : "page-shell"} ${view === v ? "animate-fadeInUp" : "hidden"}`}
+          >
+            {v === View.LIBRARY && (
+              <LibraryGrid
+                onSelectBook={startSession}
+                addBook={handleAddBook}
+                toggleFavorite={handleToggleFavorite}
+                deleteBook={handleDeleteBook}
+              />
+            )}
+            {v === View.SETTINGS && <SettingsView />}
+            {v === View.STATS && <StatsView />}
+          </div>
+        ))}
+        {view === View.READER && selectedBookId && (
+          <div className="animate-fadeInUp">
             <ReaderView
               bookId={selectedBookId}
               onClose={endSession}
@@ -149,8 +156,8 @@ function App() {
               onRemoveBookmark={removeBookmark}
               getBookContent={handleGetBookContent}
             />
-          )}
-        </div>
+          </div>
+        )}
       </main>
 
       {!isReader && (

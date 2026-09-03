@@ -1,5 +1,44 @@
-@import url("https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,600,700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* Satoshi is bundled locally (apps/web/public/fonts) so the desktop (Tauri)
+   app renders it correctly with no network access. Fontshare does not serve
+   a static weight-600 file; we map 600 to the closest sourced weight (500)
+   so font-semibold does not silently fall back to a lighter cut. */
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-300.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-500.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("/fonts/Satoshi-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
@@ -698,7 +737,10 @@
   animation: none !important;
 }
 
-/* High Contrast Mode — use opaque borders for legibility at system high-contrast */
+/* High Contrast Mode — opaque borders for legibility.
+   prefers-contrast:more fires on macOS/system "more contrast";
+   forced-colors (and prefers-contrast:forced) fires in Windows
+   High Contrast / forced colors mode. Both need the same treatment. */
 @media (prefers-contrast: more) {
   .card {
     @apply border-2 border-black/60 dark:border-white/60;
@@ -718,6 +760,24 @@
     box-shadow: none !important;
   }
 }
+
+/* Windows High Contrast / forced colors: respect the user's chosen
+   palette and always show a visible focus indicator. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid ButtonBorder !important;
+    outline-offset: 2px !important;
+  }
+
+  .card,
+  .btn-primary,
+  .input {
+    border-color: CanvasText !important;
+  }
+}
+
+/* prefers-contrast: more combined with forced-colors can coexist;
+   forced-colors block above takes precedence inside its media query. */
 
 /* Print Styles */
 @media print {

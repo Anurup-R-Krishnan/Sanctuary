@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 
 interface DropdownMenuProps {
   id: string;
@@ -6,7 +6,7 @@ interface DropdownMenuProps {
   onSelect: (v: string) => void;
   options: { value: string; label: string }[];
   show: boolean;
-  /** ID of the button that triggers this menu (for returning focus on close) */
+  /** DOM id of the trigger button — focus returns here when the menu closes. */
   triggerId?: string;
   value: string;
 }
@@ -21,11 +21,20 @@ export const DropdownMenu = ({
   triggerId,
 }: DropdownMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  // Stable ref array: never replaced mid-render, resized only when length changes.
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const focusedIndexRef = useRef<number>(-1);
 
-  // Initialise itemRefs array to match options length
-  itemRefs.current = Array(options.length).fill(null);
+  // Keep the stable array sized correctly without wiping collected refs.
+  useEffect(() => {
+    const prev = itemRefs.current.length;
+    const next = options.length;
+    if (next > prev) {
+      itemRefs.current = [...itemRefs.current, ...Array(next - prev).fill(null)];
+    } else if (next < prev) {
+      itemRefs.current = itemRefs.current.slice(0, next);
+    }
+  }, [options.length]);
 
   const focusItem = useCallback((index: number) => {
     const clamped = Math.max(0, Math.min(options.length - 1, index));
@@ -33,10 +42,9 @@ export const DropdownMenu = ({
     itemRefs.current[clamped]?.focus();
   }, [options.length]);
 
-  // Move initial focus to selected item (or first item) when menu opens
+  // Focus management: open → selected item (or first); close → trigger button.
   useEffect(() => {
     if (!show) {
-      // Return focus to the trigger button when the menu closes
       if (triggerId) {
         document.getElementById(triggerId)?.focus();
       }
@@ -45,11 +53,11 @@ export const DropdownMenu = ({
 
     const selectedIndex = options.findIndex((o) => o.value === value);
     const initialIndex = selectedIndex >= 0 ? selectedIndex : 0;
-
-    // Defer so the menu renders before we try to focus
-    const id = window.setTimeout(() => focusItem(initialIndex), 16);
-    return () => window.clearTimeout(id);
-  }, [show, options, value, focusItem, triggerId]);
+    // Defer one frame so the menu is in the DOM before we focus.
+    const tid = window.setTimeout(() => focusItem(initialIndex), 16);
+    return () => window.clearTimeout(tid);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show]); // intentionally only on show toggle — focusItem/value/options are stable within an open session
 
   // Click-outside to close
   useEffect(() => {
@@ -88,7 +96,7 @@ export const DropdownMenu = ({
           onClose();
           break;
         case "Tab":
-          // Close on Tab so focus doesn't leak into the page behind the menu
+          // Close so focus doesn't leak behind the menu.
           onClose();
           break;
       }
@@ -116,9 +124,10 @@ export const DropdownMenu = ({
             ref={(el) => {
               itemRefs.current[index] = el;
             }}
+            type="button"
             role="menuitemradio"
             aria-checked={isSelected}
-            tabIndex={-1} // roving tabIndex — keyboard navigated via arrow keys
+            tabIndex={-1}
             onClick={() => {
               onSelect(opt.value);
               onClose();

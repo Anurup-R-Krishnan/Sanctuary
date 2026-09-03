@@ -56,6 +56,8 @@ export function LibraryToolbar({
 }: LibraryToolbarProps) {
   const sortMenuId = "library-sort-menu";
   const filterMenuId = "library-filter-menu";
+  const sortTriggerId = "library-sort-trigger";
+  const filterTriggerId = "library-filter-trigger";
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
@@ -85,6 +87,7 @@ export function LibraryToolbar({
 
         <div className="relative">
           <Button
+            id={sortTriggerId}
             onClick={() => {
               setShowSortMenu(!showSortMenu);
               setShowFilterMenu(false);
@@ -107,11 +110,13 @@ export function LibraryToolbar({
             value={sortBy}
             onSelect={(v) => setSortBy(v as SortOption)}
             onClose={() => setShowSortMenu(false)}
+            triggerId={sortTriggerId}
           />
         </div>
 
         <div className="relative">
           <Button
+            id={filterTriggerId}
             onClick={() => {
               setShowFilterMenu(!showFilterMenu);
               setShowSortMenu(false);
@@ -134,6 +139,7 @@ export function LibraryToolbar({
             value={filterBy}
             onSelect={(v) => setFilterBy(v as FilterOption)}
             onClose={() => setShowFilterMenu(false)}
+            triggerId={filterTriggerId}
           />
         </div>
       </div>

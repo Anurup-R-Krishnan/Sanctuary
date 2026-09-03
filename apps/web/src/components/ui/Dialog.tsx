@@ -73,7 +73,17 @@ export function Dialog({
       if (e.key === "Tab") {
         const focusable = Array.from(
           el.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
-        ).filter((node) => node.offsetParent !== null);
+        ).filter((node) => {
+          // offsetParent is null for position:fixed elements (e.g. the close button
+          // inside a dialog that is itself fixed). Use computed style instead.
+          const style = getComputedStyle(node);
+          return (
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            style.opacity !== "0" &&
+            !(node as HTMLInputElement).disabled
+          );
+        });
 
         if (focusable.length === 0) {
           e.preventDefault();
