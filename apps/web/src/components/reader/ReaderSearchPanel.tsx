@@ -110,7 +110,7 @@ export function ReaderSearchPanel({
     return (
         <div className="absolute right-0 top-0 bottom-0 w-80 bg-light-primary dark:bg-dark-primary shadow-2xl border-l border-black/5 dark:border-white/5 flex flex-col z-[100] animate-slideInRight pointer-events-auto">
             {/* Header */}
-            <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center gap-2">
+            <div className="p-4 border-b border-black/5 dark:border-white/5 flex flex-wrap items-center gap-2">
                 <form onSubmit={handleSubmit} className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-light-text-muted dark:text-dark-text-muted" />
                     <Input
@@ -140,7 +140,7 @@ export function ReaderSearchPanel({
                     <span>
                         {searchState.activeIndex + 1} of {searchState.results.length} matches
                     </span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                         <button type="button" aria-label="Previous match" onClick={onPrev} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -152,7 +152,7 @@ export function ReaderSearchPanel({
             )}
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto" ref={resultsContainerRef}>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={resultsContainerRef}>
                 {searchState.isSearching ? (
                     <div className="flex flex-col items-center justify-center h-40 gap-3 text-light-text-muted dark:text-dark-text-muted">
                         <Loader2 className="w-6 h-6 animate-spin" />

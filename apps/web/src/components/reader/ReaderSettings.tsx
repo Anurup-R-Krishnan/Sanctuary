@@ -104,7 +104,7 @@ function ReaderSettings() {
     label: string;
     formatValue?: (v: number) => string | number;
   }) => (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-3">
       <span className="w-16 text-sm text-light-text-muted dark:text-dark-text-muted">{label}</span>
       <div className="relative flex h-8 flex-1 items-center">
         <input

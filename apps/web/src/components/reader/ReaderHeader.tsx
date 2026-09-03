@@ -93,7 +93,7 @@ function ReaderHeader({
 
                 {/* Right: Actions (Floating Group) */}
                 <div 
-                    className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-instant"
+                    className="pointer-events-auto flex flex-wrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-instant"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                 >
                     <ActionBtn 

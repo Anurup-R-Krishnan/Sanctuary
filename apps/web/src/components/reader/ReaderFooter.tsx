@@ -76,8 +76,8 @@ function ReaderFooter({
 
                 {/* Centered Bottom Bar */}
                 <div className={`fixed left-1/2 -translate-x-1/2 bottom-6 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
-                    <div className="w-[min(880px,92vw)] px-4 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-4" style={{ backgroundColor: `${readerBackground}E8` }}>
-                        <div className="flex items-center gap-2">
+                    <div className="w-[min(880px,92vw)] px-4 py-3 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex flex-wrap items-center gap-4" style={{ backgroundColor: `${readerBackground}E8` }}>
+                        <div className="flex flex-wrap items-center gap-2">
                             <IconButton
                                 onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
                                 label="Previous page"
@@ -120,7 +120,7 @@ function ReaderFooter({
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <IconButton
                                 onClick={(e) => { e.stopPropagation(); onNextPage(); }}
                                 label="Next page"

@@ -34,7 +34,7 @@ export function ReaderAnnotationsPanel({
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 {sorted.length === 0 ? (
                     <div className="p-6 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
                         No highlights or notes yet.
@@ -48,7 +48,7 @@ export function ReaderAnnotationsPanel({
                                     onClick={() => onGoToAnnotation(item.cfiRange)}
                                     className="w-full text-left p-4 pr-12"
                                 >
-                                    <div className="flex items-center gap-2 mb-2">
+                                    <div className="flex flex-wrap items-center gap-2 mb-2">
                                         <div
                                             className="w-3 h-3 rounded-full shadow-sm"
                                             style={{ backgroundColor: item.color }}

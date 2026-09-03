@@ -77,7 +77,7 @@ function ReaderControls({
         return (
             <div className="select-none">
                 <div
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                    className="flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
                     style={{ paddingLeft: `${8 + depth * 12}px` }}
                     onClick={() => onNavigate(item.href)}
                     onKeyDown={(e) => {
@@ -196,7 +196,7 @@ function ReaderControls({
                     <div className="space-y-2">
                         {bookmarks.length > 0 ? (
                             bookmarks.map(bm => (
-                                <div key={bm.id} className="group flex items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <div key={bm.id} className="group flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                                     <Button
                                         onClick={() => onNavigate(bm.cfi)}
                                         variant="ghost"
