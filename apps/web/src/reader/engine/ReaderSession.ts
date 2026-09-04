@@ -114,7 +114,7 @@ export class ReaderSession {
             // Sanitize spine URLs to prevent indexOf(undefined) crashes in EPUB.js
             this.epubBook.loaded.spine.then(spine => {
                 if (spine && typeof spine.each === "function") {
-                    spine.each((section: any) => {
+                    spine.each((section: { href?: string; url?: string }) => {
                         if (section.href === undefined) section.href = "";
                         if (section.url === undefined) section.url = "";
                     });
@@ -457,8 +457,8 @@ export class ReaderSession {
         if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
         
         if (this.crashListener) {
-            window.removeEventListener("error", this.crashListener as any, { capture: true });
-            window.removeEventListener("unhandledrejection", this.crashListener as any);
+            window.removeEventListener("error", this.crashListener as EventListener, { capture: true });
+            window.removeEventListener("unhandledrejection", this.crashListener as EventListener);
             this.crashListener = null;
         }
 

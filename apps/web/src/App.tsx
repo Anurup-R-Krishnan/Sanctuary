@@ -91,8 +91,7 @@ function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
         <div className="relative mb-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-light-accent/20 to-amber-500/20 dark:from-dark-accent/20 dark:to-amber-400/20 rounded-3xl blur-3xl scale-150" />
-          <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 flex items-center justify-center shadow-2xl">
+          <div className="relative w-20 h-20 rounded-3xl bg-light-accent dark:bg-dark-accent flex items-center justify-center shadow-2xl">
             <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
           </div>
         </div>
