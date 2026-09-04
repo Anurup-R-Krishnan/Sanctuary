@@ -26,7 +26,7 @@ export function ReaderAnnotationsPanel({
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
+                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
                         <div className="w-14 h-14 mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.06]">
                             <MessageSquare className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
                         </div>
