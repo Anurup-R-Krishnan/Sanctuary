@@ -53,8 +53,8 @@ export default defineConfig(({ mode }) => {
         name: 'Sanctuary Book Reader',
         short_name: 'Sanctuary',
         description: 'Your personal reading haven. A beautiful, modern EPUB reader.',
-        theme_color: '#caa16eff',
-        background_color: '#F8F4EC',
+        theme_color: '#09090B',
+        background_color: '#18181B',
         display: 'standalone',
         orientation: 'portrait-primary',
         start_url: '/',
@@ -63,19 +63,7 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,woff,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'gstatic-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } }
-          }
-        ]
+        globPatterns: ['**/*.{js,css,html,svg,woff,woff2}']
       }
       })
     ],
