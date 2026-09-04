@@ -122,7 +122,6 @@ function ReaderOverlay(props: ReaderOverlayProps) {
           )}
           {props.showAnnotations && (
             <ReaderAnnotationsPanel
-              isOpen={props.showAnnotations}
               onClose={props.onCloseAnnotations}
               annotations={props.annotations}
               onGoToAnnotation={props.onNavigate}

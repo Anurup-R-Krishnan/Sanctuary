@@ -7,26 +7,22 @@ import { IconButton } from "@/components/ui/IconButton";
 
 interface ReaderAnnotationsPanelProps {
     annotations: ReaderAnnotation[];
-    isOpen: boolean;
     onClose: () => void;
     onDeleteAnnotation: (id: string) => void;
     onGoToAnnotation: (cfi: string) => void;
 }
 
 export function ReaderAnnotationsPanel({
-    isOpen,
     onClose,
     annotations,
     onGoToAnnotation,
     onDeleteAnnotation,
 }: ReaderAnnotationsPanelProps) {
-    if (!isOpen) return null;
-
     // Sort newest first
     const sorted = [...annotations].sort((a, b) => b.createdAt - a.createdAt);
 
     return (
-        <div className="absolute left-0 top-0 bottom-0 w-80 bg-light-primary dark:bg-dark-primary shadow-2xl border-r border-black/5 dark:border-white/5 flex flex-col z-[100] animate-slideInLeft pointer-events-auto">
+        <div className="flex flex-col h-full">
             {/* Header */}
             <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
                 <h2 className="font-semibold text-light-text dark:text-dark-text">Annotations</h2>
