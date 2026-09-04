@@ -69,6 +69,6 @@ declare module 'epubjs' {
     }): Rendition;
   }
 
-  function ePub(input: ArrayBuffer | string): Book;
+  function ePub(input: ArrayBuffer | string, options?: Record<string, unknown>): Book;
   export default ePub;
 }

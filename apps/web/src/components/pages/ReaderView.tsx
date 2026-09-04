@@ -363,7 +363,9 @@ function ReaderView({
             )}
         {/* Book content with brightness/grayscale filter */}
         <div
-            className="absolute inset-0"
+            className={`absolute inset-0 transition-[padding] duration-instant ease-out ${
+                (showControls || showSettings || showSearch || showAnnotations) ? "md:pr-[400px]" : ""
+            }`}
             style={
                 brightness < 100 || grayscale
                     ? { filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }

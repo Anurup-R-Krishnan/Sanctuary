@@ -122,8 +122,13 @@ export type EpubBookHandle = {
   spine?: EpubSpineApi;
 };
 
-export function openEpub(source: ArrayBuffer): EpubBookHandle {
-  return ePub(source) as unknown as EpubBookHandle;
+export interface OpenEpubOptions {
+  [key: string]: unknown;
+  replacements?: "none" | "base64" | "blobUrl";
+}
+
+export function openEpub(source: ArrayBuffer, options?: OpenEpubOptions): EpubBookHandle {
+  return ePub(source, options) as unknown as EpubBookHandle;
 }
 
 export function revokeObjectUrl(url: string | null | undefined): void {
@@ -135,7 +140,7 @@ export async function extractCoverBlobFromEpubSource(source: ArrayBuffer): Promi
   let bookData: EpubBookHandle | null = null;
 
   try {
-    bookData = openEpub(source);
+    bookData = openEpub(source, { replacements: "none" });
     await bookData.ready;
     
     // Attempt direct archive extraction first

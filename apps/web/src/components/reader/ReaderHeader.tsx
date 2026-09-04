@@ -108,12 +108,14 @@ function ReaderHeader({
                     <ActionBtn icon={Highlighter} label="Annotations" onClick={onToggleAnnotations} />
                     <ActionBtn icon={Settings} label="Appearance" onClick={onToggleSettings} />
 
-                    <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
-                    <ActionBtn 
-                        icon={isFullscreen ? Minimize2 : Maximize2} 
-                        label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"} 
-                        onClick={onToggleFullscreen} 
-                    />
+                    <div className="hidden sm:block w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+                    <div className="hidden sm:block">
+                        <ActionBtn 
+                            icon={isFullscreen ? Minimize2 : Maximize2} 
+                            label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"} 
+                            onClick={onToggleFullscreen} 
+                        />
+                    </div>
                 </div>
             </div>
         </header>

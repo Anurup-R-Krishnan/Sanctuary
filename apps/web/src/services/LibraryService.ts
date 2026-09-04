@@ -341,7 +341,7 @@ export const libraryService = {
         throw new Error(`The exact file "${file.name}" is already in your library.`);
       }
 
-      bookData = openEpub(epubArrayBuffer);
+      bookData = openEpub(epubArrayBuffer, { replacements: "none" });
       await bookData.ready;
 
       const metadata = await bookData.loaded.metadata;

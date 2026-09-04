@@ -9,7 +9,7 @@ import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
 import ReaderSettings from "@/components/reader/ReaderSettings";
-import { Button } from "@/components/ui/Button";
+
 
 interface ReaderOverlayProps {
   annotations: ReaderAnnotation[];
@@ -127,25 +127,12 @@ function ReaderOverlay(props: ReaderOverlayProps) {
               onDeleteAnnotation={props.onDeleteAnnotation}
             />
           )}
-
-          <div className="p-4 border-t border-black/5 dark:border-white/5 mt-auto">
-            <Button 
-                variant="secondary" 
-                className="w-full" 
-                onClick={() => {
-                    if (props.showControls) props.onCloseControls();
-                    if (props.showSettings) props.onCloseSettings();
-                    if (props.showSearch) props.onCloseSearch();
-                    if (props.showAnnotations) props.onCloseAnnotations();
-                }}
-            >
-                Close Panel
-            </Button>
-          </div>
         </div>
       )}
     </div>
   );
 }
+
+export default memo(ReaderOverlay);
 
 export default memo(ReaderOverlay);
