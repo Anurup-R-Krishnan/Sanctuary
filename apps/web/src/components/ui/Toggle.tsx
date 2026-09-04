@@ -24,7 +24,7 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                     "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))]",
                     checked
                         ? "bg-light-accent/10 dark:bg-dark-accent/10 border border-light-accent/20 dark:border-dark-accent/20"
-                        : "bg-black/[0.02] dark:bg-white/[0.02] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.04]",
+                        : "bg-black/[0.02] dark:bg-white/[0.02] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:bg-black/[0.06] dark:active:bg-white/[0.06]",
                     className
                 )}
                 {...props}
