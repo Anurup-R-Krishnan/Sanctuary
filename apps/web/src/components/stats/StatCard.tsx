@@ -36,7 +36,7 @@ export const StatCard = ({
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide font-medium">
+        <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
           {label}
         </p>
         <p className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums mt-0.5">{value}</p>

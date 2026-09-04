@@ -192,7 +192,7 @@ const BookMetadata = ({ title, author, variant = "default" }: { title: string; a
       )}>
         {title}
       </h3>
-      <p className={cx(isFeatured ? "font-medium" : "text-xs", "font-sans uppercase tracking-wider text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1")}>
+      <p className={cx(isFeatured ? "font-medium" : "text-xs", "font-sans text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1")}>
         {author}
       </p>
     </div>

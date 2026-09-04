@@ -19,7 +19,7 @@ export function LibraryEmptyState({ onAddBook }: LibraryEmptyStateProps) {
       </p>
       <div className="flex flex-col items-center gap-3">
         <AddBookButton onAddBook={onAddBook} variant="inline" />
-        <span className="text-xs text-light-text-muted/50 dark:text-dark-text-muted/50">EPUB format supported</span>
+        <span className="text-xs text-light-text-muted/50 dark:text-dark-text-muted/50">Supports EPUB</span>
       </div>
     </div>
   );

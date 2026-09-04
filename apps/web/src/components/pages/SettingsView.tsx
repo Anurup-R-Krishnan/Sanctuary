@@ -239,7 +239,7 @@ function SettingsView() {
                                         />
                                         <div>
                                             <p className="text-sm font-medium text-light-text dark:text-dark-text">{label}</p>
-                                            <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono uppercase">{value}</p>
+                                            <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono">{value}</p>
                                         </div>
                                     </label>
                                 ))}

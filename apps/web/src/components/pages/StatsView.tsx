@@ -232,7 +232,7 @@ function StatsView() {
                 <Star className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
               </div>
               <div>
-                <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide font-medium">
+                <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
                   Reading Style
                 </p>
                 <h3 className="text-xl font-bold text-light-text dark:text-dark-text mt-0.5">{stats.readingPersonality}</h3>

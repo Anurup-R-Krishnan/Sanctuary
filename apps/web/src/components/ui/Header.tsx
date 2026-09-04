@@ -50,6 +50,7 @@ function Header({
             <Input
               ref={inputRef}
               type="text"
+              aria-label="Search library"
               placeholder="Search books and authors"
               value={searchTerm}
               onChange={(e) => onSearch(e.target.value)}
