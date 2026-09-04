@@ -155,14 +155,14 @@ function ReaderView({
     });
 
     const { annotations, addAnnotation, removeAnnotation } = useReaderAnnotations({
-        bookId: book.id,
+        bookId: book?.id ?? '',
         rendition: engineRef.current?.rendition ?? null,
         clearSelection: () => engineRef.current?.clearSelection(),
     });
 
     const { speak, stop: stopSpeech } = useReaderSpeech();
 
-    const { trackLocationProgress, stats: sessionStats } = useReaderSessionStats(book.id, totalLocations);
+    const { trackLocationProgress, stats: sessionStats } = useReaderSessionStats(book?.id ?? '', totalLocations);
     
     // Track reading speed
     useEffect(() => {
@@ -176,12 +176,12 @@ function ReaderView({
 
     // Bookmark sync
     useEffect(() => {
-        setIsBookmarked(book.bookmarks?.some((b) => b.cfi === currentCfi) ?? false);
-    }, [currentCfi, book.bookmarks]);
+        setIsBookmarked(book?.bookmarks?.some((b) => b.cfi === currentCfi) ?? false);
+    }, [currentCfi, book?.bookmarks]);
 
     // Derived Actions
     const handleToggleBookmark = useCallback(() => {
-        if (!currentCfi) return;
+        if (!currentCfi || !book) return;
         if (isBookmarked) {
             const bookmark = book.bookmarks?.find((b) => b.cfi === currentCfi);
             if (bookmark) onRemoveBookmark(book.id, bookmark.id);
@@ -189,7 +189,7 @@ function ReaderView({
             onAddBookmark(book.id, { cfi: currentCfi, title: `Page ${currentPage}` });
         }
         setIsBookmarked(!isBookmarked);
-    }, [currentCfi, isBookmarked, book.id, book.bookmarks, currentPage, onAddBookmark, onRemoveBookmark]);
+    }, [currentCfi, isBookmarked, book, currentPage, onAddBookmark, onRemoveBookmark]);
 
     const handleToggleFullscreen = useCallback(async () => {
         try {
