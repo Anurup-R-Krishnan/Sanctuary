@@ -7,7 +7,7 @@ interface SectionProps {
 }
 
 export const Section = ({ title, icon: Icon, children }: SectionProps) => (
-    <div className="rounded-3xl border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/80 dark:bg-dark-surface/80">
+    <div className="rounded-2xl border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/80 dark:bg-dark-surface/80">
         <div className="relative p-6">
             <div className="flex items-center gap-3 mb-5">
                 {Icon && (

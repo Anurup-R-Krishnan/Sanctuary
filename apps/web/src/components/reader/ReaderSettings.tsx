@@ -63,7 +63,13 @@ export default function ReaderSettings() {
   );
 
   return (
-    <div className="h-full flex flex-col overflow-y-auto overflow-x-hidden p-6 gap-8">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b border-black/5 dark:border-white/5">
+        <h2 className="font-semibold text-light-text dark:text-dark-text">Appearance</h2>
+      </div>
+
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 gap-8">
       <div>
         <h2 className="text-lg font-serif font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Typography</h2>
         <div className="space-y-5">
@@ -109,6 +115,7 @@ export default function ReaderSettings() {
           />
         </div>
       </div>
+    </div>
     </div>
   );
 }

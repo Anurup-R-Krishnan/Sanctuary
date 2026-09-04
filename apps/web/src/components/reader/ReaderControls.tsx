@@ -117,7 +117,13 @@ function ReaderControls({
     };
 
     return (
-        <div className="flex flex-col h-full pb-4">
+        <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="p-4 border-b border-black/5 dark:border-white/5">
+                <h2 className="font-semibold text-light-text dark:text-dark-text">Contents</h2>
+            </div>
+
+            <div className="flex-1 flex flex-col p-4 pb-4 overflow-hidden">
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2 mb-6">
                 <Button
@@ -139,34 +145,40 @@ function ReaderControls({
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl mb-4" role="tablist">
+            <div className="flex p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl mb-4" role="tablist">
                 <Button
                     onClick={() => setActiveTab("chapters")}
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     variant="nav"
-                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "chapters"
-                        ? "bg-white dark:bg-white/10 shadow-sm font-medium"
-                        : "opacity-60 hover:opacity-100"
+                    className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
+                        ? "text-light-accent dark:text-dark-accent font-medium"
+                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                         }`}
                     style={{ color: activeTab === "chapters" ? readerForeground : undefined }}
                 >
-                    <List className="w-4 h-4" />
-                    <span>Chapters</span>
+                    {activeTab === "chapters" && (
+                        <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
+                    )}
+                    <List className="w-4 h-4 relative" />
+                    <span className="relative">Chapters</span>
                 </Button>
                 <Button
                     onClick={() => setActiveTab("bookmarks")}
                     role="tab"
                     aria-selected={activeTab === "bookmarks"}
                     variant="nav"
-                    className={`flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "bookmarks"
-                        ? "bg-white dark:bg-white/10 shadow-sm font-medium"
-                        : "opacity-60 hover:opacity-100"
+                    className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
+                        ? "text-light-accent dark:text-dark-accent font-medium"
+                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                         }`}
                     style={{ color: activeTab === "bookmarks" ? readerForeground : undefined }}
                 >
-                    <BookmarkIcon className="w-4 h-4" />
-                    <span>Bookmarks</span>
+                    {activeTab === "bookmarks" && (
+                        <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
+                    )}
+                    <BookmarkIcon className="w-4 h-4 relative" />
+                    <span className="relative">Bookmarks</span>
                 </Button>
             </div>
 
@@ -222,6 +234,7 @@ function ReaderControls({
                         )}
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

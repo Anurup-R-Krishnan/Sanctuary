@@ -134,7 +134,7 @@ function SettingsView() {
 
     return (
         <div className="page-narrow page-stack">
-            <div className="rounded-3xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
+            <div className="rounded-2xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
                 <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
@@ -159,7 +159,7 @@ function SettingsView() {
                 </div>
             </div>
 
-            <div className="relative p-1.5 bg-black/[0.03] dark:bg-white/[0.03] rounded-2xl">
+            <div className="relative p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
                 <div className="flex gap-1">
                     {TABS.map((tab) => {
                         const isActive = activeTab === tab.id;
@@ -168,13 +168,13 @@ function SettingsView() {
                                 key={tab.id}
                                 variant="nav"
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 !rounded-xl transition-all duration-300 ${isActive
+                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 !rounded-lg transition-all duration-200 ${isActive
                                         ? "text-light-accent dark:text-dark-accent"
                                         : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                                     }`}
                             >
                                 {isActive && (
-                                    <div className="absolute inset-0 bg-white dark:bg-dark-surface rounded-xl shadow-lg shadow-black/[0.05] dark:shadow-black/[0.2]" />
+                                    <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
                                 )}
                                 <div className="relative flex items-center gap-2">
                                     <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.75} />
