@@ -1,10 +1,9 @@
-import { Star, Clock, ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
 
-import { DeleteBookDialog } from "@/components/library/DeleteBookDialog";
 import { HorizontalScroll } from "@/components/library/HorizontalScroll";
 import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
@@ -61,7 +60,6 @@ function LibraryGrid({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
 
   const SORT_LABELS: Record<SortOption, string> = {
     recent: "Recently Opened",
@@ -211,16 +209,6 @@ function LibraryGrid({
       </section>
 
       <AddBookButton onAddBook={addBook} />
-
-      <DeleteBookDialog
-        isOpen={!!bookToDelete}
-        onClose={() => setBookToDelete(null)}
-        book={bookToDelete}
-        onConfirm={(id) => {
-          onDeleteBook(id);
-          setBookToDelete(null);
-        }}
-      />
     </div>
   );
 };
