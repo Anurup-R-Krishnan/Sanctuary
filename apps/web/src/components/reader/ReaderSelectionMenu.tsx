@@ -33,7 +33,7 @@ export function ReaderSelectionMenu({
                 e.stopPropagation();
                 onClick();
             }}
-            className="p-3 flex flex-col items-center gap-1 hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-light-text dark:text-dark-text"
+            className="p-3 flex flex-col items-center gap-1 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 active:scale-[0.95] transition-all duration-instant rounded-xl text-light-text dark:text-dark-text"
             title={label}
             aria-label={ariaLabel || label}
         >

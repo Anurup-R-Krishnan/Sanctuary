@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <Button
               onClick={() => window.location.reload()}
               variant="primary"
-              className="gap-2 px-6 bg-gradient-to-r from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:opacity-90 transition-opacity border-0 shadow-lg"
+              className="gap-2 px-6 hover:opacity-90 transition-opacity border-0 shadow-lg"
             >
               <RotateCcw className="w-4 h-4" /> Reload App
             </Button>

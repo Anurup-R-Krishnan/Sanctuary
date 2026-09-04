@@ -44,7 +44,7 @@ function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps)
               {isActive && (
                 <div className="absolute inset-0 bg-light-accent/10 dark:bg-white/10 rounded-xl shadow-sm" />
               )}
-              <Icon className="w-4 h-4 relative" />
+              <Icon className="w-5 h-5 relative" />
               <span className="hidden sm:inline relative">{item.label}</span>
             </Button>
           );

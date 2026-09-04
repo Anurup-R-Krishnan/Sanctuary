@@ -106,7 +106,7 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
           className={`w-14 h-14 !rounded-2xl shadow-lg border-0 group transition-all duration-instant ${
             isDragging
               ? "bg-light-accent dark:bg-dark-accent scale-110"
-              : "bg-gradient-to-br from-light-accent to-amber-600 dark:from-dark-accent dark:to-amber-500 hover:shadow-xl hover:scale-105"
+              : "bg-light-accent dark:bg-dark-accent hover:shadow-xl hover:scale-105"
           }`}
         />
 

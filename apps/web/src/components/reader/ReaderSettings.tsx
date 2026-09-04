@@ -48,10 +48,10 @@ export default function ReaderSettings() {
             key={opt.value}
             onClick={() => onChange(opt.value)}
             className={cx(
-              "flex-1 py-1.5 px-3 rounded-lg border text-sm transition-colors",
+              "flex-1 py-1.5 px-3 rounded-lg border text-sm transition-all duration-instant active:scale-[0.98]",
               value === opt.value
                 ? "bg-light-accent/10 border-light-accent text-light-accent dark:bg-dark-accent/10 dark:border-dark-accent dark:text-dark-accent"
-                : "border-black/10 dark:border-white/10 text-light-text dark:text-dark-text hover:bg-black/5 dark:hover:bg-white/5"
+                : "border-black/10 dark:border-white/10 text-light-text dark:text-dark-text hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10"
             )}
           >
             {opt.icon && <span className="inline-block mr-2 align-middle">{opt.icon}</span>}
