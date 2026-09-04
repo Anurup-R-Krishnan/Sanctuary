@@ -18,8 +18,14 @@ function requireTool(cmd, installHint) {
 requireTool("cargo", "Install Rust with rustup: https://rustup.rs");
 requireTool("rustc", "Install Rust with rustup: https://rustup.rs");
 
+process.env.NO_STRIP = process.env.NO_STRIP ?? "true";
+
 const args = ["exec", "tauri", mode];
-const run = spawnSync("npm", args, { stdio: "inherit", shell: true });
+const run = spawnSync("npm", args, {
+  stdio: "inherit",
+  shell: true,
+  env: { ...process.env, NO_STRIP: process.env.NO_STRIP },
+});
 if (run.status !== 0) {
   console.error("[tauri-runner] Tauri command failed.");
   console.error("[tauri-runner] Linux prerequisites: libwebkit2gtk-4.1-dev, libgtk-3-dev, libayatana-appindicator3-dev, librsvg2-dev");

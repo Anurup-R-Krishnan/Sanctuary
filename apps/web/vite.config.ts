@@ -28,21 +28,29 @@ export default defineConfig(({ mode }) => {
       }
     },
     plugins: [
-      // Patch epub.js: replace deprecated "unload" → "pagehide" to avoid
-      // Chrome Permissions-Policy violations.  Runs at transform time so the
-      // fix survives `bun install` / `npm ci`.
       {
         name: "epubjs-patch",
         transform(code, id) {
           if (!id.includes("epubjs")) return null;
-          if (!code.includes('"unload"')) return null;
-          return {
-            code: code.replace(
+          let modified = false;
+
+          if (code.includes('"unload"')) {
+            code = code.replace(
               /addEventListener\(\s*"unload"/g,
               'addEventListener("pagehide"'
-            ),
-            map: null,
-          };
+            );
+            modified = true;
+          }
+
+          if (code.includes("substitute(content, urls, replacements)")) {
+            code = code.replace(
+              /function substitute\s*\(\s*content\s*,\s*urls\s*,\s*replacements\s*\)\s*\{/g,
+              'function substitute(content, urls, replacements) {\n\tif (!content || !urls || !replacements) return content;'
+            );
+            modified = true;
+          }
+
+          return modified ? { code, map: null } : null;
         },
       },
       react(),

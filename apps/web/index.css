@@ -1,4 +1,3 @@
-@tailwind base;
 @font-face {
   font-family: "Satoshi";
   src: url("/fonts/Satoshi-300.woff2") format("woff2");
@@ -40,11 +39,69 @@
 @tailwind utilities;
 
 :root {
-  --accent: 184 149 108;
-  /* #b8956c - Antique Gold */
-  --accent-dark: 212 181 139;
-  /* #d4b58b - Parchment Gold */
-  --radius: 16px;
+  /* ==========================================================================
+     Core Design Tokens — Sanctuary Design System
+     ========================================================================== */
+
+  /* Colors — Warm Gold / Amber Accent Palette (Light Mode) */
+  --color-accent: #B8956C;           /* Antique Gold */
+  --color-accent-hover: #A07F56;     /* Deep Antique Gold */
+  --color-accent-light: #F4EDE4;     /* Subtle Gold Tint */
+  --color-accent-muted: rgba(184, 149, 108, 0.15);
+
+  /* Colors — Neutrals & Surfaces (Light Mode) */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #FAFAFA;
+  --color-surface: #F4F4F5;          /* zinc-100 */
+  --color-surface-muted: #E4E4E7;    /* zinc-200 */
+  --color-card: #FFFFFF;
+  --color-text: #09090B;             /* zinc-950 */
+  --color-text-muted: #71717A;       /* zinc-500 */
+  --color-border: #E4E4E7;           /* zinc-200 */
+  --color-border-muted: #F4F4F5;     /* zinc-100 */
+
+  /* Backward-compatible RGB channel tokens for Tailwind / alpha compositions */
+  --accent: 184 149 108;             /* #B8956C - Antique Gold */
+  --accent-dark: 212 181 139;        /* #D4B58B - Parchment Gold */
+
+  /* Radius Scale */
+  --radius-xs: 4px;                  /* badges, tiny tags */
+  --radius-sm: 8px;                  /* small inputs, mini buttons */
+  --radius-md: 12px;                 /* standard buttons, controls, search */
+  --radius-lg: 16px;                 /* cards, popovers, floating headers */
+  --radius-xl: 24px;                 /* large cards, dialogs, auth container */
+  --radius-full: 9999px;             /* pills, circular icon buttons */
+  --radius: 16px;                    /* default fallback */
+
+  /* Spacing Scale (4/8/12/16/20/24/32/40/48/64) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Typography Scale */
+  --font-sans: 'Satoshi', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Crimson Pro', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --text-xs: 0.75rem;                /* 12px - metadata, captions, timestamps */
+  --text-sm: 0.875rem;               /* 14px - secondary labels, subheadings */
+  --text-base: 1rem;                 /* 16px - body text, prose */
+  --text-lg: 1.125rem;               /* 18px - card titles, emphasized UI */
+  --text-xl: 1.25rem;                /* 20px - section headers */
+  --text-2xl: 1.5rem;                /* 24px - page titles */
+  --text-3xl: 1.875rem;              /* 30px - hero headers */
+  --text-4xl: 2.25rem;               /* 36px - display headers */
+
+  /* Motion & Shadows */
+  --motion-instant: 150ms;
+  --motion-fast: 250ms;
   --shadow-color: 28 24 20;
   --shadow-elevation-low: 0 1px 2px rgba(var(--shadow-color), 0.06), 0 2px 4px rgba(var(--shadow-color), 0.04);
   --shadow-elevation-medium: 0 4px 8px rgba(var(--shadow-color), 0.08), 0 8px 16px rgba(var(--shadow-color), 0.06);
@@ -52,35 +109,26 @@
   --page-max-width: 84rem;
   --page-gutter: clamp(1rem, 3vw, 2rem);
   --page-gutter-tight: clamp(0.75rem, 2vw, 1.25rem);
-
-  /* Design system semantic tokens (source of truth: web design-tokens spec). */
-  /* Motion */
-  --motion-instant: 150ms;
-  --motion-fast: 160ms;
-  /* Spacing scale (space.1..space.8) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 18px;
-  --space-6: 20px;
-  --space-7: 22px;
-  --space-8: 22px;
-  /* Radius */
-  --radius-xs: 2px;
-  --radius-sm: 7px;
-  /* Typography scale (xs..4xl) */
-  --text-xs: 11.2px;
-  --text-sm: 12.8px;
-  --text-base: 14.4px;
-  --text-lg: 16.2px;
-  --text-xl: 18.2px;
-  --text-2xl: 20.5px;
-  --text-3xl: 23px;
-  --text-4xl: 31.47px;
 }
 
 .dark {
+  /* Colors — Warm Gold / Amber Accent Palette (Dark Mode) */
+  --color-accent: #D4B58B;           /* Parchment Gold */
+  --color-accent-hover: #E2C9A6;     /* Lighter Parchment Gold */
+  --color-accent-light: #2A241C;     /* Dark Gold Tint */
+  --color-accent-muted: rgba(212, 181, 139, 0.15);
+
+  /* Colors — Neutrals & Surfaces (Dark Mode) */
+  --color-bg-primary: #09090B;       /* zinc-950 */
+  --color-bg-secondary: #18181B;     /* zinc-900 */
+  --color-surface: #27272A;          /* zinc-800 */
+  --color-surface-muted: #3F3F46;    /* zinc-700 */
+  --color-card: #18181B;             /* zinc-900 */
+  --color-text: #FAFAFA;             /* zinc-50 */
+  --color-text-muted: #A1A1AA;       /* zinc-400 */
+  --color-border: #27272A;           /* zinc-800 */
+  --color-border-muted: #18181B;     /* zinc-900 */
+
   --shadow-color: 0 0 0;
 }
 

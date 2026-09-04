@@ -134,5 +134,3 @@ function ReaderOverlay(props: ReaderOverlayProps) {
 }
 
 export default memo(ReaderOverlay);
-
-export default memo(ReaderOverlay);
