@@ -32,8 +32,8 @@ function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps)
               variant="nav"
               onClick={() => !item.disabled && onNavigate(item.view)}
               disabled={item.disabled}
-              className={`h-11 px-3 !rounded-xl gap-2 ${isActive
-                ? "bg-light-accent/12 dark:bg-dark-accent/18 text-light-accent dark:text-dark-accent"
+              className={`relative h-11 px-3 !rounded-xl gap-2 transition-all duration-instant ${isActive
+                ? "text-light-accent dark:text-dark-accent"
                 : item.disabled
                   ? "text-light-text-muted/40 dark:text-dark-text-muted/40"
                   : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
@@ -41,8 +41,11 @@ function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps)
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
             >
-              <Icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{item.label}</span>
+              {isActive && (
+                <div className="absolute inset-0 bg-light-accent/10 dark:bg-white/10 rounded-xl shadow-sm" />
+              )}
+              <Icon className="w-4 h-4 relative" />
+              <span className="hidden sm:inline relative">{item.label}</span>
             </Button>
           );
         })}

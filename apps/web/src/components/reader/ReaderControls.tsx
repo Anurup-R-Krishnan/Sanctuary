@@ -195,7 +195,7 @@ function ReaderControls({
                             {filteredToc.length > 0 ? (
                                 filteredToc.map(item => <TocEntry key={item.id} item={item} />)
                             ) : (
-                                <p className="text-center py-8 opacity-50 text-sm">No chapters found</p>
+                                <p className="text-center py-8 text-sm text-light-text-muted dark:text-dark-text-muted opacity-80">No chapters found</p>
                             )}
                         </div>
                     </>
