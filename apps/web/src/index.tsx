@@ -1,5 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fontsource/crimson-pro/300.css';
+import '@fontsource/crimson-pro/400.css';
+import '@fontsource/crimson-pro/500.css';
+import '@fontsource/crimson-pro/600.css';
+import '@fontsource/crimson-pro/700.css';
+import '@fontsource/crimson-pro/400-italic.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
 
 import { SanctuaryAuthProvider } from '@/auth/SanctuaryAuthProvider';
 import { SettingsProvider } from '@/components/ui/SettingsProvider';
