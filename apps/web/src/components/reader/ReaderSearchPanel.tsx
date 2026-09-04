@@ -108,7 +108,7 @@ export function ReaderSearchPanel({
     if (!isOpen) return null;
 
     return (
-        <div className="flex flex-col h-full w-full">
+        <div className="flex flex-col h-full">
             {/* Header */}
             <div className="p-4 border-b border-black/5 dark:border-white/5 flex flex-wrap items-center gap-2">
                 <form onSubmit={handleSubmit} className="flex-1 relative">
@@ -136,7 +136,7 @@ export function ReaderSearchPanel({
 
             {/* Results Navigation (if we have results) */}
             {searchState.results.length > 0 && (
-                <div className="px-4 py-2 bg-black-[0.02] dark:bg-white-[0.02] border-b border-black/5 dark:border-white/5 flex items-center justify-between text-xs text-light-text-muted dark:text-dark-text-muted">
+                <div className="px-4 py-2 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5 flex items-center justify-between text-xs text-light-text-muted dark:text-dark-text-muted">
                     <span>
                         {searchState.activeIndex + 1} of {searchState.results.length} matches
                     </span>
@@ -173,7 +173,7 @@ export function ReaderSearchPanel({
                                     className={`text-left p-4 border-b border-black/5 dark:border-white/5 transition-colors ${
                                         isActive
                                             ? "bg-light-accent/10 dark:bg-dark-accent/10 border-l-2 border-l-light-accent dark:border-l-dark-accent"
-                                            : "hover:bg-black-[0.02] dark:hover:bg-white-[0.02] border-l-2 border-l-transparent"
+                                            : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02] border-l-2 border-l-transparent"
                                     }`}
                                 >
                                     <div className="text-xs font-medium text-light-accent dark:text-dark-accent mb-1 truncate">
@@ -187,12 +187,20 @@ export function ReaderSearchPanel({
                         })}
                     </div>
                 ) : searchState.query ? (
-                    <div className="p-6 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
-                        No matches found.
+                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
+                        <div className="w-14 h-14 mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.06]">
+                            <Search className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                        </div>
+                        <p className="text-light-text dark:text-dark-text font-medium">No matches found</p>
+                        <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Try a different search term.</p>
                     </div>
                 ) : (
-                    <div className="p-6 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
-                        Enter a term to search the entire book.
+                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
+                        <div className="w-14 h-14 mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.06]">
+                            <Search className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                        </div>
+                        <p className="text-light-text dark:text-dark-text font-medium">Search your book</p>
+                        <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Enter a term to search the entire book.</p>
                     </div>
                 )}
             </div>

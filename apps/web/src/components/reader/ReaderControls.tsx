@@ -15,7 +15,6 @@ import type { Bookmark } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
-import { useSettings } from "@/store/useSettingsStore";
 
 interface TocItem {
     href: string;
@@ -41,7 +40,6 @@ function ReaderControls({
     onJumpToBottom,
     onRemoveBookmark,
 }: ReaderControlsProps) {
-    const readerForeground = useSettings((state) => state.readerForeground);
     const [searchQuery, setSearchQuery] = useState("");
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const [activeTab, setActiveTab] = useState<"chapters" | "bookmarks">("chapters");
@@ -101,8 +99,7 @@ function ReaderControls({
                     )}
                     {!hasSubs && <div className="w-4" />}
                     <span
-                        className="text-sm truncate flex-1 opacity-80"
-                        style={{ color: readerForeground }}
+                        className="text-sm truncate flex-1 text-light-text dark:text-dark-text opacity-80"
                     >
                         {item.label}
                     </span>
@@ -129,7 +126,7 @@ function ReaderControls({
                 <Button
                     onClick={onJumpToTop}
                     variant="secondary"
-                    className="gap-2 !p-3 !rounded-xl"
+                    className="gap-2 py-2.5"
                 >
                     <ArrowUp className="w-4 h-4" />
                     <span className="text-sm font-medium">Top</span>
@@ -137,7 +134,7 @@ function ReaderControls({
                 <Button
                     onClick={onJumpToBottom}
                     variant="secondary"
-                    className="gap-2 !p-3 !rounded-xl"
+                    className="gap-2 py-2.5"
                 >
                     <ArrowDown className="w-4 h-4" />
                     <span className="text-sm font-medium">Bottom</span>
@@ -151,11 +148,10 @@ function ReaderControls({
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     variant="nav"
-                    className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "chapters"
+                    className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "chapters"
                         ? "text-light-accent dark:text-dark-accent font-medium"
                         : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                         }`}
-                    style={{ color: activeTab === "chapters" ? readerForeground : undefined }}
                 >
                     {activeTab === "chapters" && (
                         <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
@@ -168,11 +164,10 @@ function ReaderControls({
                     role="tab"
                     aria-selected={activeTab === "bookmarks"}
                     variant="nav"
-                    className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-200 ${activeTab === "bookmarks"
+                    className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "bookmarks"
                         ? "text-light-accent dark:text-dark-accent font-medium"
                         : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                         }`}
-                    style={{ color: activeTab === "bookmarks" ? readerForeground : undefined }}
                 >
                     {activeTab === "bookmarks" && (
                         <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
@@ -215,7 +210,7 @@ function ReaderControls({
                                         className="flex-1 !justify-start !text-left !px-0 !py-0 !rounded-none"
                                     >
                                         <span className="flex flex-col items-start gap-0.5">
-                                            <span className="text-sm font-medium" style={{ color: readerForeground }}>{bm.title}</span>
+                                            <span className="text-sm font-medium text-light-text dark:text-dark-text">{bm.title}</span>
                                             <span className="text-xs opacity-60">{new Date(bm.createdAt).toLocaleDateString()}</span>
                                         </span>
                                     </Button>
@@ -230,7 +225,11 @@ function ReaderControls({
                                 </div>
                             ))
                         ) : (
-                            <p className="text-center py-8 opacity-50 text-sm">No bookmarks yet</p>
+                            <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+                                <BookmarkIcon className="w-6 h-6 mb-3 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                                <p className="text-light-text dark:text-dark-text font-medium">No bookmarks yet</p>
+                                <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Bookmark pages while reading to find them quickly.</p>
+                            </div>
                         )}
                     </div>
                 )}

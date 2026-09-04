@@ -1,19 +1,14 @@
-import { X, MessageSquare, Trash2 } from "lucide-react";
-import React from "react";
+import { MessageSquare, Trash2 } from "lucide-react";
 
 import type { ReaderAnnotation } from "@/types/reader";
 
-import { IconButton } from "@/components/ui/IconButton";
-
 interface ReaderAnnotationsPanelProps {
     annotations: ReaderAnnotation[];
-    onClose: () => void;
     onDeleteAnnotation: (id: string) => void;
     onGoToAnnotation: (cfi: string) => void;
 }
 
 export function ReaderAnnotationsPanel({
-    onClose,
     annotations,
     onGoToAnnotation,
     onDeleteAnnotation,
@@ -24,21 +19,24 @@ export function ReaderAnnotationsPanel({
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+            <div className="p-4 border-b border-black/5 dark:border-white/5">
                 <h2 className="font-semibold text-light-text dark:text-dark-text">Annotations</h2>
-                <IconButton icon={<X className="w-5 h-5" />} label="Close annotations" onClick={onClose} variant="ghost" />
             </div>
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
                 {sorted.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
-                        No highlights or notes yet.
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
+                        <div className="w-14 h-14 mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.06]">
+                            <MessageSquare className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                        </div>
+                        <p className="text-light-text dark:text-dark-text font-medium">No highlights yet</p>
+                        <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Select text while reading to create highlights and notes.</p>
                     </div>
                 ) : (
                     <div className="flex flex-col">
                         {sorted.map((item) => (
-                            <div key={item.id} className="group relative border-b border-black/5 dark:border-white/5 hover:bg-black-[0.02] dark:hover:bg-white-[0.02] transition-colors">
+                            <div key={item.id} className="group relative border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
                                 <button
                                     type="button"
                                     onClick={() => onGoToAnnotation(item.cfiRange)}

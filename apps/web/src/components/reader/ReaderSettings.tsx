@@ -71,7 +71,7 @@ export default function ReaderSettings() {
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 gap-8">
       <div>
-        <h2 className="text-lg font-serif font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Typography</h2>
+        <h2 className="text-lg font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Typography</h2>
         <div className="space-y-5">
           <Slider label="Size" value={fontSize} min={12} max={32} step={1} onChange={setFontSize} format={(v: number) => v + "px"} />
           <Slider label="Line Height" value={lineHeight} min={1.2} max={2.5} step={0.05} onChange={setLineHeight} format={(v: number) => v.toFixed(2)} />
@@ -100,7 +100,7 @@ export default function ReaderSettings() {
       </div>
 
       <div>
-        <h2 className="text-lg font-serif font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Display</h2>
+        <h2 className="text-lg font-medium text-light-text dark:text-dark-text tracking-tight mb-6">Display</h2>
         <div className="space-y-5">
           <Slider label="Brightness" value={brightness} min={50} max={100} step={1} onChange={setBrightness} format={(v: number) => v + "%"} />
           

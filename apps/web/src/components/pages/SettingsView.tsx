@@ -134,57 +134,50 @@ function SettingsView() {
 
     return (
         <div className="page-narrow page-stack">
-            <div className="rounded-2xl p-8 border border-black/[0.05] dark:border-white/[0.06] bg-light-surface/70 dark:bg-dark-surface/70">
-                <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
+                        <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
+                    </div>
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
-                                <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
-                        </div>
-                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm max-w-md">
-                            Craft your perfect reading experience with personalized typography, colors, and layout preferences.
+                        <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
+                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm">
+                            Craft your perfect reading experience.
                         </p>
                     </div>
-
-                    <Button
-                        onClick={resetToDefaults}
-                        variant="secondary"
-                        className="gap-2.5 px-5 py-3 group shadow-sm hover:shadow-md"
-                    >
-                        <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
-                        <span className="text-sm font-medium">Reset All</span>
-                    </Button>
                 </div>
+
+                <Button
+                    onClick={resetToDefaults}
+                    variant="secondary"
+                    className="gap-2.5 px-5 py-3 group shadow-sm hover:shadow-md"
+                >
+                    <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
+                    <span className="text-sm font-medium">Reset All</span>
+                </Button>
             </div>
 
-            <div className="relative p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
-                <div className="flex gap-1">
-                    {TABS.map((tab) => {
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <Button
-                                key={tab.id}
-                                variant="nav"
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-2 !rounded-lg transition-all duration-200 ${isActive
-                                        ? "text-light-accent dark:text-dark-accent"
-                                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-                                    }`}
-                            >
-                                {isActive && (
-                                    <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
-                                )}
-                                <div className="relative flex items-center gap-2">
-                                    <tab.icon className="w-4 h-4" strokeWidth={isActive ? 2 : 1.75} />
-                                    <span className="text-sm font-medium hidden sm:inline">{tab.label}</span>
-                                </div>
-                                <span className="relative text-[10px] opacity-60 hidden lg:block">{tab.description}</span>
-                            </Button>
-                        );
-                    })}
-                </div>
+            <div className="flex p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
+                {TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <Button
+                            key={tab.id}
+                            variant="nav"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`relative flex-1 gap-1.5 py-2 px-2.5 !rounded-lg text-sm font-medium transition-all duration-instant ${isActive
+                                    ? "text-light-accent dark:text-dark-accent"
+                                    : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
+                                }`}
+                        >
+                            {isActive && (
+                                <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
+                            )}
+                            <tab.icon className="w-3.5 h-3.5 relative" strokeWidth={1.75} />
+                            <span className="hidden sm:inline relative">{tab.label}</span>
+                        </Button>
+                    );
+                })}
             </div>
 
             <div className="mt-4 grid sm:grid-cols-2 gap-4">

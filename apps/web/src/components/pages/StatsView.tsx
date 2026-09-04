@@ -119,7 +119,7 @@ function StatsView() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             variant="nav"
-            className={`relative flex-1 gap-1.5 py-2 px-2.5 !rounded-lg text-sm font-medium transition-all duration-200 ${
+            className={`relative flex-1 gap-1.5 py-2 px-2.5 !rounded-lg text-sm font-medium transition-all duration-instant ${
               activeTab === tab.id
                 ? "text-light-accent dark:text-dark-accent"
                 : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
