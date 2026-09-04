@@ -19,7 +19,7 @@ export default {
           secondary: '#FAFAFA', // zinc-50
           surface: '#F4F4F5', // zinc-100
           card: '#FFFFFF',
-          accent: '#0055FF', // electric blue pop
+          accent: '#B8956C', // antique gold
           text: '#09090B', // zinc-950
           'text-muted': '#71717A', // zinc-500
           border: '#E4E4E7', // zinc-200
@@ -31,7 +31,7 @@ export default {
           secondary: '#18181B', // zinc-900
           surface: '#27272A', // zinc-800
           card: '#18181B',
-          accent: '#3377FF', // electric blue pop
+          accent: '#D4B58B', // parchment gold
           text: '#FAFAFA', // zinc-50
           'text-muted': '#A1A1AA', // zinc-400
           border: '#27272A', // zinc-800

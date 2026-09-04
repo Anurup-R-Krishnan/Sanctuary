@@ -1,0 +1,30 @@
+- main [ref=e78]:
+  - generic [active] [ref=e183]:
+    - iframe [ref=e188]:
+      
+    - generic:
+      - generic:
+        - generic:
+          - button "Close reader" [ref=e189] [cursor=pointer]
+          - heading "Moby Dick; Or, The Whale" [level=1] [ref=e193]
+          - generic [ref=e194]:
+            - button "Bookmark" [ref=e195] [cursor=pointer]
+            - button "Contents" [ref=e199] [cursor=pointer]
+            - button "Search" [ref=e201] [cursor=pointer]
+            - button "Annotations" [ref=e205] [cursor=pointer]
+            - button "Appearance" [ref=e209] [cursor=pointer]
+            - button "Fullscreen" [ref=e214] [cursor=pointer]
+      - button "Previous page"
+      - button "Next page"
+      - generic:
+        - button "Jump to reading progress position" [ref=e220] [cursor=pointer]
+        - generic [ref=e223]:
+          - button "Previous page" [ref=e225] [cursor=pointer]
+          - generic [ref=e228]:
+            - slider "Page slider" [ref=e230] [cursor=pointer]: "1"
+            - generic [ref=e231]:
+              - generic [ref=e232]: "1"
+              - generic [ref=e233]: /
+              - generic [ref=e234]: "1"
+              - generic [ref=e235]: 100%
+          - button "Next page" [ref=e237] [cursor=pointer]

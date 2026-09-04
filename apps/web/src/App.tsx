@@ -146,16 +146,14 @@ function App() {
           </div>
         ))}
         {view === View.READER && selectedBookId && (
-          <div className="animate-fadeInUp">
-            <ReaderView
-              bookId={selectedBookId}
-              onClose={endSession}
-              onUpdateProgress={handleReaderProgress}
-              onAddBookmark={addBookmark}
-              onRemoveBookmark={removeBookmark}
-              getBookContent={handleGetBookContent}
-            />
-          </div>
+          <ReaderView
+            bookId={selectedBookId}
+            onClose={endSession}
+            onUpdateProgress={handleReaderProgress}
+            onAddBookmark={addBookmark}
+            onRemoveBookmark={removeBookmark}
+            getBookContent={handleGetBookContent}
+          />
         )}
       </main>
 

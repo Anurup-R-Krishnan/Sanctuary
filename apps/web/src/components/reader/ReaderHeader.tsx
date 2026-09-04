@@ -68,10 +68,10 @@ function ReaderHeader({
         <header
             className={`fixed top-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
         >
-            <div className="relative flex items-start justify-between p-6">
+            <div className="relative flex items-start justify-between p-3.5 sm:p-5 md:p-6">
                 <IconButton
                     onClick={(e) => { e.stopPropagation(); onClose(); }}
-                    className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hover:scale-105 transition-all duration-instant group"
+                    className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hover:scale-105 transition-all duration-instant group shrink-0"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                     label="Close reader"
                     icon={<ArrowLeft className="w-5 h-5 transition-colors" style={{ color: readerForeground }} strokeWidth={2} />}
@@ -80,7 +80,7 @@ function ReaderHeader({
 
                 {/* Center: Title (Floating Capsule) */}
                 <div 
-                    className="absolute left-1/2 -translate-x-1/2 top-6 pointer-events-auto max-w-md px-6 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden md:flex flex-col items-center justify-center transition-all duration-instant"
+                    className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-md px-6 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex flex-col items-center justify-center transition-all duration-instant"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                 >
                     <h1 
@@ -93,7 +93,7 @@ function ReaderHeader({
 
                 {/* Right: Actions (Floating Group) */}
                 <div 
-                    className="pointer-events-auto flex flex-wrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-instant"
+                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-instant shrink-0"
                     style={{ backgroundColor: `${readerBackground}E6` }}
                 >
                     <ActionBtn 

@@ -73,7 +73,7 @@ function Header({
             <IconButton
               onClick={onToggleTheme}
               label="Toggle theme"
-              icon={theme === Theme.DARK ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
+              icon={theme === Theme.DARK ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
               variant="secondary"
             />
 

@@ -377,7 +377,7 @@ function StatsView() {
             </div>
           </div>
 
-          <div className="p-5 rounded-xl bg-gradient-to-br from-blue-500/4 to-violet-500/4 dark:from-blue-500/6 dark:to-violet-500/6 border border-blue-500/8 dark:border-blue-500/10">
+          <div className="p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-yellow-500/5 dark:from-amber-500/8 dark:to-yellow-500/8 border border-amber-500/10 dark:border-amber-500/15">
             <h3 className="text-sm font-semibold text-light-text dark:text-dark-text mb-3">Tips</h3>
             <ul className="space-y-2 text-xs text-light-text-muted dark:text-dark-text-muted">
               <li className="flex items-start gap-2">
