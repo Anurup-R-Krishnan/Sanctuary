@@ -119,7 +119,7 @@ export function ReaderSearchPanel({
                         placeholder="Search book..."
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        className="pl-9 pr-8 py-1.5 h-9 bg-black/5 dark:bg-white/5 border-transparent focus:bg-transparent"
+                        className="pl-9 pr-8 py-2 bg-black/5 dark:bg-white/5 border-transparent focus:bg-transparent"
                     />
                     {inputValue && (
                         <button
