@@ -102,21 +102,17 @@ function ReaderFooter({
                                     <div style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }} className="h-full transition-all" />
                                 </div>
                             </div>
-                            <div className="flex justify-center text-xs mt-0.5 text-light-text-muted dark:text-dark-text-muted gap-2 font-medium select-none truncate">
+                            <div className="flex justify-center items-center text-xs mt-0.5 text-light-text-muted dark:text-dark-text-muted gap-2 font-medium select-none truncate">
                                 <span className="tabular-nums">{currentPage}</span>
-                                <span>/</span>
+                                <span className="opacity-60">/</span>
                                 <span className="tabular-nums">{totalPages}</span>
-                                <span>•</span>
-                                <span>{progressPercent}%</span>
+                                <span className="opacity-60">{progressPercent}%</span>
                                 {estimatedMinutesRemaining !== undefined && estimatedMinutesRemaining !== null && (
-                                    <>
-                                        <span>•</span>
-                                        <span>
-                                            {estimatedMinutesRemaining < 1 
-                                                ? "< 1m left" 
-                                                : `${Math.round(estimatedMinutesRemaining)}m left`}
-                                        </span>
-                                    </>
+                                    <span>
+                                        {estimatedMinutesRemaining < 1 
+                                            ? "less than 1m left" 
+                                            : `${Math.round(estimatedMinutesRemaining)}m left`}
+                                    </span>
                                 )}
                             </div>
                         </div>
