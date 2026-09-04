@@ -71,7 +71,7 @@ const BookCover = ({
         <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center border-l-4 border-l-light-accent dark:border-l-dark-accent bg-light-secondary dark:bg-dark-secondary relative">
           <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent pointer-events-none" />
           <span className="font-serif font-medium text-xs leading-snug text-light-text dark:text-dark-text line-clamp-4 z-10">{book.title}</span>
-          {book.author && <span className="font-sans text-[0.65rem] mt-2 text-light-text-muted dark:text-dark-text-muted line-clamp-2 uppercase tracking-widest z-10">{book.author}</span>}
+          {book.author && <span className="font-sans text-[0.65rem] mt-1.5 text-light-text-muted dark:text-dark-text-muted line-clamp-2 z-10">{book.author}</span>}
         </div>
       )}
     </div>

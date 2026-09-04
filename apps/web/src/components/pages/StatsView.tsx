@@ -168,7 +168,7 @@ function StatsView() {
                   <Target className="w-4 h-4 text-light-accent dark:text-dark-accent" />
                   Time-based Goals
                 </h3>
-                {goalsStale && <span className="text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 uppercase font-bold tracking-wider">Offline</span>}
+                {goalsStale && <span className="text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 font-medium">Offline</span>}
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <GoalProgress

@@ -7,7 +7,7 @@ interface AuthScreenProps {
 
 export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary p-4">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary p-4">
       <div className="mb-8 flex flex-col items-center">
         <div className="w-16 h-16 rounded-2xl bg-light-accent dark:bg-dark-accent flex items-center justify-center shadow-xl mb-4">
           <BookOpen className="w-8 h-8 text-white" strokeWidth={1.5} />

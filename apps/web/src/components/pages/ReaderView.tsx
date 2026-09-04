@@ -332,7 +332,7 @@ function ReaderView({
         <div
             ref={rootRef}
             tabIndex={-1}
-            className="h-screen w-screen overflow-hidden select-none flex flex-col fixed inset-0 z-50 bg-light-primary dark:bg-dark-primary font-sans"
+            className="h-[100dvh] w-screen overflow-hidden select-none flex flex-col fixed inset-0 z-50 bg-light-primary dark:bg-dark-primary font-sans"
         >
             {contentError && !isLoading && (
                 <div className="absolute inset-0 z-[60] flex items-center justify-center bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-sm p-6 animate-fadeIn">

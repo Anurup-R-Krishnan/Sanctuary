@@ -95,7 +95,7 @@
   body {
     overflow-x: hidden;
     letter-spacing: -0.01em;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Satoshi', system-ui, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     /* Grainy texture overlay logic handled in main app wrapper for better performance */
   }
