@@ -13,8 +13,8 @@ export function LibraryEmptyState({ onAddBook }: LibraryEmptyStateProps) {
       <div className="mb-8 flex items-center justify-center w-20 h-20 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08]">
         <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
       </div>
-      <h2 className="text-2xl font-bold text-light-text dark:text-dark-text mb-2">Your Library Awaits</h2>
-      <p className="text-light-text-muted dark:text-dark-text-muted max-w-sm mx-auto mb-7 text-sm leading-relaxed">
+      <h2 className="text-3xl font-serif text-light-text dark:text-dark-text mb-3">Your Library Awaits</h2>
+      <p className="text-light-text-muted dark:text-dark-text-muted max-w-sm mx-auto mb-8 font-serif italic text-lg leading-relaxed">
         Add your first book to begin your reading journey
       </p>
       <div className="flex flex-col items-center gap-3">

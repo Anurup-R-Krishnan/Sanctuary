@@ -36,12 +36,12 @@ export const StatCard = ({
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
+        <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium mb-1">
           {label}
         </p>
-        <p className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums mt-0.5">{value}</p>
+        <p className="font-serif text-3xl font-medium text-light-text dark:text-dark-text tabular-nums leading-none tracking-tight">{value}</p>
         {subtext && (
-          <p className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-0.5">{subtext}</p>
+          <p className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-1.5 italic font-serif">{subtext}</p>
         )}
       </div>
     </div>

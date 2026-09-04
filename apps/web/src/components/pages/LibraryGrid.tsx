@@ -130,9 +130,21 @@ function LibraryGrid({
       />
 
       {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
+        <section className="mb-4">
+          <BookCard 
+            book={recentBooks[0]} 
+            onSelect={onSelectBook} 
+            onToggleFavorite={onToggleFavorite} 
+            onDelete={onDeleteBook} 
+            variant="featured" 
+          />
+        </section>
+      )}
+
+      {recentBooks.length > 1 && filterBy === "all" && !searchTerm && (
         <section>
-          <SectionHeader title="Continue Reading" count={recentBooks.length} icon={Clock} />
-          <HorizontalScroll books={recentBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
+          <SectionHeader title="Continue Reading" count={recentBooks.length - 1} icon={Clock} />
+          <HorizontalScroll books={recentBooks.slice(1, 7)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
         </section>
       )}
 

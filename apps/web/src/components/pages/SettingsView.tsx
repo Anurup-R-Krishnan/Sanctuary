@@ -140,8 +140,8 @@ function SettingsView() {
                         <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-light-text dark:text-dark-text">Settings</h2>
-                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm">
+                        <h2 className="text-3xl font-serif font-medium tracking-tight text-light-text dark:text-dark-text">Settings</h2>
+                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm italic font-serif">
                             Craft your perfect reading experience.
                         </p>
                     </div>

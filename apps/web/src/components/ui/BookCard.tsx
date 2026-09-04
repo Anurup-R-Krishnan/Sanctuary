@@ -186,13 +186,13 @@ const BookMetadata = ({ title, author, variant = "default" }: { title: string; a
   const isFeatured = variant === "featured";
   
   return (
-    <div className={isFeatured ? "mb-1" : ""}>
+    <div className={isFeatured ? "mb-2" : ""}>
       <h3 className={cx(
-        isFeatured ? "text-2xl" : "text-lg", "font-serif font-medium text-light-text dark:text-dark-text line-clamp-2 leading-tight tracking-tight group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
+        isFeatured ? "text-3xl sm:text-4xl" : "text-lg", "font-serif font-medium text-light-text dark:text-dark-text line-clamp-2 leading-tight tracking-tight group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
       )}>
         {title}
       </h3>
-      <p className={cx(isFeatured ? "font-medium" : "text-xs", "font-sans text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1")}>
+      <p className={cx(isFeatured ? "font-serif text-lg sm:text-xl mt-2 italic" : "text-xs font-sans", "text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1")}>
         {author}
       </p>
     </div>
