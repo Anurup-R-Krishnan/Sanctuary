@@ -6,7 +6,6 @@ import { BadgeCard } from "@/components/stats/BadgeCard";
 import { BarChart } from "@/components/stats/BarChart";
 import { HeatmapCell } from "@/components/stats/HeatmapCell";
 import { ProgressRing } from "@/components/stats/ProgressRing";
-import { StatCard } from "@/components/stats/StatCard";
 import { Button } from "@/components/ui/Button";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
@@ -94,23 +93,9 @@ function StatsView() {
 
   return (
     <div className="page-narrow page-stack">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
-            <BarChart3 className="w-5 h-5 text-white" strokeWidth={1.75} />
-          </div>
-          <div>
-            <h2 className="text-3xl font-serif font-medium tracking-tight text-light-text dark:text-dark-text">Stats</h2>
-            <p className="text-light-text-muted dark:text-dark-text-muted text-sm italic font-serif">Track your reading</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-orange-500/8 to-amber-500/8 dark:from-orange-500/10 dark:to-amber-500/10 border border-orange-500/15 dark:border-orange-500/10">
-          <Flame className="w-4 h-4 text-orange-500" strokeWidth={2} />
-          <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.currentStreak}</span>
-            <span className="text-xs text-light-text-muted dark:text-dark-text-muted">day streak</span>
-          </div>
-        </div>
+      <div>
+        <h2 className="text-3xl font-serif font-medium tracking-tight text-light-text dark:text-dark-text">Stats</h2>
+        <p className="text-light-text-muted dark:text-dark-text-muted text-sm italic font-serif">Track your reading</p>
       </div>
 
       <div className="flex gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
@@ -135,68 +120,85 @@ function StatsView() {
       </div>
 
       {activeTab === "overview" && (
-        <div className="space-y-5">
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-serif text-light-text dark:text-dark-text">Today</h3>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="relative">
-                <ProgressRing progress={dailyProgressPercent} size={80} stroke={6} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-light-text dark:text-dark-text tabular-nums">
+        <div className="space-y-10">
+          {/* Hero: the one thing that matters today */}
+          <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-light-accent/8 via-amber-500/5 to-transparent dark:from-dark-accent/12 dark:via-amber-500/8 dark:to-transparent border border-light-accent/15 dark:border-dark-accent/15">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
+              <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+                <ProgressRing progress={dailyProgressPercent} size={128} stroke={8} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-bold text-light-text dark:text-dark-text tabular-nums leading-none">
                     {dailyProgressPercent}%
                   </span>
+                  <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted mt-1">today</span>
                 </div>
               </div>
-              <div className="flex-1">
-                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">
+
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-3xl font-bold text-light-text dark:text-dark-text tabular-nums">
                   {stats.dailyProgress}{" "}
-                  <span className="text-sm font-normal text-light-text-muted dark:text-dark-text-muted">/ {dailyGoal} pages</span>
+                  <span className="text-base font-normal text-light-text-muted dark:text-dark-text-muted">/ {dailyGoal} pages</span>
                 </p>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-0.5">
-                  {stats.dailyProgress >= dailyGoal ? "Goal achieved" : `${dailyGoal - stats.dailyProgress} pages to go`}
+                <p className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1">
+                  {stats.dailyProgress >= dailyGoal ? "Goal achieved for today" : `${dailyGoal - stats.dailyProgress} pages to your goal`}
                 </p>
+
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
+                  <Flame className="w-4 h-4 text-orange-500" strokeWidth={2} />
+                  <span className="text-sm font-semibold text-light-text dark:text-dark-text tabular-nums">{stats.currentStreak}</span>
+                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted">day streak</span>
+                  <span className="text-light-text-muted/30 dark:text-dark-text-muted/30">·</span>
+                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted">best {stats.longestStreak}d</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {goals && (
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-light-accent/5 to-amber-500/5 dark:from-dark-accent/10 dark:to-amber-500/10 border border-light-accent/10 dark:border-dark-accent/10">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-serif text-light-text dark:text-dark-text flex items-center gap-2">
-                  <Target className="w-4 h-4 text-light-accent dark:text-dark-accent" />
-                  Time-based Goals
-                </h3>
-                {goalsStale && <span className="text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 font-medium">Offline</span>}
-              </div>
-              <div className="grid grid-cols-2 gap-6">
+            {goals && (
+              <div className="mt-6 pt-6 border-t border-light-accent/10 dark:border-dark-accent/10 grid grid-cols-2 gap-6">
                 <GoalProgress
-                  label="Daily"
+                  label="Daily time goal"
                   totalMinutes={goals.day.totalMinutes}
                   targetMinutes={goals.day.targetMinutes}
                   colorClassName="bg-light-accent dark:bg-dark-accent"
                 />
                 <GoalProgress
-                  label="Weekly"
+                  label="Weekly time goal"
                   totalMinutes={goals.week.totalMinutes}
                   targetMinutes={goals.week.targetMinutes}
                   colorClassName="bg-amber-500"
                 />
               </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard icon={Flame} label="Streak" value={`${stats.currentStreak}d`} subtext={`Best: ${stats.longestStreak}d`} accent />
-            <StatCard icon={BookOpen} label="Books" value={stats.totalBooksRead} subtext={`${stats.booksCompletedThisMonth} this month`} />
-            <StatCard icon={Clock} label="Time" value={`${Math.round(stats.totalReadingTime / 60)}h`} subtext={`${dailyAvg} min/day`} />
-            <StatCard icon={TrendingUp} label="Speed" value={`${stats.averageReadingSpeed}`} subtext="pages/hr" />
+            )}
+            {goals && goalsStale && (
+              <span className="absolute top-4 right-4 text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 font-medium">Offline</span>
+            )}
           </div>
 
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
+          {/* Quiet detail: supporting numbers, no card chrome */}
+          <div>
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-black/[0.06] dark:divide-white/[0.06]">
+              <div className="text-center px-2">
+                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.totalBooksRead}</p>
+                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">Books read</p>
+              </div>
+              <div className="text-center px-2">
+                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{Math.round(stats.totalReadingTime / 60)}h</p>
+                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">{dailyAvg} min/day</p>
+              </div>
+              <div className="text-center px-2">
+                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.averageReadingSpeed}</p>
+                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">Pages/hr</p>
+              </div>
+              <div className="text-center px-2">
+                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.booksCompletedThisMonth}</p>
+                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">This month</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-serif text-light-text dark:text-dark-text">This Week</h3>
+              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">This Week</h3>
               <span className="text-xs text-light-text-muted dark:text-dark-text-muted tabular-nums">{weeklyTotal} min</span>
             </div>
             <BarChart
@@ -205,7 +207,7 @@ function StatsView() {
             />
             <div className="mt-4 flex items-center justify-between gap-3">
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                Weekly goal: <span className="font-semibold tabular-nums">{weeklyGoal} pages</span>
+                Weekly goal: <span className="font-semibold tabular-nums text-light-text dark:text-dark-text">{weeklyGoal} pages</span>
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -226,29 +228,27 @@ function StatsView() {
             </div>
           </div>
 
-          <div className="p-5 rounded-xl bg-gradient-to-br from-light-accent/4 to-amber-500/4 dark:from-dark-accent/6 dark:to-amber-400/6 border border-light-accent/10 dark:border-dark-accent/10">
-            <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-light-accent/12 dark:bg-dark-accent/12">
-                <Star className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-              </div>
-              <div>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
-                  Reading Style
-                </p>
-                <h3 className="text-xl font-bold text-light-text dark:text-dark-text mt-0.5">{stats.readingPersonality}</h3>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
-                  {stats.personalityDescription}
-                </p>
-              </div>
+          <div className="flex items-start gap-3 text-left">
+            <div className="p-2 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 flex-shrink-0">
+              <Star className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+            </div>
+            <div>
+              <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted font-medium uppercase tracking-wide">
+                Reading Style
+              </p>
+              <h3 className="text-base font-semibold text-light-text dark:text-dark-text mt-0.5">{stats.readingPersonality}</h3>
+              <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed max-w-md">
+                {stats.personalityDescription}
+              </p>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === "charts" && (
-        <div className="space-y-5">
+        <div className="space-y-8">
           <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-4">Activity (14 weeks)</h3>
+            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-4">Activity (14 weeks)</h3>
             <div className="flex gap-0.5 overflow-x-auto pb-2">
               {stats.heatmapData.map((week, wi) => (
                 <div key={`week-${wi}`} className="flex flex-col gap-0.5">
@@ -268,51 +268,53 @@ function StatsView() {
           </div>
 
           <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-4">Monthly Hours</h3>
+            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
             <BarChart
               data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
               maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
             />
           </div>
 
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-4">Genres</h3>
-            {stats.genreDistribution.length > 0 ? (
-              <div className="space-y-2.5">
-                {stats.genreDistribution.map((g) => (
-                  <div key={g.genre} className="flex items-center gap-2.5">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{g.genre}</span>
-                    <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                      {g.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Add genres to see distribution</p>
-            )}
-          </div>
-
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-4">Top Authors</h3>
-            {stats.authorNetwork.length > 0 ? (
-              <div className="space-y-2.5">
-                {stats.authorNetwork.map((a) => (
-                  <div key={a.author} className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
-                      <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+          <div className="grid sm:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Genres</h3>
+              {stats.genreDistribution.length > 0 ? (
+                <div className="space-y-2.5">
+                  {stats.genreDistribution.map((g) => (
+                    <div key={g.genre} className="flex items-center gap-2.5">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
+                      <span className="flex-1 text-sm text-light-text dark:text-dark-text">{g.genre}</span>
+                      <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
+                        {g.count}
+                      </span>
                     </div>
-                    <span className="flex-1 text-sm text-light-text dark:text-dark-text">{a.author}</span>
-                    <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                      {a.books}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Start reading to see favorites</p>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Add genres to see distribution</p>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Top Authors</h3>
+              {stats.authorNetwork.length > 0 ? (
+                <div className="space-y-2.5">
+                  {stats.authorNetwork.map((a) => (
+                    <div key={a.author} className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
+                        <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+                      </div>
+                      <span className="flex-1 text-sm text-light-text dark:text-dark-text">{a.author}</span>
+                      <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
+                        {a.books}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Start reading to see favorites</p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -331,9 +333,9 @@ function StatsView() {
       )}
 
       {activeTab === "insights" && (
-        <div className="space-y-5">
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-4">Insights</h3>
+        <div className="space-y-8">
+          <div>
+            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Insights</h3>
             <div className="space-y-3">
               {insights.map((item) => (
                 <div key={item.title} className="flex items-center gap-3">
@@ -350,8 +352,8 @@ function StatsView() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-4">Milestones</h3>
+          <div>
+            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Milestones</h3>
             <div className="space-y-3">
               {milestones.map((m) => (
                   <div key={m.title} className="flex items-center gap-3">
@@ -378,7 +380,7 @@ function StatsView() {
           </div>
 
           <div className="p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-yellow-500/5 dark:from-amber-500/8 dark:to-yellow-500/8 border border-amber-500/10 dark:border-amber-500/15">
-            <h3 className="text-xl font-serif text-light-text dark:text-dark-text mb-3">Tips</h3>
+            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Tips</h3>
             <ul className="space-y-2 text-xs text-light-text-muted dark:text-dark-text-muted">
               <li className="flex items-start gap-2">
                 <span className="text-light-accent dark:text-dark-accent mt-px">-</span>

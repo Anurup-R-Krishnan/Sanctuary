@@ -1,4 +1,4 @@
-import { Star, Clock, Heart, Trash2 } from "lucide-react";
+import { Clock, Heart, Trash2, ArrowRight } from "lucide-react";
 import React, { useState, useCallback } from "react";
 
 import type { Book } from "@/types";
@@ -50,7 +50,7 @@ const BookCover = ({
   const containerClass = isCompact
     ? "w-14 h-20 rounded-lg overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 flex-shrink-0 relative"
     : isFeatured
-      ? "w-28 h-40 rounded-xl overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-md flex-shrink-0 relative"
+      ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-lg flex-shrink-0 relative"
       : "w-full aspect-[2/3] rounded-t-2xl overflow-hidden bg-light-secondary dark:bg-dark-secondary relative";
 
   return (
@@ -260,7 +260,7 @@ function BookCard({
       className={cx(
         "group border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface transition-colors cursor-pointer",
         isCompact && "flex items-center gap-4 p-3 rounded-xl hover:border-light-accent/40 dark:hover:border-dark-accent/40",
-        isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/40 dark:hover:border-dark-accent/40 p-5",
+        isFeatured && "relative overflow-hidden rounded-3xl hover:border-light-accent/40 dark:hover:border-dark-accent/40 p-6 sm:p-7 bg-gradient-to-br from-light-accent/[0.06] to-transparent dark:from-dark-accent/[0.08] shadow-sm",
         !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/35 dark:hover:border-dark-accent/35"
       )}
     >
@@ -279,33 +279,27 @@ function BookCard({
           </div>
         </>
       ) : isFeatured ? (
-        <div className="flex items-start gap-6">
+        <div className="flex items-start gap-6 sm:gap-8">
           <div className="relative flex-shrink-0">
             <BookCover {...commonCoverProps} variant="featured" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-4 mb-3">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-light-accent dark:text-dark-accent mb-2">
+              <Clock className="w-3.5 h-3.5" strokeWidth={2} />
+              Now Reading
+            </p>
+            <div className="flex items-start justify-between gap-4 mb-4">
               <BookMetadata title={book.title} author={book.author} variant="featured" />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <FavoriteButton isFavorite={!!book.isFavorite} onClick={handleFavoriteClick} variant="featured" />
                 {onDelete && <DeleteButton onClick={handleDeleteClick} variant="featured" />}
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4 max-w-md">
               <ProgressBar progress={progressPercentage} variant="featured" />
-              <div className="flex items-center gap-4 text-sm text-light-text-muted dark:text-dark-text-muted">
-                {isRecent && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" strokeWidth={1.5} />
-                    <span>Recently read</span>
-                  </div>
-                )}
-                {isCompleted && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-amber-500 fill-current" strokeWidth={1.5} />
-                    <span>Completed</span>
-                  </div>
-                )}
+              <div className="flex items-center gap-2 text-sm font-medium text-light-accent dark:text-dark-accent">
+                <span>{isCompleted ? "Read again" : "Resume reading"}</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
               </div>
             </div>
           </div>

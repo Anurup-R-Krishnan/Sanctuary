@@ -130,7 +130,7 @@ function LibraryGrid({
       />
 
       {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
-        <section className="mb-4">
+        <section className="mb-10">
           <BookCard 
             book={recentBooks[0]} 
             onSelect={onSelectBook} 
@@ -141,40 +141,45 @@ function LibraryGrid({
         </section>
       )}
 
-      {recentBooks.length > 1 && filterBy === "all" && !searchTerm && (
-        <section>
-          <SectionHeader title="Continue Reading" count={recentBooks.length - 1} icon={Clock} />
-          <HorizontalScroll books={recentBooks.slice(1, 7)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
+      {(recentBooks.length > 1 || favoriteBooks.length > 0 || Object.keys(seriesGroups).length > 0) &&
+        filterBy === "all" && !searchTerm && (
+        <section className="mb-10 space-y-6">
+          {recentBooks.length > 1 && (
+            <div>
+              <SectionHeader title="More in Progress" count={recentBooks.length - 1} icon={Clock} variant="quiet" />
+              <HorizontalScroll books={recentBooks.slice(1, 7)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
+            </div>
+          )}
+
+          {favoriteBooks.length > 0 && (
+            <div>
+              <SectionHeader title="Favorites" count={favoriteBooks.length} icon={Star} variant="quiet" />
+              <HorizontalScroll books={favoriteBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
+            </div>
+          )}
+
+          {Object.keys(seriesGroups).length > 0 && (
+            <div>
+              <SectionHeader title="Series" variant="quiet" />
+              <div className="space-y-4">
+                {Object.entries(seriesGroups)
+                  .slice(0, 2)
+                  .map(([series, seriesBooks]) => (
+                    <div key={series}>
+                      <div className="flex items-center gap-1 mb-2 text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
+                        <span>{series}</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </div>
+                      <HorizontalScroll books={seriesBooks} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
 
-      {favoriteBooks.length > 0 && filterBy === "all" && !searchTerm && (
-        <section>
-          <SectionHeader title="Favorites" count={favoriteBooks.length} icon={Star} />
-          <HorizontalScroll books={favoriteBooks.slice(0, 6)} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
-        </section>
-      )}
-
-      {Object.keys(seriesGroups).length > 0 && filterBy === "all" && !searchTerm && (
-        <section>
-          <SectionHeader title="Series" />
-          <div className="space-y-4">
-            {Object.entries(seriesGroups)
-              .slice(0, 2)
-              .map(([series, seriesBooks]) => (
-                <div key={series}>
-                  <div className="flex items-center gap-1 mb-2 text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
-                    <span>{series}</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </div>
-                  <HorizontalScroll books={seriesBooks} onSelectBook={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
-                </div>
-              ))}
-          </div>
-        </section>
-      )}
-
-      <section>
+      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm ? "pt-6 border-t border-black/[0.06] dark:border-white/[0.06]" : ""}>
         <SectionHeader
           title={searchTerm ? "Results" : "All Books"}
           count={displayBooks.length}
