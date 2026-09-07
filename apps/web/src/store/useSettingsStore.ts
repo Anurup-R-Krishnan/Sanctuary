@@ -25,7 +25,7 @@ type SettingsValues = {
   paragraphSpacing: number;
   continuous: boolean;
   spread: boolean;
-  direction: "ltr" | "rtl";
+  direction: "auto" | "ltr" | "rtl";
   brightness: number;
   grayscale: boolean;
   showScrollbar: boolean;
@@ -41,7 +41,6 @@ type SettingsValues = {
   weeklyGoal: number;
   showStreakReminder: boolean;
   trackingEnabled: boolean;
-  screenReaderMode: boolean;
   reduceMotion: boolean;
   ttsVoiceURI: string | null;
   ttsRate: number;
@@ -59,7 +58,7 @@ type SettingsActions = {
   setParagraphSpacing: (v: number) => void;
   setContinuous: (v: boolean) => void;
   setSpread: (v: boolean) => void;
-  setDirection: (v: "ltr" | "rtl") => void;
+  setDirection: (v: "auto" | "ltr" | "rtl") => void;
   setBrightness: (v: number) => void;
   setGrayscale: (v: boolean) => void;
   setShowScrollbar: (v: boolean) => void;
@@ -75,7 +74,6 @@ type SettingsActions = {
   setWeeklyGoal: (v: number) => void;
   setShowStreakReminder: (v: boolean) => void;
   setTrackingEnabled: (v: boolean) => void;
-  setScreenReaderMode: (v: boolean) => void;
   setReduceMotion: (v: boolean) => void;
   setTtsVoiceURI: (v: string | null) => void;
   setTtsRate: (v: number) => void;
@@ -96,7 +94,7 @@ const DEFAULTS: SettingsValues = {
   paragraphSpacing: 17,
   continuous: false,
   spread: false,
-  direction: "ltr",
+  direction: "auto",
   brightness: 100,
   grayscale: false,
   showScrollbar: false,
@@ -119,7 +117,6 @@ const DEFAULTS: SettingsValues = {
   weeklyGoal: 150,
   showStreakReminder: true,
   trackingEnabled: true,
-  screenReaderMode: false,
   reduceMotion: false,
   ttsVoiceURI: null,
   ttsRate: 1,
@@ -155,7 +152,6 @@ export const pickValues = (state: Settings): SettingsValues => ({
   weeklyGoal: state.weeklyGoal,
   showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
-  screenReaderMode: state.screenReaderMode,
   reduceMotion: state.reduceMotion,
   ttsVoiceURI: state.ttsVoiceURI,
   ttsRate: state.ttsRate,
@@ -193,7 +189,6 @@ export const toRemotePayload = (state: SettingsValues) => ({
   showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
   // Accessibility
-  screenReaderMode: state.screenReaderMode,
   reduceMotion: state.reduceMotion,
   motion: state.reduceMotion ? "reduced" as const : "full" as const,
   showPageMeta: state.showPageCounter,
@@ -218,7 +213,7 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.paragraphSpacing === "number") out.paragraphSpacing = raw.paragraphSpacing;
   if (typeof raw.continuous === "boolean") out.continuous = raw.continuous;
   if (typeof raw.spread === "boolean") out.spread = raw.spread;
-  if (raw.direction === "ltr" || raw.direction === "rtl") out.direction = raw.direction;
+  if (raw.direction === "auto" || raw.direction === "ltr" || raw.direction === "rtl") out.direction = raw.direction;
   if (typeof raw.brightness === "number") out.brightness = raw.brightness;
   if (typeof raw.grayscale === "boolean") out.grayscale = raw.grayscale;
   if (typeof raw.showScrollbar === "boolean") out.showScrollbar = raw.showScrollbar;
@@ -233,7 +228,6 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.weeklyGoal === "number") out.weeklyGoal = raw.weeklyGoal;
   if (typeof raw.showStreakReminder === "boolean") out.showStreakReminder = raw.showStreakReminder;
   if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
-  if (typeof raw.screenReaderMode === "boolean") out.screenReaderMode = raw.screenReaderMode;
   if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
   if (typeof raw.ttsVoiceURI === "string" || raw.ttsVoiceURI === null) out.ttsVoiceURI = raw.ttsVoiceURI as string | null;
   if (typeof raw.ttsRate === "number") out.ttsRate = raw.ttsRate;
@@ -281,7 +275,7 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   // ── Reader behavior ───────────────────────────────────────────────────────
   if (typeof remote.continuous === "boolean") out.continuous = remote.continuous;
   if (typeof remote.spread === "boolean") out.spread = remote.spread;
-  if (remote.direction === "ltr" || remote.direction === "rtl") out.direction = remote.direction;
+  if (remote.direction === "auto" || remote.direction === "ltr" || remote.direction === "rtl") out.direction = remote.direction;
   if (typeof remote.showScrollbar === "boolean") out.showScrollbar = remote.showScrollbar;
   if (remote.progressBarType === "bar" || remote.progressBarType === "none") {
     out.progressBarType = remote.progressBarType;
@@ -295,7 +289,6 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   else if (typeof remote.showPageMeta === "boolean") out.showPageCounter = remote.showPageMeta;
 
   // ── Accessibility ─────────────────────────────────────────────────────────
-  if (typeof remote.screenReaderMode === "boolean") out.screenReaderMode = remote.screenReaderMode;
   // reduceMotion: prefer the new field; fall back to legacy motion alias
   if (typeof remote.reduceMotion === "boolean") out.reduceMotion = remote.reduceMotion;
   else if (typeof remote.motion === "string") out.reduceMotion = remote.motion === "reduced";
@@ -342,7 +335,6 @@ export const useSettingsStore = create<Settings>((set) => ({
   setWeeklyGoal: createSetAction("weeklyGoal", set),
   setShowStreakReminder: createSetAction("showStreakReminder", set),
   setTrackingEnabled: createSetAction("trackingEnabled", set),
-  setScreenReaderMode: createSetAction("screenReaderMode", set),
   setReduceMotion: createSetAction("reduceMotion", set),
   setTtsVoiceURI: createSetAction("ttsVoiceURI", set),
   setTtsRate: createSetAction("ttsRate", set),

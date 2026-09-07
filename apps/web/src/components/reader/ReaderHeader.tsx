@@ -45,6 +45,7 @@ function ReaderHeader({
 }: ReaderHeaderProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
+    const showFloatingCapsule = useSettings((state) => state.showFloatingCapsule);
 
     const ActionBtn = ({ icon: Icon, label, onClick, active }: {
         icon: React.ElementType;
@@ -79,17 +80,19 @@ function ReaderHeader({
                 />
 
                 {/* Center: Title (Floating Capsule) */}
-                <div 
-                    className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-md px-6 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex flex-col items-center justify-center transition-all duration-instant"
-                    style={{ backgroundColor: `${readerBackground}E6` }}
-                >
-                    <h1 
-                        className="font-medium text-sm truncate max-w-[260px] text-center"
-                        style={{ color: readerForeground }}
+                {showFloatingCapsule && (
+                    <div 
+                        className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-md px-6 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex flex-col items-center justify-center transition-all duration-instant"
+                        style={{ backgroundColor: `${readerBackground}E6` }}
                     >
-                        {book.title}
-                    </h1>
-                </div>
+                        <h1 
+                            className="font-medium text-sm truncate max-w-[260px] text-center"
+                            style={{ color: readerForeground }}
+                        >
+                            {book.title}
+                        </h1>
+                    </div>
+                )}
 
                 {/* Right: Actions (Floating Group) */}
                 <div 

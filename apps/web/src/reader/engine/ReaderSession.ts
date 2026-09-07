@@ -10,6 +10,7 @@ export interface ReaderSessionOptions {
     bookId: string;
     container: HTMLDivElement;
     continuous: boolean;
+    direction?: "auto" | "ltr" | "rtl";
     initialCfi?: string;
     spread: boolean;
     themeStyles: Record<string, Record<string, string>>;
@@ -150,7 +151,9 @@ export class ReaderSession {
                 }
             }
 
-            const readingDirection = this.epubBook.package?.metadata?.direction ?? "ltr";
+            const bookDirection = this.epubBook.package?.metadata?.direction ?? "ltr";
+            const userDirection = options.direction;
+            const readingDirection = userDirection && userDirection !== "auto" ? userDirection : bookDirection;
 
             this.rendition = this.epubBook.renderTo(this.container, {
                 width: "100%",

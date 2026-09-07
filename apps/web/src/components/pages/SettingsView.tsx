@@ -1,116 +1,22 @@
 import {
-    Palette,
-    Target,
-    RotateCcw,
-    Zap,
-    WandSparkles,
-    Bell,
-    ChartLine,
-    Droplets,
-    Type,
-    CircleDashed,
-    HardDrive,
-    Trash2,
-    AlertTriangle
+    Target, RotateCcw, HardDrive, Trash2, AlertTriangle, Settings2
 } from "lucide-react";
 import React, { useState } from "react";
 
-import { ColorSwatch } from "@/components/settings/ColorSwatch";
-import { Section } from "@/components/settings/Section";
-import { ShortcutItem } from "@/components/settings/ShortcutItem";
 import { Slider } from "@/components/settings/Slider";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { Toggle } from "@/components/ui/Toggle";
-import { COLOR_PRESETS } from "@/config/readerConfig";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { clearBooks } from "@/utils/db";
 
-type Tab = "colors" | "typography" | "shortcuts" | "goals" | "data";
-type ShortcutKey = "nextPage" | "prevPage" | "toggleBookmark" | "toggleFullscreen" | "toggleUI" | "close";
-
-const TABS = [
-    { id: "colors" as Tab, label: "Colors", icon: Palette, description: "Theme" },
-    { id: "typography" as Tab, label: "Type", icon: Type, description: "Layout" },
-    { id: "shortcuts" as Tab, label: "Shortcuts", icon: Zap, description: "Keybinds" },
-    { id: "goals" as Tab, label: "Goals", icon: Target, description: "Tracking" },
-    { id: "data" as Tab, label: "Data", icon: HardDrive, description: "Storage" },
-] as const;
-
-const SHORTCUTS: Array<{ key: ShortcutKey; label: string }> = [
-    { key: "nextPage", label: "Next Page" },
-    { key: "prevPage", label: "Previous Page" },
-    { key: "toggleBookmark", label: "Toggle Bookmark" },
-    { key: "toggleFullscreen", label: "Toggle Fullscreen" },
-    { key: "toggleUI", label: "Toggle UI" },
-    { key: "close", label: "Close/Exit" },
-];
-
-const TYPOGRAPHY_SLIDERS = [
-    { key: "fontSize", label: "Font Size", min: 12, max: 32, step: 1 },
-    { key: "lineHeight", label: "Line Height", min: 1.1, max: 2.2, step: 0.05 },
-    { key: "maxTextWidth", label: "Max Text Width", min: 40, max: 200, step: 5 },
-] as const;
-
 function SettingsView() {
-    const [activeTab, setActiveTab] = useState<Tab>("colors");
     const [isResetting, setIsResetting] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [resetError, setResetError] = useState<string | null>(null);
-    const {
-        readerForeground, setReaderForeground,
-        readerBackground, setReaderBackground,
-        readerAccent, setReaderAccent,
-        fontSize, setFontSize,
-        lineHeight, setLineHeight,
-        maxTextWidth, setMaxTextWidth,
-        reduceMotion, setReduceMotion,
-        keybinds, setKeybinds,
-        dailyGoal, setDailyGoal,
-        weeklyGoal, setWeeklyGoal,
-        showStreakReminder, setShowStreakReminder,
-        trackingEnabled, setTrackingEnabled,
-        showFloatingCapsule, setShowFloatingCapsule,
-        resetToDefaults,
-    } = useSettingsShallow((state) => ({
-        readerForeground: state.readerForeground,
-        setReaderForeground: state.setReaderForeground,
-        readerBackground: state.readerBackground,
-        setReaderBackground: state.setReaderBackground,
-        readerAccent: state.readerAccent,
-        setReaderAccent: state.setReaderAccent,
-        fontSize: state.fontSize,
-        setFontSize: state.setFontSize,
-        lineHeight: state.lineHeight,
-        setLineHeight: state.setLineHeight,
-        maxTextWidth: state.maxTextWidth,
-        setMaxTextWidth: state.setMaxTextWidth,
-        reduceMotion: state.reduceMotion,
-        setReduceMotion: state.setReduceMotion,
-        keybinds: state.keybinds,
-        setKeybinds: state.setKeybinds,
-        dailyGoal: state.dailyGoal,
-        setDailyGoal: state.setDailyGoal,
-        weeklyGoal: state.weeklyGoal,
-        setWeeklyGoal: state.setWeeklyGoal,
-        showStreakReminder: state.showStreakReminder,
-        setShowStreakReminder: state.setShowStreakReminder,
-        trackingEnabled: state.trackingEnabled,
-        setTrackingEnabled: state.setTrackingEnabled,
-        showFloatingCapsule: state.showFloatingCapsule,
-        setShowFloatingCapsule: state.setShowFloatingCapsule,
-        resetToDefaults: state.resetToDefaults,
-    }));
+    const state = useSettingsShallow((s) => s);
 
-    const typographyValues = {
-        fontSize: { value: fontSize, onChange: setFontSize, displayValue: `${fontSize}px` },
-        lineHeight: { value: lineHeight, onChange: setLineHeight, displayValue: lineHeight.toFixed(2) },
-        maxTextWidth: { value: maxTextWidth, onChange: setMaxTextWidth, displayValue: `${maxTextWidth}ch` },
-    };
-
-    const handleFactoryResetClick = () => {
-        setShowResetConfirm(true);
-    };
+    const handleFactoryResetClick = () => setShowResetConfirm(true);
 
     const executeFactoryReset = async () => {
         setShowResetConfirm(false);
@@ -132,244 +38,96 @@ function SettingsView() {
         }
     };
 
+    const NavAnchor = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
+        <a href={`#${id}`} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-black/[0.04] dark:hover:bg-white/[0.04] rounded-lg transition-colors">
+            <Icon className="w-4 h-4" />
+            <span className="hidden sm:inline">{label}</span>
+        </a>
+    );
+
     return (
-        <div className="page-narrow page-stack">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-light-accent dark:bg-dark-accent">
-                        <WandSparkles className="w-5 h-5 text-white" strokeWidth={1.75} />
-                    </div>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 pb-32">
+            <aside className="md:w-64 flex-shrink-0">
+               <div className="sticky top-24 space-y-1">
+                   <h2 className="px-3 mb-4 text-2xl font-serif tracking-tight text-light-text dark:text-dark-text">Settings</h2>
+                   <NavAnchor id="behavior" label="Behavior" icon={Settings2} />
+                   <NavAnchor id="goals" label="Reading Goals" icon={Target} />
+                   <NavAnchor id="data" label="Data & Storage" icon={HardDrive} />
+                   <div className="pt-6 px-3">
+                       <Button onClick={state.resetToDefaults} variant="secondary" className="w-full gap-2 justify-center group shadow-sm hover:shadow-md">
+                           <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" />
+                           <span className="text-sm font-medium">Reset All</span>
+                       </Button>
+                   </div>
+                   <p className="px-3 pt-2 text-[11px] text-light-text-muted/70 dark:text-dark-text-muted/70 leading-relaxed">
+                       Looking for typography, theme, or layout options? Those live in the reader's own Settings panel (open a book, then tap the gear icon).
+                   </p>
+               </div>
+            </aside>
+
+            <div className="flex-1 space-y-12">
+                <section id="behavior" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h2 className="text-3xl font-serif font-medium tracking-tight text-light-text dark:text-dark-text">Settings</h2>
-                        <p className="text-light-text-muted dark:text-dark-text-muted text-sm italic font-serif">
-                            Craft your perfect reading experience.
-                        </p>
+                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Behavior</h3>
+                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">App-wide interaction preferences.</p>
                     </div>
-                </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                            <Toggle checked={state.reduceMotion} onChange={state.setReduceMotion} label="Reduce Motion" sublabel="Disable animations and transitions across the app" />
+                        </div>
+                    </div>
+                </section>
 
-                <Button
-                    onClick={resetToDefaults}
-                    variant="secondary"
-                    className="gap-2.5 px-5 py-3 group shadow-sm hover:shadow-md"
-                >
-                    <RotateCcw className="w-4 h-4 transition-transform duration-500 group-hover:-rotate-180" strokeWidth={1.75} />
-                    <span className="text-sm font-medium">Reset All</span>
-                </Button>
-            </div>
+                <hr className="border-black/5 dark:border-white/5" />
 
-            <div className="flex p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
-                {TABS.map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    return (
-                        <Button
-                            key={tab.id}
-                            variant="nav"
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`relative flex-1 gap-1.5 py-2 px-2.5 !rounded-lg text-sm font-medium transition-all duration-instant ${isActive
-                                    ? "text-light-accent dark:text-dark-accent"
-                                    : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
-                                }`}
-                        >
-                            {isActive && (
-                                <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
-                            )}
-                            <tab.icon className="w-3.5 h-3.5 relative" strokeWidth={1.75} />
-                            <span className="hidden sm:inline relative">{tab.label}</span>
+                <section id="goals" className="space-y-6 scroll-mt-24">
+                    <div>
+                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Reading Goals</h3>
+                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">Track your reading habits and maintain streaks.</p>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                        <Slider label="Daily Goal" value={state.dailyGoal} onChange={state.setDailyGoal} min={5} max={120} step={5} displayValue={`${state.dailyGoal} pages`} />
+                        <Slider label="Weekly Goal" value={state.weeklyGoal} onChange={state.setWeeklyGoal} min={20} max={500} step={10} displayValue={`${state.weeklyGoal} pages`} />
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                             <Toggle checked={state.trackingEnabled} onChange={state.setTrackingEnabled} label="Analytics" sublabel="Track reading time and progress" />
+                        </div>
+                        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                             <Toggle checked={state.showStreakReminder} onChange={state.setShowStreakReminder} label="Streak Reminders" sublabel="Remind me to read daily" />
+                        </div>
+                    </div>
+                </section>
+
+                <hr className="border-black/5 dark:border-white/5" />
+
+                <section id="data" className="space-y-6 scroll-mt-24">
+                    <div>
+                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Data & Storage</h3>
+                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">Manage your local data.</p>
+                    </div>
+                    <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
+                        <div className="flex items-center gap-3 mb-3 text-red-600 dark:text-red-400">
+                            <AlertTriangle className="w-5 h-5" />
+                            <h4 className="font-semibold">Danger Zone</h4>
+                        </div>
+                        <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-5">
+                            This will permanently delete all locally cached books, reading progress, and settings from this browser. If you are offline, unsynced progress will be lost.
+                        </p>
+                        <Button onClick={handleFactoryResetClick} isLoading={isResetting} variant="destructive" className="gap-2 px-5 shadow-sm">
+                            <Trash2 className="w-4 h-4" />
+                            Factory Reset Cache
                         </Button>
-                    );
-                })}
+                        {resetError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{resetError}</p>}
+                    </div>
+                </section>
             </div>
-
-            <div className="mt-4 grid sm:grid-cols-2 gap-4">
-                <Toggle
-                    checked={showFloatingCapsule}
-                    onChange={setShowFloatingCapsule}
-                    label="Floating Capsule"
-                    sublabel="Show page/time capsule"
-                />
-                <Toggle
-                    checked={reduceMotion}
-                    onChange={setReduceMotion}
-                    label="Reduce Motion"
-                    sublabel="Simplify animations"
-                />
-            </div>
-
-            <div className="space-y-6 animate-fadeIn" key={activeTab}>
-                {activeTab === "colors" && (
-                    <>
-                        <div className="pt-2">
-                            <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-4 flex items-center gap-2">
-                                <Palette className="w-5 h-5 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
-                                Color Themes
-                            </h3>
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
-                                {COLOR_PRESETS.map((preset) => (
-                                    <ColorSwatch
-                                        key={preset.id}
-                                        preset={preset}
-                                        isActive={preset.bg === readerBackground}
-                                        onClick={() => {
-                                            setReaderForeground(preset.fg);
-                                            setReaderBackground(preset.bg);
-                                            setReaderAccent(preset.accent);
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        <Section title="Custom Colors" icon={Droplets}>
-                            <div className="grid gap-4 sm:grid-cols-3">
-                                {[
-                                    { label: "Text", value: readerForeground, onChange: setReaderForeground },
-                                    { label: "Background", value: readerBackground, onChange: setReaderBackground },
-                                    { label: "Accent", value: readerAccent, onChange: setReaderAccent },
-                                ].map(({ label, value, onChange }) => (
-                                    <label key={label} className="group relative flex items-center gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-all cursor-pointer">
-                                        <input
-                                            type="color"
-                                            value={value}
-                                            onChange={(e) => onChange(e.target.value)}
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
-                                        />
-                                        <div
-                                            className="w-10 h-10 rounded-xl border-2 border-black/10 dark:border-white/10 shadow-inner transition-transform group-hover:scale-110"
-                                            style={{ backgroundColor: value }}
-                                        />
-                                        <div>
-                                            <p className="text-sm font-medium text-light-text dark:text-dark-text">{label}</p>
-                                            <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-mono">{value}</p>
-                                        </div>
-                                    </label>
-                                ))}
-                            </div>
-                        </Section>
-                    </>
-                )}
-
-                {activeTab === "typography" && (
-                    <>
-                        <Section title="Typography" icon={Type}>
-                            {TYPOGRAPHY_SLIDERS.map((slider) => {
-                                const control = typographyValues[slider.key];
-                                return (
-                                    <Slider
-                                        key={slider.key}
-                                        label={slider.label}
-                                        value={control.value}
-                                        onChange={control.onChange}
-                                        min={slider.min}
-                                        max={slider.max}
-                                        step={slider.step}
-                                        displayValue={control.displayValue}
-                                    />
-                                );
-                            })}
-                        </Section>
-
-                        <Section title="Interface" icon={CircleDashed}>
-                             <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">
-                                These settings affect the overall interface responsiveness and accessibility.
-                            </p>
-                        </Section>
-                    </>
-                )}
-
-                {activeTab === "shortcuts" && (
-                    <>
-                        <Section title="Keyboard Shortcuts" icon={Zap}>
-                            <div className="space-y-4">
-                                <div className="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">
-                                    Customize keyboard shortcuts for reading navigation.
-                                </div>
-                                <div className="space-y-3">
-                                    {SHORTCUTS.map((shortcut) => (
-                                        <ShortcutItem
-                                            key={shortcut.key}
-                                            label={shortcut.label}
-                                            keys={keybinds[shortcut.key]}
-                                            onChange={(keys) => setKeybinds({ ...keybinds, [shortcut.key]: keys })}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </Section>
-                    </>
-                )}
-
-                {activeTab === "goals" && (
-                    <>
-                        <Section title="Reading Goals" icon={ChartLine}>
-                            <Slider
-                                label="Daily Goal"
-                                value={dailyGoal}
-                                onChange={setDailyGoal}
-                                min={5}
-                                max={120}
-                                step={5}
-                                displayValue={`${dailyGoal} pages`}
-                            />
-                            <Slider
-                                label="Weekly Goal"
-                                value={weeklyGoal}
-                                onChange={setWeeklyGoal}
-                                min={20}
-                                max={500}
-                                step={10}
-                                displayValue={`${weeklyGoal} pages`}
-                            />
-                        </Section>
-
-                        <div className="grid gap-6 lg:grid-cols-2">
-                            <Section title="Tracking" icon={Bell}>
-                                <Toggle checked={trackingEnabled} onChange={setTrackingEnabled} label="Reading Analytics" sublabel="Track your reading time and progress" />
-                                <Toggle checked={showStreakReminder} onChange={setShowStreakReminder} label="Streak Reminders" sublabel="Get notified to maintain your streak" />
-                            </Section>
-                        </div>
-                    </>
-                )}
-
-                {activeTab === "data" && (
-                    <>
-                        <Section title="Data & Storage" icon={HardDrive}>
-                            <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
-                                <div className="flex items-center gap-3 mb-3 text-red-600 dark:text-red-400">
-                                    <AlertTriangle className="w-5 h-5" />
-                                    <h4 className="font-semibold">Danger Zone</h4>
-                                </div>
-                                <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-5">
-                                    This will permanently delete all locally cached books, reading progress, and settings from this browser. If you are offline, unsynced progress will be lost.
-                                </p>
-                                <Button
-                                    onClick={handleFactoryResetClick}
-                                    isLoading={isResetting}
-                                    variant="destructive"
-                                    className="gap-2 px-5 shadow-sm"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Factory Reset Cache
-                                </Button>
-                                {resetError && (
-                                    <p className="mt-3 text-sm text-red-600 dark:text-red-400 animate-fadeIn">{resetError}</p>
-                                )}
-                            </div>
-                        </Section>
-                    </>
-                )}
-            </div>
-
-            <ConfirmDialog
-                isOpen={showResetConfirm}
-                onClose={() => setShowResetConfirm(false)}
-                onConfirm={executeFactoryReset}
-                title="Wipe Local Data"
-                description="Are you sure you want to completely wipe all local data? This will remove cached books and progress. This action cannot be undone."
-                confirmLabel="Factory Reset"
-                isDestructive
-            />
+            
+            <ConfirmDialog isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} onConfirm={executeFactoryReset} title="Wipe Local Data" description="Are you sure you want to completely wipe all local data? This action cannot be undone." confirmLabel="Factory Reset" isDestructive />
         </div>
     );
-};
+}
 
 export default SettingsView;

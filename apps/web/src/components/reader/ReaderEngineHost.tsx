@@ -5,6 +5,8 @@ import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from 
 import type { TocItem, EpubRendition, EpubBookHandle } from "@/utils/epub";
 
 import { useReaderEngine } from "@/hooks/useReaderEngine";
+import { useSettings } from "@/store/useSettingsStore";
+import { cx } from "@/utils/cx";
 
 export interface ReaderEngineRef {
     clearSelection: () => void;
@@ -34,6 +36,7 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
     onEngineStateChange,
 }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const showScrollbar = useSettings((state) => state.showScrollbar);
     
     const {
         status,
@@ -74,7 +77,7 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
         });
     }, [status, error, position, tocItems, selection, onEngineStateChange]);
 
-    return <div ref={containerRef} className="absolute inset-0 overflow-auto" />;
+    return <div ref={containerRef} className={cx("absolute inset-0 overflow-auto", !showScrollbar && "scrollbar-hide")} />;
 }));
 
 ReaderEngineHost.displayName = "ReaderEngineHost";

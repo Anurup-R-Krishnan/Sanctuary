@@ -123,10 +123,10 @@ function ReaderView({
     }, [bookId, getBookContent]); // Note: book is NOT a dependency here! Only bookId!
 
     // Settings
-    const { screenReaderMode, brightness, grayscale } = useSettingsShallow((state) => ({
-        screenReaderMode: state.screenReaderMode,
+    const { brightness, grayscale, keybinds } = useSettingsShallow((state) => ({
         brightness: state.brightness,
         grayscale: state.grayscale,
+        keybinds: state.keybinds,
     }));
 
     // Reader Engine State
@@ -240,6 +240,7 @@ function ReaderView({
 
     // Shortcuts
     useReaderShortcuts({
+        keybinds,
         nextPage: () => engineRef.current?.nextPage(),
         prevPage: () => engineRef.current?.prevPage(),
         goToStart: () => engineRef.current?.display("0"),
@@ -269,7 +270,6 @@ function ReaderView({
         showSearch,
         showAnnotations,
         selection: !!selection,
-        screenReaderMode,
     });
 
     useEffect(() => {
@@ -280,9 +280,8 @@ function ReaderView({
             showSearch,
             showAnnotations,
             selection: !!selection,
-            screenReaderMode,
         };
-    }, [showUI, showSettings, showControls, showSearch, showAnnotations, selection, screenReaderMode]);
+    }, [showUI, showSettings, showControls, showSearch, showAnnotations, selection]);
 
     useEffect(() => {
         let lastMove = Date.now();
@@ -295,10 +294,6 @@ function ReaderView({
 
         const checkIdle = () => {
             const state = uiStateRef.current;
-            if (state.screenReaderMode) {
-                setShowUI(true);
-                return;
-            }
             if (state.showUI && !state.showSettings && !state.showControls && !state.showSearch && !state.showAnnotations && !state.selection) {
                 if (Date.now() - lastMove > 3500) {
                     setShowUI(false);
@@ -315,6 +310,44 @@ function ReaderView({
             document.removeEventListener("touchstart", handleMove);
         };
     }, []);
+
+    
+    const handleToggleTOC = useCallback(() => { setShowControls(p => !p); setShowSearch(false); setShowAnnotations(false); setShowSettings(false); }, []);
+    const handleToggleSettings = useCallback(() => { setShowSettings(p => !p); setShowControls(false); setShowSearch(false); setShowAnnotations(false); }, []);
+    const handleToggleSearch = useCallback(() => { setShowSearch(p => !p); setShowControls(false); setShowSettings(false); setShowAnnotations(false); }, []);
+    const handleToggleAnnotations = useCallback(() => { setShowAnnotations(p => !p); setShowControls(false); setShowSettings(false); setShowSearch(false); }, []);
+    
+    const handleNextPage = useCallback(() => engineRef.current?.nextPage(), []);
+    const handlePrevPage = useCallback(() => engineRef.current?.prevPage(), []);
+    const handleJumpToTop = useCallback(() => engineRef.current?.display("0"), []);
+    const handleJumpToBottom = useCallback(() => engineRef.current?.goToPage(totalLocations), [totalLocations]);
+    
+    const handleCloseSettings = useCallback(() => setShowSettings(false), []);
+    const handleCloseControls = useCallback(() => setShowControls(false), []);
+    const handleCloseSearch = useCallback(() => setShowSearch(false), []);
+    const handleCloseAnnotations = useCallback(() => setShowAnnotations(false), []);
+    
+    const handleHighlight = useCallback((color: string) => {
+        if(selection) addAnnotation(selection, "highlight", color);
+    }, [selection, addAnnotation]);
+    const handleUnderline = useCallback(() => {
+        if(selection) addAnnotation(selection, "underline");
+    }, [selection, addAnnotation]);
+    const handleAddNote = useCallback(() => {
+        if(!selection) return;
+        const note = window.prompt("Add a note:");
+        if (note !== null) addAnnotation(selection, "note", undefined, note);
+    }, [selection, addAnnotation]);
+    const handleCopy = useCallback(() => {
+        if(!selection) return;
+        navigator.clipboard.writeText(selection.text);
+        engineRef.current?.clearSelection();
+    }, [selection]);
+    const handleSpeak = useCallback(() => {
+        if(!selection) return;
+        speak(selection.text);
+        engineRef.current?.clearSelection();
+    }, [selection, speak]);
 
     // --- Conditional returns AFTER all hooks (Rules of Hooks preserved) ---
     if (!book) {
@@ -361,34 +394,33 @@ function ReaderView({
                     </div>
                 </div>
             )}
-        {/* Book content with brightness/grayscale filter */}
-        <div
-            className={`absolute inset-0 transition-[padding] duration-instant ease-out ${
-                (showControls || showSettings || showSearch || showAnnotations) ? "md:pr-[400px]" : ""
-            }`}
-            style={
-                brightness < 100 || grayscale
-                    ? { filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }
-                    : undefined
-            }
-        >
-            <ReaderEngineHost 
-                ref={engineRef}
-                book={hydratedBook} 
-                onUpdateProgress={onUpdateProgress} 
-                onEngineStateChange={setEngineState} 
-            />
-        </div>
-
-        {/* Loading overlay - outside the filter div so it renders at full brightness */}
-        {isLoading && (
-            <div className="absolute inset-0 z-40 flex items-center justify-center bg-light-primary dark:bg-dark-primary">
-                <div className="flex items-center gap-3 text-light-text dark:text-dark-text">
-                    <LoadingSpinner className="h-5 w-5" />
-                    <span className="text-sm font-medium">Opening book...</span>
-                </div>
+            
+            <div
+                className={`absolute inset-0 transition-[padding] duration-instant ease-out ${
+                    (showControls || showSettings || showSearch || showAnnotations) ? "md:pr-[400px]" : ""
+                }`}
+                style={
+                    brightness < 100 || grayscale
+                        ? { filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }
+                        : undefined
+                }
+            >
+                <ReaderEngineHost 
+                    ref={engineRef}
+                    book={hydratedBook} 
+                    onUpdateProgress={onUpdateProgress} 
+                    onEngineStateChange={setEngineState} 
+                />
             </div>
-        )}
+
+            {isLoading && (
+                <div className="absolute inset-0 z-40 flex items-center justify-center bg-light-primary dark:bg-dark-primary">
+                    <div className="flex items-center gap-3 text-light-text dark:text-dark-text">
+                        <LoadingSpinner className="h-5 w-5" />
+                        <span className="text-sm font-medium">Opening book...</span>
+                    </div>
+                </div>
+            )}
 
             <ReaderOverlay
                 book={book}
@@ -400,36 +432,32 @@ function ReaderView({
                 showSearch={showSearch}
                 showAnnotations={showAnnotations}
                 isLoading={isLoading}
-                currentPage={currentPage} // Engine provides 1-based page
+                currentPage={currentPage}
                 totalPages={totalLocations}
                 isBookmarked={isBookmarked}
                 currentCfi={currentCfi}
                 toc={tocItems}
                 isFullscreen={isFullscreen}
                 estimatedMinutesRemaining={sessionStats.estimatedMinutesRemaining}
-
                 onClose={onClose}
                 onToggleBookmark={handleToggleBookmark}
-                onToggleTOC={() => { setShowControls(!showControls); setShowSearch(false); setShowAnnotations(false); setShowSettings(false); }}
-                onToggleSettings={() => { setShowSettings(!showSettings); setShowControls(false); setShowSearch(false); setShowAnnotations(false); }}
-                onToggleSearch={() => { setShowSearch(!showSearch); setShowControls(false); setShowSettings(false); setShowAnnotations(false); }}
-                onToggleAnnotations={() => { setShowAnnotations(!showAnnotations); setShowControls(false); setShowSettings(false); setShowSearch(false); }}
+                onToggleTOC={handleToggleTOC}
+                onToggleSettings={handleToggleSettings}
+                onToggleSearch={handleToggleSearch}
+                onToggleAnnotations={handleToggleAnnotations}
                 onToggleFullscreen={handleToggleFullscreen}
-
-                onNextPage={() => engineRef.current?.nextPage()}
-                onPrevPage={() => engineRef.current?.prevPage()}
+                onNextPage={handleNextPage}
+                onPrevPage={handlePrevPage}
                 onNavigate={handleNavigate}
-                onJumpToTop={() => { engineRef.current?.display("0"); }}
-                onJumpToBottom={() => { engineRef.current?.goToPage(totalLocations); }}
+                onJumpToTop={handleJumpToTop}
+                onJumpToBottom={handleJumpToBottom}
                 onPageChange={handlePageChange}
                 onRemoveBookmark={onRemoveBookmark}
-
-                onCloseSettings={() => setShowSettings(false)}
-                onCloseControls={() => setShowControls(false)}
-                onCloseSearch={() => setShowSearch(false)}
-                onCloseAnnotations={() => setShowAnnotations(false)}
+                onCloseSettings={handleCloseSettings}
+                onCloseControls={handleCloseControls}
+                onCloseSearch={handleCloseSearch}
+                onCloseAnnotations={handleCloseAnnotations}
                 onDeleteAnnotation={removeAnnotation}
-
                 searchState={searchState}
                 onSearch={performSearch}
                 onClearSearch={clearSearch}
@@ -440,31 +468,17 @@ function ReaderView({
 
             <ReaderSelectionMenu
                 selection={selection}
-                onHighlight={(color) => addAnnotation(selection!, "highlight", color)}
-                onUnderline={() => addAnnotation(selection!, "underline")}
-                onAddNote={() => {
-                    const note = window.prompt("Add a note:");
-                    if (note !== null) {
-                        addAnnotation(selection!, "note", undefined, note);
-                    }
-                }}
-                onCopy={() => {
-                    navigator.clipboard.writeText(selection!.text);
-                    engineRef.current?.clearSelection();
-                }}
-                onSpeak={() => {
-                    speak(selection!.text);
-                    engineRef.current?.clearSelection();
-                }}
+                onHighlight={handleHighlight}
+                onUnderline={handleUnderline}
+                onAddNote={handleAddNote}
+                onCopy={handleCopy}
+                onSpeak={handleSpeak}
             />
 
             {error && (
                 <ReaderErrorOverlay 
                     error={error} 
                     onRetry={() => {
-                        // Triggers a reload by unmounting and remounting the book blob 
-                        // via a small hack on the hydrated state if needed, or by reloading the page.
-                        // In a real app we'd trigger the engine initialization again.
                         window.location.reload(); 
                     }} 
                     onClose={onClose} 

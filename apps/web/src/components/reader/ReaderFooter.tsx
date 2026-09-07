@@ -26,6 +26,9 @@ function ReaderFooter({
     const readerBackground = useSettings((state) => state.readerBackground);
     const readerAccent = useSettings((state) => state.readerAccent);
     const continuous = useSettings((state) => state.continuous);
+    const showPageCounter = useSettings((state) => state.showPageCounter);
+    const progressBarType = useSettings((state) => state.progressBarType);
+    const barPosition = useSettings((state) => state.barPosition);
 
     const progressPercent = Math.round((currentPage / totalPages) * 100) || 0;
 
@@ -53,13 +56,10 @@ function ReaderFooter({
                 </>
             )}
 
-            {/* Bottom Bar (Minimal) */}
-            <footer
-                className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
-            >
+            {progressBarType !== "none" && (
                 <button
                     type="button"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group"
+                    className={`fixed left-0 right-0 z-50 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"} ${barPosition === "top" ? "top-0" : "bottom-0"}`}
                     onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
@@ -73,7 +73,12 @@ function ReaderFooter({
                         style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }}
                     />
                 </button>
+            )}
 
+            {/* Bottom Bar (Minimal) */}
+            <footer
+                className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
+            >
                 {/* Centered Bottom Bar */}
                 <div className={`fixed left-1/2 -translate-x-1/2 bottom-5 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
                     <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-3" style={{ backgroundColor: `${readerBackground}F0` }}>
@@ -102,19 +107,21 @@ function ReaderFooter({
                                     <div style={{ width: `${progressPercent}%`, backgroundColor: readerAccent }} className="h-full transition-all" />
                                 </div>
                             </div>
-                            <div className="flex justify-center items-center text-xs mt-0.5 text-light-text-muted dark:text-dark-text-muted gap-2 font-medium select-none truncate">
-                                <span className="tabular-nums">{currentPage}</span>
-                                <span className="opacity-60">/</span>
-                                <span className="tabular-nums">{totalPages}</span>
-                                <span className="opacity-60">{progressPercent}%</span>
-                                {estimatedMinutesRemaining !== undefined && estimatedMinutesRemaining !== null && (
-                                    <span>
-                                        {estimatedMinutesRemaining < 1 
-                                            ? "less than 1m left" 
-                                            : `${Math.round(estimatedMinutesRemaining)}m left`}
-                                    </span>
-                                )}
-                            </div>
+                            {showPageCounter && (
+                                <div className="flex justify-center items-center text-xs mt-0.5 text-light-text-muted dark:text-dark-text-muted gap-2 font-medium select-none truncate">
+                                    <span className="tabular-nums">{currentPage}</span>
+                                    <span className="opacity-60">/</span>
+                                    <span className="tabular-nums">{totalPages}</span>
+                                    <span className="opacity-60">{progressPercent}%</span>
+                                    {estimatedMinutesRemaining !== undefined && estimatedMinutesRemaining !== null && (
+                                        <span>
+                                            {estimatedMinutesRemaining < 1 
+                                                ? "less than 1m left" 
+                                                : `${Math.round(estimatedMinutesRemaining)}m left`}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex items-center shrink-0">

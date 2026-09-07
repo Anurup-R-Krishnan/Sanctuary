@@ -98,7 +98,7 @@ const FavoriteButton = ({
         : "text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
     )
     : cx(
-      "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-xl transition-all duration-instant opacity-0 group-hover:opacity-100",
+      "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-md transition-all duration-instant opacity-0 group-hover:opacity-100",
       isFavorite ? "bg-red-500/90 text-white" : "bg-black/20 text-white hover:bg-red-500/90"
     );
   const iconClassName = cx(isFeatured ? "w-5 h-5" : "w-4 h-4", isFavorite && "fill-current");
@@ -127,7 +127,7 @@ const DeleteButton = ({
   const isFeatured = variant === "featured";
   const className = isFeatured
     ? "p-2 rounded-xl transition-all duration-instant text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-    : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-xl transition-all duration-instant opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
+    : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-md transition-all duration-instant opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
   
   const iconClassName = isFeatured ? "w-5 h-5" : "w-4 h-4";
 
@@ -319,10 +319,10 @@ function BookCard({
             <ProgressBar progress={progressPercentage} variant="default" />
             <div className="absolute top-3 left-3 flex flex-col gap-2">
               {isRecent && (
-                <div className="px-2 py-1 bg-light-accent/90 dark:bg-dark-accent/90 text-white text-xs font-semibold rounded-lg backdrop-blur-xl">Recent</div>
+                <div className="px-2 py-1 bg-light-accent dark:bg-dark-accent text-white text-xs font-semibold rounded-lg ">Recent</div>
               )}
               {isCompleted && (
-                <div className="px-2 py-1 bg-amber-500/90 text-white text-xs font-semibold rounded-lg backdrop-blur-xl">Complete</div>
+                <div className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-lg ">Complete</div>
               )}
             </div>
           </div>

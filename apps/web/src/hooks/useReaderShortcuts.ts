@@ -1,11 +1,21 @@
 import { useEffect, useRef } from "react";
 
+export interface ReaderKeybinds {
+  close: string[];
+  nextPage: string[];
+  prevPage: string[];
+  toggleBookmark: string[];
+  toggleFullscreen: string[];
+  toggleUI: string[];
+}
+
 interface UseReaderShortcutsOptions {
   clearSelection: () => void;
   goToEnd: () => void;
   goToStart: () => void;
   hasSelection: boolean;
   isEnabled?: boolean;
+  keybinds: ReaderKeybinds;
   nextPage: () => void;
   onClose: () => void;
   prevPage: () => void;
@@ -47,6 +57,7 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         clearSelection,
         hasSelection,
         isEnabled,
+        keybinds,
       } = optionsRef.current;
 
       if (isEnabled === false) return;
@@ -62,27 +73,48 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         return;
       }
 
-      switch (event.key) {
-        case "ArrowRight":
-        case "ArrowDown":
-        case "PageDown":
-        case "j":
-        case "J":
-        case "l":
-        case "L":
-          event.preventDefault();
-          nextPage();
-          return;
-        case "ArrowLeft":
-        case "ArrowUp":
-        case "PageUp":
-        case "k":
-        case "K":
-        case "h":
-        case "H":
-          event.preventDefault();
+      const key = event.key;
+
+      // User-configurable actions (bound via Settings > Keyboard Shortcuts).
+      if (keybinds.nextPage.includes(key)) {
+        event.preventDefault();
+        if (key === " " && event.shiftKey && keybinds.prevPage.includes(" ")) {
           prevPage();
-          return;
+        } else {
+          nextPage();
+        }
+        return;
+      }
+      if (keybinds.prevPage.includes(key)) {
+        event.preventDefault();
+        prevPage();
+        return;
+      }
+      if (keybinds.toggleBookmark.includes(key)) {
+        event.preventDefault();
+        toggleBookmark();
+        return;
+      }
+      if (keybinds.toggleFullscreen.includes(key)) {
+        event.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+      if (keybinds.toggleUI.includes(key)) {
+        event.preventDefault();
+        toggleUI();
+        return;
+      }
+      if (keybinds.close.includes(key) && key !== "Escape") {
+        // Escape has layered close-panel-first behavior handled below;
+        // any other user-bound "close" key exits immediately.
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      // Fixed navigation/UI shortcuts not exposed for rebinding.
+      switch (key) {
         case "Home":
           event.preventDefault();
           goToStart();
@@ -90,29 +122,6 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         case "End":
           event.preventDefault();
           goToEnd();
-          return;
-        case "b":
-        case "B":
-          event.preventDefault();
-          toggleBookmark();
-          return;
-        case "f":
-        case "F":
-          event.preventDefault();
-          toggleFullscreen();
-          return;
-        case " ":
-          event.preventDefault();
-          if (event.shiftKey) {
-            prevPage();
-          } else {
-            nextPage();
-          }
-          return;
-        case "m":
-        case "M":
-          event.preventDefault();
-          toggleUI();
           return;
         case "t":
         case "T":

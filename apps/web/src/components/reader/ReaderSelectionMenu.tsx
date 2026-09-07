@@ -1,5 +1,5 @@
 import { Highlighter, Underline, Edit3, Copy, Volume2 } from "lucide-react";
-import React from "react";
+import React, { memo } from "react";
 
 import type { ReaderSelection } from "@/types/reader";
 
@@ -12,7 +12,7 @@ interface ReaderSelectionMenuProps {
     selection: ReaderSelection | null;
 }
 
-export function ReaderSelectionMenu({
+function ReaderSelectionMenuImpl({
     selection,
     onHighlight,
     onUnderline,
@@ -54,3 +54,5 @@ export function ReaderSelectionMenu({
         </div>
     );
 }
+
+export const ReaderSelectionMenu = memo(ReaderSelectionMenuImpl);

@@ -51,9 +51,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         paragraphSpacing: state.paragraphSpacing,
         maxTextWidth: state.maxTextWidth,
     }));
-    const { continuous, spread } = useSettingsShallow((state) => ({
+    const { continuous, spread, direction } = useSettingsShallow((state) => ({
         continuous: state.continuous,
         spread: state.spread,
+        direction: state.direction,
     }));
 
     useEffect(() => {
@@ -88,6 +89,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             initialCfi: book.lastLocation,
             continuous,
             spread,
+            direction,
             themeStyles: styles
         }, {
             onStatusChange: (s) => {
@@ -120,7 +122,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         };
         // Re-init only when the book changes, or structural flow changes.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeBookId, activeBlob, containerRef, continuous, spread]);
+    }, [activeBookId, activeBlob, containerRef, continuous, spread, direction]);
 
     // Actions
     const nextPage = useCallback(() => {
