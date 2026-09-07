@@ -12,7 +12,7 @@ export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
         <div className="w-16 h-16 rounded-2xl bg-light-accent dark:bg-dark-accent flex items-center justify-center shadow-glow-md mb-4 ring-1 ring-black/5 dark:ring-white/10 transition-transform duration-instant hover:scale-105">
           <BookOpen className="w-8 h-8 text-white" strokeWidth={1.5} />
         </div>
-        <h1 className="font-serif text-3xl font-semibold text-light-text dark:text-dark-text tracking-tight">Sanctuary</h1>
+        <h1 className="font-sans text-3xl font-semibold text-light-text dark:text-dark-text tracking-tight">Sanctuary</h1>
         <p className="font-sans text-sm text-light-text-muted dark:text-dark-text-muted mt-1.5 max-w-xs">
           Sign in to sync your library and reading progress across devices
         </p>
@@ -23,7 +23,7 @@ export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
           routing="hash"
           appearance={{
             variables: {
-              colorPrimary: "#B8956C",
+              colorPrimary: "#A67E50",
               colorText: "#09090B",
               fontFamily: "'Satoshi', system-ui, sans-serif",
               borderRadius: "16px",
@@ -31,7 +31,7 @@ export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
             elements: {
               rootBox: "w-full",
               card: "bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border shadow-xl rounded-2xl p-6",
-              headerTitle: "font-serif text-2xl font-semibold text-light-text dark:text-dark-text tracking-tight",
+              headerTitle: "font-sans text-2xl font-semibold text-light-text dark:text-dark-text tracking-tight",
               headerSubtitle: "font-sans text-sm text-light-text-muted dark:text-dark-text-muted",
               socialButtonsBlockButton: "rounded-xl border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text hover:bg-black/5 dark:hover:bg-white/5 font-sans transition-all duration-instant shadow-sm",
               socialButtonsBlockButtonText: "font-medium text-sm text-light-text dark:text-dark-text",

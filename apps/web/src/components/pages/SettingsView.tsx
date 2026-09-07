@@ -49,7 +49,7 @@ function SettingsView() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 pb-32">
             <aside className="md:w-64 flex-shrink-0">
                <div className="sticky top-24 space-y-1">
-                   <h2 className="px-3 mb-4 text-2xl font-serif tracking-tight text-light-text dark:text-dark-text">Settings</h2>
+                   <h2 className="px-3 mb-4 text-2xl font-sans font-bold tracking-tight text-light-text dark:text-dark-text">Settings</h2>
                    <NavAnchor id="behavior" label="Behavior" icon={Settings2} />
                    <NavAnchor id="goals" label="Reading Goals" icon={Target} />
                    <NavAnchor id="data" label="Data & Storage" icon={HardDrive} />

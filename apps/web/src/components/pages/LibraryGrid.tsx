@@ -98,7 +98,7 @@ function LibraryGrid({
             <div className="h-4 w-28 rounded bg-black/[0.04] dark:bg-white/[0.06] animate-pulse-soft" />
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {[...Array(10)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -201,7 +201,7 @@ function LibraryGrid({
             </p>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {displayBooks.map((book) => (
               <div key={book.id}>
                 <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />

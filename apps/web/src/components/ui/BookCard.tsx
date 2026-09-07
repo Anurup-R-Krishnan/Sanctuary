@@ -70,7 +70,7 @@ const BookCover = ({
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center border-l-4 border-l-light-accent dark:border-l-dark-accent bg-light-secondary dark:bg-dark-secondary relative">
           <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent pointer-events-none" />
-          <span className="font-serif font-medium text-xs leading-snug text-light-text dark:text-dark-text line-clamp-4 z-10">{book.title}</span>
+          <span className="font-sans font-semibold text-xs leading-snug text-light-text dark:text-dark-text line-clamp-4 z-10">{book.title}</span>
           {book.author && <span className="font-sans text-[0.65rem] mt-1.5 text-light-text-muted dark:text-dark-text-muted line-clamp-2 z-10">{book.author}</span>}
         </div>
       )}
@@ -184,15 +184,21 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
 
 const BookMetadata = ({ title, author, variant = "default" }: { title: string; author: string; variant?: BookCardVariant }) => {
   const isFeatured = variant === "featured";
+  const isCompact = variant === "compact";
   
   return (
     <div className={isFeatured ? "mb-2" : ""}>
       <h3 className={cx(
-        isFeatured ? "text-3xl sm:text-4xl" : "text-lg", "font-serif font-medium text-light-text dark:text-dark-text line-clamp-2 leading-tight tracking-tight group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
+        isFeatured ? "text-3xl sm:text-4xl" : isCompact ? "text-sm" : "text-lg",
+        "font-sans font-semibold text-light-text dark:text-dark-text line-clamp-2 leading-snug tracking-tight group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
       )}>
         {title}
       </h3>
-      <p className={cx(isFeatured ? "font-serif text-lg sm:text-xl mt-2 italic" : "text-xs font-sans", "text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1")}>
+      <p className={cx(
+        isFeatured ? "font-sans text-lg sm:text-xl mt-2" : "text-xs font-sans",
+        !isFeatured && "mt-0.5",
+        "text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1"
+      )}>
         {author}
       </p>
     </div>
@@ -259,7 +265,7 @@ function BookCard({
       tabIndex={0}
       className={cx(
         "group border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface transition-colors cursor-pointer",
-        isCompact && "flex items-center gap-4 p-3 rounded-xl hover:border-light-accent/40 dark:hover:border-dark-accent/40",
+        isCompact && "flex items-center gap-4 p-4 rounded-xl hover:border-light-accent/40 dark:hover:border-dark-accent/40",
         isFeatured && "relative overflow-hidden rounded-3xl hover:border-light-accent/40 dark:hover:border-dark-accent/40 p-6 sm:p-7 bg-gradient-to-br from-light-accent/[0.06] to-transparent dark:from-dark-accent/[0.08] shadow-sm",
         !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/35 dark:hover:border-dark-accent/35"
       )}

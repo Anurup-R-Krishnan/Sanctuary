@@ -15,27 +15,66 @@ export default {
       colors: {
         // Light theme colors
         light: {
-          primary: '#FFFFFF', // pure white
-          secondary: '#FAFAFA', // zinc-50
-          surface: '#F4F4F5', // zinc-100
-          card: '#FFFFFF',
-          accent: '#B8956C', // antique gold
+          primary: '#FEFCF8', // warm off-white, not clinical pure white
+          secondary: '#FAF6F0', // warm paper tone
+          surface: '#F3ECE1', // deeper warm surface (was flat zinc grey)
+          card: '#FEFCF8',
+          accent: '#A67E50', // antique gold
           text: '#09090B', // zinc-950
           'text-muted': '#71717A', // zinc-500
-          border: '#E4E4E7', // zinc-200
-          'border-muted': '#F4F4F5',
+          border: '#E7DCC9', // warm border, replaces cold zinc-200
+          'border-muted': '#F3ECE1',
         },
         // Dark theme colors
         dark: {
-          primary: '#09090B', // zinc-950
-          secondary: '#18181B', // zinc-900
-          surface: '#27272A', // zinc-800
-          card: '#18181B',
-          accent: '#D4B58B', // parchment gold
+          primary: '#0F0E0D', // warm near-black, not pure zinc
+          secondary: '#1C1916', // warm dark surface
+          surface: '#28221C', // deeper warm brown-black surface
+          card: '#1C1916',
+          accent: '#C8A06A', // parchment gold
           text: '#FAFAFA', // zinc-50
           'text-muted': '#A1A1AA', // zinc-400
-          border: '#27272A', // zinc-800
-          'border-muted': '#18181B',
+          border: '#332B22', // warm dark border
+          'border-muted': '#1C1916',
+        },
+        // Tonal scale built from the antique gold hue (32deg) via HSL —
+        // lighter tints for subtle fills/badges, darker shades for
+        // depth/hover/emphasis without resorting to flat black or grey.
+        gold: {
+          50: '#F7F3EE',
+          100: '#EBE1D6',
+          200: '#DAC8B3',
+          300: '#CAB091',
+          400: '#B9976F',
+          500: '#A67E50', // = light.accent
+          600: '#906E46',
+          700: '#755938',
+          800: '#59442B',
+          900: '#3E2F1E',
+        },
+        // Muted slate-blue, the near-complement (~212deg) of the gold hue —
+        // a cool counterpoint used sparingly for secondary accents, info
+        // states, and to keep all-gold pages from feeling one-note.
+        // Named "ink" (not "slate") to avoid overriding Tailwind's built-in scale.
+        ink: {
+          50: '#F3F5F7',
+          100: '#E0E5EB',
+          300: '#B3BECC',
+          400: '#8597AD',
+          500: '#5C718A',
+          600: '#47586B',
+          700: '#394656',
+          900: '#1F262E',
+        },
+        // Warm rust/terracotta, analogous to gold (~2deg) — a second warm
+        // accent for variety in badges/highlights without leaving the
+        // warm family.
+        rust: {
+          300: '#D89A97',
+          400: '#CA7672',
+          500: '#BC524E',
+          600: '#9B3F3B',
+          700: '#7E3330',
         },
       },
       spacing: {
@@ -134,12 +173,12 @@ export default {
         xs: '2px',
       },
       boxShadow: {
-        'glow-sm': '0 0 20px rgba(184, 149, 108, 0.15), 0 0 40px rgba(184, 149, 108, 0.08)',
-        'glow-md': '0 0 32px rgba(184, 149, 108, 0.2), 0 0 64px rgba(184, 149, 108, 0.1)',
-        'glow-lg': '0 0 48px rgba(184, 149, 108, 0.25), 0 0 96px rgba(184, 149, 108, 0.12)',
-        'inner-glow': 'inset 0 0 20px rgba(184, 149, 108, 0.1)',
+        'glow-sm': '0 0 20px rgba(166, 126, 80, 0.15), 0 0 40px rgba(166, 126, 80, 0.08)',
+        'glow-md': '0 0 32px rgba(166, 126, 80, 0.2), 0 0 64px rgba(166, 126, 80, 0.1)',
+        'glow-lg': '0 0 48px rgba(166, 126, 80, 0.25), 0 0 96px rgba(166, 126, 80, 0.12)',
+        'inner-glow': 'inset 0 0 20px rgba(166, 126, 80, 0.1)',
         'book-spine': 'inset -8px 0 16px -8px rgba(0, 0, 0, 0.4)',
-        'book-cover': '0 8px 32px rgba(184, 149, 108, 0.15), 0 16px 64px rgba(184, 149, 108, 0.08)',
+        'book-cover': '0 8px 32px rgba(166, 126, 80, 0.15), 0 16px 64px rgba(166, 126, 80, 0.08)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

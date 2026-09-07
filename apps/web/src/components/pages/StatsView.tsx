@@ -94,8 +94,8 @@ function StatsView() {
   return (
     <div className="page-narrow page-stack">
       <div>
-        <h2 className="text-3xl font-serif font-medium tracking-tight text-light-text dark:text-dark-text">Stats</h2>
-        <p className="text-light-text-muted dark:text-dark-text-muted text-sm italic font-serif">Track your reading</p>
+        <h2 className="text-3xl font-sans font-bold tracking-tight text-light-text dark:text-dark-text">Stats</h2>
+        <p className="text-light-text-muted dark:text-dark-text-muted text-sm font-sans">Track your reading</p>
       </div>
 
       <div className="flex gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">

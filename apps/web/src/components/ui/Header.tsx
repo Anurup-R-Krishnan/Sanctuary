@@ -34,11 +34,11 @@ function Header({
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-black/[0.08] dark:border-white/[0.08] bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-md">
-      <div className="container-wide py-3">
+      <div className="container-wide py-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 min-w-[180px]">
-            <div className="w-9 h-9 rounded-xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={2} />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 dark:from-dark-accent dark:to-gold-700 shadow-sm shadow-gold-900/20 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-white dark:text-dark-primary" strokeWidth={2} />
             </div>
             <div>
               <p className="text-sm font-semibold text-light-text dark:text-dark-text leading-none">Sanctuary</p>

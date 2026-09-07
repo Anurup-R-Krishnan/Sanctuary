@@ -39,9 +39,9 @@ export const StatCard = ({
         <p className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium mb-1">
           {label}
         </p>
-        <p className="font-serif text-3xl font-medium text-light-text dark:text-dark-text tabular-nums leading-none tracking-tight">{value}</p>
+        <p className="font-sans text-3xl font-bold text-light-text dark:text-dark-text tabular-nums leading-none tracking-tight">{value}</p>
         {subtext && (
-          <p className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-1.5 italic font-serif">{subtext}</p>
+          <p className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-1.5 font-sans">{subtext}</p>
         )}
       </div>
     </div>

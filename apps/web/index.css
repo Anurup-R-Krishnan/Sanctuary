@@ -44,10 +44,10 @@
      ========================================================================== */
 
   /* Colors — Warm Gold / Amber Accent Palette (Light Mode) */
-  --color-accent: #B8956C;           /* Antique Gold */
-  --color-accent-hover: #A07F56;     /* Deep Antique Gold */
+  --color-accent: #A67E50;           /* Antique Gold */
+  --color-accent-hover: #8A6943;     /* Deep Antique Gold */
   --color-accent-light: #F4EDE4;     /* Subtle Gold Tint */
-  --color-accent-muted: rgba(184, 149, 108, 0.15);
+  --color-accent-muted: rgba(166, 126, 80, 0.15);
 
   /* Colors — Neutrals & Surfaces (Light Mode) */
   --color-bg-primary: #FFFFFF;
@@ -61,8 +61,8 @@
   --color-border-muted: #F4F4F5;     /* zinc-100 */
 
   /* Backward-compatible RGB channel tokens for Tailwind / alpha compositions */
-  --accent: 184 149 108;             /* #B8956C - Antique Gold */
-  --accent-dark: 212 181 139;        /* #D4B58B - Parchment Gold */
+  --accent: 166 126 80;               /* #A67E50 - Antique Gold */
+  --accent-dark: 200 160 106;         /* #C8A06A - Parchment Gold */
 
   /* Radius Scale */
   --radius-xs: 4px;                  /* badges, tiny tags */
@@ -113,10 +113,10 @@
 
 .dark {
   /* Colors — Warm Gold / Amber Accent Palette (Dark Mode) */
-  --color-accent: #D4B58B;           /* Parchment Gold */
+  --color-accent: #C8A06A;           /* Parchment Gold */
   --color-accent-hover: #E2C9A6;     /* Lighter Parchment Gold */
   --color-accent-light: #2A241C;     /* Dark Gold Tint */
-  --color-accent-muted: rgba(212, 181, 139, 0.15);
+  --color-accent-muted: rgba(200, 160, 106, 0.15);
 
   /* Colors — Neutrals & Surfaces (Dark Mode) */
   --color-bg-primary: #09090B;       /* zinc-950 */
@@ -173,7 +173,7 @@
   }
 
   .dark ::selection {
-    background-color: rgba(212, 181, 139, 0.3);
+    background-color: rgba(200, 160, 106, 0.3);
   }
 
   h1,
@@ -230,6 +230,23 @@
     @apply transition-all duration-300 ease-out;
   }
 
+  /* Subtle ambient warmth so the app shell doesn't read as flat/unfinished
+     white. Two soft radial tints (gold + the muted complementary ink tone)
+     anchored to opposite corners give quiet depth without a visible gradient
+     edge or any glassy/AI-slop sheen. */
+  .app-ambient-bg {
+    background-image:
+      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(166, 126, 80, 0.06), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 0% 100%, rgba(92, 113, 138, 0.05), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  .dark .app-ambient-bg {
+    background-image:
+      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(200, 160, 106, 0.05), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 0% 100%, rgba(92, 113, 138, 0.06), transparent 60%);
+  }
+
   .immersive-layout {
     @apply transition-all duration-500 ease-out;
   }
@@ -240,7 +257,7 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-top: clamp(5.25rem, 8vw, 6rem);
+    padding-top: clamp(6.5rem, 9vw, 7.5rem);
     padding-bottom: clamp(7rem, 10vw, 8.5rem);
     padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
   }
@@ -264,12 +281,12 @@
   }
 
   .page-stack {
-    /* Design-system vertical rhythm between page sections (space.8 = 22px). */
-    padding-bottom: clamp(3rem, 8vw, 4.5rem);
+    /* Relaxed vertical rhythm between page sections. */
+    padding-bottom: clamp(4rem, 10vw, 6rem);
   }
 
   .page-stack > * + * {
-    margin-top: var(--space-8);
+    margin-top: clamp(2.5rem, 5vw, 3.5rem);
   }
 
   /* Glass Effects */

@@ -111,7 +111,7 @@ function App() {
 
 
   return (
-    <div className={`h-screen w-screen overflow-hidden select-none flex flex-col font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout"}`}>
+    <div className={`h-screen w-screen overflow-hidden select-none flex flex-col font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout app-ambient-bg"}`}>
       <MigrationDialog />
       {!isReader && (
         <Header

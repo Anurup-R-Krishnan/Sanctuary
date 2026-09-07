@@ -19,7 +19,7 @@ export const HorizontalScroll = ({
 }: HorizontalScrollProps) => (
   <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
     {books.map((book) => (
-      <div key={book.id} className="flex-shrink-0 w-[140px] sm:w-[160px]">
+      <div key={book.id} className="flex-shrink-0 w-[220px] sm:w-[240px]">
         <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDelete} variant="compact" />
       </div>
     ))}
