@@ -125,6 +125,30 @@ const DEFAULTS: SettingsValues = {
 
 export const LOCAL_SETTINGS_KEY = "sanctuary.web.settings";
 
+const KEYBIND_ACTIONS: Array<keyof Keybinds> = [
+  "nextPage",
+  "prevPage",
+  "toggleBookmark",
+  "toggleFullscreen",
+  "toggleUI",
+  "close",
+];
+
+const normalizeKeybinds = (raw: unknown): Keybinds | undefined => {
+  if (!raw || typeof raw !== "object") return undefined;
+  const input = raw as Record<string, unknown>;
+  const out = { ...DEFAULTS.keybinds };
+  let sawAny = false;
+  for (const action of KEYBIND_ACTIONS) {
+    const value = input[action];
+    if (Array.isArray(value) && value.every((k) => typeof k === "string")) {
+      out[action] = value;
+      sawAny = true;
+    }
+  }
+  return sawAny ? out : undefined;
+};
+
 export const pickValues = (state: Settings): SettingsValues => ({
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
@@ -183,6 +207,7 @@ export const toRemotePayload = (state: SettingsValues) => ({
   progressBarType: state.progressBarType,
   barPosition: state.barPosition,
   showFloatingCapsule: state.showFloatingCapsule,
+  keybinds: state.keybinds,
   // Goals & tracking
   dailyGoal: state.dailyGoal,
   weeklyGoal: state.weeklyGoal,
@@ -221,6 +246,8 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (raw.progressBarType === "bar" || raw.progressBarType === "none") out.progressBarType = raw.progressBarType;
   if (raw.barPosition === "top" || raw.barPosition === "bottom") out.barPosition = raw.barPosition;
   if (typeof raw.showFloatingCapsule === "boolean") out.showFloatingCapsule = raw.showFloatingCapsule;
+  const keybinds = normalizeKeybinds(raw.keybinds);
+  if (keybinds) out.keybinds = keybinds;
   if (typeof raw.readerForeground === "string") out.readerForeground = raw.readerForeground;
   if (typeof raw.readerBackground === "string") out.readerBackground = raw.readerBackground;
   if (typeof raw.readerAccent === "string") out.readerAccent = raw.readerAccent;
@@ -284,6 +311,8 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
     out.barPosition = remote.barPosition;
   }
   if (typeof remote.showFloatingCapsule === "boolean") out.showFloatingCapsule = remote.showFloatingCapsule;
+  const remoteKeybinds = normalizeKeybinds(remote.keybinds);
+  if (remoteKeybinds) out.keybinds = remoteKeybinds;
   // showPageCounter: prefer the new field; fall back to legacy showPageMeta alias
   if (typeof remote.showPageCounter === "boolean") out.showPageCounter = remote.showPageCounter;
   else if (typeof remote.showPageMeta === "boolean") out.showPageCounter = remote.showPageMeta;
