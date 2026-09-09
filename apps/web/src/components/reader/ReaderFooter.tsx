@@ -22,10 +22,8 @@ function ReaderFooter({
     onPageChange,
     estimatedMinutesRemaining,
 }: ReaderFooterProps) {
-    const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
     const readerAccent = useSettings((state) => state.readerAccent);
-    const continuous = useSettings((state) => state.continuous);
     const showPageCounter = useSettings((state) => state.showPageCounter);
     const progressBarType = useSettings((state) => state.progressBarType);
     const barPosition = useSettings((state) => state.barPosition);
@@ -34,28 +32,6 @@ function ReaderFooter({
 
     return (
         <>
-            {/* Floating Navigation Buttons (Desktop) */}
-            {!continuous && (
-                <>
-                    <IconButton
-                        onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
-                        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 p-4 !rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group border-transparent ${showUI ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"}`}
-                        style={{ backgroundColor: `${readerBackground}E6`, color: readerForeground }}
-                        label="Previous page"
-                        icon={<ChevronLeft className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />}
-                        variant="ghost"
-                    />
-                    <IconButton
-                        onClick={(e) => { e.stopPropagation(); onNextPage(); }}
-                        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40 p-4 !rounded-full shadow-xl transition-all duration-300 hover:scale-110 hidden md:flex items-center justify-center group border-transparent ${showUI ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"}`}
-                        style={{ backgroundColor: `${readerBackground}E6`, color: readerForeground }}
-                        label="Next page"
-                        icon={<ChevronRight className="w-6 h-6 opacity-70 group-hover:opacity-100" strokeWidth={2} />}
-                        variant="ghost"
-                    />
-                </>
-            )}
-
             {progressBarType !== "none" && (
                 <button
                     type="button"

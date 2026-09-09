@@ -227,7 +227,14 @@ export class ReaderSession {
             this.rendition.hooks?.content?.register((contents: EpubContentsLike) => {
                 if (contents.document) {
                     contents.document.querySelectorAll("script").forEach((s) => s.remove());
-                    contents.document.addEventListener("keydown", (e: KeyboardEvent) => {
+
+                    // Immediately set background on new chapter content to prevent flash
+                    const bg = this.readerBackground;
+                    contents.document.documentElement.style.backgroundColor = bg;
+                    if (contents.document.body) contents.document.body.style.backgroundColor = bg;
+
+                    // Forward keyboard events from iframe to main window
+                    const forwardKey = (e: KeyboardEvent) => {
                         window.dispatchEvent(new KeyboardEvent(e.type, {
                             key: e.key,
                             code: e.code,
@@ -238,7 +245,9 @@ export class ReaderSession {
                             bubbles: true,
                             cancelable: true,
                         }));
-                    }, { capture: true });
+                    };
+                    contents.document.addEventListener("keydown", forwardKey, { capture: true });
+                    contents.document.addEventListener("keyup", forwardKey, { capture: true });
                 }
             });
 
