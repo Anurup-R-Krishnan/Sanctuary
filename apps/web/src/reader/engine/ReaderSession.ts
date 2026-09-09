@@ -147,17 +147,29 @@ export class ReaderSession {
             this.epubBook = openEpub(arrayBuffer);
             this.callbacks.onStatusChange("loading-navigation");
             
-            // Catch deferred/detached epub.js inner errors to prevent white-screens
+            // Catch deferred/detached epub.js inner errors if they are truly fatal.
+            // We debounce this because changing layout (scroll <-> page) destroys the old EPUB.js
+            // instance, which often leaks a harmless 'indexOf undefined' promise rejection
+            // a few milliseconds later that the NEW instance catches and misinterprets.
+            const sessionStartTime = Date.now();
             const handleEpubCrash = (e: ErrorEvent | PromiseRejectionEvent) => {
                 if (this.aborted) return;
+                
+                // Allow a 1-second grace period for the old session's ghost errors to settle
+                if (Date.now() - sessionStartTime < 1000) return;
+
                 const err = e instanceof ErrorEvent ? e.error : e.reason;
                 const msg = err?.message || String(err);
-                if (msg.includes("indexOf") || msg.includes("undefined") || msg.includes("Url") || msg.includes("epub")) {
+                const stack = err?.stack || "";
+                
+                // Only act on errors that actually originate from within epub.js parsing
+                if ((msg.includes("epub") || stack.includes("epub.js") || stack.includes("epubjs")) && 
+                    (msg.includes("Failed to load") || msg.includes("Malformed"))) {
                     this.callbacks.onError({
                         code: "EPUB_INTERNAL_CRASH",
                         title: "Book Rendering Failed",
                         message: "The reader engine crashed while processing this book. The file may be missing internal assets or have a malformed manifest.",
-                        recoverable: false,
+                        recoverable: true,
                     });
                     this.callbacks.onStatusChange("error");
                 }
