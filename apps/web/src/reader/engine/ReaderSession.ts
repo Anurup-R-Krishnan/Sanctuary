@@ -12,6 +12,7 @@ export interface ReaderSessionOptions {
     continuous: boolean;
     direction?: "auto" | "ltr" | "rtl";
     initialCfi?: string;
+    readerBackground?: string;
     spread: boolean;
     themeStyles: Record<string, Record<string, string>>;
 }
@@ -42,6 +43,7 @@ export class ReaderSession {
     private lastRelocatedCfi = "";
     private container: HTMLDivElement;
     private callbacks: ReaderSessionCallbacks;
+    private readerBackground: string;
 
     public totalLocations = 1;
     public tocItems: TocItem[] = [];
@@ -60,6 +62,7 @@ export class ReaderSession {
         this.bookId = options.bookId;
         this.container = options.container;
         this.callbacks = callbacks;
+        this.readerBackground = options.readerBackground ?? '#ffffff';
         this.init(options);
     }
 
@@ -70,8 +73,12 @@ export class ReaderSession {
                 for (const node of Array.from(mutation.addedNodes)) {
                     if (node instanceof HTMLIFrameElement) {
                         node.removeAttribute("sandbox");
+                        this.preColorIframe(node);
                     } else if (node instanceof HTMLElement) {
-                        node.querySelectorAll("iframe").forEach(iframe => iframe.removeAttribute("sandbox"));
+                        node.querySelectorAll("iframe").forEach(iframe => {
+                            iframe.removeAttribute("sandbox");
+                            this.preColorIframe(iframe);
+                        });
                     }
                 }
             }
@@ -79,10 +86,57 @@ export class ReaderSession {
         this.sandboxObserver.observe(this.container, { childList: true, subtree: true });
     }
 
+    /** Set the iframe and its document background to the reader background color immediately,
+     *  before epub.js injects theme styles. This prevents the bright white flash on page turns. */
+    private preColorIframe(iframe: HTMLIFrameElement) {
+        const bg = this.readerBackground;
+        // Set the iframe element's own background
+        iframe.style.backgroundColor = bg;
+        // Try to color the inner document as soon as it's accessible
+        const colorInner = () => {
+            try {
+                const doc = iframe.contentDocument;
+                if (doc) {
+                    doc.documentElement.style.backgroundColor = bg;
+                    if (doc.body) doc.body.style.backgroundColor = bg;
+                }
+            } catch { /* cross-origin or not ready yet */ }
+        };
+        colorInner();
+        iframe.addEventListener('load', colorInner, { once: true });
+    }
+
+    /** Update the reader background color (called when settings change). */
+    public updateReaderBackground(bg: string) {
+        this.readerBackground = bg;
+        // Update the container background
+        if (this.container) {
+            this.container.style.backgroundColor = bg;
+        }
+        // Update existing iframes
+        try {
+            this.container?.querySelectorAll('iframe').forEach(iframe => {
+                iframe.style.backgroundColor = bg;
+                try {
+                    const doc = iframe.contentDocument;
+                    if (doc) {
+                        doc.documentElement.style.backgroundColor = bg;
+                        if (doc.body) doc.body.style.backgroundColor = bg;
+                    }
+                } catch { /* ignore */ }
+            });
+        } catch { /* ignore */ }
+    }
+
     private async init(options: ReaderSessionOptions) {
         this.callbacks.onError(null);
         this.callbacks.onStatusChange("loading-book");
         this.setupSandboxObserver();
+
+        // Set container background immediately to prevent white flash between page turns
+        if (this.container && this.readerBackground) {
+            this.container.style.backgroundColor = this.readerBackground;
+        }
 
         const fingerprint = getFileFingerprint(this.bookId, options.blob);
 

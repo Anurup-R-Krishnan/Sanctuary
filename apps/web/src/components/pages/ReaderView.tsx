@@ -399,11 +399,6 @@ function ReaderView({
                 className={`absolute inset-0 transition-[padding] duration-instant ease-out ${
                     (showControls || showSettings || showSearch || showAnnotations) ? "md:pr-[400px]" : ""
                 }`}
-                style={
-                    brightness < 100 || grayscale
-                        ? { filter: `brightness(${brightness}%) grayscale(${grayscale ? 1 : 0})` }
-                        : undefined
-                }
             >
                 <ReaderEngineHost 
                     ref={engineRef}
@@ -420,6 +415,30 @@ function ReaderView({
                         <span className="text-sm font-medium">Opening book...</span>
                     </div>
                 </div>
+            )}
+
+            {/* Brightness / grayscale overlay: covers the entire reader including nav, progress bar, and arrows.
+                Uses a non-interactive overlay with pointer-events:none so all controls remain clickable underneath. */}
+            {(brightness < 100 || grayscale) && (
+                <div
+                    className="fixed inset-0 z-[200] pointer-events-none"
+                    style={{
+                        backgroundColor: 'black',
+                        opacity: 1 - brightness / 100,
+                        mixBlendMode: 'multiply',
+                    }}
+                    aria-hidden="true"
+                />
+            )}
+            {grayscale && (
+                <div
+                    className="fixed inset-0 z-[200] pointer-events-none"
+                    style={{
+                        backdropFilter: 'grayscale(1)',
+                        WebkitBackdropFilter: 'grayscale(1)',
+                    }}
+                    aria-hidden="true"
+                />
             )}
 
             <ReaderOverlay

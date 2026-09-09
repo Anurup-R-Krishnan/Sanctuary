@@ -68,6 +68,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         try {
             sessionRef.current.rendition.themes.default(styles);
         } catch { /* benign */ }
+        // Also update iframe/container background to prevent flash on next page turn
+        sessionRef.current.updateReaderBackground(themeConfig.readerBackground);
     }, [themeConfig]);
 
     // Engine Initialization
@@ -90,7 +92,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             continuous,
             spread,
             direction,
-            themeStyles: styles
+            themeStyles: styles,
+            readerBackground: themeConfig.readerBackground,
         }, {
             onStatusChange: (s) => {
                 if (!mounted) return;
