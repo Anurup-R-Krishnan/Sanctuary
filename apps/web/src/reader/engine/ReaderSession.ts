@@ -47,7 +47,6 @@ export class ReaderSession {
 
     public totalLocations = 1;
     public tocItems: TocItem[] = [];
-    private crashListener: ((e: ErrorEvent | PromiseRejectionEvent) => void) | null = null;
 
     private positionUpdateTimer: number | null = null;
     private lastPositionUpdate = 0;
@@ -146,37 +145,6 @@ export class ReaderSession {
 
             this.epubBook = openEpub(arrayBuffer);
             this.callbacks.onStatusChange("loading-navigation");
-            
-            // Catch deferred/detached epub.js inner errors if they are truly fatal.
-            // We debounce this because changing layout (scroll <-> page) destroys the old EPUB.js
-            // instance, which often leaks a harmless 'indexOf undefined' promise rejection
-            // a few milliseconds later that the NEW instance catches and misinterprets.
-            const sessionStartTime = Date.now();
-            const handleEpubCrash = (e: ErrorEvent | PromiseRejectionEvent) => {
-                if (this.aborted) return;
-                
-                // Allow a 1-second grace period for the old session's ghost errors to settle
-                if (Date.now() - sessionStartTime < 1000) return;
-
-                const err = e instanceof ErrorEvent ? e.error : e.reason;
-                const msg = err?.message || String(err);
-                const stack = err?.stack || "";
-                
-                // Only act on errors that actually originate from within epub.js parsing
-                if ((msg.includes("epub") || stack.includes("epub.js") || stack.includes("epubjs")) && 
-                    (msg.includes("Failed to load") || msg.includes("Malformed"))) {
-                    this.callbacks.onError({
-                        code: "EPUB_INTERNAL_CRASH",
-                        title: "Book Rendering Failed",
-                        message: "The reader engine crashed while processing this book. The file may be missing internal assets or have a malformed manifest.",
-                        recoverable: true,
-                    });
-                    this.callbacks.onStatusChange("error");
-                }
-            };
-            window.addEventListener("error", handleEpubCrash, { capture: true });
-            window.addEventListener("unhandledrejection", handleEpubCrash);
-            this.crashListener = handleEpubCrash;
 
             // Sanitize spine URLs to prevent indexOf(undefined) crashes in EPUB.js
             this.epubBook.loaded.spine.then(spine => {
@@ -534,12 +502,6 @@ export class ReaderSession {
         }
         if (this.resizeObserver) this.resizeObserver.disconnect();
         if (this.resizeTimer !== null) window.clearTimeout(this.resizeTimer);
-        
-        if (this.crashListener) {
-            window.removeEventListener("error", this.crashListener as EventListener, { capture: true });
-            window.removeEventListener("unhandledrejection", this.crashListener as EventListener);
-            this.crashListener = null;
-        }
 
         if (this.rendition) {
             try { this.rendition.off("relocated", this.handleRelocated); } catch { /* ignore */ }

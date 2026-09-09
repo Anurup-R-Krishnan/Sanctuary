@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 import type { ReaderSessionStats } from "@/types/reader";
 
+import { useSettingsStore } from "@/store/useSettingsStore";
+
 import { incrementReadingTime } from "../reader/persistence/readingTimeRepository";
 
 export const useReaderSessionStats = (bookId: string, currentTotalLocations: number) => {
@@ -18,7 +20,11 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
     const lastLocationRef = useRef<number | null>(null);
 
     const flushReadingTime = useCallback(() => {
-        if (!bookId || unsavedSecondsRef.current === 0) return;
+        const trackingEnabled = useSettingsStore.getState().trackingEnabled;
+        if (!bookId || unsavedSecondsRef.current === 0 || !trackingEnabled) {
+            unsavedSecondsRef.current = 0;
+            return;
+        }
         const toSave = unsavedSecondsRef.current;
         unsavedSecondsRef.current = 0;
         for (let i = 0; i < toSave; i++) {
@@ -44,7 +50,8 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
         if (!bookId) return;
         
         const tick = () => {
-            if (document.visibilityState !== "visible") return;
+            const trackingEnabled = useSettingsStore.getState().trackingEnabled;
+            if (document.visibilityState !== "visible" || !trackingEnabled) return;
             
             activeSecondsRef.current += 1;
             unsavedSecondsRef.current += 1;
@@ -90,6 +97,9 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
 
     // Track location changes to calculate speed
     const trackLocationProgress = useCallback((currentLocation: number) => {
+        const trackingEnabled = useSettingsStore.getState().trackingEnabled;
+        if (!trackingEnabled) return;
+        
         if (lastLocationRef.current !== null) {
             const diff = currentLocation - lastLocationRef.current;
             if (diff > 0 && diff < 100) {
