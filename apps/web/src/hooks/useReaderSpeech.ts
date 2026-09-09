@@ -54,19 +54,21 @@ export const useReaderSpeech = () => {
         
         window.speechSynthesis.cancel(); // Stop any current speech
         
-        const utterance = new SpeechSynthesisUtterance(text);
-        if (ttsVoiceURI) {
-            const voice = voices.find(v => v.voiceURI === ttsVoiceURI);
-            if (voice) utterance.voice = voice;
-        }
-        utterance.rate = ttsRate;
-        utterance.pitch = ttsPitch;
-        
-        utterance.onstart = () => setState(s => ({ ...s, isPlaying: true, isPaused: false, currentText: text }));
-        utterance.onend = () => setState(s => ({ ...s, isPlaying: false, isPaused: false, currentText: null }));
-        utterance.onerror = () => setState(s => ({ ...s, isPlaying: false, isPaused: false, currentText: null }));
-        
-        window.speechSynthesis.speak(utterance);
+        setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (ttsVoiceURI) {
+                const voice = voices.find(v => v.voiceURI === ttsVoiceURI);
+                if (voice) utterance.voice = voice;
+            }
+            utterance.rate = ttsRate;
+            utterance.pitch = ttsPitch;
+            
+            utterance.onstart = () => setState(s => ({ ...s, isPlaying: true, isPaused: false, currentText: text }));
+            utterance.onend = () => setState(s => ({ ...s, isPlaying: false, isPaused: false, currentText: null }));
+            utterance.onerror = () => setState(s => ({ ...s, isPlaying: false, isPaused: false, currentText: null }));
+            
+            window.speechSynthesis.speak(utterance);
+        }, 50); // Small delay to prevent browser bug dropping the next utterance
     }, [voices, ttsVoiceURI, ttsRate, ttsPitch]);
 
     const pause = useCallback(() => {

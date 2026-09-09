@@ -212,7 +212,8 @@ export class ReaderSession {
             this.rendition = this.epubBook.renderTo(this.container, {
                 width: "100%",
                 height: "100%",
-                spread: options.continuous ? "none" : options.spread ? "always" : "none",
+                spread: options.continuous ? "none" : (options.spread ? "auto" : "none"),
+                minSpreadWidth: options.spread ? 800 : Infinity,
                 flow: options.continuous ? "scrolled" : "paginated",
                 manager: options.continuous ? "continuous" : "default",
                 allowScriptedContent: true,

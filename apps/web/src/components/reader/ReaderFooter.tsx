@@ -30,17 +30,24 @@ function ReaderFooter({
 
     const progressPercent = Math.round((currentPage / totalPages) * 100) || 0;
 
+    const isTop = barPosition === "top";
+    const thinBarClass = isTop ? "top-0" : "bottom-0";
+    const pillPositionClass = isTop ? "top-16" : "bottom-5";
+
+    // If progressBarType === "none", the thin line is hidden.
+    // The pill remains accessible but positioned according to barPosition.
+
     return (
         <>
             {progressBarType !== "none" && (
                 <button
                     type="button"
-                    className={`fixed left-0 right-0 z-50 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"} ${barPosition === "top" ? "top-0" : "bottom-0"}`}
+                    className={`fixed left-0 right-0 z-50 h-1 bg-black/10 dark:bg-white/10 cursor-pointer pointer-events-auto group transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-60"} ${thinBarClass}`}
                     onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
-                        const percent = x / rect.width;
-                        onPageChange(Math.ceil(percent * totalPages));
+                        const percent = x / Math.max(1, rect.width);
+                        onPageChange(Math.max(1, Math.ceil(percent * totalPages)));
                     }}
                     aria-label="Jump to reading progress position"
                 >
@@ -51,12 +58,11 @@ function ReaderFooter({
                 </button>
             )}
 
-            {/* Bottom Bar (Minimal) */}
+            {/* Navigation Pill (Visible on tap) */}
             <footer
-                className={`fixed bottom-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
+                className={`fixed left-0 right-0 z-50 pointer-events-none transition-all duration-300 ${showUI ? "opacity-100" : "opacity-0"} ${isTop ? "top-0" : "bottom-0"}`}
             >
-                {/* Centered Bottom Bar */}
-                <div className={`fixed left-1/2 -translate-x-1/2 bottom-5 z-50 pointer-events-auto transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}>
+                <div className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto transition-all duration-300 ${pillPositionClass}`}>
                     <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 flex items-center gap-3" style={{ backgroundColor: `${readerBackground}F0` }}>
                         <div className="flex items-center shrink-0">
                             <IconButton

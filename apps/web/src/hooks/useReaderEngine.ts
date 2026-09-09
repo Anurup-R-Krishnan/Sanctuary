@@ -143,9 +143,19 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const goToPage = useCallback((page: number) => {
         if (!sessionRef.current?.epubBook) return;
         const total = sessionRef.current.totalLocations;
+        
+        // Prevent crashes if locations aren't generated yet or total is invalid
+        if (total <= 1 || !sessionRef.current.epubBook.locations.length()) {
+             return;
+        }
+
         const percentage = (Math.max(1, Math.min(page, total)) - 1) / total;
-        const cfi = sessionRef.current.epubBook.locations.cfiFromPercentage(percentage);
-        if (cfi) sessionRef.current.display(cfi);
+        try {
+            const cfi = sessionRef.current.epubBook.locations.cfiFromPercentage(percentage);
+            if (cfi) sessionRef.current.display(cfi);
+        } catch {
+            // Ignore cfi bounds errors
+        }
     }, []);
 
     const clearSelection = useCallback(() => {
