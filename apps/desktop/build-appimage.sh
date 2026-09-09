@@ -13,7 +13,7 @@ echo "==> Building frontend with VITE_DISABLE_AUTH=true"
 VITE_DISABLE_AUTH=true npm --prefix ../web run build
 
 echo "==> Running tauri build (no bundle to skip slow beforeBuildCommand re-build)"
-npx @tauri-apps/cli@2 build --no-bundle
+APPIMAGE_EXTRACT_AND_RUN=1 npx @tauri-apps/cli@2 build --bundles appimage || true
 
 # The AppDir is already populated by tauri, we just need to pack it with appimagetool
 APPDIR="$(pwd)/src-tauri/target/release/bundle/appimage/Sanctuary.AppDir"
@@ -28,7 +28,7 @@ if [ ! -f "$APPIMAGETOOL" ]; then
 fi
 
 # Ensure icon exists at root with the name expected by the .desktop file
-cp "$APPDIR/usr/share/icons/hicolor/256x256/apps/sanctuary_desktop.png" \
+cp "./src-tauri/icons/128x128@2x.png" \
    "$APPDIR/sanctuary_desktop.png" 2>/dev/null || true
 
 echo "==> Packing AppImage"
@@ -42,7 +42,7 @@ chmod +x ~/Applications/Sanctuary.AppImage
 echo "==> Creating .desktop launcher"
 mkdir -p ~/.local/share/applications
 mkdir -p ~/.local/share/icons
-cp ../desktop/src-tauri/icons/128x128@2x.png ~/.local/share/icons/sanctuary.png
+cp ./src-tauri/icons/128x128@2x.png ~/.local/share/icons/sanctuary.png
 
 cat > ~/.local/share/applications/sanctuary.desktop << EOF
 [Desktop Entry]
