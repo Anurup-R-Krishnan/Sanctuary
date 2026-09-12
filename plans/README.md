@@ -12,14 +12,20 @@ Each executor must: read the plan fully before starting, honor its STOP conditio
 | [001](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/001-tts-audiobook-sync.md) | Audio & Synchronized In-Book TTS with Foliate Engine | P1 | M | direction | — | DONE |
 | [003](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/003-cloud-annotation-sync-d1.md) | Zero-Conflict Reading State & Cloudflare D1 Annotation Sync | P1 | M | architecture | — | DONE |
 | [002](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/002-opds-catalog-feed.md) | OPDS 1.2 & 2.0 Catalog Feed Support | P2 | M | direction | — | DONE |
+| [005](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/005-media-session-background-audio.md) | Native Media Session & System-Level Background Audio Playback | P1 | S | direction | 001 | TODO |
+| [006](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/006-pdf-fixed-layout-support.md) | Native PDF Document Ingestion & Fixed-Layout Canvas View | P1 | M | architecture | — | TODO |
+| [007](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/007-library-collections-and-batch-ops.md) | Collections, Custom Shelves & Batch Library Operations | P2 | M | direction | 003 | TODO |
+| [008](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/008-storage-manager-and-offline-caching.md) | Storage Dashboard, LRU Eviction & Selective Offline Caching | P2 | S | dx | — | TODO |
 
 *Status values: `TODO` | `IN PROGRESS` | `DONE` | `BLOCKED` | `REJECTED`*
 
 ## Dependency & Ordering Rationale
 
-1. **Plan 004 lands first**: Establishing the zero-warning baseline (`bun run lint` produces 0 warnings) and strengthening multi-format edge cases ensures all subsequent features build on an unblemished quality foundation.
-2. **Plan 001 (TTS) and Plan 003 (D1 Sync) are independent**: They touch separate systems (`apps/web/src/reader/foliate` vs `functions/api/` & `packages/core`). Plan 001 adds continuous speech; Plan 003 ensures cross-device state and highlights persist.
-3. **Plan 002 (OPDS)** builds on the stable multi-format pipeline and library service, enabling users to fetch books directly from Standard Ebooks and Gutenberg.
+1. **Completed Milestones (Plans 004, 001, 003, 002)**: Successfully established zero-tolerance quality gates, in-book synchronized TTS, Cloudflare D1 annotation sync with monotonic progress, and OPDS 1.2/2.0 catalog feed discovery.
+2. **Plan 005 (Media Session)**: Builds immediately on Plan 001 (TTS), integrating system-level media controls, lockscreen metadata, and Bluetooth hardware controls.
+3. **Plan 006 (PDF Support)**: Expands the multi-format pipeline to support PDF documents through fixed-layout canvas rendering while preserving bundle size constraints.
+4. **Plan 007 (Collections & Batch Ops)**: Equips power readers with custom shelves, batch tagging, and bulk library management.
+5. **Plan 008 (Storage Manager)**: Provides user-visible storage quota breakdown and selective offline cache eviction.
 
 ## Findings Considered and Rejected
 
