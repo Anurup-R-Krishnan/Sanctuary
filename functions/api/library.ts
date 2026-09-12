@@ -7,10 +7,11 @@ import {
   coverKey,
   errorJson,
   handleOptions,
-  isValidEpub,
+  isValidBookFile,
   json,
   MAX_EPUB_BYTES,
   requireUser,
+  resolveBookContentType,
   toLibraryItem,
   withEdgeCache,
   purgeEdgeCache,
@@ -93,9 +94,9 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
 
   const form = await request.formData();
   const file = form.get("file");
-  if (!(file instanceof File)) return errorJson("Missing EPUB file", 400);
+  if (!(file instanceof File)) return errorJson("Missing book file", 400);
   if (file.size > MAX_EPUB_BYTES) return errorJson("File too large (max 150 MB)", 413);
-  if (!(await isValidEpub(file))) return errorJson("File is not a valid EPUB", 415);
+  if (!(await isValidBookFile(file))) return errorJson("Unsupported or invalid book format", 415);
 
   let metaRaw: Record<string, unknown> = {};
   try {
@@ -124,10 +125,13 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
   const favorite = metadata.favorite === true ? 1 : 0;
   const bookmarksJson = JSON.stringify(metadata.bookmarks || []);
   const now = new Date().toISOString();
-  const epubKey = contentKey(user, id);
-  const contentType = file.type || "application/epub+zip";
+  const bookKey = contentKey(user, id);
+  const contentType = resolveBookContentType(file);
 
-  await env.SANCTUARY_BUCKET.put(epubKey, file.stream(), { httpMetadata: { contentType } });
+  await env.SANCTUARY_BUCKET.put(bookKey, file.stream(), {
+    httpMetadata: { contentType },
+    customMetadata: { filename: file.name },
+  });
 
   let coverUrl = metadata.coverUrl || null;
   const cover = form.get("cover");

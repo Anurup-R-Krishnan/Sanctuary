@@ -149,6 +149,74 @@ export async function isValidEpub(file: File): Promise<boolean> {
   return bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
 }
 
+export async function isValidBookFile(file: File): Promise<boolean> {
+  const slice = file.slice(0, 1024);
+  const buf = await slice.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  if (bytes.length === 0) return false;
+
+  // 1. ZIP header: PK\x03\x04, PK\x05\x06, PK\x07\x08 (EPUB, FBZ)
+  if (
+    bytes.length >= 4 &&
+    bytes[0] === 0x50 &&
+    bytes[1] === 0x4b &&
+    ((bytes[2] === 0x03 && bytes[3] === 0x04) ||
+      (bytes[2] === 0x05 && bytes[3] === 0x06) ||
+      (bytes[2] === 0x07 && bytes[3] === 0x08))
+  ) {
+    return true;
+  }
+
+  // 2. MOBI / AZW / PalmDOC header (magic BOOKMOBI at byte 60)
+  if (bytes.length >= 68) {
+    const magic = String.fromCharCode(...bytes.slice(60, 68));
+    if (magic === "BOOKMOBI") return true;
+  }
+
+  // 3. FB2 XML or HTML document
+  try {
+    const snippet = new TextDecoder().decode(bytes).trimStart().toLowerCase();
+    if (snippet.includes("<fictionbook")) return true;
+    if (snippet.startsWith("<!doctype html") || snippet.startsWith("<html")) return true;
+  } catch {
+    // ignore
+  }
+
+  // 4. File extension detection for plain text / markdown / azw / mobi / fb2
+  const name = file.name ? file.name.toLowerCase() : "";
+  if (
+    name.endsWith(".txt") ||
+    name.endsWith(".text") ||
+    name.endsWith(".md") ||
+    name.endsWith(".markdown") ||
+    name.endsWith(".mobi") ||
+    name.endsWith(".azw") ||
+    name.endsWith(".azw3") ||
+    name.endsWith(".fb2") ||
+    name.endsWith(".html") ||
+    name.endsWith(".xhtml")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function resolveBookContentType(file: File): string {
+  if (file.type && file.type !== "application/octet-stream" && file.type !== "") {
+    return file.type;
+  }
+  const name = file.name ? file.name.toLowerCase() : "";
+  if (name.endsWith(".mobi")) return "application/x-mobipocket-ebook";
+  if (name.endsWith(".azw") || name.endsWith(".azw3") || name.endsWith(".kf8")) return "application/vnd.amazon.ebook";
+  if (name.endsWith(".fb2")) return "application/x-fictionbook+xml";
+  if (name.endsWith(".fbz") || name.endsWith(".fb2.zip")) return "application/x-zip-compressed-fb2";
+  if (name.endsWith(".txt") || name.endsWith(".text")) return "text/plain";
+  if (name.endsWith(".md") || name.endsWith(".markdown")) return "text/markdown";
+  if (name.endsWith(".html") || name.endsWith(".xhtml")) return "text/html";
+  return "application/epub+zip";
+}
+
 export const MAX_EPUB_BYTES = 150 * 1024 * 1024; // 150 MB
 
 // --- Edge Caching ---

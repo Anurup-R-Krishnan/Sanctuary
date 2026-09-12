@@ -62,17 +62,48 @@ async function handleGet(
     return new Response(null, { status: 304, headers: { ...CORS_HEADERS, ETag: etag } });
   }
 
+  const ext = getExtensionForContentType(book.httpMetadata?.contentType);
+  const filename = book.customMetadata?.filename || `${id}.${ext}`;
+  const contentType = book.httpMetadata?.contentType || "application/epub+zip";
+
   return new Response(book.body, {
     headers: {
       ...CORS_HEADERS,
       ...SECURITY_HEADERS,
       "Accept-Ranges": "bytes",
       "Cache-Control": "private, max-age=600",
-      "Content-Disposition": `attachment; filename="${id}.epub"`,
-      "Content-Type": book.httpMetadata?.contentType || "application/epub+zip",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Type": contentType,
       ...(etag ? { ETag: etag } : {}),
     },
   });
+}
+
+function getExtensionForContentType(contentType: string | undefined): string {
+  if (!contentType) return "epub";
+  const type = contentType.toLowerCase().split(";")[0].trim();
+  switch (type) {
+    case "application/x-mobipocket-ebook":
+    case "application/vnd.amazon.mobi8-ebook":
+      return "mobi";
+    case "application/vnd.amazon.ebook":
+      return "azw";
+    case "application/x-fictionbook+xml":
+    case "application/x-fictionbook":
+      return "fb2";
+    case "application/x-zip-compressed-fb2":
+      return "fbz";
+    case "text/plain":
+      return "txt";
+    case "text/markdown":
+      return "md";
+    case "text/html":
+    case "application/xhtml+xml":
+      return "html";
+    case "application/epub+zip":
+    default:
+      return "epub";
+  }
 }
 
 async function handlePut(
