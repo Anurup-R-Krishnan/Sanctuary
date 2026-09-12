@@ -39,3 +39,4 @@ playwright-report/
 test-results/
 *.epub
 !apps/web/public/mobydick.epub
+.codegraph/
