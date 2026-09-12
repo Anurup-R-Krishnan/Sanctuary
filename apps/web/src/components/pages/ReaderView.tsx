@@ -161,7 +161,17 @@ function ReaderView({
     prevSentence,
     changeRate,
     stopBookSpeech,
-  } = useReaderSpeech({ session: engineRef.current });
+  } = useReaderSpeech({
+    session: engineRef.current,
+    bookMetadata: book
+      ? {
+          title: book.title,
+          author: book.author || undefined,
+          coverUrl: book.coverUrl || undefined,
+          chapter: position.chapterLabel || undefined,
+        }
+      : undefined,
+  });
 
   const handleToggleTTS = useCallback(() => {
     setIsTTSActive((prev) => {

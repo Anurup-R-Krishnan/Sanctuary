@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 
 import type { IReaderSession } from "../reader/contracts/engine";
-import type { TTSControllerState } from "../reader/foliate/FoliateTTSController";
+import type {
+  TTSBookMetadata,
+  TTSControllerState,
+} from "../reader/foliate/FoliateTTSController";
 
 import { useSettingsShallow } from "../store/useSettingsStore";
 
@@ -15,6 +18,7 @@ export interface SpeechState {
 }
 
 export interface UseReaderSpeechOptions {
+  bookMetadata?: TTSBookMetadata;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   session?: IReaderSession | any;
 }
@@ -82,6 +86,26 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
       });
     }
   }, [session, ttsVoiceURI, ttsRate]);
+
+  const metaTitle = options?.bookMetadata?.title;
+  const metaAuthor = options?.bookMetadata?.author;
+  const metaCover = options?.bookMetadata?.coverUrl;
+  const metaChapter = options?.bookMetadata?.chapter;
+
+  // Keep media session metadata updated on chapter or book change
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rendition = (session as any)?.renditionInstance || (session as any)?.rendition;
+    if (rendition?.getTTSController && metaTitle) {
+      const controller = rendition.getTTSController();
+      controller.setBookMetadata({
+        title: metaTitle,
+        author: metaAuthor,
+        coverUrl: metaCover,
+        chapter: metaChapter,
+      });
+    }
+  }, [session, metaTitle, metaAuthor, metaCover, metaChapter]);
 
   // Ad-hoc speech for selected text
   const speak = useCallback(

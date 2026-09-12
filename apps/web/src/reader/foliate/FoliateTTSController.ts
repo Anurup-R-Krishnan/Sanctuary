@@ -7,6 +7,13 @@
  * continuous reading through window.speechSynthesis.
  */
 
+import {
+  MediaSessionController,
+  type MediaSessionMetadata,
+} from "./MediaSessionController";
+
+export type TTSBookMetadata = MediaSessionMetadata;
+
 export interface TTSControllerState {
   currentIndex: number;
   currentSentence: string | null;
@@ -17,6 +24,7 @@ export interface TTSControllerState {
 }
 
 export interface TTSControllerOptions {
+  bookMetadata?: TTSBookMetadata;
   clearHighlight: () => void;
   getDoc: () => Document | null;
   highlightRange: (range: Range) => void;
@@ -44,6 +52,7 @@ export class FoliateTTSController {
   private voiceURI: string | null = null;
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private listeners = new Set<(state: TTSControllerState) => void>();
+  private mediaSessionController: MediaSessionController;
   private destroyed = false;
 
   constructor(options: TTSControllerOptions) {
@@ -51,6 +60,42 @@ export class FoliateTTSController {
     if (options.initialRate !== undefined) this.rate = options.initialRate;
     if (options.initialPitch !== undefined) this.pitch = options.initialPitch;
     if (options.voiceURI !== undefined) this.voiceURI = options.voiceURI;
+
+    this.mediaSessionController = new MediaSessionController();
+    this.setupMediaSession();
+    if (options.bookMetadata) {
+      this.mediaSessionController.updateMetadata(options.bookMetadata);
+    }
+  }
+
+  public getMediaSessionController(): MediaSessionController {
+    return this.mediaSessionController;
+  }
+
+  public setBookMetadata(meta: TTSBookMetadata): void {
+    this.options.bookMetadata = meta;
+    this.mediaSessionController.updateMetadata(meta);
+  }
+
+  private setupMediaSession(): void {
+    this.mediaSessionController.setActionHandlers({
+      onPlay: () => {
+        if (this.isPaused) {
+          this.resume();
+        } else if (!this.isPlaying) {
+          void this.start(true);
+        }
+      },
+      onPause: () => {
+        this.pause();
+      },
+      onNext: () => {
+        this.next();
+      },
+      onPrevious: () => {
+        this.prev();
+      },
+    });
   }
 
   public getState(): TTSControllerState {
@@ -123,6 +168,7 @@ export class FoliateTTSController {
   public pause(): void {
     if (!this.isPlaying || this.isPaused) return;
     this.isPaused = true;
+    this.mediaSessionController.setPlaybackState("paused");
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.pause();
     }
@@ -132,6 +178,7 @@ export class FoliateTTSController {
   public resume(): void {
     if (!this.isPlaying || !this.isPaused) return;
     this.isPaused = false;
+    this.mediaSessionController.setPlaybackState("playing");
     if (typeof window !== "undefined" && window.speechSynthesis) {
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
@@ -147,6 +194,7 @@ export class FoliateTTSController {
     this.isPaused = false;
     this.currentSentence = null;
     this.currentUtterance = null;
+    this.mediaSessionController.setPlaybackState("none");
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -304,6 +352,7 @@ export class FoliateTTSController {
       // Safe fallback if range is detached
     }
 
+    this.mediaSessionController.setPlaybackState("playing");
     this.notify();
 
     if (
@@ -345,6 +394,7 @@ export class FoliateTTSController {
 
   public destroy(): void {
     this.destroyed = true;
+    this.mediaSessionController.destroy();
     this.stop();
     this.sentences = [];
     this.listeners.clear();
