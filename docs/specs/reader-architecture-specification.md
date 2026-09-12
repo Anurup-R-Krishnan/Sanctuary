@@ -1,4 +1,4 @@
-# Implementation Plan: Sanctuary Reader Engine Rebuild (Foliate-js Migration)
+# Technical Blueprint: Sanctuary Reader Engine Rebuild (Foliate-js Migration)
 
 > **Context Baseline**: Based on the comprehensive architectural audit in `sanctuary-audit-clean.txt`.  
 > **Scope Mandate**: Rebuild `apps/web` reader engine and format pipeline. Preserve UI/UX, product behavior, Zustand store shapes, and offline/sync data model.  

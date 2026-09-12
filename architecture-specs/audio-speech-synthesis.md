@@ -1,13 +1,13 @@
-# Plan 001: Audio & Synchronized In-Book TTS with Foliate Engine
+# Architecture Specification: Audio & Synchronized In-Book Text-to-Speech
 
-> **Executor instructions**: Follow this plan step by step. Run every
+> **Executor instructions**: Execute this specification systematically. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> report — do not improvise. When done, update the status row for this specification
+> in `architecture-specs/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 553e7f6..HEAD -- apps/web/src/hooks/useReaderSpeech.ts apps/web/src/reader/foliate/FoliateRendition.ts apps/web/src/reader/engine/FoliateReaderSession.ts apps/web/src/components/reader/ReaderOverlay.tsx`
-> If any in-scope file changed since this plan was written, compare the
+> If any in-scope file changed since this specification was documented, compare the
 > "Current state" excerpts against the live code before proceeding; on a
 > mismatch, treat it as a STOP condition.
 
@@ -16,9 +16,9 @@
 - **Priority**: P1
 - **Effort**: M
 - **Risk**: LOW
-- **Depends on**: none
+- **Prerequisites**: None
 - **Category**: direction
-- **Planned at**: commit `553e7f6`, 2026-09-12
+- **Documented at**: commit `553e7f6`, 2026-09-12
 
 ## Why this matters
 
@@ -147,7 +147,7 @@ Create `apps/web/src/reader/foliate/readerTts.test.ts`:
 
 **Verify**: `bun test apps/web/src/reader/foliate/readerTts.test.ts` → all pass
 
-## Test plan
+## Verification Suite
 
 - Test continuous TTS start from beginning of current chapter.
 - Test sentence highlight callback updates active mark.
@@ -162,7 +162,7 @@ Create `apps/web/src/reader/foliate/readerTts.test.ts`:
 - [ ] `bun run lint` exits 0.
 - [ ] `bun run build` succeeds under 500 kB chunk threshold.
 - [ ] `ReaderTTSBar` appears cleanly on clicking Headphones icon.
-- [ ] `plans/README.md` status row updated to DONE.
+- [ ] `architecture-specs/README.md` status updated to VERIFIED.
 
 ## STOP conditions
 

@@ -1,10 +1,10 @@
-# Plan 006: Native PDF Document Ingestion & Fixed-Layout Canvas View
+# Architecture Specification: Native PDF Document Ingestion & Fixed-Layout View
 
-> **Executor instructions**: Follow this plan step by step. Run every
+> **Executor instructions**: Execute this specification systematically. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> report — do not improvise. When done, update the status row for this specification
+> in `architecture-specs/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 54f0583..HEAD -- apps/web/src/reader/formats/FormatDetector.ts apps/web/src/reader/formats/FoliateDocumentAdapter.ts`
 
@@ -13,9 +13,9 @@
 - **Priority**: P1
 - **Effort**: M
 - **Risk**: LOW
-- **Depends on**: none
+- **Prerequisites**: None
 - **Category**: architecture
-- **Planned at**: commit `54f0583`, 2026-09-12
+- **Documented at**: commit `54f0583`, 2026-09-12
 
 ## Why this matters
 

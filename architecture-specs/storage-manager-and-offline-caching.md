@@ -1,10 +1,10 @@
-# Plan 008: Storage Dashboard, LRU Eviction & Selective Offline Caching
+# Architecture Specification: Storage Dashboard, LRU Eviction & Selective Caching
 
-> **Executor instructions**: Follow this plan step by step. Run every
+> **Executor instructions**: Execute this specification systematically. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> report — do not improvise. When done, update the status row for this specification
+> in `architecture-specs/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 54f0583..HEAD -- apps/web/src/components/pages/SettingsView.tsx apps/web/src/utils/db.ts`
 
@@ -13,9 +13,9 @@
 - **Priority**: P2
 - **Effort**: S
 - **Risk**: LOW
-- **Depends on**: none
+- **Prerequisites**: None
 - **Category**: dx
-- **Planned at**: commit `54f0583`, 2026-09-12
+- **Documented at**: commit `54f0583`, 2026-09-12
 
 ## Why this matters
 

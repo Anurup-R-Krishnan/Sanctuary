@@ -1,13 +1,13 @@
-# Plan 005: Native Media Session & System-Level Background Audio Playback
+# Architecture Specification: Native Media Session & Background Audio Controls
 
-> **Executor instructions**: Follow this plan step by step. Run every
+> **Executor instructions**: Execute this specification systematically. Run every
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
-> report — do not improvise. When done, update the status row for this plan
-> in `plans/README.md`.
+> report — do not improvise. When done, update the status row for this specification
+> in `architecture-specs/README.md`.
 >
 > **Drift check (run first)**: `git diff --stat 54f0583..HEAD -- apps/web/src/reader/foliate/FoliateTTSController.ts apps/web/src/components/reader/ReaderTTSBar.tsx`
-> If any in-scope file changed since this plan was written, compare the
+> If any in-scope file changed since this specification was documented, compare the
 > "Current state" excerpts against the live code before proceeding; on a
 > mismatch, treat it as a STOP condition.
 
@@ -16,9 +16,9 @@
 - **Priority**: P1
 - **Effort**: S
 - **Risk**: LOW
-- **Depends on**: Plan 001
+- **Prerequisites**: Audio & Synchronized In-Book Text-to-Speech
 - **Category**: direction
-- **Planned at**: commit `54f0583`, 2026-09-12
+- **Documented at**: commit `54f0583`, 2026-09-12
 
 ## Why this matters
 
