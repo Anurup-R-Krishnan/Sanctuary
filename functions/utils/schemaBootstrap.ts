@@ -81,6 +81,42 @@ export async function ensureSessionsSchema(db: D1Database): Promise<void> {
   ).run();
 }
 
+export async function ensureAnnotationsSchema(db: D1Database): Promise<void> {
+  await db.prepare(
+    `CREATE TABLE IF NOT EXISTS annotations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      book_id TEXT NOT NULL,
+      cfi TEXT NOT NULL,
+      chapter_label TEXT,
+      href TEXT,
+      text TEXT NOT NULL,
+      note TEXT,
+      color TEXT NOT NULL DEFAULT '#facc15',
+      type TEXT NOT NULL DEFAULT 'highlight',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      deleted INTEGER NOT NULL DEFAULT 0
+    )`
+  ).run();
+
+  const requiredColumns: Array<{ name: string; sql: string }> = [
+    { name: "chapter_label", sql: "ALTER TABLE annotations ADD COLUMN chapter_label TEXT" },
+    { name: "href", sql: "ALTER TABLE annotations ADD COLUMN href TEXT" },
+  ];
+
+  const existingColumns = new Set(await listColumns(db, "annotations"));
+  for (const column of requiredColumns) {
+    if (!existingColumns.has(column.name)) {
+      await db.prepare(column.sql).run();
+    }
+  }
+
+  await db.prepare(
+    "CREATE INDEX IF NOT EXISTS idx_annotations_user_book ON annotations(user_id, book_id, updated_at DESC)"
+  ).run();
+}
+
 export async function ensureBooksSchema(db: D1Database): Promise<void> {
   await db.prepare(
     `CREATE TABLE IF NOT EXISTS books (

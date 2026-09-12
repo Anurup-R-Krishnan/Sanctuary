@@ -47,7 +47,8 @@ const patchSchema = z.object({
   totalPages: z.number().min(1).optional(),
   lastLocation: z.string().nullable().optional(),
   favorite: z.boolean().optional(),
-  bookmarks: z.array(bookmarkSchema).optional()
+  bookmarks: z.array(bookmarkSchema).optional(),
+  force: z.boolean().optional(),
 });
 
 export async function onRequestGet({ env, request }: PagesContext): Promise<Response> {
@@ -201,6 +202,23 @@ export async function onRequestPatch({ env, request }: PagesContext): Promise<Re
   if (fields.length === 0) return json({ success: true });
 
   await getSchemaReady(env.SANCTUARY_DB);
+
+  // Monotonic progress check: ignore older reading progress regressions unless forced
+  if (patch.progress !== undefined && !patch.force) {
+    const existing = await env.SANCTUARY_DB.prepare(
+      "SELECT progress FROM books WHERE id = ? AND user_id = ?"
+    ).bind(context.id, context.user).first<{ progress: number }>();
+
+    if (existing && existing.progress > patch.progress) {
+      const progressIdx = fields.findIndex((f) => f.column === "progress");
+      if (progressIdx !== -1) fields.splice(progressIdx, 1);
+      const locIdx = fields.findIndex((f) => f.column === "last_location");
+      if (locIdx !== -1) fields.splice(locIdx, 1);
+    }
+  }
+
+  if (fields.length === 0) return json({ status: "stale_ignored", success: true });
+
   fields.push({ column: "updated_at", value: new Date().toISOString() });
   
   const assignments = fields.map((f) => `${f.column} = ?`).join(", ");

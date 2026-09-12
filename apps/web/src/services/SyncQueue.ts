@@ -1,8 +1,6 @@
+import type { CoreAnnotation, ReaderSettings, ReadingSession, SanctuaryApiClient } from "@sanctuary/core";
 
-
-import type { SanctuaryApiClient, ReadingSession, ReaderSettings } from "@sanctuary/core";
-
-import { putMutation, getAllMutations, deleteMutation, type SyncMutation } from "@/utils/db";
+import { deleteMutation, getAllMutations, putMutation, type SyncMutation } from "@/utils/db";
 
 export type SyncQueueStatus = "local-only" | "idle" | "syncing" | "failed";
 
@@ -18,6 +16,11 @@ async function rawApiCall(mutation: SyncMutation, api: SanctuaryApiClient) {
   } else if (mutation.type === "DELETE_LIBRARY") {
     const payload = mutation.payload as { id: string };
     await api.deleteLibraryItem(payload.id);
+  } else if (mutation.type === "SAVE_ANNOTATION") {
+    await api.saveAnnotation(mutation.payload as CoreAnnotation);
+  } else if (mutation.type === "DELETE_ANNOTATION") {
+    const payload = mutation.payload as { id: string };
+    await api.deleteAnnotation(payload.id);
   } else {
     throw new Error(`Unknown mutation type: ${mutation.type}`);
   }
@@ -30,6 +33,10 @@ class SyncQueueManager {
   private retryTimeout: number | null = null;
   private backoffMs = 1200;
   private status: SyncQueueStatus = "idle";
+
+  getApi(): SanctuaryApiClient | null {
+    return this.api;
+  }
 
   getStatus(): SyncQueueStatus {
     return this.status;

@@ -110,6 +110,20 @@ export interface ApiClientOptions {
   getToken?: () => Promise<string | null>;
 }
 
+export interface CoreAnnotation {
+  bookId: string;
+  cfi: string;
+  chapterLabel?: string;
+  color?: string;
+  createdAt?: string;
+  href?: string;
+  id: string;
+  note?: string;
+  text: string;
+  type?: "highlight" | "underline" | "note";
+  updatedAt?: string;
+}
+
 const jsonHeaders = { "Content-Type": "application/json" };
 
 export class SanctuaryApiClient {
@@ -202,6 +216,24 @@ export class SanctuaryApiClient {
     await this.fetchJson<void>("/api/sessions", {
       method: "POST",
       body: JSON.stringify(payload)
+    });
+  }
+
+  async getAnnotations(bookId?: string): Promise<CoreAnnotation[]> {
+    const query = bookId ? `?bookId=${encodeURIComponent(bookId)}` : "";
+    return this.fetchJson<CoreAnnotation[]>(`/api/annotations${query}`);
+  }
+
+  async saveAnnotation(payload: CoreAnnotation): Promise<void> {
+    await this.fetchJson<void>("/api/annotations", {
+      body: JSON.stringify(payload),
+      method: "POST"
+    });
+  }
+
+  async deleteAnnotation(id: string): Promise<void> {
+    await this.fetchJson<void>(`/api/annotations?id=${encodeURIComponent(id)}`, {
+      method: "DELETE"
     });
   }
 

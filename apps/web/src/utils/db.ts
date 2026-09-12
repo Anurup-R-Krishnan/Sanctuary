@@ -210,7 +210,13 @@ export interface SyncMutation {
   createdAt: number;
   id: string; // uuid
   payload: unknown;
-  type: "SAVE_SESSION" | "SAVE_SETTINGS" | "PATCH_LIBRARY" | "DELETE_LIBRARY";
+  type:
+    | "DELETE_ANNOTATION"
+    | "DELETE_LIBRARY"
+    | "PATCH_LIBRARY"
+    | "SAVE_ANNOTATION"
+    | "SAVE_SESSION"
+    | "SAVE_SETTINGS";
 }
 
 export async function putMutation(mutation: SyncMutation): Promise<void> {
