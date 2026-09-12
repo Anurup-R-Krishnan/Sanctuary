@@ -64,6 +64,8 @@ function App() {
   const handleAddBook = useCallback((file: File) => libraryService.addBook(file, api, isPersistent), [api, isPersistent]);
   const handleToggleFavorite = useCallback((id: string) => libraryService.toggleFavorite(id, api, isPersistent), [api, isPersistent]);
   const handleDeleteBook = useCallback((id: string) => libraryService.deleteBook(id, api, isPersistent), [api, isPersistent]);
+  const handleUpdateBook = useCallback((id: string, updates: Parameters<typeof libraryService.updateBook>[1]) => libraryService.updateBook(id, updates, api, isPersistent), [api, isPersistent]);
+  const handleBatchDelete = useCallback((ids: string[]) => { ids.forEach((id) => libraryService.deleteBook(id, api, isPersistent)); }, [api, isPersistent]);
   const handleReplaceBookContent = useCallback((id: string, file: File) => libraryService.replaceBookContent(id, file, api, isPersistent), [api, isPersistent]);
 
   useEffect(() => {
@@ -143,10 +145,12 @@ function App() {
           >
             {v === View.LIBRARY && (
               <LibraryGrid
-                onSelectBook={startSession}
                 addBook={handleAddBook}
-                toggleFavorite={handleToggleFavorite}
                 deleteBook={handleDeleteBook}
+                onBatchDelete={handleBatchDelete}
+                onSelectBook={startSession}
+                onUpdateBook={handleUpdateBook}
+                toggleFavorite={handleToggleFavorite}
               />
             )}
             {v === View.SETTINGS && <SettingsView />}

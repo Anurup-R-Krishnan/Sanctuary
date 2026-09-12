@@ -48,6 +48,7 @@ export interface LibraryItem {
 export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "lastLocation" | "progressPercent" | "status"> {
   addedAt?: string;
   bookmarks?: Bookmark[];
+  collections?: string[];
   completedAt?: string;
   contentHash?: string;
   contentStatus?: "available" | "missing" | "invalid";
@@ -119,7 +120,7 @@ export interface ReadingStats {
 
 export type SortOption = "title" | "author" | "recent" | "progress" | "added";
 export type ViewMode = "grid" | "list";
-export type FilterOption = "all" | "favorites" | "to-read" | "reading" | "finished";
+export type FilterOption = "all" | "collection" | "favorites" | "finished" | "reading" | "to-read";
 
 export const DEFAULT_WEEKLY_DATA = [
   { day: "Mon", pages: 0, minutes: 0 },

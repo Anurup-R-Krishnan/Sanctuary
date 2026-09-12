@@ -1,9 +1,11 @@
-import { ChevronRight, Clock, Search, Star } from "lucide-react";
+import { CheckSquare, ChevronRight, Clock, Search, Square, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { Book, FilterOption, SortOption, ViewMode } from "@/types";
 
+import { BatchActionBar } from "@/components/library/BatchActionBar";
+import { BookMetadataModal } from "@/components/library/BookMetadataModal";
 import { CatalogBrowser } from "@/components/library/CatalogBrowser";
 import { HorizontalScroll } from "@/components/library/HorizontalScroll";
 import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
@@ -18,49 +20,65 @@ import BookCard from "../ui/BookCard";
 interface LibraryGridProps {
   addBook: (file: File) => Promise<void>;
   deleteBook: (id: string) => void;
+  onBatchDelete: (ids: string[]) => void;
   onSelectBook: (book: Book) => void;
+  onUpdateBook: (id: string, updates: Partial<Book>) => void;
   toggleFavorite: (id: string) => void;
 }
 
-
-
 function LibraryGrid({
-  onSelectBook,
   addBook,
-  toggleFavorite: onToggleFavorite,
   deleteBook: onDeleteBook,
+  onBatchDelete,
+  onSelectBook,
+  onUpdateBook,
+  toggleFavorite: onToggleFavorite,
 }: LibraryGridProps) {
   const { searchTerm } = useUIStore(useShallow((state) => ({
     searchTerm: state.searchTerm,
   })));
   const {
+    activeCollection,
+    allCollections,
     books,
-    sortedBooks,
-    recentBooks,
+    clearSelection,
     favoriteBooks,
-    seriesGroups,
-    isLoading,
-    sortBy,
-    setSortBy,
     filterBy,
+    isLoading,
+    recentBooks,
+    selectedBookIds,
+    seriesGroups,
+    setActiveCollection,
     setFilterBy,
+    setSortBy,
+    sortBy,
+    sortedBooks,
+    toggleBookSelection,
   } = useBookStore(useShallow((state) => ({
+    activeCollection: state.activeCollection,
+    allCollections: state.allCollections,
     books: state.books,
-    sortedBooks: state.sortedBooks,
-    recentBooks: state.recentBooks,
+    clearSelection: state.clearSelection,
     favoriteBooks: state.favoriteBooks,
-    seriesGroups: state.seriesGroups,
-    isLoading: state.isLoading,
-    sortBy: state.sortBy,
-    setSortBy: state.setSortBy,
     filterBy: state.filterBy,
+    isLoading: state.isLoading,
+    recentBooks: state.recentBooks,
+    selectedBookIds: state.selectedBookIds,
+    seriesGroups: state.seriesGroups,
+    setActiveCollection: state.setActiveCollection,
     setFilterBy: state.setFilterBy,
+    setSortBy: state.setSortBy,
+    sortBy: state.sortBy,
+    sortedBooks: state.sortedBooks,
+    toggleBookSelection: state.toggleBookSelection,
   })));
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const isSelecting = selectedBookIds.size > 0;
 
   const SORT_LABELS: Record<SortOption, string> = {
     added: "Date Added",
@@ -71,13 +89,16 @@ function LibraryGrid({
   };
   const FILTER_LABELS: Record<FilterOption, string> = {
     all: "All Books",
+    collection: "Collection",
     favorites: "Favorites",
     finished: "Finished",
     reading: "Reading",
     "to-read": "To Read",
   };
   const sortLabel = SORT_LABELS[sortBy] ?? sortBy;
-  const filterLabel = FILTER_LABELS[filterBy] ?? filterBy;
+  const filterLabel = filterBy === "collection" && activeCollection
+    ? activeCollection
+    : (FILTER_LABELS[filterBy] ?? filterBy);
 
   const displayBooks = useMemo(() => {
     if (!searchTerm) return sortedBooks;
@@ -86,9 +107,44 @@ function LibraryGrid({
       (b) =>
         b.title.toLowerCase().includes(term) ||
         b.author.toLowerCase().includes(term) ||
-        (b.tags ?? []).some((t) => t.toLowerCase().includes(term))
+        (b.tags ?? []).some((t) => t.toLowerCase().includes(term)) ||
+        (b.collections ?? []).some((c) => c.toLowerCase().includes(term))
     );
   }, [sortedBooks, searchTerm]);
+
+  const handleBookClick = (book: Book) => {
+    if (isSelecting) {
+      toggleBookSelection(book.id);
+    } else {
+      onSelectBook(book);
+    }
+  };
+
+  const handleAssignCollection = (bookIds: string[], collection: string) => {
+    bookIds.forEach((id) => {
+      const book = books.find((b) => b.id === id);
+      if (!book) return;
+      const next = book.collections ?? [];
+      if (!next.includes(collection)) {
+        onUpdateBook(id, { collections: [...next, collection] });
+      }
+    });
+    clearSelection();
+  };
+
+  const handleBatchMarkFinished = (bookIds: string[]) => {
+    bookIds.forEach((id) => onUpdateBook(id, { readingList: "finished" }));
+    clearSelection();
+  };
+
+  const handleBatchDelete = (bookIds: string[]) => {
+    onBatchDelete(bookIds);
+    clearSelection();
+  };
+
+  const handleSaveMetadata = (updates: Partial<Book>) => {
+    if (editingBook) onUpdateBook(editingBook.id, updates);
+  };
 
   if (isLoading) {
     return (
@@ -123,37 +179,90 @@ function LibraryGrid({
 
   return (
     <div className="page-stack">
-      <LibraryToolbar
-        bookCount={books.length}
-        filterBy={filterBy}
-        filterLabel={filterLabel}
-        onOpenCatalog={() => setIsCatalogOpen(true)}
-        setFilterBy={setFilterBy}
-        setShowFilterMenu={setShowFilterMenu}
-        setShowSortMenu={setShowSortMenu}
-        setSortBy={setSortBy}
-        setViewMode={setViewMode}
-        showFilterMenu={showFilterMenu}
-        showSortMenu={showSortMenu}
-        sortBy={sortBy}
-        sortLabel={sortLabel}
-        viewMode={viewMode}
-      />
+      {/* Toolbar with multi-select toggle */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <LibraryToolbar
+            bookCount={books.length}
+            filterBy={filterBy}
+            filterLabel={filterLabel}
+            onOpenCatalog={() => setIsCatalogOpen(true)}
+            setFilterBy={setFilterBy}
+            setShowFilterMenu={setShowFilterMenu}
+            setShowSortMenu={setShowSortMenu}
+            setSortBy={setSortBy}
+            setViewMode={setViewMode}
+            showFilterMenu={showFilterMenu}
+            showSortMenu={showSortMenu}
+            sortBy={sortBy}
+            sortLabel={sortLabel}
+            viewMode={viewMode}
+          />
+        </div>
+        <button
+          aria-label={isSelecting ? "Exit selection mode" : "Select books"}
+          className={`shrink-0 rounded-xl p-2 transition-colors ${
+            isSelecting
+              ? "bg-light-text dark:bg-dark-text text-white dark:text-black"
+              : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+          }`}
+          onClick={() => isSelecting ? clearSelection() : undefined}
+          title={isSelecting ? "Exit selection" : "Select books"}
+        >
+          {isSelecting ? (
+            <CheckSquare className="h-5 w-5" />
+          ) : (
+            <Square className="h-5 w-5" />
+          )}
+        </button>
+      </div>
 
-      {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
+      {/* Collection filter pills */}
+      {allCollections.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mt-2">
+          <button
+            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              filterBy !== "collection"
+                ? "bg-black/[0.07] dark:bg-white/[0.09] text-light-text dark:text-dark-text"
+                : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+            }`}
+            onClick={() => setFilterBy("all")}
+          >
+            All
+          </button>
+          {allCollections.map((col) => (
+            <button
+              key={col}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filterBy === "collection" && activeCollection === col
+                  ? "bg-black/[0.07] dark:bg-white/[0.09] text-light-text dark:text-dark-text"
+                  : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+              }`}
+              onClick={() => {
+                setActiveCollection(col);
+                setFilterBy("collection");
+              }}
+            >
+              {col}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {recentBooks.length > 0 && filterBy === "all" && !searchTerm && !isSelecting && (
         <section className="mb-10">
-          <BookCard 
-            book={recentBooks[0]} 
-            onSelect={onSelectBook} 
-            onToggleFavorite={onToggleFavorite} 
-            onDelete={onDeleteBook} 
-            variant="featured" 
+          <BookCard
+            book={recentBooks[0]}
+            onDelete={onDeleteBook}
+            onSelect={onSelectBook}
+            onToggleFavorite={onToggleFavorite}
+            variant="featured"
           />
         </section>
       )}
 
       {(recentBooks.length > 1 || favoriteBooks.length > 0 || Object.keys(seriesGroups).length > 0) &&
-        filterBy === "all" && !searchTerm && (
+        filterBy === "all" && !searchTerm && !isSelecting && (
         <section className="mb-10 space-y-6">
           {recentBooks.length > 1 && (
             <div>
@@ -190,7 +299,7 @@ function LibraryGrid({
         </section>
       )}
 
-      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm ? "pt-6 border-t border-black/[0.06] dark:border-white/[0.06]" : ""}>
+      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm && !isSelecting ? "pt-6 border-t border-black/[0.06] dark:border-white/[0.06]" : ""}>
         <SectionHeader
           title={searchTerm ? "Results" : "All Books"}
           count={displayBooks.length}
@@ -198,7 +307,7 @@ function LibraryGrid({
         />
         {searchTerm && (
           <p className="mb-4 text-xs text-light-text-muted dark:text-dark-text-muted">
-            Showing matches for "{searchTerm}". Curated sections are hidden while searching.
+            Showing matches for &ldquo;{searchTerm}&rdquo;. Curated sections are hidden while searching.
           </p>
         )}
         {displayBooks.length === 0 ? (
@@ -214,23 +323,93 @@ function LibraryGrid({
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {displayBooks.map((book) => (
-              <div key={book.id}>
-                <BookCard book={book} onSelect={onSelectBook} onToggleFavorite={onToggleFavorite} onDelete={onDeleteBook} />
-              </div>
+              isSelecting ? (
+                <div
+                  key={book.id}
+                  aria-checked={selectedBookIds.has(book.id)}
+                  className="relative cursor-pointer"
+                  role="checkbox"
+                  tabIndex={0}
+                  onClick={() => toggleBookSelection(book.id)}
+                  onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") toggleBookSelection(book.id); }}
+                >
+                  <div className={`absolute top-2 left-2 z-10 w-5 h-5 rounded-full border-2 transition-colors ${
+                    selectedBookIds.has(book.id)
+                      ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text"
+                      : "bg-white/80 dark:bg-black/50 border-black/30 dark:border-white/30"
+                  }`} />
+                  <BookCard
+                    book={book}
+                    onSelect={() => toggleBookSelection(book.id)}
+                  />
+                </div>
+              ) : (
+                <div key={book.id} className="relative group/card">
+                  <BookCard
+                    book={book}
+                    onDelete={onDeleteBook}
+                    onSelect={handleBookClick}
+                    onToggleFavorite={onToggleFavorite}
+                  />
+                  <button
+                    aria-label={`Edit metadata for ${book.title}`}
+                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/40 text-white transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
+                  >
+                    <span className="sr-only">Edit</span>
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                  </button>
+                </div>
+              )
             ))}
           </div>
         ) : (
           <div className="space-y-1.5">
             {displayBooks.map((book) => (
-              <div key={book.id}>
-                <BookCard
-                  book={book}
-                  onSelect={onSelectBook}
-                  onToggleFavorite={onToggleFavorite}
-                  onDelete={onDeleteBook}
-                  variant="compact"
-                />
-              </div>
+              isSelecting ? (
+                <div
+                  key={book.id}
+                  aria-checked={selectedBookIds.has(book.id)}
+                  className="relative cursor-pointer"
+                  role="checkbox"
+                  tabIndex={0}
+                  onClick={() => toggleBookSelection(book.id)}
+                  onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") toggleBookSelection(book.id); }}
+                >
+                  <div className={`absolute top-1/2 left-3 z-10 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-colors ${
+                    selectedBookIds.has(book.id)
+                      ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text"
+                      : "bg-white/80 dark:bg-black/50 border-black/30 dark:border-white/30"
+                  }`} />
+                  <BookCard
+                    book={book}
+                    onSelect={() => toggleBookSelection(book.id)}
+                    variant="compact"
+                  />
+                </div>
+              ) : (
+                <div key={book.id} className="relative group/card">
+                  <BookCard
+                    book={book}
+                    onDelete={onDeleteBook}
+                    onSelect={handleBookClick}
+                    onToggleFavorite={onToggleFavorite}
+                    variant="compact"
+                  />
+                  <button
+                    aria-label={`Edit metadata for ${book.title}`}
+                    className="absolute top-1/2 right-3 z-10 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/40 text-white transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
+                  >
+                    <span className="sr-only">Edit</span>
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                  </button>
+                </div>
+              )
             ))}
           </div>
         )}
@@ -241,8 +420,23 @@ function LibraryGrid({
         onClose={() => setIsCatalogOpen(false)}
         onImport={addBook}
       />
+
+      <BatchActionBar
+        onAssignCollection={handleAssignCollection}
+        onClearSelection={clearSelection}
+        onDelete={handleBatchDelete}
+        onMarkFinished={handleBatchMarkFinished}
+        selectedBookIds={[...selectedBookIds]}
+      />
+
+      <BookMetadataModal
+        allCollections={allCollections}
+        book={editingBook}
+        onClose={() => setEditingBook(null)}
+        onSave={handleSaveMetadata}
+      />
     </div>
   );
-};
+}
 
 export default LibraryGrid;
