@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
             'vendor-ui': ['lucide-react'],
+            'vendor-auth': ['@clerk/clerk-react'],
           }
         }
       }
