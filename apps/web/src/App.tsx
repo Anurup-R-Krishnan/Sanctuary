@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+import { FoliateTestHarness } from "@/components/dev/FoliateTestHarness";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
@@ -86,6 +87,11 @@ function App() {
     setExplicitGuest(false);
     resetSession();
   }, [isSignedIn, signOut, resetSession]);
+
+  // Dev harness
+  if (typeof window !== "undefined" && window.location.search.includes("dev=foliate")) {
+    return <FoliateTestHarness />;
+  }
 
   // Render Helpers
   if (!DISABLE_AUTH && !isLoaded) {

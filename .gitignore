@@ -35,7 +35,7 @@ apps/mobile/web-build
 apps/desktop/src-tauri/target
 apps/desktop/src-tauri/gen
 
-# Testing Artifacts
 playwright-report/
 test-results/
 *.epub
+!apps/web/public/mobydick.epub
