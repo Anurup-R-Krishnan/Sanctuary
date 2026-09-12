@@ -10,17 +10,17 @@ cd apps/desktop
 Before release, verify these cases in the generated AppImage:
 
 1. Launch with networking disabled.
-2. Import a valid EPUB, close the app, and reopen it.
-3. Open the imported EPUB and confirm the previous reading location restores.
+2. Import valid books across supported formats (EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown), close the app, and reopen it.
+3. Open an imported book and confirm the previous reading location restores.
 4. Change reader settings, restart, and confirm they persist.
-5. Import the same EPUB again and confirm duplicate detection is shown.
-6. Try a non-EPUB file and a deliberately damaged EPUB.
+5. Import the same book again and confirm duplicate detection is shown.
+6. Try an unsupported file (e.g. PDF/DOCX) and a deliberately damaged archive to verify error toasts.
 7. Confirm damaged or missing local content is labelled in the library.
 8. Use Retry and Open from start from the reader error screen.
-9. Delete a book, restart, and confirm both its metadata and EPUB content are gone.
-10. Sign in after guest use and confirm local-only books migrate without losing their EPUB bytes.
+9. Delete a book, restart, and confirm both its metadata and book content are gone.
+10. Sign in after guest use and confirm local-only books migrate without losing their content bytes.
 
-When an EPUB fails, open DevTools and run:
+When a book load fails, open DevTools and run:
 
 ```js
 getReaderDiagnostics()
