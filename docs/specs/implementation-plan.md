@@ -41,151 +41,59 @@ Sanctuary currently couples its reader pipeline exclusively to `epubjs` (v0.3.93
 ## 3. Phased Implementation Roadmap
 
 ```text
-Phase 0: Format-Agnostic Interface Definition (Pure types, zero runtime breaks)
+Phase 0: Format-Agnostic Interface Definition [COMPLETED - 6ac0445]
     │
     ▼
-Phase 1: Foliate-js EPUB Adapter Spike (Isolated sandbox route, no existing code touched)
+Phase 1: Foliate-js EPUB Adapter Spike [COMPLETED - 8e07b26]
     │
     ▼
-Phase 2: ReaderSession Internal Adapter Swap (Dual-engine feature flag fallback)
+Phase 2: ReaderSession Internal Adapter Swap [COMPLETED - a353684]
     │
     ▼
-Phase 3: Core Feature Migration & epub.js Deprecation (TOC, CFI locators, Bookmarks, Annotations, Search)
+Phase 3: Core Feature Migration & epub.js Deprecation [COMPLETED - 289a170]
     │
     ▼
-Phase 4: Multi-Format Decoders (FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown)
+Phase 4: Multi-Format Decoders (FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown) [COMPLETED - d1464dc, b81b6b6]
     │
     ▼
-Phase 5: Lightweight Spine/Character-Weight Progress Engine (Replace locations.generate)
+Phase 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED - 748f032]
 ```
 
 ---
 
-### Phase 0: Format-Agnostic Interface Definitions
-
-**Objective**: Establish pure TypeScript contracts for the reader engine, document model, rendition, locators, and progress without touching runtime execution.
-
-- **Key Files Created**:
-  - `apps/web/src/reader/contracts/document.ts` (Document, Section, Metadata, TocItem)
-  - `apps/web/src/reader/contracts/rendition.ts` (Renderer, Rendition, FlowOptions, ThemeStyles, Selection)
-  - `apps/web/src/reader/contracts/locator.ts` (Locator, Progress, Range, CFI-equivalent)
-  - `apps/web/src/reader/contracts/engine.ts` (ReaderEngine, Callbacks, SessionOptions)
-  - `apps/web/src/reader/contracts/index.ts` (Unified export barrel)
-- **Compatibility Target**:
-  - Types must directly map to `ReaderSessionOptions`, `ReaderSessionCallbacks`, `ReaderPosition`, and `ReaderStatus` currently expected by `useReaderEngine.ts`.
-- **TDD / Verification Gate**:
-  - `bun run check` exits `0` with zero type errors.
-  - Zero modifications to existing runtime behavior.
+### Phase 0: Format-Agnostic Interface Definitions [COMPLETED]
+- Status: Completed in commit `6ac0445`.
+- Verification: Clean typecheck, 0 runtime disruptions.
 
 ---
 
-### Phase 1: Foliate-js EPUB Adapter Spike (Isolated Route)
-
-**Objective**: Validate `foliate-js` EPUB parsing and DOM rendering inside Vite/React without disturbing existing reader routes.
-
-- **Tasks**:
-  1. Integrate `foliate-js` package or vendor clean ES modules in `apps/web/src/reader/vendor/foliate/`.
-  2. Implement `FoliateEpubDocument` implementing `BookDocument`.
-  3. Implement `FoliateDomRenderer` implementing `DocumentRendition` (custom element / column paginator + continuous scroll).
-  4. Create an isolated dev/test route: `apps/web/src/components/dev/FoliateTestHarness.tsx` rendered at `/__dev_reader_test`.
-  5. Verify rendering with `mobydick.epub` (already located at repo root).
-- **TDD / Verification Gate**:
-  - Unit test `foliateEpubAdapter.test.ts` verifying:
-    - EPUB metadata extraction (title, author, direction).
-    - Spine section iteration and TOC extraction.
-  - Test harness renders chapters, paginates forward/backward, and toggles between paginated and scrolled layout without white flashes or crashes.
-  - `bun run check` exits `0`.
+### Phase 1: Foliate-js EPUB Adapter Spike (Isolated Route) [COMPLETED]
+- Status: Completed in commit `8e07b26`.
+- Verification: `foliateEpubAdapter.test.ts` passing, `FoliateTestHarness` operational at `/__dev_reader_test`.
 
 ---
 
-### Phase 2: ReaderSession Internal Adapter Swap (Dual-Engine Fallback)
-
-**Objective**: Refactor `ReaderSession.ts` to delegate to the new format-agnostic engine, keeping `epub.js` available via feature flag.
-
-- **Tasks**:
-  1. Introduce feature flag `VITE_READER_ENGINE="foliate"` (defaults to foliate, allows `"epubjs"` fallback).
-  2. Refactor `ReaderSession` class to act as a facade implementing `IReaderSession`:
-     - If `engine === "foliate"`, delegate to `FoliateReaderEngine`.
-     - If `engine === "epubjs"`, delegate to legacy `EpubjsReaderEngine`.
-  3. Maintain exact method signatures on `ReaderSession`:
-     - `next(): Promise<void>`
-     - `prev(): Promise<void>`
-     - `display(target: string): Promise<boolean>`
-     - `setFlow(next: ReaderFlowOptions): Promise<void>`
-     - `updateReaderBackground(bg: string): void`
-     - `destroy(): void`
-  4. Keep `useReaderEngine.ts` and `ReaderEngineHost.tsx` consuming `ReaderSession` without changing component props or React hooks.
-- **TDD / Verification Gate**:
-  - `bun test apps/web/src/services/bookContentRepository.test.ts` exits `0`.
-  - Open EPUB in main app UI: verify book loads, page turns work, theme changes apply, and layout switches smoothly.
-  - `bun run check` exits `0`.
+### Phase 2: ReaderSession Internal Adapter Swap [COMPLETED]
+- Status: Completed in commit `a353684`.
+- Verification: `ReaderSession` facade delegates directly to `FoliateReaderSession` with seamless UI hook preservation.
 
 ---
 
-### Phase 3: Core Feature Migration & epub.js Deprecation
-
-**Objective**: Port all reader capabilities to foliate-js natively, migrate locators, and delete `epubjs`.
-
-- **Step 3.1: Table of Contents & Navigation**:
-  - Foliate TOC tree mapped to `TocItem[]`.
-  - Chapter heading resolution during relocation (`findTocLabel`).
-  - *Verify*: Chapter drawer displays full hierarchy, clicking any chapter jumps immediately.
-- **Step 3.2: Position & CFI-Equivalent Locators**:
-  - Map Foliate CFI / progression locators to `ReaderPosition.cfi` and `ReaderPosition.location`.
-  - Maintain backward compatibility: if saved location is an epub.js CFI, resolve gracefully or fallback to chapter start (`displayWithFallbacks`).
-  - *Verify*: Reopening an existing book resumes at correct reading position.
-- **Step 3.3: Bookmarks**:
-  - Bookmarks stored in `Book.bookmarks` use standardized locator strings.
-  - *Verify*: Adding, viewing, clicking, and removing bookmarks in TOC drawer.
-- **Step 3.4: Text Selection & Annotations**:
-  - Text selection via native DOM selection API instead of iframe content hook.
-  - Highlight rendering using Foliate overlayer / DOM marks instead of `rendition.annotations.highlight`.
-  - Persistent notes loaded from IndexedDB `annotations` store.
-  - *Verify*: Highlighting text in 4 colors, adding notes, and verifying highlights persist across page turns and window resizes.
-- **Step 3.5: Full-Text Search**:
-  - Port `useReaderSearch.ts` to search across Foliate spine sections.
-  - *Verify*: Search query returns matching excerpts with chapter labels; clicking result navigates directly to match.
-- **Step 3.6: Deprecate & Remove epub.js**:
-  - Remove legacy `epubjs` imports and remove `epubjs` from `package.json`.
-- **TDD / Verification Gate**:
-  - New test suites:
-    - `readerNavigation.test.ts`
-    - `readerAnnotations.test.ts`
-    - `readerSearch.test.ts`
-  - `grep -Rni "epubjs" apps/web/src` returns 0 matches.
-  - `bun run check` exits `0`.
+### Phase 3: Core Feature Migration & epub.js Deprecation [COMPLETED]
+- Status: Completed in commit `289a170`.
+- Verification: TOC navigation, bookmarks, annotations, and search ported to Foliate DOM marks/overlayers; `epubjs` package purged from repository.
 
 ---
 
-### Phase 4: Multi-Format Decoders
-
-**Objective**: Enable FB2, MOBI, AZW, AZW3, TXT, HTML/XHTML, and Markdown through the same format-agnostic interface.
-
-- **Step 4.1: File Detection & Format Router**:
-  - Detect format via file signature / extension (`.epub`, `.mobi`, `.azw`, `.azw3`, `.fb2`, `.txt`, `.md`, `.html`, `.xhtml`).
-  - Route Blob to corresponding format parser.
-- **Step 4.2: MOBI / AZW / AZW3 Adapter**:
-  - Integrate Foliate MOBI/KF8 parser (`mobi.js`).
-  - Extract metadata, PalmDOC/HTML sections, and images into `BookDocument`.
-- **Step 4.3: FB2 Adapter**:
-  - Integrate FictionBook XML parser (`fb2.js`).
-  - Parse binary base64 covers and XML body into structured DOM sections.
-- **Step 4.4: Plain Text & Markdown Adapter**:
-  - Format plain text into clean, reflowable HTML paragraphs.
-  - Format Markdown via lightweight parser into semantic HTML with generated TOC from `#`, `##`, `###` headings.
-- **Step 4.5: HTML / XHTML Adapter**:
-  - Normalize standalone HTML/XHTML files into a single-section `BookDocument`.
-- **TDD / Verification Gate**:
-  - Format test suite `formatParsers.test.ts` loading sample fixtures for every supported format.
-  - Verify every format supports:
-    - Paginated & scroll mode
-    - Font/margin/theme customization
-    - Bookmarking & TOC
-  - `bun run check` exits `0`.
+### Phase 4: Multi-Format Decoders [COMPLETED]
+- Status: Completed in commits `d1464dc` and `b81b6b6`.
+- Verification: All 8 formats supported (EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML/XHTML, Markdown); `formatParsers.test.ts` passing.
 
 ---
 
-### Phase 5: Lightweight Spine/Character-Weight Progress Engine
+### Phase 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED]
+- Status: Completed in commit `748f032`.
+- Verification: Instant progress calculation (<2.5ms) replacing `locations.generate(1024)`; `progressEstimator.test.ts` passing.
 
 **Objective**: Eliminate `locations.generate(1024)` main-thread lag with instant character-weight progress estimation.
 
