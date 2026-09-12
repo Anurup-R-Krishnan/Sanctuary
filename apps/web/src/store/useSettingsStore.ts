@@ -43,9 +43,11 @@ type SettingsValues = {
   showStreakReminder: boolean;
   trackingEnabled: boolean;
   reduceMotion: boolean;
+  bookVoiceOverrides: Record<string, string>;
   ttsVoiceURI: string | null;
   ttsRate: number;
   ttsPitch: number;
+  ttsParagraphPauseMs: number;
 };
 
 type SettingsActions = {
@@ -77,9 +79,11 @@ type SettingsActions = {
   setShowStreakReminder: (v: boolean) => void;
   setTrackingEnabled: (v: boolean) => void;
   setReduceMotion: (v: boolean) => void;
+  setBookVoiceOverride: (bookId: string, voiceURI: string) => void;
   setTtsVoiceURI: (v: string | null) => void;
   setTtsRate: (v: number) => void;
   setTtsPitch: (v: number) => void;
+  setTtsParagraphPauseMs: (v: number) => void;
   resetToDefaults: () => void;
 };
 
@@ -121,9 +125,11 @@ const DEFAULTS: SettingsValues = {
   showStreakReminder: true,
   trackingEnabled: true,
   reduceMotion: false,
+  bookVoiceOverrides: {},
   ttsVoiceURI: null,
   ttsRate: 1,
-  ttsPitch: 1
+  ttsPitch: 1,
+  ttsParagraphPauseMs: 350,
 };
 
 export const LOCAL_SETTINGS_KEY = "sanctuary.web.settings";
@@ -181,9 +187,11 @@ export const pickValues = (state: Settings): SettingsValues => ({
   showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
   reduceMotion: state.reduceMotion,
+  bookVoiceOverrides: state.bookVoiceOverrides,
   ttsVoiceURI: state.ttsVoiceURI,
   ttsRate: state.ttsRate,
-  ttsPitch: state.ttsPitch
+  ttsPitch: state.ttsPitch,
+  ttsParagraphPauseMs: state.ttsParagraphPauseMs,
 });
 
 export const toRemotePayload = (state: SettingsValues) => ({
@@ -262,9 +270,13 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.showStreakReminder === "boolean") out.showStreakReminder = raw.showStreakReminder;
   if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
   if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
+  if (raw.bookVoiceOverrides && typeof raw.bookVoiceOverrides === "object") {
+    out.bookVoiceOverrides = raw.bookVoiceOverrides as Record<string, string>;
+  }
   if (typeof raw.ttsVoiceURI === "string" || raw.ttsVoiceURI === null) out.ttsVoiceURI = raw.ttsVoiceURI as string | null;
   if (typeof raw.ttsRate === "number") out.ttsRate = raw.ttsRate;
   if (typeof raw.ttsPitch === "number") out.ttsPitch = raw.ttsPitch;
+  if (typeof raw.ttsParagraphPauseMs === "number") out.ttsParagraphPauseMs = raw.ttsParagraphPauseMs;
 
   return out;
 };
@@ -335,6 +347,7 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   }
   if (typeof remote.ttsRate === "number") out.ttsRate = remote.ttsRate;
   if (typeof remote.ttsPitch === "number") out.ttsPitch = remote.ttsPitch;
+  if (typeof remote.ttsParagraphPauseMs === "number") out.ttsParagraphPauseMs = remote.ttsParagraphPauseMs;
 
   return out;
 };
@@ -373,9 +386,17 @@ export const useSettingsStore = create<Settings>((set) => ({
   setShowStreakReminder: createSetAction("showStreakReminder", set),
   setTrackingEnabled: createSetAction("trackingEnabled", set),
   setReduceMotion: createSetAction("reduceMotion", set),
+  setBookVoiceOverride: (bookId: string, voiceURI: string) =>
+    set((state) => ({
+      bookVoiceOverrides: {
+        ...state.bookVoiceOverrides,
+        [bookId]: voiceURI,
+      },
+    })),
   setTtsVoiceURI: createSetAction("ttsVoiceURI", set),
   setTtsRate: createSetAction("ttsRate", set),
   setTtsPitch: createSetAction("ttsPitch", set),
+  setTtsParagraphPauseMs: createSetAction("ttsParagraphPauseMs", set),
   resetToDefaults: () => set(DEFAULTS)
 }));
 

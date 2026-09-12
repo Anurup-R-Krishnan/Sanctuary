@@ -1,12 +1,11 @@
 import { CheckSquare, ChevronRight, Clock, Search, Square, Star } from "lucide-react";
-import { useMemo, useState } from "react";
+import React, { Suspense, lazy, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { Book, FilterOption, SortOption, ViewMode } from "@/types";
 
 import { BatchActionBar } from "@/components/library/BatchActionBar";
 import { BookMetadataModal } from "@/components/library/BookMetadataModal";
-import { CatalogBrowser } from "@/components/library/CatalogBrowser";
 import { HorizontalScroll } from "@/components/library/HorizontalScroll";
 import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
@@ -17,6 +16,10 @@ import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 
 import BookCard from "../ui/BookCard";
+
+const CatalogBrowser = lazy(() =>
+  import("@/components/library/CatalogBrowser").then((m) => ({ default: m.CatalogBrowser }))
+);
 
 interface LibraryGridProps {
   addBook: (file: File) => Promise<void>;
@@ -177,11 +180,13 @@ function LibraryGrid({
     return (
       <>
         <LibraryEmptyState onAddBook={addBook} onOpenCatalog={() => setIsCatalogOpen(true)} />
-        <CatalogBrowser
-          isOpen={isCatalogOpen}
-          onClose={() => setIsCatalogOpen(false)}
-          onImport={addBook}
-        />
+        <Suspense fallback={null}>
+          <CatalogBrowser
+            isOpen={isCatalogOpen}
+            onClose={() => setIsCatalogOpen(false)}
+            onImport={addBook}
+          />
+        </Suspense>
       </>
     );
   }
@@ -424,11 +429,13 @@ function LibraryGrid({
         )}
       </section>
 
-      <CatalogBrowser
-        isOpen={isCatalogOpen}
-        onClose={() => setIsCatalogOpen(false)}
-        onImport={addBook}
-      />
+      <Suspense fallback={null}>
+        <CatalogBrowser
+          isOpen={isCatalogOpen}
+          onClose={() => setIsCatalogOpen(false)}
+          onImport={addBook}
+        />
+      </Suspense>
 
       <BatchActionBar
         onAssignCollection={handleAssignCollection}

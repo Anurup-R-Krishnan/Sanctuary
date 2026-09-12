@@ -153,4 +153,69 @@ describe("Foliate In-Book TTS Controller", () => {
     expect(nextChapterCalled).toBe(true);
     controller.destroy();
   });
+
+  it("identifies paragraph end boundaries accurately across DOM block elements", () => {
+    const doc = createMockDocument();
+    const controller = new FoliateTTSController({
+      clearHighlight: () => {},
+      getDoc: () => doc,
+      highlightRange: () => {},
+    });
+
+    controller.extractSentences();
+    const sentences = controller.getSentences();
+    expect(sentences.length).toBeGreaterThanOrEqual(4);
+
+    // Sentence in <h1> should be a paragraph end
+    expect(sentences[0].isParagraphEnd).toBe(true);
+
+    // The last sentence of the document must be a paragraph end
+    expect(sentences[sentences.length - 1].isParagraphEnd).toBe(true);
+
+    controller.destroy();
+  });
+
+  it("configures natural cadence pause durations and supports dynamic pause adjustment", () => {
+    const doc = createMockDocument();
+    const controller = new FoliateTTSController({
+      chapterPauseMs: 900,
+      clearHighlight: () => {},
+      getDoc: () => doc,
+      highlightRange: () => {},
+      paragraphPauseMs: 400,
+      sentencePauseMs: 75,
+    });
+
+    expect(controller.getParagraphPause()).toBe(400);
+    expect(controller.getSentencePause()).toBe(75);
+    expect(controller.getChapterPause()).toBe(900);
+
+    controller.setParagraphPause(550);
+    controller.setSentencePause(100);
+    controller.setChapterPause(1200);
+
+    expect(controller.getParagraphPause()).toBe(550);
+    expect(controller.getSentencePause()).toBe(100);
+    expect(controller.getChapterPause()).toBe(1200);
+
+    controller.destroy();
+  });
+
+  it("switches voiceURI dynamically and retains playback state", async () => {
+    const doc = createMockDocument();
+    const controller = new FoliateTTSController({
+      clearHighlight: () => {},
+      getDoc: () => doc,
+      highlightRange: () => {},
+      voiceURI: "urn:voice:default",
+    });
+
+    await controller.start(false);
+    expect(controller.getState().isPlaying).toBe(true);
+
+    controller.setVoice("urn:voice:custom-natural-cadence");
+    expect(controller.getState().isPlaying).toBe(true);
+
+    controller.destroy();
+  });
 });

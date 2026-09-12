@@ -16,7 +16,7 @@
 - **Prerequisites**: Audio & Synchronized In-Book TTS, Native Media Session Integration
 - **Category**: Reader Experience / Audio
 - **Documented at**: commit `d7e5ea7`, 2026-09-13
-- **Status**: READY
+- **Status**: VERIFIED
 
 ## Why this matters
 

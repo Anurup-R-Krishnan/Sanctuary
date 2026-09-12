@@ -18,6 +18,7 @@ export interface SpeechState {
 }
 
 export interface UseReaderSpeechOptions {
+  bookId?: string;
   bookMetadata?: TTSBookMetadata;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   session?: IReaderSession | any;
@@ -25,6 +26,7 @@ export interface UseReaderSpeechOptions {
 
 export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
   const session = options?.session;
+  const bookId = options?.bookId;
   const [state, setState] = useState<SpeechState>({
     currentText: null,
     isContinuous: false,
@@ -36,13 +38,29 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
-  const { ttsVoiceURI, ttsRate, ttsPitch, setTtsVoiceURI, setTtsRate } = useSettingsShallow((s) => ({
+  const {
+    bookVoiceOverrides,
+    setBookVoiceOverride,
+    setTtsParagraphPauseMs,
+    setTtsRate,
+    setTtsVoiceURI,
+    ttsParagraphPauseMs,
+    ttsPitch,
+    ttsRate,
+    ttsVoiceURI,
+  } = useSettingsShallow((s) => ({
+    bookVoiceOverrides: s.bookVoiceOverrides,
+    setBookVoiceOverride: s.setBookVoiceOverride,
+    setTtsParagraphPauseMs: s.setTtsParagraphPauseMs,
     setTtsRate: s.setTtsRate,
     setTtsVoiceURI: s.setTtsVoiceURI,
+    ttsParagraphPauseMs: s.ttsParagraphPauseMs,
     ttsPitch: s.ttsPitch,
     ttsRate: s.ttsRate,
     ttsVoiceURI: s.ttsVoiceURI,
   }));
+
+  const activeVoiceURI = (bookId && bookVoiceOverrides[bookId]) || ttsVoiceURI;
 
   // Load available voices
   useEffect(() => {
@@ -50,7 +68,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     const loadVoices = () => {
       const available = window.speechSynthesis.getVoices();
       setVoices(available);
-      if (available.length > 0 && !ttsVoiceURI) {
+      if (available.length > 0 && !activeVoiceURI) {
         const defaultVoice = available.find((v) => v.default) || available[0];
         if (defaultVoice) setTtsVoiceURI(defaultVoice.voiceURI);
       }
@@ -64,7 +82,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
         window.speechSynthesis.cancel();
       }
     };
-  }, [ttsVoiceURI, setTtsVoiceURI]);
+  }, [activeVoiceURI, setTtsVoiceURI]);
 
   // Keep state synchronized with Foliate session's TTS controller if present
   useEffect(() => {
@@ -72,8 +90,9 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     const rendition = (session as any)?.renditionInstance || (session as any)?.rendition;
     if (rendition?.getTTSController) {
       const controller = rendition.getTTSController();
-      controller.setVoice(ttsVoiceURI);
+      controller.setVoice(activeVoiceURI);
       controller.setRate(ttsRate);
+      controller.setParagraphPause(ttsParagraphPauseMs);
       return controller.subscribe((ttsState: TTSControllerState) => {
         setState((s) => ({
           ...s,
@@ -85,7 +104,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
         }));
       });
     }
-  }, [session, ttsVoiceURI, ttsRate]);
+  }, [session, activeVoiceURI, ttsRate, ttsParagraphPauseMs]);
 
   const metaTitle = options?.bookMetadata?.title;
   const metaAuthor = options?.bookMetadata?.author;
@@ -116,8 +135,8 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
 
       setTimeout(() => {
         const utterance = new SpeechSynthesisUtterance(text);
-        if (ttsVoiceURI) {
-          const voice = voices.find((v) => v.voiceURI === ttsVoiceURI);
+        if (activeVoiceURI) {
+          const voice = voices.find((v) => v.voiceURI === activeVoiceURI);
           if (voice) utterance.voice = voice;
         }
         utterance.rate = ttsRate;
@@ -133,7 +152,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
         window.speechSynthesis.speak(utterance);
       }, 50);
     },
-    [voices, ttsVoiceURI, ttsRate, ttsPitch]
+    [voices, activeVoiceURI, ttsRate, ttsPitch]
   );
 
   // Continuous book reading actions
@@ -204,6 +223,25 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     [getTTSController, setTtsRate]
   );
 
+  const changeVoice = useCallback(
+    (voiceURI: string) => {
+      if (bookId) {
+        setBookVoiceOverride(bookId, voiceURI);
+      }
+      setTtsVoiceURI(voiceURI);
+      getTTSController()?.setVoice(voiceURI);
+    },
+    [bookId, getTTSController, setBookVoiceOverride, setTtsVoiceURI]
+  );
+
+  const changeParagraphPause = useCallback(
+    (ms: number) => {
+      setTtsParagraphPauseMs(ms);
+      getTTSController()?.setParagraphPause(ms);
+    },
+    [getTTSController, setTtsParagraphPauseMs]
+  );
+
   const togglePlayPause = useCallback(() => {
     if (!state.isPlaying) {
       void startBookSpeech(true);
@@ -215,8 +253,12 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
   }, [state.isPlaying, state.isPaused, startBookSpeech, resumeBookSpeech, pauseBookSpeech]);
 
   return {
+    activeVoiceURI,
+    changeParagraphPause,
     changeRate,
+    changeVoice,
     nextSentence,
+    paragraphPauseMs: ttsParagraphPauseMs,
     pause: pauseBookSpeech,
     pauseBookSpeech,
     prevSentence,

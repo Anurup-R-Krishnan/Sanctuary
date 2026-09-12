@@ -1,8 +1,8 @@
-import React, { memo } from "react";
+import React, { Suspense, lazy, memo } from "react";
 
 import type { SpeechState } from "@/hooks/useReaderSpeech";
 import type { Book, Bookmark } from "@/types";
-import type { ReaderSearchState, ReaderAnnotation } from "@/types/reader";
+import type { ReaderAnnotation, ReaderSearchState } from "@/types/reader";
 
 import { ReaderAnnotationsPanel } from "@/components/reader/ReaderAnnotationsPanel";
 import ReaderControls from "@/components/reader/ReaderControls";
@@ -10,9 +10,13 @@ import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
 import ReaderSettings from "@/components/reader/ReaderSettings";
-import { ReaderTTSBar } from "@/components/reader/ReaderTTSBar";
+
+const ReaderTTSBar = lazy(() =>
+  import("@/components/reader/ReaderTTSBar").then((m) => ({ default: m.ReaderTTSBar }))
+);
 
 interface ReaderOverlayProps {
+  activeVoiceURI?: string | null;
   annotations: ReaderAnnotation[];
   book: Book;
   bookmarks: Bookmark[];
@@ -23,7 +27,9 @@ interface ReaderOverlayProps {
   isFullscreen: boolean;
   isLoading: boolean;
   isTTSActive?: boolean;
+  onChangeTTSParagraphPause?: (ms: number) => void;
   onChangeTTSRate?: (rate: number) => void;
+  onChangeTTSVoice?: (voiceURI: string) => void;
   onClearSearch: () => void;
   onClose: () => void;
   onCloseAnnotations: () => void;
@@ -53,6 +59,7 @@ interface ReaderOverlayProps {
   onToggleTOC: () => void;
   onToggleTTS?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
+  paragraphPauseMs?: number;
   searchState: ReaderSearchState;
   showAnnotations: boolean;
   showControls: boolean;
@@ -62,6 +69,7 @@ interface ReaderOverlayProps {
   speechState?: SpeechState;
   toc: Array<{ id?: string; href: string; label: string; subitems?: Array<{ id?: string; href: string; label: string }> }>;
   totalPages: number;
+  voices?: SpeechSynthesisVoice[];
 }
 
 function ReaderOverlay(props: ReaderOverlayProps) {
@@ -97,14 +105,21 @@ function ReaderOverlay(props: ReaderOverlayProps) {
       />
 
       {props.isTTSActive && props.speechState && (
-        <ReaderTTSBar
-          speechState={props.speechState}
-          onTogglePlayPause={props.onToggleTTS || (() => {})}
-          onNextSentence={props.onNextTTSSentence || (() => {})}
-          onPrevSentence={props.onPrevTTSSentence || (() => {})}
-          onChangeRate={props.onChangeTTSRate || (() => {})}
-          onClose={props.onCloseTTS || props.onToggleTTS || (() => {})}
-        />
+        <Suspense fallback={null}>
+          <ReaderTTSBar
+            activeVoiceURI={props.activeVoiceURI}
+            onChangeParagraphPause={props.onChangeTTSParagraphPause}
+            onChangeRate={props.onChangeTTSRate || (() => {})}
+            onChangeVoice={props.onChangeTTSVoice}
+            onClose={props.onCloseTTS || props.onToggleTTS || (() => {})}
+            onNextSentence={props.onNextTTSSentence || (() => {})}
+            onPrevSentence={props.onPrevTTSSentence || (() => {})}
+            onTogglePlayPause={props.onToggleTTS || (() => {})}
+            paragraphPauseMs={props.paragraphPauseMs}
+            speechState={props.speechState}
+            voices={props.voices}
+          />
+        </Suspense>
       )}
 
       <ReaderFooter

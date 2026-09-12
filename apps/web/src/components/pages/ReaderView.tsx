@@ -176,24 +176,30 @@ function ReaderView({
 
   const [isTTSActive, setIsTTSActive] = useState(false);
   const {
+    activeVoiceURI,
+    changeParagraphPause,
+    changeRate,
+    changeVoice,
+    nextSentence,
+    paragraphPauseMs,
+    prevSentence,
     speak,
-    stop: stopSpeech,
     speechState,
     startBookSpeech,
-    nextSentence,
-    prevSentence,
-    changeRate,
+    stop: stopSpeech,
     stopBookSpeech,
+    voices,
   } = useReaderSpeech({
-    session: engineRef.current,
+    bookId: book?.id,
     bookMetadata: book
       ? {
-          title: book.title,
           author: book.author || undefined,
-          coverUrl: book.coverUrl || undefined,
           chapter: position.chapterLabel || undefined,
+          coverUrl: book.coverUrl || undefined,
+          title: book.title,
         }
       : undefined,
+    session: engineRef.current,
   });
 
   const handleToggleTTS = useCallback(() => {
@@ -385,13 +391,18 @@ function ReaderView({
         onNextSearchResult={nextResult}
         onPrevSearchResult={prevResult}
         onGoToSearchResult={goToResult}
+        activeVoiceURI={activeVoiceURI}
         isTTSActive={isTTSActive}
-        onToggleTTS={handleToggleTTS}
+        onChangeTTSParagraphPause={changeParagraphPause}
+        onChangeTTSRate={changeRate}
+        onChangeTTSVoice={changeVoice}
         onCloseTTS={handleCloseTTS}
-        speechState={speechState}
         onNextTTSSentence={nextSentence}
         onPrevTTSSentence={prevSentence}
-        onChangeTTSRate={changeRate}
+        onToggleTTS={handleToggleTTS}
+        paragraphPauseMs={paragraphPauseMs}
+        speechState={speechState}
+        voices={voices}
       />
 
       <ReaderSelectionMenu
