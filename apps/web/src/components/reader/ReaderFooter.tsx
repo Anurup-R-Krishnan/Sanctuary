@@ -4,6 +4,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderFooterProps {
+    chapterEstimatedMinutesRemaining?: number | null;
     currentPage: number;
     estimatedMinutesRemaining?: number | null;
     onNextPage: () => void;
@@ -14,13 +15,14 @@ interface ReaderFooterProps {
 }
 
 function ReaderFooter({
+    chapterEstimatedMinutesRemaining,
     currentPage,
-    totalPages,
-    showUI,
-    onNextPage,
-    onPrevPage,
-    onPageChange,
     estimatedMinutesRemaining,
+    onNextPage,
+    onPageChange,
+    onPrevPage,
+    showUI,
+    totalPages,
 }: ReaderFooterProps) {
     const readerBackground = useSettings((state) => state.readerBackground);
     const readerAccent = useSettings((state) => state.readerAccent);
@@ -95,12 +97,27 @@ function ReaderFooter({
                                     <span className="opacity-60">/</span>
                                     <span className="tabular-nums">{totalPages}</span>
                                     <span className="opacity-60">{progressPercent}%</span>
+                                    {chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null && (
+                                        <>
+                                            <span className="opacity-40">·</span>
+                                            <span className="tabular-nums">
+                                                {chapterEstimatedMinutesRemaining < 1
+                                                    ? "< 1m in ch"
+                                                    : `${Math.round(chapterEstimatedMinutesRemaining)}m in ch`}
+                                            </span>
+                                        </>
+                                    )}
                                     {estimatedMinutesRemaining !== undefined && estimatedMinutesRemaining !== null && (
-                                        <span>
-                                            {estimatedMinutesRemaining < 1 
-                                                ? "less than 1m left" 
-                                                : `${Math.round(estimatedMinutesRemaining)}m left`}
-                                        </span>
+                                        <>
+                                            <span className="opacity-40">·</span>
+                                            <span className="tabular-nums">
+                                                {estimatedMinutesRemaining < 1 
+                                                    ? "< 1m left" 
+                                                    : estimatedMinutesRemaining >= 60
+                                                        ? `${Math.floor(estimatedMinutesRemaining / 60)}h ${Math.round(estimatedMinutesRemaining % 60)}m left`
+                                                        : `${Math.round(estimatedMinutesRemaining)}m left`}
+                                            </span>
+                                        </>
                                     )}
                                 </div>
                             )}

@@ -1,23 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import type { ReaderSessionStats } from "@/types/reader";
+import type { ReaderPosition, ReaderSessionStats } from "@/types/reader";
 
 import { useSettingsStore } from "@/store/useSettingsStore";
 
 import { incrementReadingTime } from "../reader/persistence/readingTimeRepository";
 
-export const useReaderSessionStats = (bookId: string, currentTotalLocations: number) => {
+export const useReaderSessionStats = (
+    bookId: string,
+    currentTotalLocations: number,
+    position?: Partial<ReaderPosition> | null
+) => {
     const [stats, setStats] = useState<ReaderSessionStats>({
         activeSeconds: 0,
-        sessionStartedAt: Date.now(),
+        chapterEstimatedMinutesRemaining: null,
         estimatedMinutesRemaining: null,
         locationsPerMinute: null,
+        readingSpeedWpm: null,
+        sessionStartedAt: Date.now(),
     });
 
     const activeSecondsRef = useRef(0);
     const unsavedSecondsRef = useRef(0);
     const locationsReadRef = useRef(0);
     const lastLocationRef = useRef<number | null>(null);
+    const positionRef = useRef<Partial<ReaderPosition> | null>(position ?? null);
+
+    useEffect(() => {
+        positionRef.current = position ?? null;
+    }, [position]);
 
     const flushReadingTime = useCallback(() => {
         const trackingEnabled = useSettingsStore.getState().trackingEnabled;
@@ -39,11 +50,54 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
         unsavedSecondsRef.current = 0;
         setStats({
             activeSeconds: 0,
-            sessionStartedAt: Date.now(),
+            chapterEstimatedMinutesRemaining: null,
             estimatedMinutesRemaining: null,
             locationsPerMinute: null,
+            readingSpeedWpm: null,
+            sessionStartedAt: Date.now(),
         });
     }, [bookId]);
+
+    // Compute estimates from velocity and remaining weights
+    const computeEstimates = useCallback((
+        activeSec: number,
+        locsRead: number,
+        loc: number | null,
+        pos: Partial<ReaderPosition> | null
+    ) => {
+        let lpm: number | null = null;
+        let wpm: number | null = null;
+
+        if (activeSec >= 20 && locsRead > 0) {
+            lpm = Math.round(((locsRead / activeSec) * 60) * 100) / 100;
+            wpm = Math.max(80, Math.min(800, Math.round(lpm * 250)));
+        }
+
+        const effectiveWpm = wpm ?? 230;
+        const charsPerMinute = effectiveWpm * 6;
+
+        let chapterEstimated: number | null = null;
+        if (typeof pos?.chapterRemainingWeight === "number") {
+            chapterEstimated = Math.round((pos.chapterRemainingWeight / charsPerMinute) * 10) / 10;
+        } else if (typeof pos?.chapterProgress === "number") {
+            const remFraction = Math.max(0, (100 - pos.chapterProgress) / 100);
+            chapterEstimated = Math.round(remFraction * 4 * 10) / 10;
+        }
+
+        let bookEstimated: number | null = null;
+        if (typeof pos?.totalRemainingWeight === "number") {
+            bookEstimated = Math.round((pos.totalRemainingWeight / charsPerMinute) * 10) / 10;
+        } else if (currentTotalLocations > 0 && loc !== null) {
+            const remainingLocations = currentTotalLocations - loc;
+            if (remainingLocations > 0 && (lpm ?? 1) > 0) {
+                bookEstimated = Math.round((remainingLocations / (lpm ?? 1)) * 10) / 10;
+            } else if (remainingLocations <= 0) {
+                bookEstimated = 0;
+            }
+        }
+
+        return { bookEstimated, chapterEstimated, lpm, wpm };
+    }, [currentTotalLocations]);
 
     // Active ticking
     useEffect(() => {
@@ -60,29 +114,32 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
                 flushReadingTime();
             }
 
-            // Recalculate stats every 10s or when minute estimates change
-            if (activeSecondsRef.current % 10 === 0 && activeSecondsRef.current > 60 && locationsReadRef.current > 0) {
-                const lpm = (locationsReadRef.current / activeSecondsRef.current) * 60;
-                let estimated: number | null = null;
-
-                if (currentTotalLocations > 0 && lastLocationRef.current !== null) {
-                    const remainingLocations = currentTotalLocations - lastLocationRef.current;
-                    if (remainingLocations > 0 && lpm > 0) {
-                        estimated = Math.round((remainingLocations / lpm) * 10) / 10;
-                    } else if (remainingLocations <= 0) {
-                        estimated = 0;
-                    }
-                }
+            // Recalculate stats periodically
+            if (activeSecondsRef.current % 5 === 0) {
+                const { bookEstimated, chapterEstimated, lpm, wpm } = computeEstimates(
+                    activeSecondsRef.current,
+                    locationsReadRef.current,
+                    lastLocationRef.current,
+                    positionRef.current
+                );
 
                 setStats(prev => {
-                    if (prev.estimatedMinutesRemaining === estimated && prev.locationsPerMinute === lpm) {
+                    if (
+                        prev.activeSeconds === activeSecondsRef.current &&
+                        prev.chapterEstimatedMinutesRemaining === chapterEstimated &&
+                        prev.estimatedMinutesRemaining === bookEstimated &&
+                        prev.locationsPerMinute === lpm &&
+                        prev.readingSpeedWpm === wpm
+                    ) {
                         return prev;
                     }
                     return {
-                        ...prev,
                         activeSeconds: activeSecondsRef.current,
+                        chapterEstimatedMinutesRemaining: chapterEstimated,
+                        estimatedMinutesRemaining: bookEstimated,
                         locationsPerMinute: lpm,
-                        estimatedMinutesRemaining: estimated,
+                        readingSpeedWpm: wpm,
+                        sessionStartedAt: prev.sessionStartedAt,
                     };
                 });
             }
@@ -93,10 +150,14 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
             clearInterval(interval);
             flushReadingTime();
         };
-    }, [bookId, currentTotalLocations, flushReadingTime]);
+    }, [bookId, computeEstimates, flushReadingTime]);
 
-    // Track location changes to calculate speed
-    const trackLocationProgress = useCallback((currentLocation: number) => {
+    // Record location changes to calculate speed and refresh estimates
+    const recordLocationProgress = useCallback((
+        currentLocation: number,
+        chapterRemainingWeight?: number,
+        totalRemainingWeight?: number
+    ) => {
         const trackingEnabled = useSettingsStore.getState().trackingEnabled;
         if (!trackingEnabled) return;
         
@@ -107,10 +168,34 @@ export const useReaderSessionStats = (bookId: string, currentTotalLocations: num
             }
         }
         lastLocationRef.current = currentLocation;
-    }, []);
+
+        if (chapterRemainingWeight !== undefined || totalRemainingWeight !== undefined) {
+            positionRef.current = {
+                ...positionRef.current,
+                ...(chapterRemainingWeight !== undefined ? { chapterRemainingWeight } : {}),
+                ...(totalRemainingWeight !== undefined ? { totalRemainingWeight } : {}),
+            };
+        }
+
+        const { bookEstimated, chapterEstimated, lpm, wpm } = computeEstimates(
+            activeSecondsRef.current,
+            locationsReadRef.current,
+            currentLocation,
+            positionRef.current
+        );
+
+        setStats(prev => ({
+            ...prev,
+            chapterEstimatedMinutesRemaining: chapterEstimated,
+            estimatedMinutesRemaining: bookEstimated,
+            locationsPerMinute: lpm,
+            readingSpeedWpm: wpm,
+        }));
+    }, [computeEstimates]);
 
     return {
+        recordLocationProgress,
         stats,
-        trackLocationProgress,
+        trackLocationProgress: recordLocationProgress,
     };
 };

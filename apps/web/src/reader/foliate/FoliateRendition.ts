@@ -138,16 +138,22 @@ export class FoliateRendition implements DocumentRendition {
       const section = this.documentAdapter.getSectionByIndex(index);
       const chapterLabel = detail.tocItem?.label?.trim() || this.findChapterLabel(section?.href ?? "");
 
+      const chapterRemainingWeight = this.progressEstimator.getRemainingSectionWeight(index, fraction);
+      const totalRemainingWeight = this.progressEstimator.getRemainingTotalWeight(index, fraction);
+
       const pos: ReaderPosition = {
         bookProgress: this.currentProgress,
         cfi: cfi || (section ? section.href : `sec-${index}`),
         chapterLabel,
         chapterProgress: Math.round(fraction * 100),
+        chapterRemainingWeight,
         displayedPage: location,
         displayedPages: totalLocations,
         href: section?.href ?? "",
         location,
+        sectionIndex: index,
         totalLocations,
+        totalRemainingWeight,
       };
 
       this.emit("relocated", pos);

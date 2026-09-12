@@ -33,11 +33,14 @@ export interface ReaderPosition {
     cfi: string;
     chapterLabel: string;
     chapterProgress: number;
+    chapterRemainingWeight?: number;
     displayedPage: number;
     displayedPages: number;
     href: string;
     location: number;
+    sectionIndex?: number;
     totalLocations: number;
+    totalRemainingWeight?: number;
 }
 
 export interface ReaderSelection {
@@ -79,8 +82,10 @@ export interface ReaderSearchState {
 
 export interface ReaderSessionStats {
     activeSeconds: number;
+    chapterEstimatedMinutesRemaining: number | null;
     estimatedMinutesRemaining: number | null;
     locationsPerMinute: number | null;
+    readingSpeedWpm: number | null;
     sessionStartedAt: number;
 }
 

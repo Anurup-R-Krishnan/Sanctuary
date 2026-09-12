@@ -20,9 +20,11 @@ interface ReaderOverlayProps {
   annotations: ReaderAnnotation[];
   book: Book;
   bookmarks: Bookmark[];
+  chapterEstimatedMinutesRemaining?: number | null;
+  chapterLabel?: string;
   currentCfi: string;
   currentPage: number;
-  estimatedMinutesRemaining?: number;
+  estimatedMinutesRemaining?: number | null;
   isBookmarked: boolean;
   isFullscreen: boolean;
   isLoading: boolean;
@@ -60,6 +62,7 @@ interface ReaderOverlayProps {
   onToggleTTS?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   paragraphPauseMs?: number;
+  readingSpeedWpm?: number | null;
   searchState: ReaderSearchState;
   showAnnotations: boolean;
   showControls: boolean;
@@ -67,19 +70,19 @@ interface ReaderOverlayProps {
   showSettings: boolean;
   showUI: boolean;
   speechState?: SpeechState;
-  toc: Array<{ id?: string; href: string; label: string; subitems?: Array<{ id?: string; href: string; label: string }> }>;
+  toc: Array<{ href: string; id?: string; label: string; subitems?: Array<{ href: string; id?: string; label: string }> }>;
   totalPages: number;
   voices?: SpeechSynthesisVoice[];
 }
 
 function ReaderOverlay(props: ReaderOverlayProps) {
   const mappedToc = props.toc.map((item, i) => ({
-    id: `toc-${i}`,
     href: item.href,
+    id: `toc-${i}`,
     label: item.label,
     subitems: item.subitems?.map((sub, j) => ({
-      id: `toc-${i}-${j}`,
       href: sub.href,
+      id: `toc-${i}-${j}`,
       label: sub.label,
     }))
   }));
@@ -90,18 +93,21 @@ function ReaderOverlay(props: ReaderOverlayProps) {
     <div className="pointer-events-none absolute inset-0 z-50">
       <ReaderHeader
         book={props.book}
+        chapterEstimatedMinutesRemaining={props.chapterEstimatedMinutesRemaining}
+        chapterLabel={props.chapterLabel}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
         isTTSActive={props.isTTSActive}
-        showUI={props.showUI}
         onClose={props.onClose}
-        onToggleBookmark={props.onToggleBookmark}
-        onToggleTOC={props.onToggleTOC}
-        onToggleSettings={props.onToggleSettings}
-        onToggleSearch={props.onToggleSearch}
         onToggleAnnotations={props.onToggleAnnotations}
+        onToggleBookmark={props.onToggleBookmark}
         onToggleFullscreen={props.onToggleFullscreen}
+        onToggleSearch={props.onToggleSearch}
+        onToggleSettings={props.onToggleSettings}
+        onToggleTOC={props.onToggleTOC}
         onToggleTTS={props.onToggleTTS}
+        readingSpeedWpm={props.readingSpeedWpm}
+        showUI={props.showUI}
       />
 
       {props.isTTSActive && props.speechState && (
@@ -123,13 +129,14 @@ function ReaderOverlay(props: ReaderOverlayProps) {
       )}
 
       <ReaderFooter
+        chapterEstimatedMinutesRemaining={props.chapterEstimatedMinutesRemaining}
         currentPage={props.currentPage}
-        totalPages={props.totalPages}
-        showUI={props.showUI}
-        onNextPage={props.onNextPage}
-        onPrevPage={props.onPrevPage}
-        onPageChange={props.onPageChange}
         estimatedMinutesRemaining={props.estimatedMinutesRemaining}
+        onNextPage={props.onNextPage}
+        onPageChange={props.onPageChange}
+        onPrevPage={props.onPrevPage}
+        showUI={props.showUI}
+        totalPages={props.totalPages}
       />
 
       {isAnyPanelOpen && (

@@ -219,9 +219,10 @@ function ReaderView({
     stopBookSpeech();
   }, [stopBookSpeech]);
 
-  const { trackLocationProgress, stats: sessionStats } = useReaderSessionStats(
+  const { recordLocationProgress, stats: sessionStats } = useReaderSessionStats(
     book?.id ?? "",
-    totalLocations
+    totalLocations,
+    position
   );
 
   const { handleHighlight, handleUnderline, handleAddNote, handleCopy, handleSpeak } =
@@ -233,10 +234,21 @@ function ReaderView({
       onRequestNote: (sel) => setNoteTarget(sel),
     });
 
-  // Reading speed tracking
+  // Reading speed and progress updates
   useEffect(() => {
-    if (currentPage > 0) trackLocationProgress(currentPage);
-  }, [currentPage, trackLocationProgress]);
+    if (currentPage > 0) {
+      recordLocationProgress(
+        currentPage,
+        position.chapterRemainingWeight,
+        position.totalRemainingWeight
+      );
+    }
+  }, [
+    currentPage,
+    position.chapterRemainingWeight,
+    position.totalRemainingWeight,
+    recordLocationProgress,
+  ]);
 
   // Cleanup speech on unmount
   useEffect(() => {
@@ -363,8 +375,11 @@ function ReaderView({
         isBookmarked={isBookmarked}
         currentCfi={currentCfi}
         toc={tocItems}
-        isFullscreen={isFullscreen}
+        chapterEstimatedMinutesRemaining={sessionStats.chapterEstimatedMinutesRemaining}
+        chapterLabel={position.chapterLabel}
         estimatedMinutesRemaining={sessionStats.estimatedMinutesRemaining}
+        isFullscreen={isFullscreen}
+        readingSpeedWpm={sessionStats.readingSpeedWpm}
         onClose={onClose}
         onToggleBookmark={handleToggleBookmark}
         onToggleTOC={handleToggleTOC}

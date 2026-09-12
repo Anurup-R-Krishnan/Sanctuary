@@ -19,6 +19,8 @@ import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderHeaderProps {
     book: Book;
+    chapterEstimatedMinutesRemaining?: number | null;
+    chapterLabel?: string;
     isBookmarked: boolean;
     isFullscreen: boolean;
     isTTSActive?: boolean;
@@ -30,23 +32,27 @@ interface ReaderHeaderProps {
     onToggleSettings: () => void;
     onToggleTOC: () => void;
     onToggleTTS?: () => void;
+    readingSpeedWpm?: number | null;
     showUI: boolean;
 }
 
 function ReaderHeader({
     book,
+    chapterEstimatedMinutesRemaining,
+    chapterLabel,
     isBookmarked,
     isFullscreen,
     isTTSActive,
-    showUI,
     onClose,
-    onToggleBookmark,
-    onToggleTOC,
-    onToggleSettings,
-    onToggleSearch,
     onToggleAnnotations,
+    onToggleBookmark,
     onToggleFullscreen,
+    onToggleSearch,
+    onToggleSettings,
+    onToggleTOC,
     onToggleTTS,
+    readingSpeedWpm,
+    showUI,
 }: ReaderHeaderProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
@@ -84,18 +90,29 @@ function ReaderHeader({
                     variant="ghost"
                 />
 
-                {/* Center: Title (Floating Capsule) */}
+                {/* Center: Title & Chapter Progress (Floating Capsule) */}
                 {showFloatingCapsule && (
                     <div 
-                        className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-md px-6 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex flex-col items-center justify-center transition-all duration-instant"
+                        className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-md px-5 py-2 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex flex-col items-center justify-center transition-all duration-instant"
                         style={{ backgroundColor: `${readerBackground}E6` }}
                     >
                         <h1 
-                            className="font-medium text-sm truncate max-w-[260px] text-center"
+                            className="font-medium text-xs sm:text-sm truncate max-w-[280px] text-center"
                             style={{ color: readerForeground }}
                         >
-                            {book.title}
+                            {chapterLabel || book.title}
                         </h1>
+                        {chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null && (
+                            <span 
+                                className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[280px] text-center"
+                                style={{ color: readerForeground }}
+                            >
+                                {chapterEstimatedMinutesRemaining < 1
+                                    ? "< 1 min in chapter"
+                                    : `${Math.round(chapterEstimatedMinutesRemaining)} min in chapter`}
+                                {readingSpeedWpm ? ` · ${readingSpeedWpm} wpm` : ""}
+                            </span>
+                        )}
                     </div>
                 )}
 

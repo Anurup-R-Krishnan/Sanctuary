@@ -72,4 +72,54 @@ export class SpineWeightProgressEstimator {
     }
     return { sectionIndex: 0, fraction: 0 };
   }
+
+  /**
+   * Returns the number of sections.
+   */
+  public getSectionCount(): number {
+    return this.sectionWeights.length;
+  }
+
+  /**
+   * Returns the character weight of the specified section.
+   */
+  public getSectionWeight(sectionIndex: number): number {
+    if (this.sectionWeights.length === 0) return 0;
+    const clampedIndex = Math.max(0, Math.min(sectionIndex, this.sectionWeights.length - 1));
+    return this.sectionWeights[clampedIndex] ?? 0;
+  }
+
+  /**
+   * Calculates remaining character weight within the current section.
+   */
+  public getRemainingSectionWeight(sectionIndex: number, fraction: number = 0): number {
+    if (this.sectionWeights.length === 0) return 0;
+    const clampedFraction = Math.max(0, Math.min(1, fraction));
+    const sectionWeight = this.getSectionWeight(sectionIndex);
+    return Math.max(0, Math.round((1 - clampedFraction) * sectionWeight));
+  }
+
+  /**
+   * Calculates remaining character weight across the rest of the book.
+   */
+  public getRemainingTotalWeight(sectionIndex: number, fraction: number = 0): number {
+    if (this.sectionWeights.length === 0) return 0;
+    const clampedIndex = Math.max(0, Math.min(sectionIndex, this.sectionWeights.length - 1));
+    const clampedFraction = Math.max(0, Math.min(1, fraction));
+    const weightBefore = this.cumulativeWeights[clampedIndex] ?? 0;
+    const sectionWeight = this.sectionWeights[clampedIndex] ?? 0;
+    const currentWeight = weightBefore + clampedFraction * sectionWeight;
+    return Math.max(0, Math.round(this.totalWeight - currentWeight));
+  }
+
+  /**
+   * Estimates reading time in minutes for a character weight given words per minute.
+   * Standard average word length: ~6 characters including trailing whitespace.
+   */
+  public estimateReadingMinutes(charWeight: number, wordsPerMinute: number = 230): number {
+    if (charWeight <= 0 || wordsPerMinute <= 0) return 0;
+    const charsPerMinute = wordsPerMinute * 6;
+    const minutes = charWeight / charsPerMinute;
+    return Math.round(minutes * 10) / 10;
+  }
 }

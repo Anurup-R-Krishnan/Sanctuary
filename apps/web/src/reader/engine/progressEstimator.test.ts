@@ -91,4 +91,45 @@ describe("SpineWeightProgressEstimator", () => {
     expect(elapsed).toBeLessThan(10);
     expect(estimator.totalLocations).toBeGreaterThan(100);
   });
+
+  it("calculates remaining section and total weights with high precision", () => {
+    // 2 sections: Section 0 is 3,000 chars, Section 1 is 9,000 chars (total: 12,000 chars)
+    const estimator = new SpineWeightProgressEstimator([
+      { weight: 3000 },
+      { weight: 9000 },
+    ]);
+
+    expect(estimator.getSectionCount()).toBe(2);
+    expect(estimator.getSectionWeight(0)).toBe(3000);
+    expect(estimator.getSectionWeight(1)).toBe(9000);
+
+    // Section 0 at 50%: remaining section weight is 1,500 chars; total remaining is 10,500 chars
+    expect(estimator.getRemainingSectionWeight(0, 0.5)).toBe(1500);
+    expect(estimator.getRemainingTotalWeight(0, 0.5)).toBe(10500);
+
+    // Section 0 at 100%: remaining section weight is 0; total remaining is 9,000 chars
+    expect(estimator.getRemainingSectionWeight(0, 1.0)).toBe(0);
+    expect(estimator.getRemainingTotalWeight(0, 1.0)).toBe(9000);
+
+    // Section 1 at 75%: remaining section weight is 2,250 chars; total remaining is 2,250 chars
+    expect(estimator.getRemainingSectionWeight(1, 0.75)).toBe(2250);
+    expect(estimator.getRemainingTotalWeight(1, 0.75)).toBe(2250);
+
+    // Section 1 at 100%: book is finished
+    expect(estimator.getRemainingSectionWeight(1, 1.0)).toBe(0);
+    expect(estimator.getRemainingTotalWeight(1, 1.0)).toBe(0);
+  });
+
+  it("accurately estimates reading minutes based on words per minute", () => {
+    const estimator = new SpineWeightProgressEstimator([{ weight: 12000 }]);
+
+    // 230 wpm = 230 * 6 = 1380 chars/minute
+    expect(estimator.estimateReadingMinutes(1380, 230)).toBe(1.0);
+    expect(estimator.estimateReadingMinutes(690, 230)).toBe(0.5);
+    expect(estimator.estimateReadingMinutes(0, 230)).toBe(0);
+    expect(estimator.estimateReadingMinutes(-100, 230)).toBe(0);
+
+    // 300 wpm = 1800 chars/minute -> 3600 chars is 2.0 minutes
+    expect(estimator.estimateReadingMinutes(3600, 300)).toBe(2.0);
+  });
 });
