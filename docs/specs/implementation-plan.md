@@ -38,60 +38,60 @@ Sanctuary currently couples its reader pipeline exclusively to `epubjs` (v0.3.93
 
 ---
 
-## 3. Phased Implementation Roadmap
+## 3. Modular Architecture Implementation Roadmap
 
 ```text
-Phase 0: Format-Agnostic Interface Definition [COMPLETED - 6ac0445]
+Milestone 0: Format-Agnostic Interface Definition [COMPLETED - 6ac0445]
     │
     ▼
-Phase 1: Foliate-js EPUB Adapter Spike [COMPLETED - 8e07b26]
+Milestone 1: Foliate-js EPUB Adapter Spike [COMPLETED - 8e07b26]
     │
     ▼
-Phase 2: ReaderSession Internal Adapter Swap [COMPLETED - a353684]
+Milestone 2: ReaderSession Internal Adapter Swap [COMPLETED - a353684]
     │
     ▼
-Phase 3: Core Feature Migration & epub.js Deprecation [COMPLETED - 289a170]
+Milestone 3: Core Feature Migration & epub.js Deprecation [COMPLETED - 289a170]
     │
     ▼
-Phase 4: Multi-Format Decoders (FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown) [COMPLETED - d1464dc, b81b6b6]
+Milestone 4: Multi-Format Decoders (FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown) [COMPLETED - d1464dc, b81b6b6]
     │
     ▼
-Phase 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED - 748f032]
+Milestone 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED - 748f032]
 ```
 
 ---
 
-### Phase 0: Format-Agnostic Interface Definitions [COMPLETED]
+### Milestone 0: Format-Agnostic Interface Definitions [COMPLETED]
 - Status: Completed in commit `6ac0445`.
 - Verification: Clean typecheck, 0 runtime disruptions.
 
 ---
 
-### Phase 1: Foliate-js EPUB Adapter Spike (Isolated Route) [COMPLETED]
+### Milestone 1: Foliate-js EPUB Adapter Spike (Isolated Route) [COMPLETED]
 - Status: Completed in commit `8e07b26`.
 - Verification: `foliateEpubAdapter.test.ts` passing, `FoliateTestHarness` operational at `/__dev_reader_test`.
 
 ---
 
-### Phase 2: ReaderSession Internal Adapter Swap [COMPLETED]
+### Milestone 2: ReaderSession Internal Adapter Swap [COMPLETED]
 - Status: Completed in commit `a353684`.
 - Verification: `ReaderSession` facade delegates directly to `FoliateReaderSession` with seamless UI hook preservation.
 
 ---
 
-### Phase 3: Core Feature Migration & epub.js Deprecation [COMPLETED]
+### Milestone 3: Core Feature Migration & epub.js Deprecation [COMPLETED]
 - Status: Completed in commit `289a170`.
 - Verification: TOC navigation, bookmarks, annotations, and search ported to Foliate DOM marks/overlayers; `epubjs` package purged from repository.
 
 ---
 
-### Phase 4: Multi-Format Decoders [COMPLETED]
+### Milestone 4: Multi-Format Decoders [COMPLETED]
 - Status: Completed in commits `d1464dc` and `b81b6b6`.
 - Verification: All 8 formats supported (EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML/XHTML, Markdown); `formatParsers.test.ts` passing.
 
 ---
 
-### Phase 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED]
+### Milestone 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED]
 - Status: Completed in commit `748f032`.
 - Verification: Instant progress calculation (<2.5ms) replacing `locations.generate(1024)`; `progressEstimator.test.ts` passing.
 
@@ -123,6 +123,6 @@ Phase 5: Lightweight Spine/Character-Weight Progress Engine [COMPLETED - 748f032
 3. If `bun run check` fails and cannot be cleanly resolved within the reader boundary.
 
 ### Quality Bar:
-- Every phase begins with a failing test and ends with passing tests + clean `bun run check`.
+- Every milestone begins with a failing test and ends with passing tests + clean `bun run check`.
 - Zero impact on desktop Tauri build (`build-appimage.sh` must remain untouched).
 - All changes cleanly tracked with atomic git commits.

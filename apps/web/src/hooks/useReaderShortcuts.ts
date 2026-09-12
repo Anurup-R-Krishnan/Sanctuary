@@ -182,7 +182,7 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
       }
     };
 
-    // Capture phase improves reliability when other listeners stop propagation.
+    // Early event capturing ensures shortcuts trigger reliably even if inner handlers intercept events.
     window.addEventListener("keydown", onKeyDown, { capture: true });
     document.addEventListener("keydown", onKeyDown, { capture: true });
     window.addEventListener("keyup", onKeyUp, { capture: true });
