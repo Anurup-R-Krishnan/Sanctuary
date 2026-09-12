@@ -16,7 +16,7 @@
 - **Prerequisites**: Native PDF Fixed-Layout Support
 - **Category**: Format Architecture
 - **Documented at**: commit `5128ed0`, 2026-09-13
-- **Status**: READY
+- **Status**: VERIFIED (commit `6b7af8b`, 2026-09-13)
 
 ## Why this matters
 

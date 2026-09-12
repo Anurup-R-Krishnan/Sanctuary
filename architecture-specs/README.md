@@ -16,7 +16,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Native PDF Fixed-Layout Support](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/pdf-fixed-layout-support.md) | PDF document ingestion, canvas rendering & zoom controls | Format Architecture | None | VERIFIED |
 | [Collections & Batch Library Operations](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/library-collections-and-batch-ops.md) | Custom shelves, metadata editing & multi-select actions | Library Management | D1 Reading Sync | VERIFIED |
 | [Storage Dashboard & Offline Caching](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/storage-manager-and-offline-caching.md) | Quota meter, selective offline caching & LRU cache eviction | Device Storage | None | VERIFIED |
-| [Comic & Manga Archive (CBZ/CBR) Reader](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/comic-manga-cbz-cbr-support.md) | Sequential image archives, dual-spread & manga direction | Format Architecture | PDF Fixed-Layout | READY |
+| [Comic & Manga Archive (CBZ/CBR) Reader](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/comic-manga-cbz-cbr-support.md) | Sequential image archives, dual-spread & manga direction | Format Architecture | PDF Fixed-Layout | VERIFIED |
 | [Annotation Knowledge Export & Markdown Sync](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/annotation-export-knowledge-sync.md) | Obsidian callouts, Markdown frontmatter & CSV export | Knowledge Management | Batch Library Ops | READY |
 | [Interactive Dictionary & Vocabulary Builder](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/in-reader-dictionary-vocabulary-builder.md) | In-reader definition popover, audio phonetics & Leitner SRS | Reader Experience | In-Book TTS | READY |
 | [Cross-Book Library Full-Text Search](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/cross-book-library-full-text-search.md) | Client-side inverted index, idle worker & global search | Search & Discovery | Batch Library Ops | READY |
@@ -34,8 +34,8 @@ Each module contains self-contained technical specifications, scope definitions,
    - **PDF Document Engine**: Adds fixed-layout PDF viewing and zoom controls without ballooning bundle size.
    - **Collections & Batch Library Management**: Empowers power readers with custom shelves, bulk editing, and multi-book management.
    - **Storage Management & Offline Caching**: Provides device storage visibility and selective offline cache retention.
-2. **Upcoming Capabilities**:
    - **Comic & Manga Archive (CBZ/CBR) Reader**: Native image sequence unpacking, dual-page layout, and right-to-left manga orientation.
+2. **Upcoming Capabilities**:
    - **Annotation Knowledge Export & Markdown Sync**: Obsidian-compatible Markdown export, blockquote callouts, and multi-book annotation bundles.
    - **Interactive Dictionary & Vocabulary Builder**: In-reader definition lookups and Leitner spaced-repetition vocabulary learning queue.
    - **Cross-Book Library Full-Text Search**: Inverted index across personal book collection with snippet previews and one-click navigation.
