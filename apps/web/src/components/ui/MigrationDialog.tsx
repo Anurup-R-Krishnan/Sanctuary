@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+import { getVerifiedBookContent } from "@/services/bookContentRepository";
 import { libraryService } from "@/services/LibraryService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getAllBooks } from "@/utils/db";
@@ -21,7 +22,7 @@ export function MigrationDialog() {
       // User signed in while in guest mode. 
       // Check if they have pending books in IndexedDB.
       getAllBooks().then(books => {
-        const pending = books.filter(b => b.syncStatus === "pending");
+        const pending = books.filter(b => b.syncStatus === "pending" || b.syncStatus === "local-only");
         if (pending.length > 0) {
           setPendingBooksCount(pending.length);
           setShow(true);
@@ -37,12 +38,16 @@ export function MigrationDialog() {
     setIsMigrating(true);
     try {
       const books = await getAllBooks();
-      const pending = books.filter(b => b.syncStatus === "pending");
+      const pending = books.filter(b => b.syncStatus === "pending" || b.syncStatus === "local-only");
       
       for (const book of pending) {
-        if (!book.epubBlob) continue;
-        const file = new File([book.epubBlob], `${book.title}.epub`, { type: "application/epub+zip" });
-        await libraryService._migrateBook(file, book, api);
+        const content = await getVerifiedBookContent(book.id);
+        if (!content) {
+          console.warn(`Skipping migration for ${book.id}: local EPUB content is missing.`);
+          continue;
+        }
+        const file = new File([content.blob], `${book.title}.epub`, { type: "application/epub+zip" });
+        await libraryService._migrateBook(file, { ...book, epubBlob: content.blob }, api);
       }
       
       setShow(false);

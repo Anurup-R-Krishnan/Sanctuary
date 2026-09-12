@@ -4,6 +4,8 @@ import type { SanctuaryApiClient, ReadingSession, ReaderSettings } from "@sanctu
 
 import { putMutation, getAllMutations, deleteMutation, type SyncMutation } from "@/utils/db";
 
+export type SyncQueueStatus = "local-only" | "idle" | "syncing" | "failed";
+
 // Fallback logic for when the web app wants to run standalone without core API wrappers
 async function rawApiCall(mutation: SyncMutation, api: SanctuaryApiClient) {
   if (mutation.type === "SAVE_SESSION") {
@@ -27,17 +29,30 @@ class SyncQueueManager {
   private isPersistent = true;
   private retryTimeout: number | null = null;
   private backoffMs = 1200;
+  private status: SyncQueueStatus = "idle";
+
+  getStatus(): SyncQueueStatus {
+    return this.status;
+  }
+
+  private setStatus(status: SyncQueueStatus) {
+    this.status = status;
+  }
 
   init(api: SanctuaryApiClient, isPersistent: boolean) {
     this.api = api;
     this.isPersistent = isPersistent;
+    this.setStatus(isPersistent ? "idle" : "local-only");
     if (this.isPersistent) {
       this.processQueue();
     }
   }
 
   async enqueue(type: SyncMutation["type"], payload: unknown) {
-    if (!this.isPersistent) return;
+    if (!this.isPersistent) {
+      this.setStatus("local-only");
+      return;
+    }
     
     const mutation: SyncMutation = {
       id: crypto.randomUUID(),
@@ -47,18 +62,21 @@ class SyncQueueManager {
     };
     
     await putMutation(mutation);
+    this.setStatus("idle");
     this.processQueue();
   }
 
   async processQueue() {
     if (this.isProcessing || !this.isPersistent || !this.api) return;
     this.isProcessing = true;
+    this.setStatus("syncing");
 
     try {
       while (this.isPersistent && this.api) {
         const mutations = await getAllMutations();
         if (mutations.length === 0) {
           this.backoffMs = 1200; // reset on empty queue
+          this.setStatus("idle");
           break;
         }
 
@@ -74,6 +92,7 @@ class SyncQueueManager {
           } catch (error) {
             // A mutation failed. Halt processing for now.
             console.warn(`Mutation ${mutation.id} failed, will retry:`, error);
+            this.setStatus("failed");
             this.scheduleRetry();
             this.isProcessing = false;
             return;
@@ -85,10 +104,12 @@ class SyncQueueManager {
       }
     } catch (err) {
       console.error("Critical failure reading mutation queue", err);
+      this.setStatus("failed");
       this.scheduleRetry();
     }
     
     this.isProcessing = false;
+    if (this.status === "syncing") this.setStatus("idle");
   }
 
   private scheduleRetry() {

@@ -3,12 +3,13 @@ import { v4 as uuidv4 } from "uuid";
 import type { Book, Bookmark } from "@/types";
 import type { EpubBookHandle } from "@/utils/epub";
 
+import { BookContentError, getVerifiedBookContent, saveBookContent, verifyBookContent } from "@/services/bookContentRepository";
 import { bookService } from "@/services/bookService";
 import { logErrorOnce, HttpError } from "@/services/http";
 import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
 import { calculateEpubHash } from "@/utils/crypto";
-import { putBook as putBookInDb, deleteBook as deleteBookFromDb, getAllBooks } from "@/utils/db";
+import { deleteBook as deleteBookFromDb, deleteBookContent, getAllBooks, putBook as putBookInDb } from "@/utils/db";
 import { extractCoverBlobFromEpubSource, openEpub } from "@/utils/epub";
 
 type BookSyncMeta = {
@@ -48,7 +49,7 @@ const replaceBookInStore = (id: string, updater: (book: Book) => Book): Book | n
 };
 
 const saveBookToDb = async (book: Book, message: string) => {
-  await putBookInDb(book).catch((error) => {
+  await putBookInDb({ ...book, epubBlob: null }).catch((error) => {
     console.error(message, error);
   });
 };
@@ -124,7 +125,7 @@ const syncBookUpdate = async (
   });
 
   try {
-    await putBookInDb(nextBook);
+    await putBookInDb({ ...nextBook, epubBlob: null });
   } catch (error) {
     console.error("Failed to persist local book update:", error);
     revertLocalBookState(id, previousBook, previousMeta);
@@ -163,11 +164,11 @@ const syncBookUpdate = async (
     if (error instanceof HttpError && error.status === 404) {
       console.warn(`Book ${id} not found on server (404). Purging local cache.`);
       revertLocalBookAddition(id);
-      await deleteBookFromDb(id).catch(console.error);
+      await Promise.all([deleteBookFromDb(id), deleteBookContent(id)]).catch(console.error);
     } else {
       console.error("Failed to persist remote book update:", error);
       revertLocalBookState(id, previousBook, previousMeta);
-      await putBookInDb(previousBook).catch((rollbackError) => {
+      await putBookInDb({ ...previousBook, epubBlob: null }).catch((rollbackError) => {
         console.error("Failed to rollback local book update:", rollbackError);
       });
       const latestMeta = syncMetaByBookId.get(id);
@@ -199,12 +200,23 @@ export const libraryService = {
       useBookStore.getState().setIsLoading(true);
       try {
         const rawLocalBooks = await getAllBooks().catch(() => [] as Book[]);
-        const localDbBooks = rawLocalBooks.map(book => {
+        const localDbBooks = await Promise.all(rawLocalBooks.map(async (book) => {
           if (book.coverBlob) {
              book.coverUrl = trackCoverBlobForBook(book.id, book.coverBlob);
           }
+          try {
+            const verified = await getVerifiedBookContent(book.id);
+            if (!verified) throw new BookContentError("BOOK_CONTENT_MISSING", `No EPUB content is stored for book ${book.id}.`);
+            book.epubBlob = verified.blob;
+            book.contentStatus = "available";
+          } catch (error) {
+            book.contentStatus = error instanceof BookContentError && error.code === "BOOK_CONTENT_MISSING"
+              ? "missing"
+              : "invalid";
+            console.warn(`Local EPUB integrity check failed for ${book.id}:`, error);
+          }
           return book;
-        });
+        }));
         reconcileTrackedCoverUrls(localDbBooks);
         useBookStore.getState().setBooks(localDbBooks);
       } catch (error) {
@@ -293,7 +305,7 @@ export const libraryService = {
           // INV-SYNC-001: Shield guest books ("pending") from GC.
           // The MigrationDialog handles migrating them explicitly.
           if (localBook.syncStatus !== "pending") {
-            await deleteBookFromDb(localBook.id).catch((err) => {
+            await Promise.all([deleteBookFromDb(localBook.id), deleteBookContent(localBook.id)]).catch((err) => {
               console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
             });
             revokeTrackedCoverUrl(localBook.id);
@@ -317,6 +329,49 @@ export const libraryService = {
     replaceBookInStore(localBook.id, () => persistedBook);
     await saveBookToDb(persistedBook, "Failed to persist synced book:");
     return persistedBook;
+  },
+
+  async replaceBookContent(id: string, file: File, api: SanctuaryApiClient, isPersistent: boolean) {
+    const existing = useBookStore.getState().books.find((book) => book.id === id);
+    if (!existing) throw new Error("This book is no longer in your library.");
+    if (!file.name.toLowerCase().endsWith(".epub")) throw new Error("Only EPUB files can repair a book.");
+
+    let bookData: EpubBookHandle | null = null;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const contentHash = await calculateEpubHash(arrayBuffer);
+      const epubBlob = new Blob([arrayBuffer], { type: "application/epub+zip" });
+      await verifyBookContent(id, epubBlob, contentHash);
+
+      bookData = openEpub(arrayBuffer, { replacements: "none" });
+      await bookData.ready;
+      const metadata = await bookData.loaded.metadata;
+      const coverBlob = await extractCoverBlobFromEpubSource(arrayBuffer);
+      const coverUrl = coverBlob ? trackCoverBlobForBook(id, coverBlob) : existing.coverUrl;
+      const repairedBook: Book = {
+        ...existing,
+        author: Array.isArray(metadata.creator) ? metadata.creator.join(", ") || existing.author : metadata.creator || existing.author,
+        contentHash,
+        contentStatus: "available",
+        coverBlob: coverBlob || existing.coverBlob || null,
+        coverUrl,
+        epubBlob,
+        title: metadata.title || existing.title,
+      };
+
+      await saveBookContent(repairedBook);
+      replaceBookInStore(id, () => repairedBook);
+
+      if (isPersistent) {
+        try {
+          await bookService.addBook(file, repairedBook, api, coverBlob);
+        } catch (error) {
+          console.warn("Repaired local EPUB could not be uploaded; keeping the local copy:", error);
+        }
+      }
+    } finally {
+      bookData?.destroy?.();
+    }
   },
 
   async addBook(file: File, api: SanctuaryApiClient, isPersistent: boolean) {
@@ -363,7 +418,8 @@ export const libraryService = {
         epubBlob,
         coverBlob: coverBlob || null,
         contentHash,
-        syncStatus: isPersistent ? "synced" : "pending",
+        contentStatus: "available",
+        syncStatus: isPersistent ? "synced" : "local-only",
         progress: 0,
         lastLocation: "",
         addedAt: new Date().toISOString(),
@@ -377,7 +433,7 @@ export const libraryService = {
       setBooks((books) => [...books, newBook]);
 
       try {
-        await putBookInDb(newBook);
+        await saveBookContent(newBook);
       } catch (error) {
         revertLocalBookAddition(newBook.id);
         throw error;
@@ -395,11 +451,15 @@ export const libraryService = {
         }
       } catch (error) {
         console.error("Backend upload failed:", error);
-        revertLocalBookAddition(newBook.id);
-        await deleteBookFromDb(newBook.id).catch((dbError) => {
-          console.error("Failed to rollback local EPUB after backend upload failure:", dbError);
+        console.error("Backend upload failed; keeping the local desktop copy:", error);
+        syncMetaByBookId.set(newBook.id, {
+          ...getInitialSyncMeta(),
+          dirty: true,
+          localRevision: 1,
+          lastAckRevision: 0,
+          syncInFlight: false,
         });
-        throw error;
+        return;
       }
     } catch (error) {
       console.error("Error adding book:", error);
@@ -493,7 +553,7 @@ export const libraryService = {
 
       try {
         // 1. Remove from local IndexedDB
-        await deleteBookFromDb(id);
+            await Promise.all([deleteBookFromDb(id), deleteBookContent(id)]);
 
         // 2. Remove remote if persistent
         if (isPersistent) {
@@ -512,11 +572,27 @@ export const libraryService = {
 
   async getBookContent(id: string, api: SanctuaryApiClient, isPersistent: boolean): Promise<Blob> {
     const existing = useBookStore.getState().books.find((item) => item.id === id);
-    if (existing?.epubBlob) return existing.epubBlob;
+    if (existing?.epubBlob) {
+      try {
+        return (await verifyBookContent(id, existing.epubBlob, existing.contentHash)).blob;
+      } catch (error) {
+        console.warn("In-memory EPUB failed verification; checking durable storage:", error);
+      }
+    }
+
+    const local = await getVerifiedBookContent(id).catch((error) => {
+      if (error instanceof BookContentError) throw error;
+      throw new BookContentError("BOOK_CONTENT_READ_FAILED", `The local EPUB for book ${id} could not be loaded.`, error);
+    });
+    if (local) {
+      replaceBookInStore(id, (book) => ({ ...book, epubBlob: local.blob }));
+      return local.blob;
+    }
 
     const blob = await bookService.getBookContent(id, api);
+    await verifyBookContent(id, blob);
 
-    const updatedBook = replaceBookInStore(id, (book) => ({ ...book, epubBlob: blob }));
+    const updatedBook = replaceBookInStore(id, (book) => ({ ...book, epubBlob: blob, contentStatus: "available" }));
 
     if (updatedBook) {
       await saveBookToDb(updatedBook, "Failed to cache hydrated book content locally:");

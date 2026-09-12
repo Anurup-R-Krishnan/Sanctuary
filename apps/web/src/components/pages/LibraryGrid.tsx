@@ -12,7 +12,6 @@ import { SkeletonCard } from "@/components/library/SkeletonCard";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 
-import AddBookButton from "../ui/AddBookButton";
 import BookCard from "../ui/BookCard";
 
 interface LibraryGridProps {
@@ -224,8 +223,6 @@ function LibraryGrid({
           </div>
         )}
       </section>
-
-      <AddBookButton onAddBook={addBook} />
     </div>
   );
 };

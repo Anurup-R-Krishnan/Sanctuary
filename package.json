@@ -47,6 +47,7 @@
     "mobile:dev": "bun run --cwd apps/mobile start",
     "mobile:web": "bun run --cwd apps/mobile web",
     "prepare": "husky",
+    "test:desktop": "bun test apps/web/src/services/bookContentRepository.test.ts",
     "postversion": "git push && git push --tags",
     "preview": "bun run web:preview",
     "preversion": "bun run check",

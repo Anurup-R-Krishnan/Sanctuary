@@ -1,4 +1,4 @@
-import { Clock, Heart, Trash2, ArrowRight } from "lucide-react";
+import { AlertTriangle, Clock, Heart, Trash2, ArrowRight } from "lucide-react";
 import React, { useState, useCallback } from "react";
 
 import type { Book } from "@/types";
@@ -323,6 +323,12 @@ function BookCard({
               )}
               {isCompleted && (
                 <div className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-lg ">Complete</div>
+              )}
+              {book.contentStatus && book.contentStatus !== "available" && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg" title="The local EPUB needs to be re-imported">
+                  <AlertTriangle className="w-3 h-3" strokeWidth={2} />
+                  {book.contentStatus === "missing" ? "Missing file" : "Damaged file"}
+                </div>
               )}
             </div>
           </div>

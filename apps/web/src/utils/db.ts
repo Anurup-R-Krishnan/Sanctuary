@@ -1,8 +1,9 @@
 import type { Book } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const BOOKS_STORE = "books";
+const BOOK_CONTENTS_STORE = "book_contents";
 const VOCAB_STORE = "vocabulary";
 const SESSIONS_STORE = "sessions";
 const MUTATIONS_STORE = "mutations";
@@ -52,6 +53,9 @@ function openDB(): Promise<IDBDatabase> {
       if (!database.objectStoreNames.contains(BOOKS_STORE)) {
         const booksStore = database.createObjectStore(BOOKS_STORE, { keyPath: "id" });
         booksStore.createIndex("syncStatus", "syncStatus", { unique: false });
+      }
+      if (!database.objectStoreNames.contains(BOOK_CONTENTS_STORE)) {
+        database.createObjectStore(BOOK_CONTENTS_STORE, { keyPath: "bookId" });
       }
       if (!database.objectStoreNames.contains(VOCAB_STORE)) {
         database.createObjectStore(VOCAB_STORE, { keyPath: "id" });
@@ -153,6 +157,25 @@ export async function getAllBooks(): Promise<Book[]> {
 
 export async function clearBooks(): Promise<void> {
   return dbClear(BOOKS_STORE);
+}
+
+export interface StoredBookContent {
+  blob: Blob;
+  bookId: string;
+  contentHash?: string;
+  storedAt: string;
+}
+
+export async function putBookContent(content: StoredBookContent): Promise<void> {
+  return dbPut(BOOK_CONTENTS_STORE, content);
+}
+
+export async function getBookContent(bookId: string): Promise<StoredBookContent | null> {
+  return dbGet<StoredBookContent>(BOOK_CONTENTS_STORE, bookId);
+}
+
+export async function deleteBookContent(bookId: string): Promise<void> {
+  return dbDelete(BOOK_CONTENTS_STORE, bookId);
 }
 
 async function dbPutAll<T>(store: string, values: T[]): Promise<void> {

@@ -1,5 +1,5 @@
 import { AlertCircle, RotateCcw, Home } from "lucide-react";
-import React from "react";
+import React, { useRef, useState } from "react";
 
 import type { ReaderError } from "@/types/reader";
 
@@ -8,10 +8,32 @@ import { Button } from "@/components/ui/Button";
 interface ReaderErrorOverlayProps {
     error: ReaderError;
     onClose: () => void;
+    onReplaceContent?: (file: File) => Promise<void>;
     onRetry: () => void;
+    onRetryFromStart?: () => void;
 }
 
-export function ReaderErrorOverlay({ error, onRetry, onClose }: ReaderErrorOverlayProps) {
+export function ReaderErrorOverlay({ error, onRetry, onRetryFromStart, onReplaceContent, onClose }: ReaderErrorOverlayProps) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [isReplacing, setIsReplacing] = useState(false);
+    const [replaceError, setReplaceError] = useState<string | null>(null);
+
+    const handleReplacement = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file || !onReplaceContent) return;
+        setIsReplacing(true);
+        setReplaceError(null);
+        try {
+            await onReplaceContent(file);
+            onRetry();
+        } catch (cause) {
+            setReplaceError(cause instanceof Error ? cause.message : "The replacement EPUB could not be saved.");
+        } finally {
+            setIsReplacing(false);
+        }
+    };
+
     return (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-sm p-6 pointer-events-auto">
             <div className="max-w-md w-full bg-light-surface dark:bg-dark-surface rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-8 text-center animate-scaleIn">
@@ -26,6 +48,8 @@ export function ReaderErrorOverlay({ error, onRetry, onClose }: ReaderErrorOverl
                 <p className="text-light-text-muted dark:text-dark-text-muted mb-8">
                     {error.message}
                 </p>
+                {replaceError && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{replaceError}</p>}
+                <input ref={inputRef} type="file" accept=".epub" className="hidden" onChange={handleReplacement} />
                 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button
@@ -45,6 +69,25 @@ export function ReaderErrorOverlay({ error, onRetry, onClose }: ReaderErrorOverl
                         >
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Retry
+                        </Button>
+                    )}
+                    {onRetryFromStart && (
+                        <Button
+                            variant="secondary"
+                            onClick={onRetryFromStart}
+                            className="flex-1"
+                        >
+                            Open from start
+                        </Button>
+                    )}
+                    {onReplaceContent && (
+                        <Button
+                            variant="secondary"
+                            onClick={() => inputRef.current?.click()}
+                            isLoading={isReplacing}
+                            className="flex-1"
+                        >
+                            Replace EPUB
                         </Button>
                     )}
                 </div>

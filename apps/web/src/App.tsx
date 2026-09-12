@@ -63,6 +63,7 @@ function App() {
   const handleAddBook = useCallback((file: File) => libraryService.addBook(file, api, isPersistent), [api, isPersistent]);
   const handleToggleFavorite = useCallback((id: string) => libraryService.toggleFavorite(id, api, isPersistent), [api, isPersistent]);
   const handleDeleteBook = useCallback((id: string) => libraryService.deleteBook(id, api, isPersistent), [api, isPersistent]);
+  const handleReplaceBookContent = useCallback((id: string, file: File) => libraryService.replaceBookContent(id, file, api, isPersistent), [api, isPersistent]);
 
   useEffect(() => {
     if (mode === "initializing") return;
@@ -119,6 +120,7 @@ function App() {
           onToggleTheme={toggleTheme}
           searchTerm={searchTerm}
           onSearch={setSearchTerm}
+          onAddBook={handleAddBook}
           isGuest={isGuest}
           onShowLogin={isGuest ? handleShowLogin : undefined}
           onSignOut={isSignedIn ? handleSignOut : undefined}
@@ -153,6 +155,7 @@ function App() {
             onAddBookmark={addBookmark}
             onRemoveBookmark={removeBookmark}
             getBookContent={handleGetBookContent}
+            onReplaceContent={handleReplaceBookContent}
           />
         )}
       </main>

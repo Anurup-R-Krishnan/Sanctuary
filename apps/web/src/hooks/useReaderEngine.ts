@@ -56,6 +56,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         spread: state.spread,
         direction: state.direction,
     }));
+    const builtFlowRef = useRef({ continuous, spread, direction });
 
     useEffect(() => {
         onUpdateProgressRef.current = onUpdateProgress;
@@ -72,7 +73,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         sessionRef.current.updateReaderBackground(themeConfig.readerBackground);
     }, [themeConfig]);
 
-    // Engine Initialization
+    // Engine Initialization — only when the book itself (or its bytes) changes.
+    // Layout-mode toggles (continuous/spread/direction) go through
+    // session.setFlow() below, which reuses the parsed book instead of
+    // destroying everything and re-parsing the ZIP.
     useEffect(() => {
         let mounted = true;
         const container = containerRef.current;
@@ -83,7 +87,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         }
 
         const styles = themeControllerRef.current.buildStyles(themeConfig);
-        
+        builtFlowRef.current = { continuous, spread, direction };
+
         sessionRef.current = new ReaderSession({
             bookId: activeBookId,
             blob: activeBlob,
@@ -123,9 +128,43 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             sessionRef.current?.destroy();
             sessionRef.current = null;
         };
-        // Re-init only when the book changes, or structural flow changes.
+        // Re-init only when the book/bytes change. Flow changes are handled
+        // by the setFlow effect below.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeBookId, activeBlob, containerRef, continuous, spread, direction]);
+    }, [activeBookId, activeBlob, containerRef]);
+
+    // Fast layout-mode switch: reuse the parsed book, only rebuild the view.
+    // Debounced so rapid toggling collapses into a single re-render.
+    useEffect(() => {
+        if (
+            builtFlowRef.current.continuous === continuous &&
+            builtFlowRef.current.spread === spread &&
+            builtFlowRef.current.direction === direction
+        ) {
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            const session = sessionRef.current;
+            if (!session?.epubBook) {
+                // Book hasn't finished parsing yet; the creation effect
+                // already used the latest values, so just record them.
+                builtFlowRef.current = { continuous, spread, direction };
+                return;
+            }
+            const styles = themeControllerRef.current.buildStyles(themeConfig);
+            session.setFlow({
+                continuous,
+                spread,
+                direction,
+                themeStyles: styles,
+                readerBackground: themeConfig.readerBackground,
+            }).then(() => {
+                builtFlowRef.current = { continuous, spread, direction };
+            }).catch((err) => console.warn("Flow switch failed:", err));
+        }, 150);
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [continuous, spread, direction]);
 
     // Actions
     const nextPage = useCallback(() => {

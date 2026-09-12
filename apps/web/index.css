@@ -257,7 +257,7 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-top: clamp(6.5rem, 9vw, 7.5rem);
+    padding-top: clamp(7rem, 9vw, 8rem);
     padding-bottom: clamp(7rem, 10vw, 8.5rem);
     padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
   }

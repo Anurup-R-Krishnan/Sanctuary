@@ -1,0 +1,1449 @@
+================================================================================
+SANCTUARY BOOK READER: ARCHITECTURAL AUDIT & PRE-REWRITE BASELINE MAP
+================================================================================
+
+### 1. Current repository structure
+
+$ printf '\n=== TOP LEVEL ===\n'
+$ find . -maxdepth 2 -type f -not -path './node_modules/*' -not -path './.git/*' | sort
+$ printf '\n=== DIRECTORIES ===\n'
+$ find . -maxdepth 2 -type d -not -path './node_modules*' -not -path './.git*' | sort
+
+
+=== TOP LEVEL ===
+./ansTYhg.txt
+./build.sh
+./bun.lock
+./.cf-env
+./.commitlintrc.json
+./compose.yaml
+./.dev.vars
+./dist/sw.js
+./dist/workbox-1151e57f.js
+./docs/DESKTOP_RELEASE_CHECKLIST.md
+./.editorconfig
+./.env
+./.env.example
+./.env.local
+./.eslintcache
+./eslint.config.js
+./functions/tsconfig.json
+./functions/types.d.ts
+./.gitignore
+./.husky/commit-msg
+./.husky/pre-commit
+./LICENSE
+./lil.txt
+./mobydick.epub
+./.npmrc
+./.nvmrc
+./package.json
+./README.md
+./renovate.json
+./test_ui.js
+./test_ui.mjs
+./tsconfig.json
+./.vscode/settings.json
+./wrangler.toml
+
+=== DIRECTORIES ===
+.
+./apps
+./apps/desktop
+./apps/mobile
+./apps/web
+./dist
+./docs
+./functions
+./functions/api
+./functions/utils
+./.husky
+./.husky/_
+./packages
+./packages/core
+./packages/reader-webview
+./packages/ui
+./.vscode
+./.wrangler
+./.wrangler/cache
+./.wrangler/tmp
+
+
+$ cat package.json
+
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "sanctuary-book-reader",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "author": "Anurup R Krishnan",
+  "description": "A modern, cross-platform book reader monorepo",
+  "license": "GPL-3.0-only",
+  "bugs": "https://github.com/Anurup-R-Krishnan/Sanctuary/issues",
+  "homepage": "https://github.com/Anurup-R-Krishnan/Sanctuary#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anurup-R-Krishnan/Sanctuary.git"
+  },
+  "keywords": [
+    "epub",
+    "book-reader",
+    "ebook",
+    "react",
+    "monorepo"
+  ],
+  "files": [
+    "apps",
+    "packages",
+    "functions"
+  ],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun run web:build && echo build success",
+    "check": "tsc -p apps/web/tsconfig.json --noEmit && echo check success",
+    "desktop:build": "bun run --cwd apps/desktop tauri:build",
+    "desktop:dev": "bun run --cwd apps/desktop tauri:dev",
+    "dev": "bash -lc 'bun run web:guest & bun run dev:backend:guest; wait -n; kill 0'",
+    "dev:backend:guest": "wrangler pages dev apps/web/dist --ip 0.0.0.0 --port 8788 -b DISABLE_CLERK_AUTH=true",
+    "dev:backend:guest:remote": "bash -lc 'echo \"wrangler pages dev has no --remote in this Wrangler version; running local Pages dev. Use wrangler --remote commands to verify real D1/R2.\"; wrangler pages dev apps/web/dist --ip 0.0.0.0 --port 8788 -b DISABLE_CLERK_AUTH=true'",
+    "dev:backend:strict": "wrangler pages dev apps/web/dist --ip 0.0.0.0 --port 8788 -b DISABLE_CLERK_AUTH=false",
+    "dev:remote": "bash -lc 'bun run web:guest & bun run dev:backend:guest:remote; wait -n; kill 0'",
+    "dev:strict": "bash -lc 'bun run web:strict & bun run dev:backend:strict; wait -n; kill 0'",
+    "lint": "eslint . --cache && echo lint success",
+    "lint:commits": "commitlint --from=HEAD~1",
+    "lint:fix": "eslint . --fix",
+    "mobile:android": "bun run --cwd apps/mobile android",
+    "mobile:dev": "bun run --cwd apps/mobile start",
+    "mobile:web": "bun run --cwd apps/mobile web",
+    "prepare": "husky",
+    "test:desktop": "bun test apps/web/src/services/bookContentRepository.test.ts",
+    "postversion": "git push && git push --tags",
+    "preview": "bun run web:preview",
+    "preversion": "bun run check",
+    "web:build": "bun run --cwd apps/web build",
+    "web:dev": "bun run --cwd apps/web dev",
+    "web:guest": "bun run --cwd apps/web dev:guest",
+    "web:preview": "bun run --cwd apps/web preview",
+    "web:strict": "bun run --cwd apps/web dev:strict"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
+  "dependencies": {
+    "@clerk/backend": "^3.17.1",
+    "@clerk/clerk-react": "^5.60.2",
+    "epubjs": "^0.3.93",
+    "lucide-react": "^0.555.0",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "uuid": "^13.0.0",
+    "zod": "^4.5.4",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260131.0",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
+    "@eslint/js": "^9.21.0",
+    "@types/bun": "^1.3.6",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^10.0.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-perfectionist": "^4.9.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.25.0",
+    "vite": "^6.2.0",
+    "vite-plugin-pwa": "^0.11.3",
+    "wrangler": "^4.61.1"
+  }
+}
+
+
+$ find apps packages -maxdepth 3 -name package.json -print -exec sh -c 'echo "--- $1"; cat "$1"' _ {} \;
+
+apps/web/package.json
+--- apps/web/package.json
+{
+  "name": "@sanctuary/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "dev:guest": "VITE_DISABLE_AUTH=true vite --host 0.0.0.0 --port 5173",
+    "dev:strict": "VITE_DISABLE_AUTH=false vite --host 0.0.0.0 --port 5173",
+    "lint": "eslint src vite.config.ts",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/crimson-pro": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@sanctuary/core": "workspace:*"
+  }
+}
+apps/mobile/package.json
+--- apps/mobile/package.json
+{
+  "name": "@sanctuary/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "android": "expo run:android",
+    "build:web": "expo export --platform web",
+    "start": "expo start",
+    "web": "expo start --web",
+    "web:tauri": "CI=1 EXPO_NO_PORT_SEARCH=1 expo start --web --host localhost --port 5174"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~5.0.5",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-navigation/bottom-tabs": "^7.4.4",
+    "@react-navigation/native": "^7.1.17",
+    "@sanctuary/core": "0.1.0",
+    "@sanctuary/reader-webview": "0.1.0",
+    "@sanctuary/ui": "0.1.0",
+    "expo": "^51.0.39",
+    "expo-linear-gradient": "^15.0.0",
+    "expo-status-bar": "~2.2.3",
+    "expo-updates": "^57.0.6",
+    "react": "19.2.6",
+    "react-native": "^0.84.0",
+    "react-native-safe-area-context": "^5.6.1",
+    "react-native-screens": "^4.16.0",
+    "react-native-web": "^0.20.0",
+    "react-native-webview": "^13.12.5",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "^57.0.1",
+    "typescript": "^5.8.2"
+  }
+}
+apps/desktop/package.json
+--- apps/desktop/package.json
+{
+  "name": "@sanctuary/desktop",
+  "private": true,
+  "scripts": {
+    "tauri:dev": "node scripts/run-tauri.mjs dev",
+    "tauri:build": "node scripts/run-tauri.mjs build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.10.0"
+  }
+}
+packages/ui/package.json
+--- packages/ui/package.json
+{
+  "name": "@sanctuary/ui",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}
+packages/core/package.json
+--- packages/core/package.json
+{
+  "name": "@sanctuary/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}
+packages/reader-webview/package.json
+--- packages/reader-webview/package.json
+{
+  "name": "@sanctuary/reader-webview",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}
+
+
+--------------------------------------------------------------------------------
+### 2. Actual app split
+
+Do you currently have:
+apps/web
+apps/desktop
+apps/mobile
+
+and are web + desktop both functional, or is one currently incomplete?
+Also: is mobile still a real target, or should we temporarily remove/ignore it during the rewrite?
+
+--- ANSWER ---
+1. App split status:
+   - apps/web: Active, primary React 19 + Vite 6 SPA. Contains the entire reader, library grid, statistics view, settings, and auth flow.
+   - apps/desktop: Active Tauri v2 desktop application. However, it does NOT have its own separate React UI codebase. Its tauri.conf.json sets `frontendDist: "../../web/dist"` and `beforeBuildCommand: "VITE_DISABLE_AUTH=true npm --prefix ../web run build"`. In other words, Desktop is a native WebKit/WebView host wrapping the built `apps/web` bundle.
+   - apps/mobile: Expo / React Native project (`@sanctuary/mobile`) with dedicated mobile screens, navigation, and a WebView reader.
+
+2. Web + Desktop functionality:
+   - Both Web and Desktop are functional.
+   - `apps/web` compiles and runs cleanly via `bun run web:build` and `bun run dev`.
+   - `apps/desktop` compiles and packages cleanly into an AppImage (`apps/desktop/build-appimage.sh`), running the web bundle in offline/guest mode (`VITE_DISABLE_AUTH=true`).
+
+3. Mobile recommendation during rewrite:
+   - Temporarily ignore/freeze mobile during the rewrite.
+   - Web IS the desktop application interface. Keeping web and desktop unified is natural and fast.
+   - Attempting to rewrite mobile simultaneously with a new reader engine will double the surface area and slow down iteration. Once the Foliate-js engine and shared data contracts (in `packages/core`) stabilize on desktop/web, mobile can be updated against those shared interfaces without friction.
+
+
+--------------------------------------------------------------------------------
+### 3. Current EPUB implementation
+
+$ grep -RniE 'epubjs|epub-ts|epub|Rendition|Book|CFI|contents|locations' apps packages --exclude-dir=node_modules --exclude-dir=.git | head -300
+
+apps/web/tailwind.config.js:180:        'book-spine': 'inset -8px 0 16px -8px rgba(0, 0, 0, 0.4)',
+apps/web/tailwind.config.js:181:        'book-cover': '0 8px 32px rgba(166, 126, 80, 0.15), 0 16px 64px rgba(166, 126, 80, 0.08)',
+apps/web/tailwind.config.js:186:        'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E\")",
+apps/web/index.html:7:        <meta name="description" content="Sanctuary - Your personal reading haven. A beautiful, modern EPUB reader for focused reading." />
+apps/web/index.html:15:        <title>Sanctuary - Book Reader</title>
+apps/web/index.html:23:                    <p style="opacity:0.7;">Please enable JavaScript to use Sanctuary Book Reader.</p>
+apps/web/src/auth/AuthScreen.tsx:2:import { BookOpen } from "lucide-react";
+apps/web/src/auth/AuthScreen.tsx:13:          <BookOpen className="w-8 h-8 text-white" strokeWidth={1.5} />
+apps/web/src/utils/stats.ts:1:import type { ReadingSession, SessionAggregates, Book, ReadingStats } from "@/types";
+apps/web/src/utils/stats.ts:104:  books: Book[],
+apps/web/src/utils/stats.ts:110:  let completedBooksCount = 0;
+apps/web/src/utils/stats.ts:111:  const completedBooksByMonth = new Map<string, number>();
+apps/web/src/utils/stats.ts:115:  for (const book of books) {
+apps/web/src/utils/stats.ts:116:    const genre = book.genre || "Uncategorized";
+apps/web/src/utils/stats.ts:118:    authorMap.set(book.author, (authorMap.get(book.author) || 0) + 1);
+apps/web/src/utils/stats.ts:120:    if (book.progress >= 100) {
+apps/web/src/utils/stats.ts:121:      completedBooksCount++;
+apps/web/src/utils/stats.ts:122:      if (book.completedAt) {
+apps/web/src/utils/stats.ts:123:        const completedDate = new Date(book.completedAt);
+apps/web/src/utils/stats.ts:126:          completedBooksByMonth.set(key, (completedBooksByMonth.get(key) || 0) + 1);
+apps/web/src/utils/stats.ts:162:      books: completedBooksByMonth.get(monthKey) || 0,
+apps/web/src/utils/stats.ts:188:    .map(([author, booksCount]) => ({ author, books: booksCount }));
+apps/web/src/utils/stats.ts:201:    } else if (totalPagesRead / Math.max(1, completedBooksCount) > 300) {
+apps/web/src/utils/stats.ts:213:    totalBooksRead: completedBooksCount,
+apps/web/src/utils/stats.ts:214:    totalBooksInLibrary: books.length,
+apps/web/src/utils/stats.ts:220:    booksCompletedThisMonth: monthlyData[5]?.books || 0,
+apps/web/src/utils/db.ts:1:import type { Book } from "@/types";
+apps/web/src/utils/db.ts:5:const BOOKS_STORE = "books";
+apps/web/src/utils/db.ts:6:const BOOK_CONTENTS_STORE = "book_contents";
+apps/web/src/utils/db.ts:47:        if (database.objectStoreNames.contains(BOOKS_STORE)) database.deleteObjectStore(BOOKS_STORE);
+apps/web/src/utils/db.ts:53:      if (!database.objectStoreNames.contains(BOOKS_STORE)) {
+apps/web/src/utils/db.ts:54:        const booksStore = database.createObjectStore(BOOKS_STORE, { keyPath: "id" });
+apps/web/src/utils/db.ts:55:        booksStore.createIndex("syncStatus", "syncStatus", { unique: false });
+apps/web/src/utils/db.ts:57:      if (!database.objectStoreNames.contains(BOOK_CONTENTS_STORE)) {
+apps/web/src/utils/db.ts:58:        database.createObjectStore(BOOK_CONTENTS_STORE, { keyPath: "bookId" });
+apps/web/src/utils/db.ts:74:        annStore.createIndex("bookId", "bookId", { unique: false });
+apps/web/src/utils/db.ts:142:export async function putBook(book: Book): Promise<void> {
+apps/web/src/utils/db.ts:143:  return dbPut(BOOKS_STORE, book);
+apps/web/src/utils/db.ts:146:export async function getBookById(id: string): Promise<Book | null> {
+apps/web/src/utils/db.ts:147:  return dbGet<Book>(BOOKS_STORE, id);
+apps/web/src/utils/db.ts:150:export async function deleteBook(id: string): Promise<void> {
+apps/web/src/utils/db.ts:151:  return dbDelete(BOOKS_STORE, id);
+apps/web/src/utils/db.ts:154:export async function getAllBooks(): Promise<Book[]> {
+apps/web/src/utils/db.ts:155:  return dbGetAll<Book>(BOOKS_STORE);
+apps/web/src/utils/db.ts:158:export async function clearBooks(): Promise<void> {
+apps/web/src/utils/db.ts:159:  return dbClear(BOOKS_STORE);
+apps/web/src/utils/db.ts:162:export interface StoredBookContent {
+apps/web/src/utils/db.ts:164:  bookId: string;
+apps/web/src/utils/db.ts:169:export async function putBookContent(content: StoredBookContent): Promise<void> {
+apps/web/src/utils/db.ts:170:  return dbPut(BOOK_CONTENTS_STORE, content);
+apps/web/src/utils/db.ts:173:export async function getBookContent(bookId: string): Promise<StoredBookContent | null> {
+apps/web/src/utils/db.ts:174:  return dbGet<StoredBookContent>(BOOK_CONTENTS_STORE, bookId);
+apps/web/src/utils/db.ts:177:export async function deleteBookContent(bookId: string): Promise<void> {
+apps/web/src/utils/db.ts:178:  return dbDelete(BOOK_CONTENTS_STORE, bookId);
+apps/web/src/utils/db.ts:249:export async function getAnnotationsByBook(bookId: string): Promise<ReaderAnnotation[]> {
+apps/web/src/utils/db.ts:253:    bindTxFailure(tx, reject, `Failed to get annotations for book ${bookId}`);
+apps/web/src/utils/db.ts:254:    const req = tx.objectStore(ANNOTATIONS_STORE).index("bookId").getAll(bookId);
+apps/web/src/utils/db.ts:256:    req.onerror = () => reject(new Error(`Failed to get annotations for book ${bookId}: ${req.error?.message}`));
+apps/web/src/utils/crypto.ts:1:export async function calculateEpubHash(buffer: ArrayBuffer | Uint8Array): Promise<string> {
+apps/web/src/utils/epub.ts:1:import ePub from "epubjs";
+apps/web/src/utils/epub.ts:3:export type EpubMetadata = {
+apps/web/src/utils/epub.ts:15:export type EpubLocation = {
+apps/web/src/utils/epub.ts:17:    cfi: string;
+apps/web/src/utils/epub.ts:21:export type EpubNavigation = {
+apps/web/src/utils/epub.ts:25:export type EpubLocations = {
+apps/web/src/utils/epub.ts:26:  cfiFromPercentage: (percentage: number) => string | undefined;
+apps/web/src/utils/epub.ts:29:  percentageFromCfi: (cfi: string) => number;
+apps/web/src/utils/epub.ts:30:  locationFromCfi?: (cfi: string) => number;
+apps/web/src/utils/epub.ts:32:  load?: (locations: string) => void;
+apps/web/src/utils/epub.ts:35:export interface EpubSearchMatch {
+apps/web/src/utils/epub.ts:36:  cfi?: string;
+apps/web/src/utils/epub.ts:40:export interface EpubSpineSection {
+apps/web/src/utils/epub.ts:41:  find?(query: string): EpubSearchMatch[];
+apps/web/src/utils/epub.ts:47:export interface EpubSpineApi {
+apps/web/src/utils/epub.ts:48:  each(callback: (section: EpubSpineSection) => void): void;
+apps/web/src/utils/epub.ts:51:export interface EpubAnnotationsApi {
+apps/web/src/utils/epub.ts:53:    cfiRange: string,
+apps/web/src/utils/epub.ts:59:  remove(cfiRange: string, type?: string): void;
+apps/web/src/utils/epub.ts:61:    cfiRange: string,
+apps/web/src/utils/epub.ts:69:export interface EpubContentsLike {
+apps/web/src/utils/epub.ts:74:export type EpubRendition = {
+apps/web/src/utils/epub.ts:75:  annotations?: EpubAnnotationsApi;
+apps/web/src/utils/epub.ts:78:  getContents?(): EpubContentsLike[];
+apps/web/src/utils/epub.ts:81:      register: (cb: (contents: EpubContentsLike) => void) => void;
+apps/web/src/utils/epub.ts:84:      register: (cb: (contents: EpubContentsLike) => void) => void;
+apps/web/src/utils/epub.ts:89:  on(event: "relocated", cb: (location: EpubLocation) => void): void;
+apps/web/src/utils/epub.ts:90:  on(event: "selected", cb: (cfiRange: string, contents: EpubContentsLike) => void): void;
+apps/web/src/utils/epub.ts:100:export type EpubBookHandle = {
+apps/web/src/utils/epub.ts:105:    metadata: Promise<EpubMetadata>;
+apps/web/src/utils/epub.ts:106:    navigation: Promise<EpubNavigation>;
+apps/web/src/utils/epub.ts:107:    spine: Promise<EpubSpineApi>;
+apps/web/src/utils/epub.ts:110:  locations: EpubLocations;
+apps/web/src/utils/epub.ts:121:  renderTo: (container: HTMLDivElement, options: Record<string, unknown>) => EpubRendition;
+apps/web/src/utils/epub.ts:122:  spine?: EpubSpineApi;
+apps/web/src/utils/epub.ts:125:export interface OpenEpubOptions {
+apps/web/src/utils/epub.ts:130:export function openEpub(source: ArrayBuffer, options?: OpenEpubOptions): EpubBookHandle {
+apps/web/src/utils/epub.ts:131:  return ePub(source, options) as unknown as EpubBookHandle;
+apps/web/src/utils/epub.ts:139:export async function extractCoverBlobFromEpubSource(source: ArrayBuffer): Promise<Blob | null> {
+apps/web/src/utils/epub.ts:140:  let bookData: EpubBookHandle | null = null;
+apps/web/src/utils/epub.ts:143:    bookData = openEpub(source, { replacements: "none" });
+apps/web/src/utils/epub.ts:144:    await bookData.ready;
+apps/web/src/utils/epub.ts:147:    const anyBook = bookData as unknown as { cover?: string; archive?: { getBlob: (path: string) => Promise<Blob> } };
+apps/web/src/utils/epub.ts:148:    if (anyBook.cover && anyBook.archive && typeof anyBook.archive.getBlob === "function") {
+apps/web/src/utils/epub.ts:150:        const directBlob = await anyBook.archive.getBlob(anyBook.cover);
+apps/web/src/utils/epub.ts:155:    const coverHref = await bookData.coverUrl();
+apps/web/src/utils/epub.ts:170:      bookData?.destroy?.();
+apps/web/src/types/epubjs.d.ts:1:declare module 'epubjs' {
+apps/web/src/types/epubjs.d.ts:2:  export interface Locations {
+apps/web/src/types/epubjs.d.ts:3:    cfiFromPercentage(percentage: number): string;
+apps/web/src/types/epubjs.d.ts:28:      cfi: string;
+apps/web/src/types/epubjs.d.ts:33:      cfi: string;
+apps/web/src/types/epubjs.d.ts:39:  export interface Rendition {
+apps/web/src/types/epubjs.d.ts:54:  export interface Book {
+apps/web/src/types/epubjs.d.ts:60:    locations: Locations;
+apps/web/src/types/epubjs.d.ts:69:    }): Rendition;
+apps/web/src/types/epubjs.d.ts:72:  function ePub(input: ArrayBuffer | string, options?: Record<string, unknown>): Book;
+apps/web/src/types/epubjs.d.ts:73:  export default ePub;
+apps/web/src/types/index.ts:22:  cfi: string;
+apps/web/src/types/index.ts:30:export interface Bookmark {
+apps/web/src/types/index.ts:31:  cfi: string;
+apps/web/src/types/index.ts:40:  bookmarks?: Array<{ cfi: string; title?: string }>;
+apps/web/src/types/index.ts:52:export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "lastLocation" | "progressPercent" | "status"> {
+apps/web/src/types/index.ts:54:  bookmarks?: Bookmark[];
+apps/web/src/types/index.ts:57:  contentStatus?: "available" | "missing" | "invalid";
+apps/web/src/types/index.ts:59:  epubBlob: Blob | null;
+apps/web/src/types/index.ts:102:  authorNetwork: { author: string; books: number }[];
+apps/web/src/types/index.ts:105:  booksCompletedThisMonth: number;
+apps/web/src/types/index.ts:113:  monthlyData: { month: string; hours: number; books: number }[];
+apps/web/src/types/index.ts:116:  totalBooksInLibrary: number;
+apps/web/src/types/index.ts:117:  totalBooksRead: number;
+apps/web/src/types/index.ts:145:  { id: "first_book", name: "First Steps", icon: "📖", description: "Complete your first book", unlocked: false, progress: 0, target: 1 },
+apps/web/src/types/index.ts:146:  { id: "bookworm", name: "Bookworm", icon: "📚", description: "Complete 5 books", unlocked: false, progress: 0, target: 5 },
+apps/web/src/types/index.ts:147:  { id: "librarian", name: "Librarian", icon: "🏛️", description: "Complete 25 books", unlocked: false, progress: 0, target: 25 },
+apps/web/src/types/index.ts:160:  bookId: string;
+apps/web/src/types/index.ts:161:  bookTitle: string;
+apps/web/src/types/index.ts:185:    bookId: session.bookId,
+apps/web/src/types/index.ts:195:export function sessionFromCore(session: CoreReadingSession, bookTitle: string, date: string): ReadingSession {
+apps/web/src/types/index.ts:197:    bookId: session.bookId,
+apps/web/src/types/index.ts:198:    bookTitle,
+apps/web/src/types/reader.ts:3:    | "loading-book"
+apps/web/src/types/reader.ts:6:    | "generating-locations"
+apps/web/src/types/reader.ts:14:        | "BOOK_DATA_MISSING"
+apps/web/src/types/reader.ts:15:        | "BOOK_CONTENT_MISSING"
+apps/web/src/types/reader.ts:16:        | "BOOK_CONTENT_EMPTY"
+apps/web/src/types/reader.ts:17:        | "BOOK_CONTENT_INVALID"
+apps/web/src/types/reader.ts:18:        | "BOOK_CONTENT_READ_FAILED"
+apps/web/src/types/reader.ts:19:        | "INVALID_EPUB"
+apps/web/src/types/reader.ts:20:        | "EPUB_INTERNAL_CRASH"
+apps/web/src/types/reader.ts:32:    bookProgress: number;
+apps/web/src/types/reader.ts:33:    cfi: string;
+apps/web/src/types/reader.ts:40:    totalLocations: number;
+apps/web/src/types/reader.ts:44:    cfiRange: string;
+apps/web/src/types/reader.ts:51:    bookId: string;
+apps/web/src/types/reader.ts:52:    cfiRange: string;
+apps/web/src/types/reader.ts:65:    cfi: string;
+apps/web/src/types/reader.ts:83:    locationsPerMinute: number | null;
+apps/web/src/hooks/useReaderSessionStats.ts:9:export const useReaderSessionStats = (bookId: string, currentTotalLocations: number) => {
+apps/web/src/hooks/useReaderSessionStats.ts:14:        locationsPerMinute: null,
+apps/web/src/hooks/useReaderSessionStats.ts:19:    const locationsReadRef = useRef(0);
+apps/web/src/hooks/useReaderSessionStats.ts:24:        if (!bookId || unsavedSecondsRef.current === 0 || !trackingEnabled) {
+apps/web/src/hooks/useReaderSessionStats.ts:31:            incrementReadingTime(bookId);
+apps/web/src/hooks/useReaderSessionStats.ts:33:    }, [bookId]);
+apps/web/src/hooks/useReaderSessionStats.ts:37:        if (!bookId) return;
+apps/web/src/hooks/useReaderSessionStats.ts:44:            locationsPerMinute: null,
+apps/web/src/hooks/useReaderSessionStats.ts:46:    }, [bookId]);
+apps/web/src/hooks/useReaderSessionStats.ts:50:        if (!bookId) return;
+apps/web/src/hooks/useReaderSessionStats.ts:64:            if (activeSecondsRef.current % 10 === 0 && activeSecondsRef.current > 60 && locationsReadRef.current > 0) {
+apps/web/src/hooks/useReaderSessionStats.ts:65:                const lpm = (locationsReadRef.current / activeSecondsRef.current) * 60;
+apps/web/src/hooks/useReaderSessionStats.ts:68:                if (currentTotalLocations > 0 && lastLocationRef.current !== null) {
+apps/web/src/hooks/useReaderSessionStats.ts:69:                    const remainingLocations = currentTotalLocations - lastLocationRef.current;
+apps/web/src/hooks/useReaderSessionStats.ts:70:                    if (remainingLocations > 0 && lpm > 0) {
+apps/web/src/hooks/useReaderSessionStats.ts:71:                        estimated = Math.round((remainingLocations / lpm) * 10) / 10;
+apps/web/src/hooks/useReaderSessionStats.ts:72:                    } else if (remainingLocations <= 0) {
+apps/web/src/hooks/useReaderSessionStats.ts:78:                    if (prev.estimatedMinutesRemaining === estimated && prev.locationsPerMinute === lpm) {
+apps/web/src/hooks/useReaderSessionStats.ts:84:                        locationsPerMinute: lpm,
+apps/web/src/hooks/useReaderSessionStats.ts:96:    }, [bookId, currentTotalLocations, flushReadingTime]);
+apps/web/src/hooks/useReaderSessionStats.ts:106:                locationsReadRef.current += diff;
+apps/web/src/hooks/useReaderAnnotations.ts:4:import type { EpubRendition } from "@/utils/epub";
+apps/web/src/hooks/useReaderAnnotations.ts:11:    bookId: string;
+apps/web/src/hooks/useReaderAnnotations.ts:13:    rendition: EpubRendition | null;
+apps/web/src/hooks/useReaderAnnotations.ts:16:export const useReaderAnnotations = ({ bookId, rendition, clearSelection }: UseReaderAnnotationsProps) => {
+apps/web/src/hooks/useReaderAnnotations.ts:22:        if (!bookId) return;
+apps/web/src/hooks/useReaderAnnotations.ts:24:        getAnnotations(bookId).then(loaded => {
+apps/web/src/hooks/useReaderAnnotations.ts:31:    }, [bookId]);
+apps/web/src/hooks/useReaderAnnotations.ts:34:        if (!rendition?.annotations) return;
+apps/web/src/hooks/useReaderAnnotations.ts:37:                rendition.annotations.highlight(
+apps/web/src/hooks/useReaderAnnotations.ts:38:                    annotation.cfiRange,
+apps/web/src/hooks/useReaderAnnotations.ts:48:            } else if (annotation.type === "underline" && rendition.annotations.underline) {
+apps/web/src/hooks/useReaderAnnotations.ts:49:                 rendition.annotations.underline(
+apps/web/src/hooks/useReaderAnnotations.ts:50:                    annotation.cfiRange,
+apps/web/src/hooks/useReaderAnnotations.ts:63:    }, [rendition]);
+apps/web/src/hooks/useReaderAnnotations.ts:66:        if (!rendition || !rendition.annotations || annotations.length === 0) return;
+apps/web/src/hooks/useReaderAnnotations.ts:68:        // epub.js sometimes re-renders pages without firing events we can catch easily,
+apps/web/src/hooks/useReaderAnnotations.ts:69:        // so we need to ensure annotations are painted when the rendition is ready.
+apps/web/src/hooks/useReaderAnnotations.ts:75:        rendition.on("relocated", handleRelocated);
+apps/web/src/hooks/useReaderAnnotations.ts:84:            rendition.off("relocated", handleRelocated);
+apps/web/src/hooks/useReaderAnnotations.ts:86:    }, [rendition, annotations, renderAnnotation]);
+apps/web/src/hooks/useReaderAnnotations.ts:96:            bookId,
+apps/web/src/hooks/useReaderAnnotations.ts:98:            cfiRange: selection.cfiRange,
+apps/web/src/hooks/useReaderAnnotations.ts:114:    }, [annotations, bookId, clearSelection, renderAnnotation]);
+apps/web/src/hooks/useReaderAnnotations.ts:120:        if (rendition?.annotations) {
+apps/web/src/hooks/useReaderAnnotations.ts:122:                rendition.annotations.remove(annotation.cfiRange, annotation.type);
+apps/web/src/hooks/useReaderAnnotations.ts:131:    }, [annotations, rendition]);
+apps/web/src/hooks/useReaderAnnotations.ts:146:        if (color && color !== original.color && rendition?.annotations) {
+apps/web/src/hooks/useReaderAnnotations.ts:148:                 rendition.annotations.remove(original.cfiRange, original.type);
+apps/web/src/hooks/useReaderAnnotations.ts:160:    }, [annotations, rendition, renderAnnotation]);
+apps/web/src/hooks/useBookUpload.ts:3:export interface UseBookUploadResult {
+apps/web/src/hooks/useBookUpload.ts:33: * Shared EPUB upload behaviour: validation, loading/error state, the hidden
+apps/web/src/hooks/useBookUpload.ts:35: * across every Add Book entry point.
+apps/web/src/hooks/useBookUpload.ts:37:export function useBookUpload(onAddBook: (file: File) => Promise<void>): UseBookUploadResult {
+apps/web/src/hooks/useBookUpload.ts:51:      if (!file.name.toLowerCase().endsWith(".epub")) {
+apps/web/src/hooks/useBookUpload.ts:52:        setErrorMessage("Only EPUB files are supported.");
+apps/web/src/hooks/useBookUpload.ts:57:        await onAddBook(file);
+apps/web/src/hooks/useBookUpload.ts:59:        setErrorMessage(error instanceof Error ? error.message : "Failed to add book.");
+apps/web/src/hooks/useBookUpload.ts:64:    [onAddBook]
+apps/web/src/hooks/useBookUpload.ts:98:    window.addEventListener("sanctuary:add-book", openPicker);
+apps/web/src/hooks/useBookUpload.ts:99:    return () => window.removeEventListener("sanctuary:add-book", openPicker);
+apps/web/src/hooks/useBookUpload.ts:106:      accept: ".epub",
+apps/web/src/hooks/useReaderShortcuts.ts:7:  toggleBookmark: string[];
+apps/web/src/hooks/useReaderShortcuts.ts:28:  toggleBookmark: () => void;
+apps/web/src/hooks/useReaderShortcuts.ts:55:        toggleBookmark,
+apps/web/src/hooks/useReaderShortcuts.ts:91:      if (keybinds.toggleBookmark.includes(key)) {
+apps/web/src/hooks/useReaderShortcuts.ts:93:        if (!event.repeat) toggleBookmark();
+apps/web/src/hooks/useReadingSession.ts:7:import { useBookStore } from "@/store/useBookStore";
+apps/web/src/hooks/useReadingSession.ts:10:import { View, type Book, type Bookmark } from "@/types";
+apps/web/src/hooks/useReadingSession.ts:19:  const startSession = useCallback((book: Book) => {
+apps/web/src/hooks/useReadingSession.ts:21:    useReaderProgressStore.getState().clearActiveBook();
+apps/web/src/hooks/useReadingSession.ts:22:    useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
+apps/web/src/hooks/useReadingSession.ts:24:    statsService.startSession(book.id, book.progress);
+apps/web/src/hooks/useReadingSession.ts:31:    const books = useBookStore.getState().books;
+apps/web/src/hooks/useReadingSession.ts:32:    // endSession is fire-and-forget; the optimistic update in syncBookUpdate
+apps/web/src/hooks/useReadingSession.ts:33:    // already keeps the store current so a full loadBooks() re-fetch is unnecessary.
+apps/web/src/hooks/useReadingSession.ts:34:    void statsService.endSession(books, api, isPersistent, activeProgress?.progress);
+apps/web/src/hooks/useReadingSession.ts:35:    useReaderProgressStore.getState().clearActiveBook();
+apps/web/src/hooks/useReadingSession.ts:40:  const addBookmark = useCallback((bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => {
+apps/web/src/hooks/useReadingSession.ts:41:    const next: Bookmark = {
+apps/web/src/hooks/useReadingSession.ts:42:      ...bookmark,
+apps/web/src/hooks/useReadingSession.ts:43:      id: `${bookId}:${encodeURIComponent(bookmark.cfi)}`,
+apps/web/src/hooks/useReadingSession.ts:46:    libraryService.addBookmark(bookId, next, api, isPersistent);
+apps/web/src/hooks/useReadingSession.ts:49:  const removeBookmark = useCallback((bookId: string, bookmarkId: string) => {
+apps/web/src/hooks/useReadingSession.ts:50:    libraryService.removeBookmark(bookId, bookmarkId, api, isPersistent);
+apps/web/src/hooks/useReadingSession.ts:53:  return { startSession, endSession, addBookmark, removeBookmark };
+apps/web/src/hooks/useProgressSync.ts:16:    await libraryService.updateBookProgress(pending.id, pending.progress, pending.location, api, isPersistent);
+apps/web/src/hooks/useReaderSearch.ts:4:import type { EpubBookHandle, EpubSpineSection } from "@/utils/epub";
+apps/web/src/hooks/useReaderSearch.ts:7:    display: (cfi: string) => void;
+apps/web/src/hooks/useReaderSearch.ts:8:    epubBook: EpubBookHandle | null;
+apps/web/src/hooks/useReaderSearch.ts:11:export const useReaderSearch = ({ epubBook, display }: UseReaderSearchProps) => {
+apps/web/src/hooks/useReaderSearch.ts:28:    }, [epubBook]);
+apps/web/src/hooks/useReaderSearch.ts:38:        if (!epubBook || !epubBook.spine) {
+apps/web/src/hooks/useReaderSearch.ts:39:            setSearchState(s => ({ ...s, error: "Search is not supported in this book." }));
+apps/web/src/hooks/useReaderSearch.ts:49:        const processSection = async (section: EpubSpineSection) => {
+apps/web/src/hooks/useReaderSearch.ts:53:                    await section.load(epubBook.load);
+apps/web/src/hooks/useReaderSearch.ts:65:                        if (epubBook.navigation?.get) {
+apps/web/src/hooks/useReaderSearch.ts:66:                            const tocItem = epubBook.navigation.get(href);
+apps/web/src/hooks/useReaderSearch.ts:73:                            if (match.cfi) {
+apps/web/src/hooks/useReaderSearch.ts:76:                                    cfi: match.cfi,
+apps/web/src/hooks/useReaderSearch.ts:96:            epubBook.spine.each((section) => {
+apps/web/src/hooks/useReaderSearch.ts:115:    }, [epubBook]);
+apps/web/src/hooks/useReaderSearch.ts:126:            display(result.cfi);
+apps/web/src/hooks/useReaderSearch.ts:136:            display(result.cfi);
+apps/web/src/hooks/useReaderSearch.ts:146:            display(result.cfi);
+apps/web/src/hooks/useReaderEngine.ts:5:import type { Book } from "@/types";
+apps/web/src/hooks/useReaderEngine.ts:7:import type { TocItem } from "@/utils/epub";
+apps/web/src/hooks/useReaderEngine.ts:15:    book: Book;
+apps/web/src/hooks/useReaderEngine.ts:20:export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
+apps/web/src/hooks/useReaderEngine.ts:21:    const activeBookId = book.id;
+apps/web/src/hooks/useReaderEngine.ts:22:    const activeBlob = book.epubBlob;
+apps/web/src/hooks/useReaderEngine.ts:28:        cfi: "", href: "", chapterLabel: "", bookProgress: 0, chapterProgress: 0,
+apps/web/src/hooks/useReaderEngine.ts:29:        location: 1, totalLocations: 1, displayedPage: 1, displayedPages: 1
+apps/web/src/hooks/useReaderEngine.ts:36:    const [renditionReady, setRenditionReady] = useState(0);
+apps/web/src/hooks/useReaderEngine.ts:67:        if (!sessionRef.current?.rendition) return;
+apps/web/src/hooks/useReaderEngine.ts:70:            sessionRef.current.rendition.themes.default(styles);
+apps/web/src/hooks/useReaderEngine.ts:76:    // Engine Initialization — only when the book itself (or its bytes) changes.
+apps/web/src/hooks/useReaderEngine.ts:78:    // session.setFlow() below, which reuses the parsed book instead of
+apps/web/src/hooks/useReaderEngine.ts:93:            bookId: activeBookId,
+apps/web/src/hooks/useReaderEngine.ts:96:            initialCfi: book.lastLocation,
+apps/web/src/hooks/useReaderEngine.ts:106:                if (["restoring-location", "ready", "generating-locations"].includes(s)) {
+apps/web/src/hooks/useReaderEngine.ts:107:                    setRenditionReady(n => n + 1);
+apps/web/src/hooks/useReaderEngine.ts:118:                    if (next.cfi && next.bookProgress !== prev.bookProgress || next.cfi !== prev.cfi) {
+apps/web/src/hooks/useReaderEngine.ts:119:                        onUpdateProgressRef.current(activeBookId, next.bookProgress, next.cfi);
+apps/web/src/hooks/useReaderEngine.ts:131:        // Re-init only when the book/bytes change. Flow changes are handled
+apps/web/src/hooks/useReaderEngine.ts:134:    }, [activeBookId, activeBlob, containerRef]);
+apps/web/src/hooks/useReaderEngine.ts:136:    // Fast layout-mode switch: reuse the parsed book, only rebuild the view.
+apps/web/src/hooks/useReaderEngine.ts:148:            if (!session?.epubBook) {
+apps/web/src/hooks/useReaderEngine.ts:149:                // Book hasn't finished parsing yet; the creation effect
+apps/web/src/hooks/useReaderEngine.ts:183:        if (!sessionRef.current?.epubBook) return;
+apps/web/src/hooks/useReaderEngine.ts:184:        const total = sessionRef.current.totalLocations;
+apps/web/src/hooks/useReaderEngine.ts:186:        // Prevent crashes if locations aren't generated yet or total is invalid
+apps/web/src/hooks/useReaderEngine.ts:187:        if (total <= 1 || !sessionRef.current.epubBook.locations.length()) {
+apps/web/src/hooks/useReaderEngine.ts:193:            const cfi = sessionRef.current.epubBook.locations.cfiFromPercentage(percentage);
+apps/web/src/hooks/useReaderEngine.ts:194:            if (cfi) sessionRef.current.display(cfi);
+apps/web/src/hooks/useReaderEngine.ts:196:            // Ignore cfi bounds errors
+apps/web/src/hooks/useReaderEngine.ts:203:            sessionRef.current?.rendition?.getContents()?.forEach(c => {
+apps/web/src/hooks/useReaderEngine.ts:225:        _rendition: renditionReady >= 0 ? (sessionRef.current?.rendition ?? null) : null,
+apps/web/src/hooks/useReaderEngine.ts:226:        _epubBook: renditionReady >= 0 ? (sessionRef.current?.epubBook ?? null) : null,
+apps/web/src/reader/engine/ReaderSession.ts:2:import type { EpubBookHandle, EpubRendition, EpubContentsLike, TocItem } from "@/utils/epub";
+apps/web/src/reader/engine/ReaderSession.ts:4:import { BookContentError } from "@/services/bookContentRepository";
+apps/web/src/reader/engine/ReaderSession.ts:6:import { openEpub } from "@/utils/epub";
+apps/web/src/reader/engine/ReaderSession.ts:8:import { getFileFingerprint, loadCachedLocations, saveCachedLocations } from "../persistence/locationCache";
+apps/web/src/reader/engine/ReaderSession.ts:12:    bookId: string;
+
+
+--- DETAILED ARCHITECTURAL BREAKDOWN ---
+
+* Where is the EPUB engine initialized?
+  - Initialized in `apps/web/src/hooks/useReaderEngine.ts` inside a `useEffect` watching `[activeBookId, activeBlob, containerRef]`.
+  - It constructs `new ReaderSession(...)` defined in `apps/web/src/reader/engine/ReaderSession.ts`.
+  - Inside `ReaderSession.init()`, the book file ArrayBuffer is retrieved (with an in-memory cache `epubBufferCache` to avoid re-reading the Blob across layout changes) and passed to `openEpub(arrayBuffer, { replacements: "none" })` in `apps/web/src/utils/epub.ts`.
+  - `openEpub()` invokes `ePub(source, options)` directly from the `epubjs` package.
+
+* Where is the iframe/rendition created?
+  - In `apps/web/src/reader/engine/ReaderSession.ts` within `buildRendition(readingDirection)`.
+  - It executes:
+    `this.rendition = this.epubBook.renderTo(this.container, {
+        width: "100%",
+        height: "100%",
+        spread: flow?.continuous ? "none" : (flow?.spread ? "auto" : "none"),
+        minSpreadWidth: flow?.spread ? 800 : Infinity,
+        flow: flow?.continuous ? "scrolled" : "paginated",
+        manager: flow?.continuous ? "continuous" : "default",
+        allowScriptedContent: true,
+        direction: readingDirection,
+    });`
+  - An `<iframe>` is dynamically generated by epub.js and appended to `this.container`.
+  - To prevent epub.js sandbox errors and white flashes between chapter loads, a `MutationObserver` (`setupSandboxObserver`) removes the iframe's `sandbox` attribute and applies `preColorIframe` to set the iframe and inner document background colors before content renders.
+
+* Where are pagination and locations handled?
+  - Location generation: In `ReaderSession.ts`. First checks IndexedDB for pre-generated locations via `loadCachedLocations(this.bookId, fingerprint, 1024)` (`apps/web/src/reader/persistence/locationCache.ts`). If not cached, `generateLocationsInBackground()` executes `this.epubBook.locations.generate(1024)` inside a `requestIdleCallback` (or `setTimeout(..., 0)`) off the main thread.
+  - Relocation: Handled in `ReaderSession.attachRenditionListeners()` via `this.rendition.on("relocated", this.handleRelocated)`. Inside `handleRelocated`, it captures `loc.start?.cfi`, calculates `progressFraction = epubBook.locations.percentageFromCfi(cfi)`, determines `locationIndex = epubBook.locations.locationFromCfi(cfi)`, maps chapter labels via `findTocLabel(href)`, and triggers `callbacks.onPositionChange()` debounced at 250ms.
+  - Pagination (Next / Previous): In `ReaderSession.next()` and `ReaderSession.prev()`. Calls `rendition.next()` / `rendition.prev()` in paginated mode, or scrolls the container by 80% viewport height in continuous scroll mode.
+
+* Where are CFI/bookmarks/highlights handled?
+  - CFI: Extracted during `handleRelocated` from `loc.start?.cfi`. Forwarded through `useReaderEngine.ts` to `ReaderView.tsx` and saved via `onUpdateProgress(activeBookId, next.bookProgress, next.cfi)`.
+  - Bookmarks: Stored directly on the `Book` model (`book.bookmarks: Bookmark[]`). Created/removed via `useReadingSession.ts` (`addBookmark`, `removeBookmark`), which calls `libraryService.addBookmark`/`removeBookmark`. Each bookmark stores `{ id: `${bookId}:${encodeURIComponent(bookmark.cfi)}`, cfi, label, progress, createdAt }`.
+  - Highlights / Annotations: Managed by `apps/web/src/hooks/useReaderAnnotations.ts`. Selection is captured in `ReaderSession.ts` via `rendition.on("selected", (cfiRange, contents) => ...)`. Annotations are stored locally in IndexedDB via `apps/web/src/reader/persistence/annotationRepository.ts`. In `useReaderAnnotations.ts`, `renderAnnotation()` invokes `rendition.annotations.highlight(annotation.cfiRange, ...)` or `rendition.annotations.underline(...)` and repaints on `relocated`.
+
+* Where is search implemented?
+  - In `apps/web/src/hooks/useReaderSearch.ts` and `apps/web/src/components/reader/ReaderSearchPanel.tsx`.
+  - `performSearch()` loops across each spine section using `epubBook.spine.each(async (section) => { await section.load(epubBook.load); const matches = section.find(trimmed); section.unload(); })`, mapping matches to `{ id, cfi, excerpt, href, chapterLabel }`. Clicking a result invokes `session.display(result.cfi)`.
+
+* Where is TOC/navigation implemented?
+  - Extracted in `ReaderSession.ts` via `this.epubBook.loaded.navigation.then(nav => { this.tocItems = nav.toc; this.callbacks.onTocReady(nav.toc); })`.
+  - Rendered in `apps/web/src/components/reader/ReaderControls.tsx` (the TOC drawer) and `ReaderOverlay.tsx`.
+  - Clicking a chapter invokes `engineRef.current.display(item.href)`.
+  - `ReaderSession.findTocLabel(href)` scans the TOC tree to find the matching chapter title for display in the header and footer capsules.
+
+
+--------------------------------------------------------------------------------
+### 4. Current state architecture
+
+$ grep -RniE 'create\(|zustand|useStore|View|view\s*=|setView' apps packages --exclude-dir=node_modules --exclude-dir=.git | head -300
+
+apps/web/tailwind.config.js:186:        'noise': "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E\")",
+apps/web/public/icon.svg:1:<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+apps/web/index.html:5:        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+apps/web/src/auth/AuthScreen.tsx:41:              identityPreviewText: "text-light-text dark:text-dark-text",
+apps/web/src/auth/AuthScreen.tsx:42:              identityPreviewEditButton: "text-light-accent dark:text-dark-accent hover:underline",
+apps/web/src/config/readerConfig.ts:3: * Central source of truth — import from here, not from individual view files.
+apps/web/src/types/index.ts:12:export enum View {
+apps/web/src/types/index.ts:124:export type ViewMode = "grid" | "list";
+apps/web/src/hooks/useReadingSession.ts:10:import { View, type Book, type Bookmark } from "@/types";
+apps/web/src/hooks/useReadingSession.ts:17:  const setView = useUIStore((state) => state.setView);
+apps/web/src/hooks/useReadingSession.ts:23:    setView(View.READER);
+apps/web/src/hooks/useReadingSession.ts:25:  }, [setView]);
+apps/web/src/hooks/useReadingSession.ts:37:    setView(View.LIBRARY);
+apps/web/src/hooks/useReadingSession.ts:38:  }, [api, isPersistent, flushPendingProgress, setView]);
+apps/web/src/hooks/useReaderEngine.ts:136:    // Fast layout-mode switch: reuse the parsed book, only rebuild the view.
+apps/web/src/reader/engine/ReaderSession.ts:292:        this.initStage = "creating reader view";
+apps/web/src/components/ui/Navigation.tsx:4:import { View } from "@/types";
+apps/web/src/components/ui/Navigation.tsx:9:  activeView: View;
+apps/web/src/components/ui/Navigation.tsx:11:  onNavigate: (view: View) => void;
+apps/web/src/components/ui/Navigation.tsx:14:function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps) {
+apps/web/src/components/ui/Navigation.tsx:16:    { view: View.LIBRARY, label: "Library", icon: Library, disabled: false },
+apps/web/src/components/ui/Navigation.tsx:17:    { view: View.READER, label: "Reader", icon: BookOpen, disabled: !isReaderActive },
+apps/web/src/components/ui/Navigation.tsx:18:    { view: View.STATS, label: "Stats", icon: BarChart3, disabled: false },
+apps/web/src/components/ui/Navigation.tsx:19:    { view: View.SETTINGS, label: "Settings", icon: Settings, disabled: false },
+apps/web/src/components/ui/Navigation.tsx:26:          const isActive = activeView === item.view;
+apps/web/src/components/ui/Navigation.tsx:31:              key={item.view}
+apps/web/src/components/ui/Navigation.tsx:33:              onClick={() => !item.disabled && onNavigate(item.view)}
+apps/web/src/components/ui/LoadingSpinner.tsx:8:            viewBox="0 0 24 24"
+apps/web/src/components/reader/ReaderSearchPanel.tsx:87:    // Scroll active result into view
+apps/web/src/components/reader/ReaderSearchPanel.tsx:92:                activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+apps/web/src/components/pages/SettingsView.tsx:13:function SettingsView() {
+apps/web/src/components/pages/SettingsView.tsx:133:export default SettingsView;
+apps/web/src/components/pages/LibraryGrid.tsx:3:import { useShallow } from "zustand/react/shallow";
+apps/web/src/components/pages/LibraryGrid.tsx:5:import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
+apps/web/src/components/pages/LibraryGrid.tsx:59:  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+apps/web/src/components/pages/LibraryGrid.tsx:117:        viewMode={viewMode}
+apps/web/src/components/pages/LibraryGrid.tsx:118:        setViewMode={setViewMode}
+apps/web/src/components/pages/LibraryGrid.tsx:202:        ) : viewMode === "grid" ? (
+apps/web/src/components/pages/StatsView.tsx:3:import { useShallow } from "zustand/react/shallow";
+apps/web/src/components/pages/StatsView.tsx:14:type StatsTab = "overview" | "charts" | "badges" | "insights";
+apps/web/src/components/pages/StatsView.tsx:17:  { id: "overview" as StatsTab, label: "Overview", icon: BarChart3 },
+apps/web/src/components/pages/StatsView.tsx:52:function StatsView() {
+apps/web/src/components/pages/StatsView.tsx:70:  const [activeTab, setActiveTab] = useState<StatsTab>("overview");
+apps/web/src/components/pages/StatsView.tsx:122:      {activeTab === "overview" && (
+apps/web/src/components/pages/StatsView.tsx:405:export default StatsView;
+apps/web/src/components/pages/ReaderView.tsx:21:interface ReaderViewProps {
+apps/web/src/components/pages/ReaderView.tsx:31:function ReaderView({
+apps/web/src/components/pages/ReaderView.tsx:39:}: ReaderViewProps) {
+apps/web/src/components/pages/ReaderView.tsx:378:                            <svg className="w-7 h-7 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+apps/web/src/components/pages/ReaderView.tsx:526:export default ReaderView;
+apps/web/src/components/library/LibraryToolbar.tsx:4:import type { SortOption, FilterOption, ViewMode } from "@/types";
+apps/web/src/components/library/LibraryToolbar.tsx:18:  setViewMode: (v: ViewMode) => void;
+apps/web/src/components/library/LibraryToolbar.tsx:23:  viewMode: ViewMode;
+apps/web/src/components/library/LibraryToolbar.tsx:44:  viewMode,
+apps/web/src/components/library/LibraryToolbar.tsx:45:  setViewMode,
+apps/web/src/components/library/LibraryToolbar.tsx:73:            onClick={() => setViewMode("grid")}
+apps/web/src/components/library/LibraryToolbar.tsx:74:            label="Grid view"
+apps/web/src/components/library/LibraryToolbar.tsx:77:            className={viewMode === "grid" ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text" : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"}
+apps/web/src/components/library/LibraryToolbar.tsx:80:            onClick={() => setViewMode("list")}
+apps/web/src/components/library/LibraryToolbar.tsx:81:            label="List view"
+apps/web/src/components/library/LibraryToolbar.tsx:84:            className={viewMode === "list" ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text" : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"}
+apps/web/src/App.tsx:14:import { View } from "@/types";
+apps/web/src/App.tsx:17:import ReaderView from "./components/pages/ReaderView";
+apps/web/src/App.tsx:18:import SettingsView from "./components/pages/SettingsView";
+apps/web/src/App.tsx:19:import StatsView from "./components/pages/StatsView";
+apps/web/src/App.tsx:53:  const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
+apps/web/src/App.tsx:111:  const isReader = view === View.READER;
+apps/web/src/App.tsx:133:        {([View.LIBRARY, View.SETTINGS, View.STATS] as View[]).map((v) => (
+apps/web/src/App.tsx:136:            className={`${isReader ? "" : "page-shell"} ${view === v ? "animate-fadeInUp" : "hidden"}`}
+apps/web/src/App.tsx:138:            {v === View.LIBRARY && (
+apps/web/src/App.tsx:146:            {v === View.SETTINGS && <SettingsView />}
+apps/web/src/App.tsx:147:            {v === View.STATS && <StatsView />}
+apps/web/src/App.tsx:150:        {view === View.READER && selectedBookId && (
+apps/web/src/App.tsx:151:          <ReaderView
+apps/web/src/App.tsx:164:        <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
+apps/web/src/store/useSessionStore.ts:1:import { create } from "zustand";
+apps/web/src/store/useBookStore.ts:1:import { create } from "zustand";
+apps/web/src/store/useStatsStore.ts:1:import { create } from "zustand";
+apps/web/src/store/useReaderProgressStore.ts:1:import { create } from "zustand";
+apps/web/src/store/useUIStore.ts:1:import { create } from "zustand";
+apps/web/src/store/useUIStore.ts:3:import { Theme, View } from "@/types";
+apps/web/src/store/useUIStore.ts:8:  setView: (view: View) => void;
+apps/web/src/store/useUIStore.ts:11:  view: View;
+apps/web/src/store/useUIStore.ts:16:  view: View.LIBRARY,
+apps/web/src/store/useUIStore.ts:18:  setView: (view) => set({ view }),
+apps/web/src/store/useSettingsStore.ts:1:import { create } from "zustand";
+apps/web/src/store/useSettingsStore.ts:2:import { useShallow } from "zustand/react/shallow";
+apps/web/dist/icon.svg:1:<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+apps/web/dist/assets/vendor-epub-DkFY65zt.js:3: [OMITTED — minified/bundled third-party JS output, 37240 chars, not relevant to architecture audit]
+apps/web/dist/assets/vendor-epub-DkFY65zt.js:4: [OMITTED — minified/bundled third-party JS output, 33982 chars, not relevant to architecture audit]
+apps/web/dist/assets/vendor-epub-DkFY65zt.js:5: [OMITTED — minified/bundled third-party JS output, 73086 chars, not relevant to architecture audit]
+apps/web/dist/assets/vendor-epub-DkFY65zt.js:16: [OMITTED — minified/bundled third-party JS output, 94776 chars, not relevant to architecture audit]
+apps/web/dist/assets/index-BKkgGKNe.js:32: [OMITTED — minified/bundled third-party JS output, 133446 chars, not relevant to architecture audit]
+apps/web/dist/assets/index-BKkgGKNe.js:33: [OMITTED — minified/bundled third-party JS output, 37932 chars, not relevant to architecture audit]
+apps/web/dist/assets/index-BKkgGKNe.js:48: [OMITTED — minified/bundled third-party JS output, 8424 chars, not relevant to architecture audit]
+apps/web/dist/assets/index-BKkgGKNe.js:54: [OMITTED — minified/bundled third-party JS output, 7671 chars, not relevant to architecture audit]
+apps/web/dist/assets/index-BKkgGKNe.js:55: [OMITTED — minified/bundled third-party JS output, 259151 chars, not relevant to architecture audit]
+apps/web/dist/assets/vendor-ui-B10wx4MJ.js:11: */var x={xmlns:"http://www.w3.org/2000/svg",width:24,height:24,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"};/**
+apps/web/dist/index.html:5:        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+apps/web/package.json:11:    "preview": "vite preview",
+apps/mobile/src/state/useAppStore.ts:3:import { create } from "zustand";
+apps/mobile/src/theme/sharedStyles.ts:3:export const sharedStyles = StyleSheet.create({
+apps/mobile/src/reader/ReaderWebView.tsx:1:import type { ReaderBridgeCommand, ReaderBridgeEvent } from "@sanctuary/reader-webview";
+apps/mobile/src/reader/ReaderWebView.tsx:3:import { readerBridgeBootstrap } from "@sanctuary/reader-webview";
+apps/mobile/src/reader/ReaderWebView.tsx:5:import { View, Text, StyleSheet, Pressable, PanResponder } from "react-native";
+apps/mobile/src/reader/ReaderWebView.tsx:6:import { WebView } from "react-native-webview";
+apps/mobile/src/reader/ReaderWebView.tsx:12:interface ReaderWebViewProps {
+apps/mobile/src/reader/ReaderWebView.tsx:31:export const ReaderWebView = React.forwardRef<ReaderBridgeHandle, ReaderWebViewProps>(function ReaderWebView({
+apps/mobile/src/reader/ReaderWebView.tsx:40:}: ReaderWebViewProps, ref) {
+apps/mobile/src/reader/ReaderWebView.tsx:41:  const webviewRef = useRef<WebView>(null);
+apps/mobile/src/reader/ReaderWebView.tsx:49:    webviewRef.current?.injectJavaScript(
+apps/mobile/src/reader/ReaderWebView.tsx:121:      PanResponder.create({
+apps/mobile/src/reader/ReaderWebView.tsx:139:    <meta name="viewport" content="width=device-width,initial-scale=1" />
+apps/mobile/src/reader/ReaderWebView.tsx:164:      <View style={styles.empty}>
+apps/mobile/src/reader/ReaderWebView.tsx:166:      </View>
+apps/mobile/src/reader/ReaderWebView.tsx:171:    <View style={styles.readerRoot}>
+apps/mobile/src/reader/ReaderWebView.tsx:172:      <WebView
+apps/mobile/src/reader/ReaderWebView.tsx:173:        ref={webviewRef}
+apps/mobile/src/reader/ReaderWebView.tsx:181:      <View style={styles.tapOverlay} {...gestureResponder.panHandlers}>
+apps/mobile/src/reader/ReaderWebView.tsx:192:      </View>
+apps/mobile/src/reader/ReaderWebView.tsx:193:      <View style={styles.controls}>
+apps/mobile/src/reader/ReaderWebView.tsx:203:      </View>
+apps/mobile/src/reader/ReaderWebView.tsx:205:        <View style={styles.loading}>
+apps/mobile/src/reader/ReaderWebView.tsx:215:        </View>
+apps/mobile/src/reader/ReaderWebView.tsx:217:    </View>
+apps/mobile/src/reader/ReaderWebView.tsx:221:const styles = StyleSheet.create({
+apps/mobile/src/components/StaleDataNotice.tsx:19:const styles = StyleSheet.create({
+apps/mobile/src/components/TopBar.tsx:2:import { View, Text, Pressable, StyleSheet } from "react-native";
+apps/mobile/src/components/TopBar.tsx:13:    <View style={[styles.wrap, { backgroundColor: c.surface, borderColor: c.border }]}> 
+apps/mobile/src/components/TopBar.tsx:18:    </View>
+apps/mobile/src/components/TopBar.tsx:22:const styles = StyleSheet.create({
+apps/mobile/src/components/ReaderPanel.tsx:2:import { Animated, View, Text, Pressable, FlatList, StyleSheet } from "react-native";
+apps/mobile/src/components/ReaderPanel.tsx:27:    <View style={[styles.overlay]}>
+apps/mobile/src/components/ReaderPanel.tsx:29:      <Animated.View
+apps/mobile/src/components/ReaderPanel.tsx:45:        <View style={styles.header}>
+apps/mobile/src/components/ReaderPanel.tsx:50:        </View>
+apps/mobile/src/components/ReaderPanel.tsx:55:          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.border }]} />}
+apps/mobile/src/components/ReaderPanel.tsx:67:      </Animated.View>
+apps/mobile/src/components/ReaderPanel.tsx:68:    </View>
+apps/mobile/src/components/ReaderPanel.tsx:72:const styles = StyleSheet.create({
+apps/mobile/src/screens/StatsScreen.tsx:2:import { AppState, View, Text, StyleSheet, Pressable } from "react-native";
+apps/mobile/src/screens/StatsScreen.tsx:41:    <View style={[sharedStyles.page, { backgroundColor: c.background }]}> 
+apps/mobile/src/screens/StatsScreen.tsx:43:      <View style={sharedStyles.content}>
+apps/mobile/src/screens/StatsScreen.tsx:64:      </View>
+apps/mobile/src/screens/StatsScreen.tsx:65:    </View>
+apps/mobile/src/screens/StatsScreen.tsx:69:const styles = StyleSheet.create({
+apps/mobile/src/screens/ReaderScreen.tsx:5:import { AppState, Animated, Platform, View, StyleSheet } from "react-native";
+apps/mobile/src/screens/ReaderScreen.tsx:7:import type { ReaderBridgeHandle } from "../reader/ReaderWebView";
+apps/mobile/src/screens/ReaderScreen.tsx:11:import { ReaderWebView } from "../reader/ReaderWebView";
+apps/mobile/src/screens/ReaderScreen.tsx:61:  const [chapterPreview, setChapterPreview] = useState<string | null>(null);
+apps/mobile/src/screens/ReaderScreen.tsx:193:    setChapterPreview(findNextChapterLabel(tocItems, data.href, data.chapterTitle));
+apps/mobile/src/screens/ReaderScreen.tsx:289:      <Animated.View
+apps/mobile/src/screens/ReaderScreen.tsx:307:        <Animated.View
+apps/mobile/src/screens/ReaderScreen.tsx:351:      <View style={styles.readerWrap}>
+apps/mobile/src/screens/ReaderScreen.tsx:352:        <ReaderWebView
+apps/mobile/src/screens/ReaderScreen.tsx:362:      </View>
+apps/mobile/src/screens/ReaderScreen.tsx:363:      <ReaderOverlays readerError={readerError} goalsStale={goalsStale} chapterPreview={chapterPreview} />
+apps/mobile/src/screens/ReaderScreen.tsx:384:const styles = StyleSheet.create({
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:4:import { View, Text, Pressable, StyleSheet } from "react-native";
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:28:    <View style={styles.header}>
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:29:      <View style={{ flex: 1 }}>
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:44:      </View>
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:45:      <View style={styles.headerActions}>
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:52:      </View>
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:53:    </View>
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:57:const styles = StyleSheet.create({
+apps/mobile/src/screens/reader/components/ReaderStatusRows.tsx:2:import { View, Text, StyleSheet } from "react-native";
+apps/mobile/src/screens/reader/components/ReaderStatusRows.tsx:36:      <View style={styles.statsWrap}>
+apps/mobile/src/screens/reader/components/ReaderStatusRows.tsx:39:      </View>
+apps/mobile/src/screens/reader/components/ReaderStatusRows.tsx:40:      <View style={styles.syncStatusWrap}>
+apps/mobile/src/screens/reader/components/ReaderStatusRows.tsx:43:      </View>
+apps/mobile/src/screens/reader/components/ReaderStatusRows.tsx:48:const styles = StyleSheet.create({
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:2:import { View, Text, StyleSheet } from "react-native";
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:7:  chapterPreview: string | null;
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:12:export function ReaderOverlays({ readerError, goalsStale, chapterPreview }: ReaderOverlaysProps) {
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:16:        <View style={styles.errorCapsule}>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:18:        </View>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:21:        <View style={styles.offlineGoalsNotice}>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:23:        </View>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:25:      {chapterPreview && (
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:26:        <View style={styles.previewCard}>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:27:          <Text style={styles.previewLabel}>Next chapter</Text>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:28:          <Text style={styles.previewText}>{chapterPreview}</Text>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:29:        </View>
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:35:const styles = StyleSheet.create({
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:47:  previewCard: {
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:57:  previewLabel: { fontSize: 10, color: "#c6b3a1", marginBottom: 4 },
+apps/mobile/src/screens/reader/components/ReaderOverlays.tsx:58:  previewText: { fontSize: 15, color: "#fff", fontWeight: "600" },
+apps/mobile/src/screens/SettingsScreen.tsx:2:import { View, Text, Pressable } from "react-native";
+apps/mobile/src/screens/SettingsScreen.tsx:49:    <View style={[sharedStyles.page, { backgroundColor: c.background }]}> 
+apps/mobile/src/screens/SettingsScreen.tsx:51:      <View style={sharedStyles.content}>
+apps/mobile/src/screens/SettingsScreen.tsx:57:      </View>
+apps/mobile/src/screens/SettingsScreen.tsx:58:    </View>
+apps/mobile/src/screens/LibraryScreen.tsx:2:import { AppState, View, Text, FlatList, Pressable, StyleSheet } from "react-native";
+apps/mobile/src/screens/LibraryScreen.tsx:38:    <View style={[styles.page, { backgroundColor: c.background }]}> 
+apps/mobile/src/screens/LibraryScreen.tsx:42:        <View style={styles.banner}>
+apps/mobile/src/screens/LibraryScreen.tsx:44:        </View>
+apps/mobile/src/screens/LibraryScreen.tsx:63:    </View>
+apps/mobile/src/screens/LibraryScreen.tsx:67:const styles = StyleSheet.create({
+apps/mobile/package.json:19:    "@sanctuary/reader-webview": "0.1.0",
+apps/mobile/package.json:30:    "react-native-webview": "^13.12.5",
+apps/mobile/package.json:31:    "zustand": "^5.0.9"
+apps/desktop/src-tauri/Cargo.lock:948: "wasi 0.9.0+wasi-snapshot-preview1",
+apps/desktop/src-tauri/Cargo.lock:959: "wasi 0.11.1+wasi-snapshot-preview1",
+apps/desktop/src-tauri/Cargo.lock:1729: "wasi 0.11.1+wasi-snapshot-preview1",
+apps/desktop/src-tauri/Cargo.lock:3199: "webview2-com",
+apps/desktop/src-tauri/Cargo.lock:3288: "webview2-com",
+apps/desktop/src-tauri/Cargo.lock:3314: "webview2-com",
+apps/desktop/src-tauri/Cargo.lock:3848:version = "0.9.0+wasi-snapshot-preview1"
+apps/desktop/src-tauri/Cargo.lock:3854:version = "0.11.1+wasi-snapshot-preview1"
+apps/desktop/src-tauri/Cargo.lock:4037:name = "webview2-com"
+apps/desktop/src-tauri/Cargo.lock:4042: "webview2-com-macros",
+apps/desktop/src-tauri/Cargo.lock:4043: "webview2-com-sys",
+apps/desktop/src-tauri/Cargo.lock:4051:name = "webview2-com-macros"
+apps/desktop/src-tauri/Cargo.lock:4062:name = "webview2-com-sys"
+apps/desktop/src-tauri/Cargo.lock:4657: "webview2-com",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:40:      "description": "A grouping and boundary mechanism developers can use to isolate access to the IPC layer.\n\nIt controls application windows' and webviews' fine grained access to the Tauri core, application, or plugin commands. If a webview or its window is not matching any capability then it has no access to the IPC layer at all.\n\nThis can be done to create groups of windows, based on their required system access, which can reduce impact of frontend vulnerabilities in less privileged windows. Windows can be added to a capability by exact name (e.g. `main-window`) or glob patterns like `*` or `admin-*`. A Window can have none, one, or multiple associated capabilities.\n\n## Example\n\n```json { \"identifier\": \"main-user-files-write\", \"description\": \"This capability allows the `main` window on macOS and Windows access to `filesystem` write related commands and `dialog` commands to enable programmatic access to files selected by the user.\", \"windows\": [ \"main\" ], \"permissions\": [ \"core:default\", \"dialog:open\", { \"identifier\": \"fs:allow-write-text-file\", \"allow\": [{ \"path\": \"$HOME/test.txt\" }] }, ], \"platforms\": [\"macOS\",\"windows\"] } ```",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:73:          "description": "List of windows that are affected by this capability. Can be a glob pattern.\n\nIf a window label matches any of the patterns in this list, the capability will be enabled on all the webviews of that window, regardless of the value of [`Self::webviews`].\n\nOn multiwebview windows, prefer specifying [`Self::webviews`] and omitting [`Self::windows`] for a fine grained access control.\n\n## Example\n\n`[\"main\"]`",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:79:        "webviews": {
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:80:          "description": "List of webviews that are affected by this capability. Can be a glob pattern.\n\nThe capability will be enabled on all the webviews whose label matches any of the patterns in this list, regardless of whether the webview's window label matches a pattern in [`Self::windows`].\n\n## Example\n\n`[\"sub-webview-one\", \"sub-webview-two\"]`",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:180:          "description": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:183:          "markdownDescription": "Default core plugins set.\n#### This default permission set includes:\n\n- `core:path:default`\n- `core:event:default`\n- `core:window:default`\n- `core:webview:default`\n- `core:app:default`\n- `core:image:default`\n- `core:resources:default`\n- `core:menu:default`\n- `core:tray:default`"
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1008:          "description": "Default permissions for the plugin.\n#### This default permission set includes:\n\n- `allow-get-all-webviews`\n- `allow-webview-position`\n- `allow-webview-size`\n- `allow-internal-toggle-devtools`",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1010:          "const": "core:webview:default",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1011:          "markdownDescription": "Default permissions for the plugin.\n#### This default permission set includes:\n\n- `allow-get-all-webviews`\n- `allow-webview-position`\n- `allow-webview-size`\n- `allow-internal-toggle-devtools`"
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1016:          "const": "core:webview:allow-clear-all-browsing-data",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1020:          "description": "Enables the create_webview command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1022:          "const": "core:webview:allow-create-webview",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1023:          "markdownDescription": "Enables the create_webview command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1026:          "description": "Enables the create_webview_window command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1028:          "const": "core:webview:allow-create-webview-window",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1029:          "markdownDescription": "Enables the create_webview_window command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1032:          "description": "Enables the get_all_webviews command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1034:          "const": "core:webview:allow-get-all-webviews",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1035:          "markdownDescription": "Enables the get_all_webviews command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1040:          "const": "core:webview:allow-internal-toggle-devtools",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1046:          "const": "core:webview:allow-print",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1052:          "const": "core:webview:allow-reparent",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1056:          "description": "Enables the set_webview_auto_resize command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1058:          "const": "core:webview:allow-set-webview-auto-resize",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1059:          "markdownDescription": "Enables the set_webview_auto_resize command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1062:          "description": "Enables the set_webview_background_color command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1064:          "const": "core:webview:allow-set-webview-background-color",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1065:          "markdownDescription": "Enables the set_webview_background_color command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1068:          "description": "Enables the set_webview_focus command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1070:          "const": "core:webview:allow-set-webview-focus",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1071:          "markdownDescription": "Enables the set_webview_focus command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1074:          "description": "Enables the set_webview_position command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1076:          "const": "core:webview:allow-set-webview-position",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1077:          "markdownDescription": "Enables the set_webview_position command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1080:          "description": "Enables the set_webview_size command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1082:          "const": "core:webview:allow-set-webview-size",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1083:          "markdownDescription": "Enables the set_webview_size command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1086:          "description": "Enables the set_webview_zoom command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1088:          "const": "core:webview:allow-set-webview-zoom",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1089:          "markdownDescription": "Enables the set_webview_zoom command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1092:          "description": "Enables the webview_close command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1094:          "const": "core:webview:allow-webview-close",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1095:          "markdownDescription": "Enables the webview_close command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1098:          "description": "Enables the webview_hide command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1100:          "const": "core:webview:allow-webview-hide",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1101:          "markdownDescription": "Enables the webview_hide command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1104:          "description": "Enables the webview_position command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1106:          "const": "core:webview:allow-webview-position",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1107:          "markdownDescription": "Enables the webview_position command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1110:          "description": "Enables the webview_show command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1112:          "const": "core:webview:allow-webview-show",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1113:          "markdownDescription": "Enables the webview_show command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1116:          "description": "Enables the webview_size command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1118:          "const": "core:webview:allow-webview-size",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1119:          "markdownDescription": "Enables the webview_size command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1124:          "const": "core:webview:deny-clear-all-browsing-data",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1128:          "description": "Denies the create_webview command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1130:          "const": "core:webview:deny-create-webview",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1131:          "markdownDescription": "Denies the create_webview command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1134:          "description": "Denies the create_webview_window command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1136:          "const": "core:webview:deny-create-webview-window",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1137:          "markdownDescription": "Denies the create_webview_window command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1140:          "description": "Denies the get_all_webviews command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1142:          "const": "core:webview:deny-get-all-webviews",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1143:          "markdownDescription": "Denies the get_all_webviews command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1148:          "const": "core:webview:deny-internal-toggle-devtools",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1154:          "const": "core:webview:deny-print",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1160:          "const": "core:webview:deny-reparent",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1164:          "description": "Denies the set_webview_auto_resize command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1166:          "const": "core:webview:deny-set-webview-auto-resize",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1167:          "markdownDescription": "Denies the set_webview_auto_resize command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1170:          "description": "Denies the set_webview_background_color command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1172:          "const": "core:webview:deny-set-webview-background-color",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1173:          "markdownDescription": "Denies the set_webview_background_color command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1176:          "description": "Denies the set_webview_focus command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1178:          "const": "core:webview:deny-set-webview-focus",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1179:          "markdownDescription": "Denies the set_webview_focus command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1182:          "description": "Denies the set_webview_position command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1184:          "const": "core:webview:deny-set-webview-position",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1185:          "markdownDescription": "Denies the set_webview_position command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1188:          "description": "Denies the set_webview_size command without any pre-configured scope.",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1190:          "const": "core:webview:deny-set-webview-size",
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1191:          "markdownDescription": "Denies the set_webview_size command without any pre-configured scope."
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json:1194:          "description": "Denies the set_webview_zoom command without any pre-configured scope.",
+
+
+--- STORES BREAKDOWN & SEPARATION AUDIT ---
+
+Sanctuary has 6 dedicated Zustand stores located in `apps/web/src/store/`:
+
+1. `useBookStore` (apps/web/src/store/useBookStore.ts):
+   - Scope: Library books collection, sort/filter options, and derived state.
+   - State: `books: Book[]`, `sortedBooks`, `recentBooks`, `favoriteBooks`, `seriesGroups`, `isLoading`, `sortBy`, `filterBy`.
+   - Actions: `setBooks`, `setIsLoading`, `setSortBy`, `setFilterBy`, `updateDerivedState`, `getBookById`.
+
+2. `useReaderProgressStore` (apps/web/src/store/useReaderProgressStore.ts):
+   - Scope: Active reading session progress.
+   - State: `active: { bookId: string, location: string, progress: number } | null`.
+   - Actions: `setActiveBook`, `updateActiveProgress`, `clearActiveBook`.
+
+3. `useSessionStore` (apps/web/src/store/useSessionStore.ts):
+   - Scope: Authentication and user session mode.
+   - State: `mode: 'initializing' | 'guest' | 'authenticated'`, `userId: string | null`.
+   - Actions: `setSession`, `reset`.
+
+4. `useSettingsStore` (apps/web/src/store/useSettingsStore.ts):
+   - Scope: Complete reader preferences, typography, color themes, display toggles, speech, and keybinds.
+   - State: `fontSize`, `lineHeight`, `textAlignment`, `fontPairing`, `maxTextWidth`, `hyphenation`, `pageMargin`, `paragraphSpacing`, `readerBackground`, `readerForeground`, `readerAccent`, `brightness`, `grayscale`, `showScrollbar`, `showPageCounter`, `showFloatingCapsule`, `progressBarType`, `barPosition`, `continuous`, `spread`, `direction`, `ttsVoiceURI`, `ttsRate`, `ttsPitch`, `keybinds`.
+
+5. `useStatsStore` (apps/web/src/store/useStatsStore.ts):
+   - Scope: Analytics, streaks, reading history, and goals.
+   - State: `stats: ReadingStats` (currentStreak, longestStreak, totalBooksRead, totalReadingTime, averageReadingSpeed, hourly breakdown, authorNetwork), `goals: ReadingGoals | null`, `goalsStale`, `sessions: ReadingSession[]`.
+   - Actions: `setStats`, `setGoals`, `setSessions`, `addSession`.
+
+6. `useUIStore` (apps/web/src/store/useUIStore.ts):
+   - Scope: Global UI navigation and app theme.
+   - State: `view: View.LIBRARY | View.READER | View.STATS | View.SETTINGS`, `theme: Theme.LIGHT | Theme.DARK`, `searchTerm: string`.
+   - Actions: `setView`, `toggleTheme`, `setSearchTerm`.
+
+Store Separation Assessment:
+- Separate: Settings (`useSettingsStore`), UI routing (`useUIStore`), Session/Auth (`useSessionStore`), and Stats (`useStatsStore`) are cleanly decoupled into independent stores.
+- Mixed / Non-store areas:
+  * Bookmarks: Mixed directly into `Book.bookmarks` inside `useBookStore`.
+  * Reader engine / Rendition state: NOT in Zustand. ReaderSession is an imperative OOP class referenced via `useRef` in `ReaderView.tsx` and `useReaderEngine.ts`.
+  * Annotations: Completely separated from Zustand. Kept in React hook state (`useReaderAnnotations.ts`) backed directly by an IndexedDB repository (`annotationRepository.ts`).
+  * Reading progress: Partially duplicated — tracked transiently in `useReaderProgressStore` during active reading, but also debounced and saved into `Book.progress` and `Book.lastLocation` in `useBookStore`.
+
+
+--------------------------------------------------------------------------------
+### 5. Persistence / database
+
+$ grep -RniE 'indexedDB|Dexie|localStorage|sessionStorage|sqlite|drizzle|prisma|tauri.*store|zustand/middleware' apps packages --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=target --exclude-dir=gen
+
+apps/web/src/utils/db.ts:21:    const request = indexedDB.open(DB_NAME, DB_VERSION);
+apps/web/src/reader/persistence/storage.ts:2:    try { return window.localStorage.getItem(key); } catch { return null; }
+apps/web/src/reader/persistence/storage.ts:6:    try { window.localStorage.setItem(key, value); } catch { /* Storage can fail in private mode. */ }
+apps/web/src/reader/persistence/locationCache.ts:25:    // Fallback migration and cleanup: check localStorage for any legacy caches
+apps/web/src/reader/persistence/locationCache.ts:27:    for (let i = 0; i < window.localStorage.length; i++) {
+apps/web/src/reader/persistence/locationCache.ts:28:        const storageKey = window.localStorage.key(i);
+apps/web/src/reader/persistence/locationCache.ts:43:            window.localStorage.removeItem(storageKey);
+apps/web/src/components/ui/SettingsProvider.tsx:34:        const storedRaw = localStorage.getItem(LOCAL_SETTINGS_KEY);
+apps/web/src/components/ui/SettingsProvider.tsx:75:          localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(values));
+apps/web/src/components/ui/MigrationDialog.tsx:23:      // Check if they have pending books in IndexedDB.
+apps/web/src/components/pages/SettingsView.tsx:26:            localStorage.clear();
+apps/web/src/components/pages/SettingsView.tsx:27:            sessionStorage.clear();
+apps/web/src/services/LibraryService.ts:555:        // 1. Remove from local IndexedDB
+apps/web/src/services/StatsService.ts:83:    // 1. One-time migration from localStorage
+apps/web/src/services/StatsService.ts:84:    const legacySaved = localStorage.getItem(SESSIONS_KEY);
+apps/web/src/services/StatsService.ts:90:      localStorage.removeItem(SESSIONS_KEY);
+apps/web/src/services/StatsService.ts:93:    // 2. Load from IndexedDB
+
+
+--- STORAGE MATRIX: WHAT IS STORED AND WHERE ---
+
+1. Books (binary EPUB files):
+   - Local: IndexedDB database `SanctuaryReaderDB`, object store `book_contents` (`{ bookId, content: Blob, mimeType, updatedAt }`). Managed by `apps/web/src/utils/db.ts` and `apps/web/src/services/bookContentRepository.ts`.
+   - Cloud (when signed in): Cloudflare R2 bucket (`SANCTUARY_BUCKET`) via `/api/content/:id` (with fallback storage in Cloudflare D1 `books.content_blob`).
+
+2. Metadata (title, author, totalPages, isFavorite, etc.):
+   - Local: IndexedDB database `SanctuaryReaderDB`, object store `books`.
+   - Cloud: Cloudflare D1 (SQLite) table `books` (columns `id`, `user_id`, `title`, `author`, `cover_url`, `progress`, `total_pages`, `last_location`, `bookmarks_json`, `is_favorite`, `updated_at`).
+
+3. Reading Position & Progress:
+   - Local: `book.progress` (percentage integer) and `book.lastLocation` (CFI string) in IndexedDB `books` object store.
+   - Cloud: Cloudflare D1 table `books` columns `progress`, `last_location`, `updated_at`.
+
+4. Bookmarks:
+   - Local: Embedded inside the `bookmarks` array on each `Book` record in IndexedDB `books` store.
+   - Cloud: Stored in Cloudflare D1 table `books` column `bookmarks_json` (serialized JSON array).
+
+5. Highlights & Notes (Annotations):
+   - Local: IndexedDB database `SanctuaryReaderDB`, object store `annotations` (`{ id, bookId, cfiRange, text, color, note, type, createdAt }`).
+   - Cloud: NOT currently synced to cloud (local IndexedDB only).
+
+6. Settings:
+   - Local: `localStorage` under key `sanctuary-settings` (managed via `apps/web/src/components/ui/SettingsProvider.tsx`).
+   - Cloud (when signed in): Cloudflare D1 table `user_settings` (columns `user_id`, `daily_goal`, `weekly_goal`, `theme_preset`, `font_scale`, `line_height`, `text_width`, etc.).
+
+7. Thumbnails / Covers:
+   - Local: Extracted from EPUB archive on import (`extractCoverBlobFromEpubSource` in `apps/web/src/utils/epub.ts`), converted to object URL or stored as data URI in `book.coverUrl` in IndexedDB `books` store.
+   - Cloud: Stored in Cloudflare D1 table `books` column `cover_url`.
+
+8. Additional persistent stores:
+   - IndexedDB store `sessions`: Reading session history for statistics calculations (migrated from legacy localStorage).
+   - IndexedDB store `reader_cache`: Cached locations generated by epub.js (`{ id: `${bookId}:${fingerprint}:${breakSize}`, locations }`).
+   - IndexedDB store `mutations`: Offline sync queue mutations for synchronizing with Cloudflare Pages API when online.
+
+
+--------------------------------------------------------------------------------
+### 6. Tauri architecture
+
+$ find apps/desktop -maxdepth 4 -type f -not -path '*/target/*' | sort
+
+apps/desktop/build-appimage.sh
+apps/desktop/package.json
+apps/desktop/scripts/run-tauri.mjs
+apps/desktop/src-tauri/build.rs
+apps/desktop/src-tauri/.cargo/config.toml
+apps/desktop/src-tauri/Cargo.lock
+apps/desktop/src-tauri/Cargo.toml
+apps/desktop/src-tauri/gen/schemas/acl-manifests.json
+apps/desktop/src-tauri/gen/schemas/capabilities.json
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json
+apps/desktop/src-tauri/gen/schemas/linux-schema.json
+apps/desktop/src-tauri/icons/128x128@2x.png
+apps/desktop/src-tauri/icons/128x128.png
+apps/desktop/src-tauri/icons/32x32.png
+apps/desktop/src-tauri/icons/icon.png
+apps/desktop/src-tauri/src/main.rs
+apps/desktop/src-tauri/tauri.conf.json
+
+
+$ find apps/desktop/src-tauri -maxdepth 4 -type f -not -path '*/target/*' | sort 2>/dev/null
+
+apps/desktop/src-tauri/build.rs
+apps/desktop/src-tauri/.cargo/config.toml
+apps/desktop/src-tauri/Cargo.lock
+apps/desktop/src-tauri/Cargo.toml
+apps/desktop/src-tauri/gen/schemas/acl-manifests.json
+apps/desktop/src-tauri/gen/schemas/capabilities.json
+apps/desktop/src-tauri/gen/schemas/desktop-schema.json
+apps/desktop/src-tauri/gen/schemas/linux-schema.json
+apps/desktop/src-tauri/icons/128x128@2x.png
+apps/desktop/src-tauri/icons/128x128.png
+apps/desktop/src-tauri/icons/32x32.png
+apps/desktop/src-tauri/icons/icon.png
+apps/desktop/src-tauri/src/main.rs
+apps/desktop/src-tauri/tauri.conf.json
+
+
+--- TAURI ARCHITECTURAL AUDIT ---
+
+Is Tauri currently just React → WebView or does Rust handle backend tasks?
+
+Tauri is currently strictly `React → WebView`.
+
+Evidence and Architecture:
+1. `apps/desktop/src-tauri/src/main.rs`:
+   - Contains only 30 lines of Rust.
+   - Sets up a standard Tauri window and a basic "File" menu with an "Add EPUB…" menu item.
+   - When "Add EPUB…" is clicked, it calls:
+     `window.eval("window.dispatchEvent(new Event('sanctuary:add-book'))")`
+     which simply dispatches a custom DOM event into the React frontend to open the HTML `<input type="file">`.
+2. `apps/desktop/src-tauri/Cargo.toml`:
+   - Dependencies: only `tauri = "2.0.0"`, `serde`, and `serde_json`.
+   - Zero plugins: no `tauri-plugin-fs`, no `tauri-plugin-dialog`, no `tauri-plugin-sql`, no `tauri-plugin-upload`.
+3. What Rust currently handles:
+   - Filesystem: NO.
+   - File importing: NO (browser file input reads files into ArrayBuffer/Blob).
+   - Database: NO (frontend uses IndexedDB in the WebView).
+   - Native dialogs: NO (frontend uses web input elements).
+   - Background tasks: NO.
+   - Book processing: NO (frontend parses EPUBs in JS).
+
+Conclusion:
+Sanctuary Desktop is currently a thin WebKit/Blink WebView wrapper around the production Vite build of `apps/web`.
+
+
+--------------------------------------------------------------------------------
+### 7. Authentication / backend
+
+$ grep -RniE 'Clerk|VITE_DISABLE_AUTH|auth' apps packages --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=target --exclude-dir=gen | head -200
+
+apps/web/index.html:6:        <meta http-equiv="Content-Security-Policy" content="default-src 'self' tauri: asset: https://asset.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: tauri: asset: https://asset.localhost https://*.clerk.accounts.dev https://*.clerk.com; style-src 'self' 'unsafe-inline' blob: tauri: asset: https://asset.localhost; style-src-elem 'self' 'unsafe-inline' blob: tauri: asset: https://asset.localhost; img-src 'self' blob: data: tauri: asset: https://asset.localhost https:; connect-src 'self' blob: tauri: ipc: https://ipc.localhost asset: https://asset.localhost https://*.clerk.com wss://*.clerk.com https://*.clerk.accounts.dev wss://*.clerk.accounts.dev https://clerk-telemetry.com; worker-src 'self' blob:; font-src 'self' blob: tauri: asset: https://asset.localhost data:;">
+apps/web/src/auth/AuthScreen.tsx:1:import { SignIn } from "@clerk/clerk-react";
+apps/web/src/auth/AuthScreen.tsx:4:interface AuthScreenProps {
+apps/web/src/auth/AuthScreen.tsx:8:export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
+apps/web/src/auth/GuestAuthProvider.tsx:3:import { SanctuaryAuthContext } from "./useSanctuaryAuth";
+apps/web/src/auth/GuestAuthProvider.tsx:5:export function GuestAuthProvider({ children }: { children: ReactNode }) {
+apps/web/src/auth/GuestAuthProvider.tsx:7:    <SanctuaryAuthContext.Provider
+apps/web/src/auth/GuestAuthProvider.tsx:17:    </SanctuaryAuthContext.Provider>
+apps/web/src/auth/ClerkAuthProvider.tsx:1:import { ClerkProvider, useAuth, useUser } from "@clerk/clerk-react";
+apps/web/src/auth/ClerkAuthProvider.tsx:4:import { SanctuaryAuthContext, type SanctuaryAuthContextType, type SanctuaryUser } from "./useSanctuaryAuth";
+apps/web/src/auth/ClerkAuthProvider.tsx:6:const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+apps/web/src/auth/ClerkAuthProvider.tsx:8:function ClerkAuthAdapter({ children }: { children: ReactNode }) {
+apps/web/src/auth/ClerkAuthProvider.tsx:9:  const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
+apps/web/src/auth/ClerkAuthProvider.tsx:21:  const authValue: SanctuaryAuthContextType = {
+apps/web/src/auth/ClerkAuthProvider.tsx:29:  return <SanctuaryAuthContext.Provider value={authValue}>{children}</SanctuaryAuthContext.Provider>;
+apps/web/src/auth/ClerkAuthProvider.tsx:32:export function ClerkAuthProvider({ children }: { children: ReactNode }) {
+apps/web/src/auth/ClerkAuthProvider.tsx:34:    return <div className="p-4 text-red-500">Missing Clerk Publishable Key in environment variables.</div>;
+apps/web/src/auth/ClerkAuthProvider.tsx:38:    <ClerkProvider 
+apps/web/src/auth/ClerkAuthProvider.tsx:42:          footer: "hidden", // Hides the "Secured by Clerk" footer in popovers
+apps/web/src/auth/ClerkAuthProvider.tsx:49:      <ClerkAuthAdapter>{children}</ClerkAuthAdapter>
+apps/web/src/auth/ClerkAuthProvider.tsx:50:    </ClerkProvider>
+apps/web/src/auth/SanctuaryAuthProvider.tsx:3:import { ClerkAuthProvider } from "./ClerkAuthProvider";
+apps/web/src/auth/SanctuaryAuthProvider.tsx:4:import { GuestAuthProvider } from "./GuestAuthProvider";
+apps/web/src/auth/SanctuaryAuthProvider.tsx:6:const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
+apps/web/src/auth/SanctuaryAuthProvider.tsx:8:export function SanctuaryAuthProvider({ children }: { children: ReactNode }) {
+apps/web/src/auth/SanctuaryAuthProvider.tsx:9:  if (DISABLE_AUTH) {
+apps/web/src/auth/SanctuaryAuthProvider.tsx:10:    return <GuestAuthProvider>{children}</GuestAuthProvider>;
+apps/web/src/auth/SanctuaryAuthProvider.tsx:13:  return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
+apps/web/src/auth/useSanctuaryAuth.ts:10:export interface SanctuaryAuthContextType {
+apps/web/src/auth/useSanctuaryAuth.ts:18:export const SanctuaryAuthContext = createContext<SanctuaryAuthContextType | null>(null);
+apps/web/src/auth/useSanctuaryAuth.ts:20:export function useSanctuaryAuth(): SanctuaryAuthContextType {
+apps/web/src/auth/useSanctuaryAuth.ts:21:  const context = useContext(SanctuaryAuthContext);
+apps/web/src/auth/useSanctuaryAuth.ts:23:    throw new Error("useSanctuaryAuth must be used within a SanctuaryAuthProvider");
+apps/web/src/utils/stats.ts:113:  const authorMap = new Map<string, number>();
+apps/web/src/utils/stats.ts:118:    authorMap.set(book.author, (authorMap.get(book.author) || 0) + 1);
+apps/web/src/utils/stats.ts:185:  const authorNetwork = Array.from(authorMap.entries())
+apps/web/src/utils/stats.ts:188:    .map(([author, booksCount]) => ({ author, books: booksCount }));
+apps/web/src/utils/stats.ts:225:    authorNetwork,
+apps/web/src/types/index.ts:39:  author: string;
+apps/web/src/types/index.ts:102:  authorNetwork: { author: string; books: number }[];
+apps/web/src/types/index.ts:123:export type SortOption = "title" | "author" | "recent" | "progress" | "added";
+apps/web/src/components/ui/BookCard.tsx:74:          {book.author && <span className="font-sans text-[0.65rem] mt-1.5 text-light-text-muted dark:text-dark-text-muted line-clamp-2 z-10">{book.author}</span>}
+apps/web/src/components/ui/BookCard.tsx:185:const BookMetadata = ({ title, author, variant = "default" }: { title: string; author: string; variant?: BookCardVariant }) => {
+apps/web/src/components/ui/BookCard.tsx:202:        {author}
+apps/web/src/components/ui/BookCard.tsx:280:            <BookMetadata title={book.title} author={book.author} variant="compact" />
+apps/web/src/components/ui/BookCard.tsx:298:              <BookMetadata title={book.title} author={book.author} variant="featured" />
+apps/web/src/components/ui/BookCard.tsx:336:            <BookMetadata title={book.title} author={book.author} variant="default" />
+apps/web/src/components/ui/SettingsProvider.tsx:6:import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+apps/web/src/components/ui/SettingsProvider.tsx:19:  const { isSignedIn } = useSanctuaryAuth();
+apps/web/src/components/ui/SettingsProvider.tsx:21:  const isPersistent = import.meta.env.VITE_DISABLE_AUTH !== "true" && !!(isSignedIn && mode !== "guest");
+apps/web/src/components/ui/MigrationDialog.tsx:5:import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+apps/web/src/components/ui/MigrationDialog.tsx:12:  const { isLoaded, isSignedIn } = useSanctuaryAuth();
+apps/web/src/components/ui/MigrationDialog.tsx:31:          setSession("authenticated", "auto");
+apps/web/src/components/ui/MigrationDialog.tsx:54:      setSession("authenticated", "auto");
+apps/web/src/components/ui/MigrationDialog.tsx:64:    setSession("authenticated", "auto");
+apps/web/src/components/ui/Header.tsx:112:            placeholder="Search books and authors"
+apps/web/src/components/pages/LibraryGrid.tsx:66:    author: "Author",
+apps/web/src/components/pages/LibraryGrid.tsx:86:        b.author.toLowerCase().includes(term) ||
+apps/web/src/components/pages/StatsView.tsx:299:              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Top Authors</h3>
+apps/web/src/components/pages/StatsView.tsx:300:              {stats.authorNetwork.length > 0 ? (
+apps/web/src/components/pages/StatsView.tsx:302:                  {stats.authorNetwork.map((a) => (
+apps/web/src/components/pages/StatsView.tsx:303:                    <div key={a.author} className="flex items-center gap-2.5">
+apps/web/src/components/pages/StatsView.tsx:307:                      <span className="flex-1 text-sm text-light-text dark:text-dark-text">{a.author}</span>
+apps/web/src/components/library/LibraryToolbar.tsx:29:  { value: "author", label: "Author" },
+apps/web/src/App.tsx:5:import { AuthScreen } from "@/auth/AuthScreen";
+apps/web/src/App.tsx:6:import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+apps/web/src/App.tsx:26:const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
+apps/web/src/App.tsx:29:  // Auth & Session
+apps/web/src/App.tsx:31:  const { isLoaded, isSignedIn, user, signOut } = useSanctuaryAuth();
+apps/web/src/App.tsx:34:  const [explicitGuest, setExplicitGuest] = useState(DISABLE_AUTH);
+apps/web/src/App.tsx:37:  const isPersistent = mode === "authenticated";
+apps/web/src/App.tsx:44:        setSession("authenticated", user.id);
+apps/web/src/App.tsx:91:  if (!DISABLE_AUTH && !isLoaded) {
+apps/web/src/App.tsx:107:  if (!DISABLE_AUTH && !isSignedIn && !explicitGuest) {
+apps/web/src/App.tsx:108:    return <AuthScreen onContinueAsGuest={() => setExplicitGuest(true)} />;
+apps/web/src/index.tsx:12:import { SanctuaryAuthProvider } from '@/auth/SanctuaryAuthProvider';
+apps/web/src/index.tsx:78:    <SanctuaryAuthProvider>
+apps/web/src/index.tsx:84:    </SanctuaryAuthProvider>
+apps/web/src/store/useSessionStore.ts:3:export type SessionMode = "initializing" | "guest" | "authenticated";
+apps/web/src/store/useBookStore.ts:39:      case "author":
+apps/web/src/store/useBookStore.ts:40:        return a.author.localeCompare(b.author);
+apps/web/src/store/useStatsStore.ts:33:  authorNetwork: [],
+apps/web/src/api/useSanctuaryApi.ts:4:import { useSanctuaryAuth } from "../auth/useSanctuaryAuth";
+apps/web/src/api/useSanctuaryApi.ts:7:  const { getToken } = useSanctuaryAuth();
+apps/web/src/services/LibraryService.ts:353:        author: Array.isArray(metadata.creator) ? metadata.creator.join(", ") || existing.author : metadata.creator || existing.author,
+apps/web/src/services/LibraryService.ts:404:      const author = Array.isArray(metadata.creator)
+apps/web/src/services/LibraryService.ts:416:        author,
+apps/web/src/services/LibraryService.ts:506:          author: nextBook.author,
+apps/web/src/services/bookService.ts:18:            author: b.author,
+apps/web/src/services/bookService.ts:60:                author: metadata.author,
+apps/web/src/services/bookService.ts:101:            author: updates.author,
+apps/web/index.css:72:  --radius-xl: 24px;                 /* large cards, dialogs, auth container */
+apps/web/index.css:900:/* Hide Clerk Development Badge */
+apps/web/package.json:8:    "dev:guest": "VITE_DISABLE_AUTH=true vite --host 0.0.0.0 --port 5173",
+apps/web/package.json:9:    "dev:strict": "VITE_DISABLE_AUTH=false vite --host 0.0.0.0 --port 5173",
+apps/mobile/src/screens/ReaderScreen.tsx:183:      author: selected.author,
+apps/mobile/src/screens/ReaderScreen.tsx:202:      author: selected.author,
+apps/mobile/src/screens/reader/components/ReaderHeader.tsx:31:        <Text style={styles.meta}>{selected?.author || "Open a book to start."}</Text>
+apps/mobile/src/screens/LibraryScreen.tsx:57:            <Text style={[styles.meta, { color: c.muted }]} numberOfLines={1}>{item.author}</Text>
+apps/mobile/src/services/progressSync.ts:8:  author?: string;
+apps/mobile/src/services/progressSync.ts:30:          author: update.author,
+apps/desktop/build-appimage.sh:7:#   - Ensures VITE_DISABLE_AUTH=true so the frontend bundles in offline/guest mode
+apps/desktop/build-appimage.sh:12:echo "==> Building frontend with VITE_DISABLE_AUTH=true"
+apps/desktop/build-appimage.sh:13:VITE_DISABLE_AUTH=true npm --prefix ../web run build
+apps/desktop/src-tauri/tauri.conf.json:8:    "beforeBuildCommand": "VITE_DISABLE_AUTH=true npm --prefix ../web run build",
+apps/desktop/src-tauri/tauri.conf.json:13:      "csp": "default-src 'self' tauri: asset: https://asset.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: tauri: asset: https://asset.localhost https://*.clerk.accounts.dev https://*.clerk.com; style-src 'self' 'unsafe-inline' blob: tauri: asset: https://asset.localhost; style-src-elem 'self' 'unsafe-inline' blob: tauri: asset: https://asset.localhost; img-src 'self' blob: data: tauri: asset: https://asset.localhost https:; connect-src 'self' blob: tauri: ipc: https://ipc.localhost asset: https://asset.localhost https://*.clerk.com wss://*.clerk.com https://*.clerk.accounts.dev wss://*.clerk.accounts.dev https://clerk-telemetry.com; worker-src 'self' blob:; font-src 'self' blob: tauri: asset: https://asset.localhost data:;"
+packages/core/src/index.ts:1:export type SessionMode = "guest" | "clerk";
+packages/core/src/index.ts:59:  author: string;
+packages/core/src/index.ts:123:    return { ...jsonHeaders, Authorization: `Bearer ${token}` };
+packages/core/src/index.ts:172:      author?: string;
+
+
+--- AUTHENTICATION & BACKEND STATUS ---
+
+Does Sanctuary currently have Clerk, local-only mode, sync/backend, accounts, cloud library?
+
+Yes, Sanctuary currently has a dual-mode setup:
+
+1. Local-Only / Guest Mode:
+   - Enabled when `VITE_DISABLE_AUTH=true` or when the user clicks "Continue as Guest" on `AuthScreen`.
+   - For desktop builds (`build-appimage.sh` and `tauri.conf.json`), `VITE_DISABLE_AUTH=true` is hardcoded at build time.
+   - In guest mode, `GuestAuthProvider` supplies a mock auth context (`isSignedIn: false`, `user: null`), completely bypassing Clerk.
+   - All books, reading sessions, progress, bookmarks, and settings work 100% locally and offline in IndexedDB and localStorage.
+
+2. Clerk Authentication & Cloud Library:
+   - When `VITE_DISABLE_AUTH !== "true"`, Clerk React (`@clerk/clerk-react`) handles user authentication (sign-up, sign-in, user sessions).
+   - An authenticated session communicates with Cloudflare Pages Functions backend (`functions/api/`):
+     * D1 (SQLite) stores user settings, books metadata, reading sessions, and goals.
+     * R2 stores book binary contents.
+   - `SyncQueue.ts` manages offline mutations and replays them when the connection is restored.
+   - `MigrationDialog.tsx` prompts users when switching from guest to authenticated mode to migrate local books to their cloud account.
+
+Should authentication remain in the rewrite?
+- Yes, as an optional cloud sync layer, BUT the core reader architecture must be local-first and strictly decoupled from authentication.
+- The reader engine, book content repository, annotation system, and bookmarking should operate directly against a local-first interface.
+- Authentication and remote sync should sit in a separate synchronization adapter layer so the reader remains fast, reliable, and completely functional offline.
+
+
+--------------------------------------------------------------------------------
+### 8. Current reader UX
+
+Audit of current EPUB reader functionality:
+
+[✓] EPUB opens
+[✓] Chapters / TOC (hierarchical tree in drawer with search filter)
+[✓] Pagination (paginated two-column or single-column mode)
+[✓] Continuous scrolling (flow mode with max-width slider)
+[✓] Font size (slider 12px to 32px)
+[✓] Margins (slider 0px to 100px)
+[✓] Dark mode & color presets (Paper, Sepia, Night, Dark, Charcoal, Nord, Solarized, Matcha + custom color pickers)
+[✓] Font selection (Satoshi, Crimson Pro, JetBrains Mono, Literata, etc.)
+[✓] Search (full-text search across spine sections with excerpts and jump-to-CFI)
+[✓] Bookmarks (add/remove bookmarks with CFI location, label, and progress)
+[✓] Highlights (text selection popup with color options)
+[✓] Annotations (notes attached to highlights)
+[✓] Progress (percentage, page counters, top/bottom progress bar)
+[✓] Resume last position (restores saved CFI on open with fallback to chapter start)
+[✓] Keyboard shortcuts (configurable keybindings for page turns, bookmarking, fullscreen, toggle UI, close)
+[✓] Fullscreen (standard browser / window fullscreen toggle)
+[✓] Text-to-speech / Read aloud (Web Speech API integration with voice/rate/pitch controls)
+[✗] Layout switching (previously caused crashes and loops; mitigated with debounce and rendition rebuilding, but still constrained by epub.js)
+[✗] Non-EPUB formats (unsupported; completely missing)
+
+What is currently GOOD:
+1. UI Polish & Aesthetics: The visual styling, typography controls, slide-out drawer, bottom bar, and color presets are very well designed and feel like a modern, premium reader.
+2. Offline-first foundation: Guest mode works completely offline with IndexedDB storing both metadata and book files.
+3. Resilience against corrupt positions: `displayWithFallbacks` prevents stale CFIs from bricking books on open.
+4. Fast mode switching optimization: `setFlow()` reuses the parsed EPUB buffer and spine instead of reloading the entire ZIP archive from scratch.
+
+What is currently BAD:
+1. epub.js iframe coupling: epub.js creates an isolated iframe per rendition. This leads to white flashes between chapter loads (requiring MutationObserver style injections to mask), broken keyboard event bubbling (requiring manual event forwarding), and sandbox restrictions.
+2. Location generation lag: `locations.generate(1024)` parses the entire book on the main thread, causing significant CPU and memory spikes on large EPUBs.
+3. Fragile continuous scroll: epub.js scrolled flow is notoriously clunky, frequently desyncing or miscalculating scroll positions.
+4. Annotation fragility: Annotations rendered via epub.js highlight API frequently detach or fail to repaint across page reflows or window resizes.
+5. In-memory bloat: epub.js retains extensive internal object graphs, leading to memory accumulation during long reading sessions.
+
+What is currently MISSING:
+1. Multi-format support: No support whatsoever for FB2, MOBI, AZW, AZW3, TXT, HTML, or Markdown.
+2. Native DOM pagination: Modern readers (like Foliate-js) paginate directly in the DOM or via clean shadow DOM / virtualized columns without the iframe baggage.
+3. Fast spine/character-weight progress calculation without blocking the main thread with location generation.
+4. Cloud sync for annotations (highlights and notes are currently trapped in local IndexedDB).
+5. Native desktop performance optimizations (no native file streaming or Rust file importing).
+
+
+--------------------------------------------------------------------------------
+### 9. Multi-format goal
+
+Target formats:
+EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML/XHTML, Markdown
+
+Confirmation:
+Yes, this remains the definitive target format list.
+
+A vs B:
+Targeting Option A: Every format should get essentially the same reader features.
+- Rationale: Foliate-js (and modern format decoders) convert all incoming formats (MOBI, AZW, AZW3, FB2, TXT, Markdown, HTML) into a unified normalized document structure (HTML/DOM spine sections).
+- Because all formats pass through the same unified document model, every format can natively support:
+  * Paginated and continuous scrolling modes
+  * Full typography and theme adjustments (font size, font family, margins, line height, colors)
+  * Progress percentage and position restoration
+  * Table of contents / navigation (generated for TXT/Markdown via headers)
+  * In-book search
+  * Bookmarking and annotations
+
+
+--------------------------------------------------------------------------------
+### 10. What exactly do you mean by "rewrite"
+
+Answer: Option B — Rebuild (preserving product behavior and UI, while rebuilding the internal architecture and reader engine).
+
+Breakdown of what this means:
+- PRESERVE:
+  * Sanctuary's visual design system, UI layout, and styling (Library grid, Book cards, Reader drawers/menus, Stats dashboard, Settings controls, color presets).
+  * Product behavior: keyboard shortcuts, offline guest mode, reading progress tracking, bookmarks, annotations, and optional Clerk/Cloudflare sync.
+- REBUILD & REPLACE:
+  * Reader Engine: Drop `epubjs` completely. Adopt `foliate-js` decoders and renderer.
+  * Format Pipeline: Implement a unified format loader that handles EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown through an abstract format-agnostic interface.
+  * Progress Tracking: Replace `locations.generate(1024)` with lightweight spine/character-weight progress estimation.
+  * State & Persistence: Cleanly separate local storage, reader engine state, and cloud sync into modular adapters.
+
+
+--------------------------------------------------------------------------------
+### 11. Git state
+
+$ git status --short
+
+ D .playwright-cli/page-2026-09-04T10-49-10-308Z.yml
+ D .playwright-cli/page-2026-09-04T10-49-51-694Z.yml
+ D .playwright-cli/page-2026-09-04T10-59-49-406Z.yml
+ D .playwright-cli/page-2026-09-04T11-13-11-627Z.yml
+ D .playwright-cli/page-2026-09-04T11-13-23-640Z.yml
+ D .playwright-cli/page-2026-09-04T11-14-30-848Z.yml
+ D .playwright-cli/page-2026-09-04T11-21-16-212Z.yml
+ D .playwright-cli/page-2026-09-04T11-21-49-866Z.yml
+ D .playwright-cli/page-2026-09-04T11-22-33-334Z.yml
+ D .playwright-cli/page-2026-09-04T11-26-10-968Z.yml
+ D .playwright-cli/page-2026-09-04T11-50-13-698Z.yml
+ D .playwright-cli/page-2026-09-04T11-55-08-725Z.yml
+ D .playwright-cli/page-2026-09-04T11-58-10-126Z.yml
+ M README.md
+ M apps/desktop/build-appimage.sh
+ M apps/desktop/src-tauri/src/main.rs
+ M apps/desktop/src-tauri/tauri.conf.json
+ M apps/web/index.css
+ M apps/web/src/App.tsx
+ M apps/web/src/components/pages/LibraryGrid.tsx
+ M apps/web/src/components/pages/ReaderView.tsx
+ M apps/web/src/components/reader/ReaderErrorOverlay.tsx
+ M apps/web/src/components/ui/AddBookButton.tsx
+ M apps/web/src/components/ui/BookCard.tsx
+ M apps/web/src/components/ui/Header.tsx
+ M apps/web/src/components/ui/Input.tsx
+ M apps/web/src/components/ui/MigrationDialog.tsx
+ M apps/web/src/hooks/useReaderEngine.ts
+ M apps/web/src/index.tsx
+ M apps/web/src/reader/engine/ReaderSession.ts
+ M apps/web/src/services/LibraryService.ts
+ M apps/web/src/services/SyncQueue.ts
+ M apps/web/src/types/index.ts
+ M apps/web/src/types/reader.ts
+ M apps/web/src/utils/db.ts
+ M apps/web/tsconfig.json
+ M package.json
+?? ansTYhg.txt
+?? apps/web/src/components/ui/UploadErrorToast.tsx
+?? apps/web/src/hooks/useBookUpload.ts
+?? apps/web/src/platform/
+?? apps/web/src/services/bookContentRepository.test.ts
+?? apps/web/src/services/bookContentRepository.ts
+?? apps/web/src/services/readerDiagnostics.ts
+?? docs/
+?? lil.txt
+
+
+$ git log --oneline -10
+
+d2c1bd6 fix(reader): prevent crash when switching between paginated and continuous scroll layouts
+6c44268 fix(reader): fix crash loop when toggling layout mode
+444a38c fix(reader): fix missing settings behaviors and progress bar crashes
+282738d fix(reader): remove floating arrows, keyup page turns, chapter flash fix
+00bef8c fix(reader): brightness overlay covers entire screen, smooth page transitions
+114dd13 fix: upgrade eslint-plugin-jsx-a11y, fix build-appimage icon path
+3d9ab6f feat(web): darker gold, Satoshi everywhere, relaxed spacing
+4262120 fix(web): persist keybinds across reload/sync (was silently dropped)
+04052ff feat(web): give Library and Stats a real visual hierarchy
+7e55d1c fix(web): rebalance blur, split settings, fix broken reader settings
+
+
+Analysis of uncommitted changes:
+Are there uncommitted changes that need to be preserved?
+YES. There are crucial uncommitted changes that represent recent stability fixes:
+1. Reader Session & Error Fallback:
+   - `apps/web/src/reader/engine/ReaderSession.ts` and `useReaderEngine.ts`: Layout mode switching debounce, in-memory array buffer caching, and `displayWithFallbacks` to prevent stale CFIs from bricking books.
+2. Book Content Repository & Diagnostics:
+   - `apps/web/src/services/bookContentRepository.ts` (and tests): Decoupled IndexedDB blob access with robust fallback handling.
+   - `apps/web/src/services/readerDiagnostics.ts`: In-memory diagnostic tracker for reader initialization failures.
+3. Platform Abstraction & Desktop Integration:
+   - `apps/web/src/platform/`: Runtime platform detection (desktop Tauri vs browser web).
+   - `apps/desktop/src-tauri/src/main.rs`: Native desktop menu dispatching `sanctuary:add-book` events into the webview.
+   - `apps/desktop/build-appimage.sh`: Fixed icon paths and packaging settings.
+   - `apps/web/src/hooks/useBookUpload.ts` and `UploadErrorToast.tsx`: Clean file upload and validation handling.
+
+Action for rewrite:
+These uncommitted changes should be committed to a branch or preserved in git before beginning the Foliate-js rebuild so that none of the desktop integration or platform abstractions are lost.

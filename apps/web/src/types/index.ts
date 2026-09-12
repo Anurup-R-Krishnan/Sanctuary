@@ -16,6 +16,8 @@ export enum View {
   STATS = "stats",
 }
 
+export type SyncStatus = "local-only" | "pending" | "syncing" | "synced" | "failed" | "needs-account" | "deleted";
+
 export interface Highlight {
   cfi: string;
   color: "yellow" | "green" | "blue" | "pink" | "purple";
@@ -52,6 +54,7 @@ export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "last
   bookmarks?: Bookmark[];
   completedAt?: string;
   contentHash?: string;
+  contentStatus?: "available" | "missing" | "invalid";
   coverBlob?: Blob | null;
   epubBlob: Blob | null;
   genre?: string;
@@ -65,7 +68,7 @@ export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "last
   readingList?: "to-read" | "reading" | "finished";
   series?: string;
   seriesIndex?: number;
-  syncStatus?: "pending" | "synced" | "deleted";
+  syncStatus?: SyncStatus;
   tags?: string[];
   totalPages?: number;
 }

@@ -12,6 +12,10 @@ export interface ReaderError {
     cause?: unknown;
     code:
         | "BOOK_DATA_MISSING"
+        | "BOOK_CONTENT_MISSING"
+        | "BOOK_CONTENT_EMPTY"
+        | "BOOK_CONTENT_INVALID"
+        | "BOOK_CONTENT_READ_FAILED"
         | "INVALID_EPUB"
         | "EPUB_INTERNAL_CRASH"
         | "RENDER_FAILED"

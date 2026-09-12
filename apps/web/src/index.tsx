@@ -11,6 +11,8 @@ import '@fontsource/jetbrains-mono/500.css';
 
 import { SanctuaryAuthProvider } from '@/auth/SanctuaryAuthProvider';
 import { SettingsProvider } from '@/components/ui/SettingsProvider';
+import { appRuntime } from '@/platform/runtime';
+import { getReaderDiagnostics } from '@/services/readerDiagnostics';
 
 import App from './App';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
@@ -65,6 +67,9 @@ const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
+
+Object.assign(window, { getReaderDiagnostics });
+document.documentElement.dataset.runtime = appRuntime.platform;
 
 const root = ReactDOM.createRoot(rootElement);
 

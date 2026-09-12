@@ -24,6 +24,7 @@ interface ReaderViewProps {
     onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
     onClose: () => void;
     onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
+    onReplaceContent: (id: string, file: File) => Promise<void>;
     onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
 
@@ -34,6 +35,7 @@ function ReaderView({
     onAddBookmark,
     onRemoveBookmark,
     getBookContent,
+    onReplaceContent,
 }: ReaderViewProps) {
     const book = useBookStore((state) => state.getBookById(bookId));
 
@@ -59,6 +61,8 @@ function ReaderView({
     const [hydratedBook, setHydratedBook] = useState<Book | undefined>(book);
     const [isFetchingContent, setIsFetchingContent] = useState(false);
     const [contentError, setContentError] = useState<string | null>(null);
+    const [contentRetryKey, setContentRetryKey] = useState(0);
+    const [readerAttempt, setReaderAttempt] = useState(0);
 
     useEffect(() => {
         if (book) {
@@ -106,7 +110,7 @@ function ReaderView({
                 .catch(err => {
                     console.error("Failed to load book content:", err);
                     if (isMounted) {
-                        setContentError("Book content is unavailable on this device.");
+                        setContentError(err instanceof Error ? err.message : "Book content is unavailable on this device.");
                     }
                 })
                 .finally(() => {
@@ -120,7 +124,7 @@ function ReaderView({
         return () => {
             isMounted = false;
         };
-    }, [bookId, getBookContent]); // Note: book is NOT a dependency here! Only bookId!
+    }, [bookId, book, contentRetryKey, getBookContent]);
 
     // Settings
     const { brightness, grayscale, keybinds } = useSettingsShallow((state) => ({
@@ -385,7 +389,13 @@ function ReaderView({
                                 Back to Library
                             </button>
                             <button
-                                onClick={() => window.location.reload()}
+                                onClick={() => {
+                                    setContentError(null);
+                                    setIsFetchingContent(false);
+                                    isFetchingRef.current = false;
+                                    setHydratedBook((current) => current ? { ...current, epubBlob: null } : current);
+                                    setContentRetryKey((key) => key + 1);
+                                }}
                                 className="px-4 py-2.5 rounded-xl text-sm font-medium bg-light-accent dark:bg-dark-accent text-white hover:opacity-90 transition-opacity shadow-sm"
                             >
                                 Try Again
@@ -401,6 +411,7 @@ function ReaderView({
                 }`}
             >
                 <ReaderEngineHost 
+                    key={readerAttempt}
                     ref={engineRef}
                     book={hydratedBook} 
                     onUpdateProgress={onUpdateProgress} 
@@ -498,8 +509,13 @@ function ReaderView({
                 <ReaderErrorOverlay 
                     error={error} 
                     onRetry={() => {
-                        window.location.reload(); 
+                        setReaderAttempt((attempt) => attempt + 1);
                     }} 
+                    onRetryFromStart={() => {
+                        setHydratedBook((current) => current ? { ...current, lastLocation: "" } : current);
+                        setReaderAttempt((attempt) => attempt + 1);
+                    }}
+                    onReplaceContent={(file) => onReplaceContent(bookId, file)}
                     onClose={onClose} 
                 />
             )}

@@ -42,6 +42,18 @@ If you prefer to run on the host directly (required for Desktop and Mobile devel
    bun run dev
    ```
 
+### 📦 Linux desktop release
+
+Sanctuary desktop uses the web app as its frontend inside Tauri. Build the
+offline-first Linux AppImage with:
+
+```bash
+cd apps/desktop
+./build-appimage.sh
+```
+
+See [the desktop release checklist](docs/DESKTOP_RELEASE_CHECKLIST.md) before distributing a build.
+
 ## 🛠️ Code Quality Stack
 
 This project uses a comprehensive set of tools to ensure high code quality, security, and performance.
