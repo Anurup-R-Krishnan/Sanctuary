@@ -18,7 +18,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Storage Dashboard & Offline Caching](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/storage-manager-and-offline-caching.md) | Quota meter, selective offline caching & LRU cache eviction | Device Storage | None | VERIFIED |
 | [Comic & Manga Archive (CBZ/CBR) Reader](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/comic-manga-cbz-cbr-support.md) | Sequential image archives, dual-spread & manga direction | Format Architecture | PDF Fixed-Layout | VERIFIED |
 | [Annotation Knowledge Export & Markdown Sync](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/annotation-export-knowledge-sync.md) | Obsidian callouts, Markdown frontmatter & CSV export | Knowledge Management | Batch Library Ops | VERIFIED |
-| [Interactive Dictionary & Vocabulary Builder](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/in-reader-dictionary-vocabulary-builder.md) | In-reader definition popover, audio phonetics & Leitner SRS | Reader Experience | In-Book TTS | READY |
+| [Interactive Dictionary & Vocabulary Builder](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/in-reader-dictionary-vocabulary-builder.md) | In-reader definition popover, audio phonetics & Leitner SRS | Reader Experience | In-Book TTS | VERIFIED |
 | [Cross-Book Library Full-Text Search](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/cross-book-library-full-text-search.md) | Client-side inverted index, idle worker & global search | Search & Discovery | Batch Library Ops | READY |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
@@ -36,8 +36,8 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Storage Management & Offline Caching**: Provides device storage visibility and selective offline cache retention.
    - **Comic & Manga Archive (CBZ/CBR) Reader**: Native image sequence unpacking, dual-page layout, and right-to-left manga orientation.
    - **Annotation Knowledge Export & Markdown Sync**: Obsidian-compatible Markdown export, blockquote callouts, and multi-book annotation bundles.
-2. **Upcoming Capabilities**:
    - **Interactive Dictionary & Vocabulary Builder**: In-reader definition lookups and Leitner spaced-repetition vocabulary learning queue.
+2. **Upcoming Capabilities**:
    - **Cross-Book Library Full-Text Search**: Inverted index across personal book collection with snippet previews and one-click navigation.
 
 ## Evaluated Architectural Alternatives
