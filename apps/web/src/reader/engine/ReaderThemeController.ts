@@ -1,8 +1,10 @@
 export interface ReaderThemeConfig {
+    bionicReading?: boolean;
     continuous: boolean;
     fontPairing: string;
     fontSize: number;
     hyphenation: boolean;
+    letterSpacing?: number;
     lineHeight: number;
     maxTextWidth: number;
     pageMargin: number;
@@ -13,14 +15,16 @@ export interface ReaderThemeConfig {
 }
 
 const FONT_FAMILIES: Record<string, string> = {
-    "merriweather-georgia": "'Merriweather', Georgia, serif",
     "crimson-pro": "'Crimson Pro', Georgia, serif",
-    "libre-baskerville": "'Libre Baskerville', Georgia, serif",
-    "lora": "'Lora', Georgia, serif",
-    "source-serif": "'Source Serif Pro', Georgia, serif",
     "inter": "'Inter', system-ui, sans-serif",
     "inter-sf": "'Inter', 'Satoshi', system-ui, sans-serif",
+    "jetbrains-mono": "'JetBrains Mono', 'Fira Code', monospace",
+    "libre-baskerville": "'Libre Baskerville', Georgia, serif",
+    "lora": "'Lora', Georgia, serif",
+    "merriweather-georgia": "'Merriweather', Georgia, serif",
+    "opendyslexic": "'OpenDyslexic', 'Comic Sans MS', sans-serif",
     "satoshi": "'Satoshi', system-ui, sans-serif",
+    "source-serif": "'Source Serif Pro', Georgia, serif",
 };
 
 export class ReaderThemeController {
@@ -28,6 +32,7 @@ export class ReaderThemeController {
         const {
             fontSize,
             lineHeight,
+            letterSpacing,
             fontPairing,
             textAlignment,
             hyphenation,
@@ -51,6 +56,7 @@ export class ReaderThemeController {
                 "font-family": fontFamily,
                 "font-size": `${fontSize}px`,
                 "line-height": `${lineHeight}`,
+                "letter-spacing": letterSpacing ? `${letterSpacing}px` : "normal",
                 "color": `${readerForeground} !important`,
                 "background-color": `${readerBackground} !important`,
                 "padding-top": `${pageMargin}px`,
@@ -102,6 +108,10 @@ export class ReaderThemeController {
             },
             "::selection": {
                 "background": "rgba(128, 128, 128, 0.35)",
+            },
+            ".bionic-fixation": {
+                "font-weight": "700 !important",
+                "display": "inline",
             },
         };
     }

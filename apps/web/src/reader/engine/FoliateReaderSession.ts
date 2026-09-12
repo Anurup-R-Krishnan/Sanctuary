@@ -40,6 +40,7 @@ export class FoliateReaderSession implements IReaderSession {
     this.callbacks = callbacks;
     this.readerBackground = options.readerBackground ?? "#ffffff";
     this.flowOptions = {
+      bionicReading: options.bionicReading,
       continuous: options.continuous,
       direction: options.direction,
       readerBackground: options.readerBackground,
@@ -145,8 +146,8 @@ export class FoliateReaderSession implements IReaderSession {
       prev: () => this.prev(),
       search: (query: string) => this.renditionInstance?.search(query) ?? Promise.resolve([]),
       themes: {
-        default: (styles: Record<string, Record<string, string>>) => {
-          this.renditionInstance?.setStyles(styles);
+        default: (styles: Record<string, Record<string, string>>, bionicReading?: boolean) => {
+          this.renditionInstance?.setStyles(styles, bionicReading);
         },
       },
     };

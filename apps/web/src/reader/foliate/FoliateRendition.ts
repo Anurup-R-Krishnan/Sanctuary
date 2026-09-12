@@ -14,6 +14,7 @@ import type {
 } from "../contracts/rendition";
 import type { FoliateEpubAdapter } from "./FoliateEpubAdapter";
 
+import { applyBionicReading } from "../../utils/bionicReading";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
 
@@ -33,6 +34,7 @@ export class FoliateRendition implements DocumentRendition {
   private totalSections = 1;
   private activeSearchCfi: string | null = null;
   private ttsController: FoliateTTSController | null = null;
+  private bionicCleanups = new WeakMap<Document, () => void>();
 
   public readonly progressEstimator: SpineWeightProgressEstimator;
   public annotations?: DocumentAnnotationsApi;
@@ -232,6 +234,20 @@ export class FoliateRendition implements DocumentRendition {
         }
       }
       styleEl.textContent = cssText;
+
+      // Handle Bionic Reading
+      if (this.flowOptions.bionicReading) {
+        if (!this.bionicCleanups.has(doc)) {
+          const cleanup = applyBionicReading(doc);
+          this.bionicCleanups.set(doc, cleanup);
+        }
+      } else {
+        const cleanup = this.bionicCleanups.get(doc);
+        if (cleanup) {
+          cleanup();
+          this.bionicCleanups.delete(doc);
+        }
+      }
     } catch {
       // Cross-origin or transient access error
     }
@@ -425,8 +441,11 @@ export class FoliateRendition implements DocumentRendition {
     return [];
   }
 
-  public setStyles(styles: Record<string, Record<string, string>>): void {
+  public setStyles(styles: Record<string, Record<string, string>>, bionicReading?: boolean): void {
     this.flowOptions.themeStyles = styles;
+    if (bionicReading !== undefined) {
+      this.flowOptions.bionicReading = bionicReading;
+    }
     const renderer = this.view?.renderer;
     if (renderer && typeof renderer.getContents === "function") {
       const contents = renderer.getContents();

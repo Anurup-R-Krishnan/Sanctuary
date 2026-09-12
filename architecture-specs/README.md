@@ -26,6 +26,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Dynamic Chapter Reading Time & Adaptive Speed Estimator](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/dynamic-chapter-eta-and-reading-speed.md) | Real-time chapter ETA, reader velocity WPM & dual footer indicators | Reader Experience | Storage Dashboard | VERIFIED |
 | [Quote Card Generator & Typographic Excerpt Staging](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/quote-card-generator-and-typographic-export.md) | High-DPI canvas quote cards, multi-ratio presets & social export | Reader Experience | Annotation Knowledge Sync | VERIFIED |
 | [Fallback Generative SVG Book Covers](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/generative-svg-book-covers.md) | Procedural book cloth SVG covers, geometric motifs & deterministic palettes | Visual Design | PDF Fixed-Layout | VERIFIED |
+| [High-Legibility Typography & Bionic Reading Fixation](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/bionic-reading-and-high-legibility.md) | Bionic fixation saccade acceleration, OpenDyslexic typeface & letter spacing | Accessibility | Quality Gate | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 

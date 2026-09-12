@@ -216,6 +216,15 @@ export default function ReaderSettings() {
             <Slider label="Line Height" value={state.lineHeight} min={1.1} max={2.5} step={0.05} onChange={state.setLineHeight} format={(v) => v.toFixed(2)} />
             <Slider label="Paragraph Gap" value={state.paragraphSpacing} min={0} max={40} step={2} onChange={state.setParagraphSpacing} format={(v) => v + "px"} />
             <Slider label="Margin" value={state.pageMargin} min={0} max={100} step={5} onChange={state.setPageMargin} format={(v) => v + "px"} />
+            <Slider
+              format={(v) => (v === 0 ? "Normal" : v > 0 ? `+${v}px` : `${v}px`)}
+              label="Letter Spacing"
+              max={4}
+              min={-0.5}
+              onChange={state.setLetterSpacing}
+              step={0.25}
+              value={state.letterSpacing}
+            />
 
             <ButtonGroup
               label="Font"
@@ -236,6 +245,7 @@ export default function ReaderSettings() {
             />
 
             <MiniToggle checked={state.hyphenation} onChange={state.setHyphenation} label="Hyphenation" />
+            <MiniToggle checked={state.bionicReading} onChange={state.setBionicReading} label="Bionic Reading (Fixation)" />
           </div>
         </div>
 

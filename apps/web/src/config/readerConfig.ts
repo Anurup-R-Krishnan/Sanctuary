@@ -38,6 +38,8 @@ export const FONT_PAIRINGS: FontPairing[] = [
   { id: "lora",                 label: "Lora" },
   { id: "source-serif",         label: "Source Serif" },
   { id: "inter",                label: "Inter (Sans)" },
+  { id: "opendyslexic",         label: "OpenDyslexic" },
+  { id: "jetbrains-mono",        label: "JetBrains Mono" },
 ];
 
 // ── Genre palette ─────────────────────────────────────────────────────────────

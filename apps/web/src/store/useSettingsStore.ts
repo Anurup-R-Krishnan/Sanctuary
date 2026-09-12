@@ -18,6 +18,7 @@ type SettingsValues = {
   annualBookGoal: number;
   annualGoalYear: number;
   barPosition: "top" | "bottom";
+  bionicReading: boolean;
   bookVoiceOverrides: Record<string, string>;
   brightness: number;
   continuous: boolean;
@@ -28,6 +29,7 @@ type SettingsValues = {
   grayscale: boolean;
   hyphenation: boolean;
   keybinds: Keybinds;
+  letterSpacing: number;
   lineHeight: number;
   maxTextWidth: number;
   pageMargin: number;
@@ -57,6 +59,7 @@ type SettingsActions = {
   setAnnualBookGoal: (v: number) => void;
   setAnnualGoalYear: (v: number) => void;
   setBarPosition: (v: "top" | "bottom") => void;
+  setBionicReading: (v: boolean) => void;
   setBookVoiceOverride: (bookId: string, voiceURI: string) => void;
   setBrightness: (v: number) => void;
   setContinuous: (v: boolean) => void;
@@ -67,6 +70,7 @@ type SettingsActions = {
   setGrayscale: (v: boolean) => void;
   setHyphenation: (v: boolean) => void;
   setKeybinds: (v: Keybinds) => void;
+  setLetterSpacing: (v: number) => void;
   setLineHeight: (v: number) => void;
   setMaxTextWidth: (v: number) => void;
   setPageMargin: (v: number) => void;
@@ -95,6 +99,7 @@ type Settings = SettingsValues & SettingsActions;
 
 const DEFAULTS: SettingsValues = {
   fontSize: 19,
+  letterSpacing: 0,
   lineHeight: 1.65,
   textAlignment: "justify",
   fontPairing: "merriweather-georgia",
@@ -108,6 +113,7 @@ const DEFAULTS: SettingsValues = {
   writingMode: "horizontal-tb",
   brightness: 100,
   grayscale: false,
+  bionicReading: false,
   showScrollbar: false,
   showPageCounter: true,
   progressBarType: "bar",
@@ -167,7 +173,9 @@ const normalizeKeybinds = (raw: unknown): Keybinds | undefined => {
 export const pickValues = (state: Settings): SettingsValues => ({
   annualBookGoal: state.annualBookGoal,
   annualGoalYear: state.annualGoalYear,
+  bionicReading: state.bionicReading,
   fontSize: state.fontSize,
+  letterSpacing: state.letterSpacing,
   lineHeight: state.lineHeight,
   textAlignment: state.textAlignment,
   fontPairing: state.fontPairing,
@@ -205,6 +213,7 @@ export const pickValues = (state: Settings): SettingsValues => ({
 export const toRemotePayload = (state: SettingsValues) => ({
   // Typography
   fontSize: state.fontSize,
+  letterSpacing: state.letterSpacing,
   lineHeight: state.lineHeight,
   fontPairing: state.fontPairing,
   maxTextWidth: Math.max(50, Math.min(200, Math.round(state.maxTextWidth))),
@@ -213,6 +222,7 @@ export const toRemotePayload = (state: SettingsValues) => ({
   pageMargin: state.pageMargin,
   paragraphSpacing: state.paragraphSpacing,
   textAlignment: state.textAlignment,
+  bionicReading: state.bionicReading,
   // Appearance
   brightness: state.brightness,
   grayscale: state.grayscale,
@@ -252,6 +262,8 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   const out: Partial<SettingsValues> = {};
 
   if (typeof raw.fontSize === "number") out.fontSize = raw.fontSize;
+  if (typeof raw.letterSpacing === "number") out.letterSpacing = raw.letterSpacing;
+  if (typeof raw.bionicReading === "boolean") out.bionicReading = raw.bionicReading;
   if (typeof raw.lineHeight === "number") out.lineHeight = raw.lineHeight;
   if (raw.textAlignment === "left" || raw.textAlignment === "justify" || raw.textAlignment === "center") out.textAlignment = raw.textAlignment;
   if (typeof raw.fontPairing === "string") out.fontPairing = raw.fontPairing;
@@ -308,6 +320,8 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
 
   // ── Typography ────────────────────────────────────────────────────────────
   if (typeof remote.fontSize === "number") out.fontSize = remote.fontSize;
+  if (typeof remote.letterSpacing === "number") out.letterSpacing = remote.letterSpacing;
+  if (typeof remote.bionicReading === "boolean") out.bionicReading = remote.bionicReading;
   if (typeof remote.lineHeight === "number") out.lineHeight = remote.lineHeight;
   if (typeof remote.fontPairing === "string") out.fontPairing = remote.fontPairing;
   // maxTextWidth: prefer the new field; fall back to legacy textWidth alias
@@ -372,7 +386,9 @@ const createSetAction = <K extends keyof SettingsValues>(key: K, set: (partial: 
 
 export const useSettingsStore = create<Settings>((set) => ({
   ...DEFAULTS,
+  setBionicReading: createSetAction("bionicReading", set),
   setFontSize: createSetAction("fontSize", set),
+  setLetterSpacing: createSetAction("letterSpacing", set),
   setLineHeight: createSetAction("lineHeight", set),
   setTextAlignment: createSetAction("textAlignment", set),
   setFontPairing: createSetAction("fontPairing", set),

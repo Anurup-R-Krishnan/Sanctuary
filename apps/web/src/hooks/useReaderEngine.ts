@@ -39,17 +39,19 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
 
     // Settings Selector
     const themeConfig = useSettingsShallow<ReaderThemeConfig>((state) => ({
-        fontSize: state.fontSize,
-        lineHeight: state.lineHeight,
-        fontPairing: state.fontPairing,
-        textAlignment: state.textAlignment,
-        hyphenation: state.hyphenation,
-        readerForeground: state.readerForeground,
-        readerBackground: state.readerBackground,
+        bionicReading: state.bionicReading,
         continuous: state.continuous,
+        fontPairing: state.fontPairing,
+        fontSize: state.fontSize,
+        hyphenation: state.hyphenation,
+        letterSpacing: state.letterSpacing,
+        lineHeight: state.lineHeight,
+        maxTextWidth: state.maxTextWidth,
         pageMargin: state.pageMargin,
         paragraphSpacing: state.paragraphSpacing,
-        maxTextWidth: state.maxTextWidth,
+        readerBackground: state.readerBackground,
+        readerForeground: state.readerForeground,
+        textAlignment: state.textAlignment,
     }));
     const { continuous, spread, direction, writingMode } = useSettingsShallow((state) => ({
         continuous: state.continuous,
@@ -68,7 +70,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         if (!sessionRef.current?.rendition) return;
         const styles = themeControllerRef.current.buildStyles(themeConfig);
         try {
-            sessionRef.current.rendition.themes.default(styles);
+            sessionRef.current.rendition.themes.default(styles, themeConfig.bionicReading);
         } catch { /* benign */ }
         // Also update iframe/container background to prevent flash on next page turn
         sessionRef.current.updateReaderBackground(themeConfig.readerBackground);
@@ -91,6 +93,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         builtFlowRef.current = { continuous, direction, spread, writingMode };
 
         sessionRef.current = new ReaderSession({
+            bionicReading: themeConfig.bionicReading,
             blob: activeBlob,
             bookId: activeBookId,
             container,
@@ -156,6 +159,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             }
             const styles = themeControllerRef.current.buildStyles(themeConfig);
             session.setFlow({
+                bionicReading: themeConfig.bionicReading,
                 continuous,
                 direction,
                 readerBackground: themeConfig.readerBackground,

@@ -10,6 +10,7 @@ import type { TTSControllerState } from "../foliate/FoliateTTSController";
 import type { ReaderFlowOptions } from "./rendition";
 
 export interface ReaderEngineOptions {
+  bionicReading?: boolean;
   blob: Blob;
   bookId: string;
   container: HTMLDivElement;

@@ -7,6 +7,7 @@ import type { ReaderPosition } from "@/types/reader";
 import type { DocumentLocator, DocumentSelection } from "./locator";
 
 export interface ReaderFlowOptions {
+  bionicReading?: boolean;
   continuous: boolean;
   direction?: "auto" | "ltr" | "rtl";
   readerBackground?: string;
