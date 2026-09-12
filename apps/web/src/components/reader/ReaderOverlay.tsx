@@ -45,6 +45,7 @@ interface ReaderOverlayProps {
   onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleTOC: () => void;
+  onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   searchState: ReaderSearchState;
   showAnnotations: boolean;
   showControls: boolean;
@@ -123,8 +124,11 @@ function ReaderOverlay(props: ReaderOverlayProps) {
           {props.showAnnotations && (
             <ReaderAnnotationsPanel
               annotations={props.annotations}
+              bookTitle={props.book.title}
+              bookAuthor={props.book.author}
               onGoToAnnotation={props.onNavigate}
               onDeleteAnnotation={props.onDeleteAnnotation}
+              onUpdateAnnotation={props.onUpdateAnnotation}
             />
           )}
         </div>

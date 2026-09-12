@@ -10,6 +10,7 @@ interface UseReaderTextActionsProps {
     note?: string
   ) => void;
   clearSelection: () => void;
+  onRequestNote?: (selection: ReaderSelection) => void;
   selection: ReaderSelection | null;
   speak: (text: string) => void;
 }
@@ -19,6 +20,7 @@ export function useReaderTextActions({
   addAnnotation,
   speak,
   clearSelection,
+  onRequestNote,
 }: UseReaderTextActionsProps) {
   const handleHighlight = useCallback(
     (color: string) => {
@@ -33,9 +35,13 @@ export function useReaderTextActions({
 
   const handleAddNote = useCallback(() => {
     if (!selection) return;
+    if (onRequestNote) {
+      onRequestNote(selection);
+      return;
+    }
     const note = window.prompt("Add a note:");
     if (note !== null) addAnnotation(selection, "note", undefined, note);
-  }, [selection, addAnnotation]);
+  }, [selection, onRequestNote, addAnnotation]);
 
   const handleCopy = useCallback(() => {
     if (!selection) return;

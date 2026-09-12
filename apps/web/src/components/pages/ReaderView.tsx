@@ -9,6 +9,7 @@ import { ReaderContentErrorBanner } from "@/components/reader/ReaderContentError
 import { ReaderEngineHost } from "@/components/reader/ReaderEngineHost";
 import { ReaderErrorOverlay } from "@/components/reader/ReaderErrorOverlay";
 import { ReaderFilterOverlay } from "@/components/reader/ReaderFilterOverlay";
+import { ReaderNoteDialog } from "@/components/reader/ReaderNoteDialog";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
 import { ReaderSelectionMenu } from "@/components/reader/ReaderSelectionMenu";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -137,7 +138,9 @@ function ReaderView({
       display: (target) => engineRef.current?.display(target),
     });
 
-  const { annotations, addAnnotation, removeAnnotation } = useReaderAnnotations({
+  const [noteTarget, setNoteTarget] = useState<ReaderSelection | null>(null);
+
+  const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
     bookId: book?.id ?? "",
     rendition: engineRef.current?.rendition ?? null,
     clearSelection: () => engineRef.current?.clearSelection(),
@@ -155,6 +158,7 @@ function ReaderView({
       addAnnotation,
       speak,
       clearSelection: () => engineRef.current?.clearSelection(),
+      onRequestNote: (sel) => setNoteTarget(sel),
     });
 
   // Reading speed tracking
@@ -305,6 +309,7 @@ function ReaderView({
         onCloseSearch={handleCloseSearch}
         onCloseAnnotations={handleCloseAnnotations}
         onDeleteAnnotation={removeAnnotation}
+        onUpdateAnnotation={updateAnnotation}
         searchState={searchState}
         onSearch={performSearch}
         onClearSearch={clearSearch}
@@ -320,6 +325,18 @@ function ReaderView({
         onAddNote={handleAddNote}
         onCopy={handleCopy}
         onSpeak={handleSpeak}
+      />
+
+      <ReaderNoteDialog
+        isOpen={!!noteTarget}
+        selectedText={noteTarget?.text}
+        onSave={(note) => {
+          if (noteTarget) {
+            addAnnotation(noteTarget, "note", undefined, note);
+            setNoteTarget(null);
+          }
+        }}
+        onCancel={() => setNoteTarget(null)}
       />
 
       {error && (
