@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 
 import type { Book, Bookmark } from "@/types";
-import type { EpubBookHandle } from "@/utils/epub";
 
+import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
 import { BookContentError, getVerifiedBookContent, saveBookContent, verifyBookContent } from "@/services/bookContentRepository";
 import { bookService } from "@/services/bookService";
 import { logErrorOnce, HttpError } from "@/services/http";
@@ -10,7 +10,7 @@ import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
 import { calculateEpubHash } from "@/utils/crypto";
 import { deleteBook as deleteBookFromDb, deleteBookContent, getAllBooks, putBook as putBookInDb } from "@/utils/db";
-import { extractCoverBlobFromEpubSource, openEpub } from "@/utils/epub";
+import { extractCoverBlobFromEpubSource } from "@/utils/epub";
 
 type BookSyncMeta = {
   dirty: boolean;
@@ -336,27 +336,27 @@ export const libraryService = {
     if (!existing) throw new Error("This book is no longer in your library.");
     if (!file.name.toLowerCase().endsWith(".epub")) throw new Error("Only EPUB files can repair a book.");
 
-    let bookData: EpubBookHandle | null = null;
+    let adapter: FoliateEpubAdapter | null = null;
     try {
       const arrayBuffer = await file.arrayBuffer();
       const contentHash = await calculateEpubHash(arrayBuffer);
       const epubBlob = new Blob([arrayBuffer], { type: "application/epub+zip" });
       await verifyBookContent(id, epubBlob, contentHash);
 
-      bookData = openEpub(arrayBuffer, { replacements: "none" });
-      await bookData.ready;
-      const metadata = await bookData.loaded.metadata;
-      const coverBlob = await extractCoverBlobFromEpubSource(arrayBuffer);
+      adapter = await FoliateEpubAdapter.create(epubBlob);
+      const title = adapter.metadata.title || existing.title;
+      const author = adapter.metadata.author || existing.author;
+      const coverBlob = await adapter.getCoverBlob();
       const coverUrl = coverBlob ? trackCoverBlobForBook(id, coverBlob) : existing.coverUrl;
       const repairedBook: Book = {
         ...existing,
-        author: Array.isArray(metadata.creator) ? metadata.creator.join(", ") || existing.author : metadata.creator || existing.author,
+        author,
         contentHash,
         contentStatus: "available",
         coverBlob: coverBlob || existing.coverBlob || null,
         coverUrl,
         epubBlob,
-        title: metadata.title || existing.title,
+        title,
       };
 
       await saveBookContent(repairedBook);
@@ -370,13 +370,13 @@ export const libraryService = {
         }
       }
     } finally {
-      bookData?.destroy?.();
+      adapter?.destroy();
     }
   },
 
   async addBook(file: File, api: SanctuaryApiClient, isPersistent: boolean) {
     const bookId = uuidv4();
-    let bookData: EpubBookHandle | null = null;
+    let adapter: FoliateEpubAdapter | null = null;
 
     let importKey: string | null = null;
     try {
@@ -396,19 +396,14 @@ export const libraryService = {
         throw new Error(`The exact file "${file.name}" is already in your library.`);
       }
 
-      bookData = openEpub(epubArrayBuffer, { replacements: "none" });
-      await bookData.ready;
+      const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
+      adapter = await FoliateEpubAdapter.create(epubBlob);
 
-      const metadata = await bookData.loaded.metadata;
-      const title = metadata.title ?? "Untitled";
-      const author = Array.isArray(metadata.creator)
-        ? metadata.creator.join(", ") || "Unknown"
-        : metadata.creator || "Unknown";
-
-      const coverBlob = await extractCoverBlobFromEpubSource(epubArrayBuffer);
+      const title = adapter.metadata.title ?? "Untitled";
+      const author = adapter.metadata.author || "Unknown";
+      const coverBlob = await adapter.getCoverBlob();
 
       const displayCoverUrl = coverBlob ? trackCoverBlobForBook(bookId, coverBlob) : "";
-      const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
 
       const newBook: Book = {
         id: bookId,
@@ -467,7 +462,7 @@ export const libraryService = {
       if (error instanceof Error && error.message.includes("currently being imported")) throw error;
       throw new Error(`Failed to import EPUB file: ${error instanceof Error ? error.message : "Invalid format"}`);
     } finally {
-      bookData?.destroy?.();
+      adapter?.destroy();
       if (importKey) pendingImports.delete(importKey);
     }
   },

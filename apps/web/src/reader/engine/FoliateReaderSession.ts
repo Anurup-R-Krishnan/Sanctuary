@@ -129,11 +129,17 @@ export class FoliateReaderSession implements IReaderSession {
     // continue to function smoothly without throwing undefined errors.
     this.rendition = {
       annotations: this.renditionInstance?.annotations,
+      clearSearch: () => this.renditionInstance?.clearSearch(),
       destroy: () => this.destroy(),
       display: (target?: string) => this.display(target ?? ""),
       getContents: () => this.renditionInstance?.getContents() ?? [],
       next: () => this.next(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      off: (event: string, cb: any) => this.renditionInstance?.off(event, cb),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      on: (event: string, cb: any) => this.renditionInstance?.on(event, cb),
       prev: () => this.prev(),
+      search: (query: string) => this.renditionInstance?.search(query) ?? Promise.resolve([]),
       themes: {
         default: (styles: Record<string, Record<string, string>>) => {
           this.renditionInstance?.setStyles(styles);
@@ -142,6 +148,7 @@ export class FoliateReaderSession implements IReaderSession {
     };
 
     this.epubBook = {
+      clearSearch: () => this.renditionInstance?.clearSearch(),
       locations: {
         cfiFromPercentage: (percentage: number) => `fraction:${percentage}`,
         generate: async () => {},
@@ -153,7 +160,14 @@ export class FoliateReaderSession implements IReaderSession {
           return 0;
         },
       },
+      navigation: {
+        get: (href: string) => {
+          const item = this.adapter?.getSectionByHref(href);
+          return item ? { label: item.id } : null;
+        },
+      },
       rawBook: this.adapter?.rawBook,
+      search: (query: string) => this.renditionInstance?.search(query) ?? Promise.resolve([]),
     };
   }
 

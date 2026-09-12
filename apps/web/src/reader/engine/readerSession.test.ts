@@ -1,43 +1,11 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import * as fs from "fs";
-import { JSDOM } from "jsdom";
 
+import { ensureTestDom } from "../foliate/testEnv";
 import { getReaderEngineType, ReaderSession } from "./ReaderSession";
 
 beforeAll(() => {
-  const dom = new JSDOM("<!DOCTYPE html><html><body><div id='reader'></div></body></html>", {
-    url: "http://localhost?engine=foliate",
-  });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  globalThis.window = dom.window as any;
-  globalThis.document = dom.window.document;
-  globalThis.DOMParser = dom.window.DOMParser;
-  globalThis.HTMLElement = dom.window.HTMLElement;
-  globalThis.NodeFilter = dom.window.NodeFilter;
-  globalThis.customElements = dom.window.customElements;
-  globalThis.ProcessingInstruction = dom.window.ProcessingInstruction;
-  globalThis.XMLSerializer = dom.window.XMLSerializer;
-  globalThis.innerWidth = 1024;
-  globalThis.innerHeight = 768;
-
-  globalThis.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
-
-  globalThis.matchMedia = ((query: string) => ({
-    addEventListener: () => {},
-    addListener: () => {},
-    dispatchEvent: () => false,
-    matches: false,
-    media: query,
-    onchange: null,
-    removeEventListener: () => {},
-    removeListener: () => {},
-  })) as unknown as typeof matchMedia;
-  globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0) as unknown as number;
-  globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+  ensureTestDom();
 });
 
 describe("ReaderSession Facade", () => {
@@ -88,6 +56,14 @@ describe("ReaderSession Facade", () => {
     expect(tocLength).toBeGreaterThan(0);
     expect(session.tocItems.length).toBeGreaterThan(0);
     expect(session.totalLocations).toBeGreaterThan(1);
+
+    // Verify search
+    if (session.epubBook?.search) {
+      const searchResults = await session.epubBook.search("Ishmael");
+      expect(searchResults.length).toBeGreaterThan(0);
+      expect(searchResults[0].cfi).toBeDefined();
+      expect(searchResults[0].excerpt.toLowerCase()).toContain("ishmael");
+    }
 
     session.destroy();
   });

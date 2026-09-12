@@ -124,7 +124,7 @@ export class FoliateRendition implements DocumentRendition {
       this.currentProgress = Math.round(overallFraction * 100);
 
       const section = this.documentAdapter.getSectionByIndex(index);
-      const chapterLabel = this.findChapterLabel(section?.href ?? "");
+      const chapterLabel = detail.tocItem?.label?.trim() || this.findChapterLabel(section?.href ?? "");
 
       const pos: ReaderPosition = {
         bookProgress: this.currentProgress,
@@ -141,25 +141,31 @@ export class FoliateRendition implements DocumentRendition {
       this.emit("relocated", pos);
     });
 
-    // Content load hook to inject theme styles and forward keys
+    // Content load hook to inject theme styles, forward keys, and wire selection
     this.view.addEventListener("load", (e: CustomEvent) => {
-      const { doc } = e.detail ?? {};
+      const { doc, index = 0 } = e.detail ?? {};
       if (doc) {
         this.injectStylesToDocument(doc);
         this.setupDocumentKeyboardForwarding(doc);
+        this.setupDocumentSelection(doc, index);
       }
     });
 
-    // Text selection event
-    this.view.addEventListener("select", (e: CustomEvent) => {
-      const detail = e.detail ?? {};
-      const sel: DocumentSelection = {
-        cfiRange: detail.cfi || "",
-        chapterLabel: "",
-        href: "",
-        text: detail.text || "",
-      };
-      this.emit("selected", sel);
+    // Draw annotation event from foliate-view
+    this.view.addEventListener("draw-annotation", async (e: CustomEvent) => {
+      const { annotation, draw } = e.detail ?? {};
+      if (typeof draw !== "function") return;
+      try {
+        const { Overlayer } = await import("foliate-js/overlayer.js");
+        const color = annotation?.color || "#facc15";
+        if (annotation?.underline) {
+          draw(Overlayer.underline, { color, width: 2 });
+        } else {
+          draw(Overlayer.highlight, { color });
+        }
+      } catch (err) {
+        console.warn("Foliate draw-annotation failed:", err);
+      }
     });
   }
 
@@ -217,6 +223,34 @@ export class FoliateRendition implements DocumentRendition {
     } catch {
       // ignore
     }
+  }
+
+  private setupDocumentSelection(doc: Document, index: number): void {
+    const handleSelection = () => {
+      try {
+        const sel = doc.getSelection();
+        const text = sel?.toString().trim();
+        if (!text || !sel || sel.rangeCount === 0) {
+          return;
+        }
+        const range = sel.getRangeAt(0);
+        const cfi = this.view?.getCFI?.(index, range) || "";
+        const section = this.documentAdapter.getSectionByIndex(index);
+        const chapterLabel = this.findChapterLabel(section?.href ?? "");
+        const selectionData: DocumentSelection = {
+          cfiRange: cfi,
+          chapterLabel,
+          href: section?.href ?? "",
+          text,
+        };
+        this.emit("selected", selectionData);
+      } catch (err) {
+        console.warn("Error capturing selection:", err);
+      }
+    };
+
+    doc.addEventListener("pointerup", handleSelection);
+    doc.addEventListener("keyup", handleSelection);
   }
 
   private async applyFlowToRenderer(): Promise<void> {
@@ -373,6 +407,42 @@ export class FoliateRendition implements DocumentRendition {
 
   public resize(): void {
     // Foliate paginator has internal ResizeObservers; no manual resize needed.
+  }
+
+  public async search(query: string): Promise<Array<{ cfi: string; chapterLabel: string; excerpt: string; href: string; id: string }>> {
+    const results: Array<{ cfi: string; chapterLabel: string; excerpt: string; href: string; id: string }> = [];
+    if (!this.view?.search) return results;
+    try {
+      for await (const res of this.view.search({ query })) {
+        if (res && typeof res === "object" && Array.isArray(res.subitems)) {
+          const chapterLabel = res.label || "Chapter";
+          for (let i = 0; i < res.subitems.length; i++) {
+            const item = res.subitems[i];
+            const excerpt = typeof item.excerpt === "string"
+              ? item.excerpt
+              : item.excerpt ? `${item.excerpt.pre ?? ""}${item.excerpt.match ?? ""}${item.excerpt.post ?? ""}` : "";
+            results.push({
+              cfi: item.cfi,
+              chapterLabel,
+              excerpt,
+              href: "",
+              id: `${item.cfi || i}-${i}`,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Foliate search failed:", err);
+    }
+    return results;
+  }
+
+  public clearSearch(): void {
+    try {
+      this.view?.clearSearch?.();
+    } catch {
+      // benign
+    }
   }
 
   public on(event: "relocated", callback: (location: ReaderPosition) => void): void;

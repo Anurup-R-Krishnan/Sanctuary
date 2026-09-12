@@ -28,31 +28,6 @@ export default defineConfig(({ mode }) => {
       }
     },
     plugins: [
-      {
-        name: "epubjs-patch",
-        transform(code, id) {
-          if (!id.includes("epubjs")) return null;
-          let modified = false;
-
-          if (code.includes('"unload"')) {
-            code = code.replace(
-              /addEventListener\(\s*"unload"/g,
-              'addEventListener("pagehide"'
-            );
-            modified = true;
-          }
-
-          if (code.includes("substitute(content, urls, replacements)")) {
-            code = code.replace(
-              /function substitute\s*\(\s*content\s*,\s*urls\s*,\s*replacements\s*\)\s*\{/g,
-              'function substitute(content, urls, replacements) {\n\tif (!content || !urls || !replacements) return content;'
-            );
-            modified = true;
-          }
-
-          return modified ? { code, map: null } : null;
-        },
-      },
       react(),
       VitePWA({
       registerType: 'autoUpdate',
@@ -80,7 +55,6 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
-            'vendor-epub': ['epubjs'],
             'vendor-ui': ['lucide-react'],
           }
         }

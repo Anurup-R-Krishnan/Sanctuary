@@ -35,13 +35,34 @@ export const useReaderSearch = ({ epubBook, display }: UseReaderSearchProps) => 
             return;
         }
 
-        if (!epubBook || !epubBook.spine) {
+        if (!epubBook || (!epubBook.spine && typeof (epubBook as unknown as { search?: unknown }).search !== "function")) {
             setSearchState(s => ({ ...s, error: "Search is not supported in this book." }));
             return;
         }
 
         activeQueryRef.current = trimmed;
         setSearchState(s => ({ ...s, query: trimmed, results: [], activeIndex: -1, isSearching: true, error: null }));
+
+        const candidate = epubBook as unknown as { search?: (q: string) => Promise<ReaderSearchResult[]> };
+        if (typeof candidate.search === "function") {
+            try {
+                const results = await candidate.search(trimmed);
+                if (activeQueryRef.current === trimmed) {
+                    setSearchState({
+                        activeIndex: results.length > 0 ? 0 : -1,
+                        error: results.length === 0 ? "No matches found." : null,
+                        isSearching: false,
+                        query: trimmed,
+                        results,
+                    });
+                }
+            } catch {
+                if (activeQueryRef.current === trimmed) {
+                    setSearchState(s => ({ ...s, error: "An error occurred while searching.", isSearching: false }));
+                }
+            }
+            return;
+        }
 
         const results: ReaderSearchResult[] = [];
         const searchAborted = false;
@@ -116,8 +137,16 @@ export const useReaderSearch = ({ epubBook, display }: UseReaderSearchProps) => 
 
     const clearSearch = useCallback(() => {
         activeQueryRef.current = "";
+        try {
+            const candidate = epubBook as unknown as { clearSearch?: () => void };
+            if (typeof candidate?.clearSearch === "function") {
+                candidate.clearSearch();
+            }
+        } catch {
+            // benign
+        }
         setSearchState({ query: "", results: [], activeIndex: -1, isSearching: false, error: null });
-    }, []);
+    }, [epubBook]);
 
     const goToResult = useCallback((index: number) => {
         setSearchState(s => {

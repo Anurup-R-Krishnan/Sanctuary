@@ -1,4 +1,4 @@
-import ePub from "epubjs";
+import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
 
 export type EpubMetadata = {
   creator?: string | string[];
@@ -122,52 +122,23 @@ export type EpubBookHandle = {
   spine?: EpubSpineApi;
 };
 
-export interface OpenEpubOptions {
-  [key: string]: unknown;
-  replacements?: "none" | "base64" | "blobUrl";
-}
-
-export function openEpub(source: ArrayBuffer, options?: OpenEpubOptions): EpubBookHandle {
-  return ePub(source, options) as unknown as EpubBookHandle;
-}
-
 export function revokeObjectUrl(url: string | null | undefined): void {
   if (!url?.startsWith("blob:")) return;
   URL.revokeObjectURL(url);
 }
 
-export async function extractCoverBlobFromEpubSource(source: ArrayBuffer): Promise<Blob | null> {
-  let bookData: EpubBookHandle | null = null;
-
+export async function extractCoverBlobFromEpubSource(source: ArrayBuffer | Blob): Promise<Blob | null> {
+  let adapter: FoliateEpubAdapter | null = null;
   try {
-    bookData = openEpub(source, { replacements: "none" });
-    await bookData.ready;
-    
-    // Attempt direct archive extraction first
-    const anyBook = bookData as unknown as { cover?: string; archive?: { getBlob: (path: string) => Promise<Blob> } };
-    if (anyBook.cover && anyBook.archive && typeof anyBook.archive.getBlob === "function") {
-      try {
-        const directBlob = await anyBook.archive.getBlob(anyBook.cover);
-        if (directBlob && directBlob.size > 0) return directBlob;
-      } catch { /* fallback */ }
-    }
-
-    const coverHref = await bookData.coverUrl();
-    if (!coverHref) return null;
-
-    if (coverHref.startsWith("blob:") || coverHref.startsWith("data:")) {
-      const response = await fetch(coverHref);
-      if (response.ok) {
-        return await response.blob();
-      }
-    }
-    return null;
+    const blob = source instanceof Blob ? source : new Blob([source], { type: "application/epub+zip" });
+    adapter = await FoliateEpubAdapter.create(blob);
+    return await adapter.getCoverBlob();
   } catch (err) {
     console.warn("Cover extraction error:", err);
     return null;
   } finally {
     try {
-      bookData?.destroy?.();
+      adapter?.destroy();
     } catch { /* benign */ }
   }
 }
