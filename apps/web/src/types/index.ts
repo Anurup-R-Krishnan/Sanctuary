@@ -1,3 +1,4 @@
+export * from "./vocabulary";
 export type { ReaderSettings } from "@sanctuary/core";
 
 export enum Theme {
@@ -177,3 +178,4 @@ export type SessionAggregates = {
   monthMinutes: Map<string, number>;
   sessionCount: number;
 };
+

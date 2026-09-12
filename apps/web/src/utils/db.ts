@@ -1,4 +1,4 @@
-import type { Book } from "@/types";
+import type { Book, VocabularyItem } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
 const DB_VERSION = 7;
@@ -252,4 +252,21 @@ export async function getAnnotationsByBook(bookId: string): Promise<ReaderAnnota
 
 export async function deleteAnnotation(id: string): Promise<void> {
   return dbDelete(ANNOTATIONS_STORE, id);
+}
+
+// Vocabulary store helpers
+export async function putVocabWord(item: VocabularyItem): Promise<void> {
+  return dbPut(VOCAB_STORE, item);
+}
+
+export async function getAllVocabWords(): Promise<VocabularyItem[]> {
+  return dbGetAll<VocabularyItem>(VOCAB_STORE);
+}
+
+export async function getVocabWord(id: string): Promise<VocabularyItem | undefined> {
+  return dbGet<VocabularyItem>(VOCAB_STORE, id);
+}
+
+export async function deleteVocabWord(id: string): Promise<void> {
+  return dbDelete(VOCAB_STORE, id);
 }

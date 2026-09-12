@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import type { ReaderEngineRef } from "@/components/reader/ReaderEngineHost";
 import type { Bookmark } from "@/types";
@@ -13,6 +13,12 @@ import { ReaderNoteDialog } from "@/components/reader/ReaderNoteDialog";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
 import { ReaderSelectionMenu } from "@/components/reader/ReaderSelectionMenu";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+
+const WordDefinitionModal = lazy(() =>
+  import("@/components/reader/WordDefinitionModal").then((m) => ({
+    default: m.WordDefinitionModal,
+  }))
+);
 import { useReaderAnnotations } from "@/hooks/useReaderAnnotations";
 import { useReaderBookHydration } from "@/hooks/useReaderBookHydration";
 import { useReaderBookmarks } from "@/hooks/useReaderBookmarks";
@@ -144,6 +150,23 @@ function ReaderView({
   }, [handleCloseSearch, clearSearch]);
 
   const [noteTarget, setNoteTarget] = useState<ReaderSelection | null>(null);
+  const [activeDefineWord, setActiveDefineWord] = useState<{
+    bookTitle?: string;
+    cfi?: string;
+    contextSentence?: string;
+    word: string;
+  } | null>(null);
+
+  const handleDefine = useCallback(() => {
+    if (!selection?.text) return;
+    setActiveDefineWord({
+      bookTitle: book?.title,
+      cfi: selection.cfiRange,
+      contextSentence: selection.text,
+      word: selection.text.trim(),
+    });
+    engineRef.current?.clearSelection();
+  }, [selection, book?.title]);
 
   const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
     bookId: book?.id ?? "",
@@ -372,25 +395,40 @@ function ReaderView({
       />
 
       <ReaderSelectionMenu
-        selection={selection}
-        onHighlight={handleHighlight}
-        onUnderline={handleUnderline}
         onAddNote={handleAddNote}
         onCopy={handleCopy}
+        onDefine={handleDefine}
+        onHighlight={handleHighlight}
         onSpeak={handleSpeak}
+        onUnderline={handleUnderline}
+        selection={selection}
       />
 
       <ReaderNoteDialog
         isOpen={!!noteTarget}
-        selectedText={noteTarget?.text}
+        onCancel={() => setNoteTarget(null)}
         onSave={(note) => {
           if (noteTarget) {
             addAnnotation(noteTarget, "note", undefined, note);
             setNoteTarget(null);
           }
         }}
-        onCancel={() => setNoteTarget(null)}
+        selectedText={noteTarget?.text}
       />
+
+      {activeDefineWord && (
+        <Suspense fallback={null}>
+          <WordDefinitionModal
+            bookId={bookId}
+            bookTitle={activeDefineWord.bookTitle}
+            cfi={activeDefineWord.cfi}
+            contextSentence={activeDefineWord.contextSentence}
+            isOpen={!!activeDefineWord}
+            onClose={() => setActiveDefineWord(null)}
+            word={activeDefineWord.word}
+          />
+        </Suspense>
+      )}
 
       {error && (
         <ReaderErrorOverlay

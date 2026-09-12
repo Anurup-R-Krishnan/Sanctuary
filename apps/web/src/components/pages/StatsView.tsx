@@ -1,5 +1,5 @@
-import { Flame, Trophy, BookOpen, Clock, Target, TrendingUp, BarChart3, PieChart, Zap, Calendar, Star, Users } from "lucide-react";
-import React, { useState, useMemo } from "react";
+import { BarChart3, BookOpen, Calendar, Clock, Flame, PieChart, Star, Target, TrendingUp, Trophy, Users, Zap } from "lucide-react";
+import React, { lazy, Suspense, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { BadgeCard } from "@/components/stats/BadgeCard";
@@ -7,17 +7,25 @@ import { BarChart } from "@/components/stats/BarChart";
 import { HeatmapCell } from "@/components/stats/HeatmapCell";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { Button } from "@/components/ui/Button";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
 import { clampPercent } from "@/utils/number";
 
-type StatsTab = "overview" | "charts" | "badges" | "insights";
+const VocabularyReviewCard = lazy(() =>
+  import("@/components/vocabulary/VocabularyReviewCard").then((m) => ({
+    default: m.VocabularyReviewCard,
+  }))
+);
+
+type StatsTab = "badges" | "charts" | "insights" | "overview" | "vocabulary";
 
 const TABS = [
-  { id: "overview" as StatsTab, label: "Overview", icon: BarChart3 },
-  { id: "charts" as StatsTab, label: "Charts", icon: PieChart },
-  { id: "badges" as StatsTab, label: "Badges", icon: Trophy },
-  { id: "insights" as StatsTab, label: "Insights", icon: Zap },
+  { icon: BarChart3, id: "overview" as StatsTab, label: "Overview" },
+  { icon: PieChart, id: "charts" as StatsTab, label: "Charts" },
+  { icon: Trophy, id: "badges" as StatsTab, label: "Badges" },
+  { icon: Zap, id: "insights" as StatsTab, label: "Insights" },
+  { icon: BookOpen, id: "vocabulary" as StatsTab, label: "Vocabulary" },
 ] as const;
 
 function GoalProgress({
@@ -397,6 +405,12 @@ function StatsView() {
             </ul>
           </div>
         </div>
+      )}
+
+      {activeTab === "vocabulary" && (
+        <Suspense fallback={<div className="flex justify-center p-8"><LoadingSpinner className="w-6 h-6" /></div>}>
+          <VocabularyReviewCard />
+        </Suspense>
       )}
     </div>
   );
