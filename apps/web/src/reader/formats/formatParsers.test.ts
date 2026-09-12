@@ -28,6 +28,8 @@ describe("Multi-Format Pipeline & Decoders", () => {
       expect(isSupportedExtension("book.md")).toBe(true);
       expect(isSupportedExtension("book.markdown")).toBe(true);
       expect(isSupportedExtension("doc.pdf")).toBe(true);
+      expect(isSupportedExtension("manga.cbz")).toBe(true);
+      expect(isSupportedExtension("comic.cbr")).toBe(true);
       expect(isSupportedExtension("image.png")).toBe(false);
       expect(isSupportedExtension("executable.bin")).toBe(false);
     });
@@ -42,6 +44,8 @@ describe("Multi-Format Pipeline & Decoders", () => {
       expect(await detectBookFormat(new Blob(), "novel.mobi")).toBe("mobi");
       expect(await detectBookFormat(new Blob(), "novel.azw3")).toBe("azw3");
       expect(await detectBookFormat(new Blob(), "document.pdf")).toBe("pdf");
+      expect(await detectBookFormat(new Blob(), "manga.cbz")).toBe("cbz");
+      expect(await detectBookFormat(new Blob(), "comic.cbr")).toBe("cbr");
 
       // ZIP magic byte
       const zipBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00]);

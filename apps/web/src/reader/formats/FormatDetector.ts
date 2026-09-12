@@ -21,6 +21,8 @@ export const SUPPORTED_EXTENSIONS = [
   ".md",
   ".markdown",
   ".pdf",
+  ".cbz",
+  ".cbr",
 ] as const;
 
 export const SUPPORTED_FILE_ACCEPT = SUPPORTED_EXTENSIONS.join(",");
@@ -48,6 +50,8 @@ export async function detectBookFormat(
   if (lowerName.endsWith(".xhtml")) return "xhtml";
   if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) return "html";
   if (lowerName.endsWith(".pdf")) return "pdf";
+  if (lowerName.endsWith(".cbz")) return "cbz";
+  if (lowerName.endsWith(".cbr")) return "cbr";
 
   // 2. Read first 1024 bytes for signature sniffing
   let bytes: Uint8Array;
@@ -71,6 +75,19 @@ export async function detectBookFormat(
     bytes[3] === 0x46
   ) {
     return "pdf";
+  }
+
+  // RAR header for CBR: Rar!\x1a\x07 (0x52 0x61 0x72 0x21 0x1a 0x07)
+  if (
+    bytes.length >= 6 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x61 &&
+    bytes[2] === 0x72 &&
+    bytes[3] === 0x21 &&
+    bytes[4] === 0x1a &&
+    bytes[5] === 0x07
+  ) {
+    return "cbr";
   }
 
   // ZIP header: PK\x03\x04

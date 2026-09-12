@@ -220,6 +220,13 @@ export class FoliateDocumentAdapter implements BookDocument {
         break;
       }
 
+      case "cbz":
+      case "cbr": {
+        const { parseComicToBook } = await import("../formats/ComicParser");
+        rawBook = (await parseComicToBook(source, fileName)) as unknown as FoliateRawBook;
+        break;
+      }
+
       default: {
         rawBook = await parseTxtToBook(source, fileName);
         break;
