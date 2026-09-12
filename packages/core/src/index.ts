@@ -60,6 +60,7 @@ export interface LibraryItem {
   bookmarks?: Array<{ cfi: string; title: string }>;
   coverUrl?: string | null;
   favorite: boolean;
+  format?: string;
   id: string;
   lastLocation?: string | null;
   progressPercent: number;

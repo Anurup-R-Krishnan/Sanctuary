@@ -1,5 +1,5 @@
 export type ReaderBridgeCommand =
-  | { type: "OPEN_BOOK"; payload: { url: string; initialLocation?: string | null; initialBookmarks?: Array<{ cfi: string; title: string }> } }
+  | { type: "OPEN_BOOK"; payload: { url: string; initialLocation?: string | null; initialBookmarks?: Array<{ cfi: string; title: string }>; format?: string; title?: string } }
   | { type: "NAV_NEXT" }
   | { type: "NAV_PREV" }
   | { type: "NAV_TO_CFI"; payload: { cfi: string } }
@@ -130,8 +130,8 @@ export const readerBridgeBootstrap = `
 
   async function openBook(payload) {
     try {
-      if (!window.ePub) {
-        fail("epub.js is not available in WebView runtime");
+      if (!window.ePub && !window.foliate) {
+        fail("No reader engine available in WebView runtime (expected foliate-js or epub.js)");
         return;
       }
       if (!payload || !payload.url) {
