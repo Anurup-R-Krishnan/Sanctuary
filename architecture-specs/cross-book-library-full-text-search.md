@@ -16,7 +16,7 @@
 - **Prerequisites**: Collections, Custom Shelves & Batch Library Operations
 - **Category**: Search & Discovery
 - **Documented at**: commit `5128ed0`, 2026-09-13
-- **Status**: READY
+- **Status**: VERIFIED
 
 ## Why this matters
 
