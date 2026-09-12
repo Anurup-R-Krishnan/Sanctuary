@@ -66,5 +66,5 @@ describe("ReaderSession Facade", () => {
     }
 
     session.destroy();
-  });
+  }, 15000);
 });

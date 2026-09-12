@@ -1,10 +1,12 @@
-import { Check, AlignLeft, AlignJustify, AlignCenter, BookOpen, Layers, Columns2, X, Plus } from "lucide-react";
+import { AlignCenter, AlignJustify, AlignLeft, BookOpen, Check, Columns2, Layers, Plus, X } from "lucide-react";
 import React, { useState } from "react";
 
+import { SOUNDSCAPES, type SoundscapeType } from "@/audio/ambientTypes";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { COLOR_PRESETS, FONT_PAIRINGS } from "@/config/readerConfig";
 import { useReaderSpeech } from "@/hooks/useReaderSpeech";
+import { useAmbientSoundStore } from "@/store/useAmbientSoundStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { cx } from "@/utils/cx";
 
@@ -152,6 +154,12 @@ const SHORTCUTS: Array<{ key: ShortcutKey; label: string }> = [
 export default function ReaderSettings() {
   const state = useSettingsShallow((s) => s);
   const { voices } = useReaderSpeech();
+  const ambientActiveSoundscape = useAmbientSoundStore((s) => s.activeSoundscape);
+  const isAmbientPlaying = useAmbientSoundStore((s) => s.isPlaying);
+  const playAmbient = useAmbientSoundStore((s) => s.play);
+  const togglePlayAmbient = useAmbientSoundStore((s) => s.togglePlay);
+  const ambientVolume = useAmbientSoundStore((s) => s.volume);
+  const setAmbientVolume = useAmbientSoundStore((s) => s.setVolume);
 
   return (
     <div className="flex flex-col h-full">
@@ -344,6 +352,39 @@ export default function ReaderSettings() {
             )}
             <Slider label="Rate" value={state.ttsRate} min={0.5} max={2} step={0.1} onChange={state.setTtsRate} format={(v) => v.toFixed(1) + "x"} />
             <Slider label="Pitch" value={state.ttsPitch} min={0.5} max={2} step={0.1} onChange={state.setTtsPitch} format={(v) => v.toFixed(1)} />
+          </div>
+        </div>
+
+        {/* Ambient Soundscapes */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight">Ambient Soundscapes</h3>
+            <button
+              type="button"
+              onClick={togglePlayAmbient}
+              className="text-xs font-medium px-2.5 py-1 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 text-light-accent dark:text-dark-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/20 transition-colors"
+            >
+              {isAmbientPlaying ? "Pause" : "Play"}
+            </button>
+          </div>
+          <div className="space-y-4">
+            <ButtonGroup
+              label="Soundscape"
+              value={ambientActiveSoundscape ?? "rain"}
+              onChange={(val) => {
+                playAmbient(val as SoundscapeType);
+              }}
+              options={SOUNDSCAPES.map((s) => ({ value: s.id, label: s.label }))}
+            />
+            <Slider
+              format={(v) => v + "%"}
+              label="Volume"
+              max={100}
+              min={0}
+              onChange={setAmbientVolume}
+              step={1}
+              value={ambientVolume}
+            />
           </div>
         </div>
 

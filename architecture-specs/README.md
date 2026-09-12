@@ -28,6 +28,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Fallback Generative SVG Book Covers](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/generative-svg-book-covers.md) | Procedural book cloth SVG covers, geometric motifs & deterministic palettes | Visual Design | PDF Fixed-Layout | VERIFIED |
 | [High-Legibility Typography & Bionic Reading Fixation](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/bionic-reading-and-high-legibility.md) | Bionic fixation saccade acceleration, OpenDyslexic typeface & letter spacing | Accessibility | Quality Gate | VERIFIED |
 | [Inline Footnote & Endnote Instant Popover](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/inline-footnote-instant-popover.md) | In-reader footnote preview popover, cross-document note resolution & backlink stripping | Reader Experience | High-Legibility Typography | VERIFIED |
+| [Ambient Soundscapes & Focus Audio Synthesizer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/ambient-soundscapes-and-focus-audio.md) | Procedural Web Audio API soundscapes, zero-asset acoustic masking & sleep timer | Reader Audio | In-Book Speech Synthesis | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 

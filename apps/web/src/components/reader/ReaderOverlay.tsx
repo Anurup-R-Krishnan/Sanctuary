@@ -9,7 +9,15 @@ import ReaderControls from "@/components/reader/ReaderControls";
 import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
-import ReaderSettings from "@/components/reader/ReaderSettings";
+import { useAmbientSoundStore } from "@/store/useAmbientSoundStore";
+
+const ReaderAmbientSoundPopover = lazy(() =>
+  import("@/components/reader/ReaderAmbientSoundPopover").then((m) => ({
+    default: m.ReaderAmbientSoundPopover,
+  }))
+);
+
+const ReaderSettings = lazy(() => import("@/components/reader/ReaderSettings"));
 
 const ReaderTTSBar = lazy(() =>
   import("@/components/reader/ReaderTTSBar").then((m) => ({ default: m.ReaderTTSBar }))
@@ -88,6 +96,11 @@ function ReaderOverlay(props: ReaderOverlayProps) {
     }))
   }));
 
+  const isAmbientPlaying = useAmbientSoundStore((s) => s.isPlaying);
+  const isAmbientPopoverOpen = useAmbientSoundStore((s) => s.isPopoverOpen);
+  const toggleAmbientPopover = useAmbientSoundStore((s) => s.togglePopover);
+  const closeAmbientPopover = useAmbientSoundStore((s) => s.setPopoverOpen);
+
   const isAnyPanelOpen = props.showControls || props.showSettings || props.showSearch || props.showAnnotations;
 
   return (
@@ -96,10 +109,12 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         book={props.book}
         chapterEstimatedMinutesRemaining={props.chapterEstimatedMinutesRemaining}
         chapterLabel={props.chapterLabel}
+        isAmbientActive={isAmbientPlaying}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
         isTTSActive={props.isTTSActive}
         onClose={props.onClose}
+        onToggleAmbient={toggleAmbientPopover}
         onToggleAnnotations={props.onToggleAnnotations}
         onToggleBookmark={props.onToggleBookmark}
         onToggleFullscreen={props.onToggleFullscreen}
@@ -110,6 +125,12 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         readingSpeedWpm={props.readingSpeedWpm}
         showUI={props.showUI}
       />
+
+      {isAmbientPopoverOpen && (
+        <Suspense fallback={null}>
+          <ReaderAmbientSoundPopover onClose={() => closeAmbientPopover(false)} />
+        </Suspense>
+      )}
 
       {props.isTTSActive && props.speechState && (
         <Suspense fallback={null}>
@@ -152,7 +173,11 @@ function ReaderOverlay(props: ReaderOverlayProps) {
               onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}
             />
           )}
-          {props.showSettings && <ReaderSettings />}
+          {props.showSettings && (
+            <Suspense fallback={null}>
+              <ReaderSettings />
+            </Suspense>
+          )}
           {props.showSearch && (
             <ReaderSearchPanel
               isOpen={props.showSearch}

@@ -2,13 +2,14 @@ import {
     ArrowLeft,
     Bookmark,
     BookmarkCheck,
+    Headphones,
+    Highlighter,
     List,
-    Settings,
     Maximize2,
     Minimize2,
     Search,
-    Highlighter,
-    Headphones,
+    Settings,
+    Waves,
 } from "lucide-react";
 import React from "react";
 
@@ -21,10 +22,12 @@ interface ReaderHeaderProps {
     book: Book;
     chapterEstimatedMinutesRemaining?: number | null;
     chapterLabel?: string;
+    isAmbientActive?: boolean;
     isBookmarked: boolean;
     isFullscreen: boolean;
     isTTSActive?: boolean;
     onClose: () => void;
+    onToggleAmbient?: () => void;
     onToggleAnnotations: () => void;
     onToggleBookmark: () => void;
     onToggleFullscreen: () => void;
@@ -40,10 +43,12 @@ function ReaderHeader({
     book,
     chapterEstimatedMinutesRemaining,
     chapterLabel,
+    isAmbientActive,
     isBookmarked,
     isFullscreen,
     isTTSActive,
     onClose,
+    onToggleAmbient,
     onToggleAnnotations,
     onToggleBookmark,
     onToggleFullscreen,
@@ -136,6 +141,14 @@ function ReaderHeader({
                             label="Read Aloud" 
                             onClick={onToggleTTS} 
                             active={isTTSActive} 
+                        />
+                    )}
+                    {onToggleAmbient && (
+                        <ActionBtn 
+                            icon={Waves} 
+                            label="Ambient Soundscapes" 
+                            onClick={onToggleAmbient} 
+                            active={isAmbientActive} 
                         />
                     )}
                     <ActionBtn icon={Highlighter} label="Annotations" onClick={onToggleAnnotations} />
