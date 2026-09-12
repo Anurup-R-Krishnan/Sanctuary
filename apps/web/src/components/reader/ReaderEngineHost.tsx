@@ -8,6 +8,12 @@ import { useReaderEngine } from "@/hooks/useReaderEngine";
 import { useSettings } from "@/store/useSettingsStore";
 import { cx } from "@/utils/cx";
 
+const ReaderFootnotePopover = React.lazy(() =>
+  import("@/components/reader/ReaderFootnotePopover").then((m) => ({
+    default: m.ReaderFootnotePopover,
+  }))
+);
+
 export interface ReaderEngineRef {
     clearSelection: () => void;
     display: (target: string) => void;
@@ -21,63 +27,79 @@ export interface ReaderEngineRef {
 interface ReaderEngineHostProps {
     book?: Book;
     onEngineStateChange: (state: {
-        status: ReaderStatus;
         error: ReaderError | null;
         position: ReaderPosition;
-        tocItems: TocItem[];
         selection: ReaderSelection | null;
+        status: ReaderStatus;
+        tocItems: TocItem[];
     }) => void;
     onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
 
 export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHostProps>(({
     book,
-    onUpdateProgress,
     onEngineStateChange,
+    onUpdateProgress,
 }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const showScrollbar = useSettings((state) => state.showScrollbar);
     
     const {
-        status,
-        error,
-        position,
-        tocItems,
-        selection,
-        nextPage,
-        prevPage,
-        display,
-        goToPage,
+        activeFootnote,
         clearSelection,
-        _rendition,
+        closeFootnote,
+        display,
+        error,
+        goToPage,
+        nextPage,
+        position,
+        prevPage,
+        selection,
+        status,
+        tocItems,
         _epubBook,
+        _rendition,
     } = useReaderEngine({ book, containerRef, onUpdateProgress });
 
     useImperativeHandle(ref, () => ({
+        clearSelection,
+        display,
+        epubBook: _epubBook,
+        goToPage,
         nextPage,
         prevPage,
-        display,
-        goToPage,
-        clearSelection,
         rendition: _rendition,
-        epubBook: _epubBook,
     }), [nextPage, prevPage, display, goToPage, clearSelection, _rendition, _epubBook]);
 
     // Sync engine state up to the UI shell.
-    // We use a layout effect equivalent pattern by calling it during render
-    // or using a highly responsive effect to prevent tearing.
-    // To avoid React warnings about updating during render, we use an effect.
     React.useEffect(() => {
         onEngineStateChange({
-            status,
             error,
             position,
-            tocItems,
             selection,
+            status,
+            tocItems,
         });
     }, [status, error, position, tocItems, selection, onEngineStateChange]);
 
-    return <div ref={containerRef} className={cx("absolute inset-0 overflow-auto", !showScrollbar && "scrollbar-hide")} />;
+    return (
+        <>
+            <div ref={containerRef} className={cx("absolute inset-0 overflow-auto", !showScrollbar && "scrollbar-hide")} />
+            {activeFootnote && (
+                <React.Suspense fallback={null}>
+                    <ReaderFootnotePopover
+                        anchorRect={activeFootnote.anchorRect}
+                        footnote={activeFootnote.footnote}
+                        onClose={closeFootnote}
+                        onNavigate={(href) => {
+                            closeFootnote();
+                            display(href);
+                        }}
+                    />
+                </React.Suspense>
+            )}
+        </>
+    );
 }));
 
 ReaderEngineHost.displayName = "ReaderEngineHost";

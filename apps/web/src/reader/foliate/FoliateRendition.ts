@@ -15,6 +15,7 @@ import type {
 import type { FoliateEpubAdapter } from "./FoliateEpubAdapter";
 
 import { applyBionicReading } from "../../utils/bionicReading";
+import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
 
@@ -185,6 +186,44 @@ export class FoliateRendition implements DocumentRendition {
         }
       } catch (err) {
         console.warn("Foliate draw-annotation failed:", err);
+      }
+    });
+
+    // Intercept link clicks to provide instant footnote previews without jarring jumps
+    this.view.addEventListener("link", async (e: CustomEvent) => {
+      const { a, href } = e.detail ?? {};
+      if (!href || !a) return;
+
+      if (isFootnoteLink(a, href)) {
+        e.preventDefault();
+        try {
+          const doc = a.ownerDocument;
+          const resolved = await resolveFootnote(this.documentAdapter.rawBook, doc, href);
+          if (resolved) {
+            let anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null = null;
+            if (typeof a.getBoundingClientRect === "function") {
+              const rect = a.getBoundingClientRect();
+              const iframe = a.ownerDocument?.defaultView?.frameElement as HTMLElement | null;
+              const iframeRect = iframe ? iframe.getBoundingClientRect() : { left: 0, top: 0 };
+              anchorRect = {
+                bottom: rect.bottom + iframeRect.top,
+                height: rect.height,
+                left: rect.left + iframeRect.left,
+                right: rect.right + iframeRect.left,
+                top: rect.top + iframeRect.top,
+                width: rect.width,
+              };
+            }
+            this.emit("footnote", {
+              anchorRect,
+              footnote: resolved,
+            });
+          } else {
+            this.view.goTo(href);
+          }
+        } catch {
+          this.view.goTo(href);
+        }
       }
     });
   }
@@ -648,6 +687,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public on(event: "relocated", callback: (location: ReaderPosition) => void): void;
   public on(event: "selected", callback: (selection: DocumentSelection | null) => void): void;
+  public on(event: "footnote", callback: (data: { anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null; footnote: ResolvedFootnote }) => void): void;
   public on(event: string, callback: (...args: unknown[]) => void): void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public on(event: string, callback: (arg?: any) => void): void {

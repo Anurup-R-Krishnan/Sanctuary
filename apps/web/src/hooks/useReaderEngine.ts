@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { Book } from "@/types";
 import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
 import type { TocItem } from "@/utils/epub";
+import type { ResolvedFootnote } from "@/utils/footnoteResolver";
 
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
@@ -30,6 +31,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     });
     const [tocItems, setTocItems] = useState<TocItem[]>([]);
     const [selection, setSelection] = useState<ReaderSelection | null>(null);
+    const [activeFootnote, setActiveFootnote] = useState<{
+        anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null;
+        footnote: ResolvedFootnote;
+    } | null>(null);
 
     // Refs
     const sessionRef = useRef<ReaderSession | null>(null);
@@ -105,16 +110,11 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             themeStyles: styles,
             writingMode,
         }, {
-            onStatusChange: (s) => {
-                if (!mounted) return;
-                setStatus(s);
-                if (["restoring-location", "ready", "generating-locations"].includes(s)) {
-                    setRenditionReady(n => n + 1);
-                }
-            },
             onError: (err) => mounted && setError(err),
-            onTocReady: (toc) => mounted && setTocItems(toc),
-            onSelection: (sel) => mounted && setSelection(sel),
+            onFootnote: (data) => {
+                if (!mounted) return;
+                setActiveFootnote(data);
+            },
             onPositionChange: (pos) => {
                 if (!mounted) return;
                 setPosition(prev => {
@@ -125,7 +125,16 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                     }
                     return next;
                 });
-            }
+            },
+            onSelection: (sel) => mounted && setSelection(sel),
+            onStatusChange: (s) => {
+                if (!mounted) return;
+                setStatus(s);
+                if (["restoring-location", "ready", "generating-locations"].includes(s)) {
+                    setRenditionReady(n => n + 1);
+                }
+            },
+            onTocReady: (toc) => mounted && setTocItems(toc),
         });
 
         return () => {
@@ -219,8 +228,13 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         } catch { /* Ignore */ }
     }, []);
 
+    const closeFootnote = useCallback(() => {
+        setActiveFootnote(null);
+    }, []);
+
     return {
         // State
+        activeFootnote,
         status,
         error,
         position,
@@ -228,11 +242,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         selection,
         
         // Actions
-        nextPage,
-        prevPage,
+        clearSelection,
+        closeFootnote,
         display,
         goToPage,
-        clearSelection,
+        nextPage,
+        prevPage,
 
         // Internal Escape Hatch
         _rendition: renditionReady >= 0 ? (sessionRef.current?.rendition ?? null) : null,

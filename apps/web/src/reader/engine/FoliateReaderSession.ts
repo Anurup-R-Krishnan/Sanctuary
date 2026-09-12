@@ -213,6 +213,11 @@ export class FoliateReaderSession implements IReaderSession {
       if (this.aborted) return;
       this.callbacks.onSelection(sel);
     });
+
+    this.renditionInstance.on("footnote", (data) => {
+      if (this.aborted) return;
+      this.callbacks.onFootnote?.(data);
+    });
   }
 
   private async displayWithFallbacks(startLocation?: string): Promise<boolean> {

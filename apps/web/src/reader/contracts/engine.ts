@@ -6,6 +6,7 @@
 import type { ReaderError, ReaderPosition, ReaderSelection, ReaderStatus } from "@/types/reader";
 import type { TocItem } from "@/utils/epub";
 
+import type { ResolvedFootnote } from "../../utils/footnoteResolver";
 import type { TTSControllerState } from "../foliate/FoliateTTSController";
 import type { ReaderFlowOptions } from "./rendition";
 
@@ -25,6 +26,10 @@ export interface ReaderEngineOptions {
 
 export interface ReaderEngineCallbacks {
   onError: (error: ReaderError | null) => void;
+  onFootnote?: (data: {
+    anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null;
+    footnote: ResolvedFootnote;
+  }) => void;
   onPositionChange: (position: Partial<ReaderPosition>) => void;
   onSelection: (selection: ReaderSelection | null) => void;
   onStatusChange: (status: ReaderStatus) => void;
