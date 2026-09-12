@@ -16,6 +16,7 @@
 - **Prerequisites**: Cloudflare D1 Reading State Sync
 - **Category**: direction
 - **Documented at**: commit `54f0583`, 2026-09-12
+- **Status**: VERIFIED (commit `0698bc8`, 2026-09-13)
 
 ## Why this matters
 
