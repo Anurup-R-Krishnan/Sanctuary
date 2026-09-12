@@ -8,8 +8,10 @@ import { HeatmapCell } from "@/components/stats/HeatmapCell";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
+import { calculateAnnualChallenge } from "@/utils/challenge";
 import { clampPercent } from "@/utils/number";
 
 const VocabularyReviewCard = lazy(() =>
@@ -63,12 +65,28 @@ function StatsView() {
     goals: state.goals,
     goalsStale: state.goalsStale,
   })));
-  const { dailyGoal, weeklyGoal, setDailyGoal, setWeeklyGoal } = useSettingsShallow((state) => ({
+  const books = useBookStore((state) => state.books);
+  const {
+    annualBookGoal,
+    annualGoalYear,
+    dailyGoal,
+    setAnnualBookGoal,
+    setDailyGoal,
+    setWeeklyGoal,
+    weeklyGoal,
+  } = useSettingsShallow((state) => ({
+    annualBookGoal: state.annualBookGoal,
+    annualGoalYear: state.annualGoalYear,
     dailyGoal: state.dailyGoal,
-    weeklyGoal: state.weeklyGoal,
+    setAnnualBookGoal: state.setAnnualBookGoal,
     setDailyGoal: state.setDailyGoal,
     setWeeklyGoal: state.setWeeklyGoal,
+    weeklyGoal: state.weeklyGoal,
   }));
+
+  const activeAnnualChallenge = useMemo(() => {
+    return calculateAnnualChallenge(books, annualBookGoal, new Date(), annualGoalYear);
+  }, [books, annualBookGoal, annualGoalYear]);
   
   const onUpdateGoal = (daily: number, weekly: number) => {
     setDailyGoal(daily);
@@ -103,7 +121,7 @@ function StatsView() {
     <div className="page-narrow page-stack">
       <div>
         <h2 className="text-3xl font-sans font-bold tracking-tight text-light-text dark:text-dark-text">Stats</h2>
-        <p className="text-light-text-muted dark:text-dark-text-muted text-sm font-sans">Track your reading</p>
+        <p className="text-light-text-muted dark:text-dark-text-muted text-sm font-sans">Your reading journey and milestones</p>
       </div>
 
       <div className="flex gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
@@ -200,6 +218,102 @@ function StatsView() {
               <div className="text-center px-2">
                 <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.booksCompletedThisMonth}</p>
                 <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">This month</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Annual Reading Challenge Card */}
+          <div className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-black/[0.04] dark:border-white/[0.04]">
+              <div>
+                <span className="text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted uppercase [letter-spacing:0.05em]">
+                  Annual Challenge · {activeAnnualChallenge.year}
+                </span>
+                <h3 className="text-lg font-bold text-light-text dark:text-dark-text mt-0.5">
+                  {activeAnnualChallenge.goal} Books Challenge
+                </h3>
+              </div>
+
+              {/* Goal Presets & Stepper */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[12, 24, 52].map((preset) => (
+                  <Button
+                    key={preset}
+                    onClick={() => setAnnualBookGoal(preset)}
+                    variant={annualBookGoal === preset ? "primary" : "secondary"}
+                    size="sm"
+                    className="!text-xs !py-1 !px-2.5 !h-auto"
+                  >
+                    {preset} books
+                  </Button>
+                ))}
+                <div className="flex items-center gap-1 ml-1 pl-2 border-l border-black/10 dark:border-white/10">
+                  <Button
+                    onClick={() => setAnnualBookGoal(Math.max(1, annualBookGoal - 1))}
+                    variant="secondary"
+                    size="sm"
+                    className="!text-xs !p-1 !h-7 !w-7"
+                    aria-label="Decrease annual goal"
+                  >
+                    -
+                  </Button>
+                  <Button
+                    onClick={() => setAnnualBookGoal(annualBookGoal + 1)}
+                    variant="secondary"
+                    size="sm"
+                    className="!text-xs !p-1 !h-7 !w-7"
+                    aria-label="Increase annual goal"
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+              <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+                <ProgressRing progress={activeAnnualChallenge.percentComplete} size={96} stroke={7} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums leading-none">
+                    {activeAnnualChallenge.percentComplete}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex-1 text-center sm:text-left space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-baseline gap-2">
+                  <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">
+                    {activeAnnualChallenge.completedBooks}{" "}
+                    <span className="text-sm font-normal text-light-text-muted dark:text-dark-text-muted">
+                      of {activeAnnualChallenge.goal} books completed
+                    </span>
+                  </p>
+                </div>
+
+                {/* Pace status badge */}
+                <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                  {activeAnnualChallenge.paceStatus === "ahead" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      +{activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} ahead of schedule
+                    </span>
+                  )}
+                  {activeAnnualChallenge.paceStatus === "behind" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                      <Clock className="w-3.5 h-3.5" />
+                      -{activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} behind schedule
+                    </span>
+                  )}
+                  {activeAnnualChallenge.paceStatus === "on-pace" && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      <Target className="w-3.5 h-3.5" />
+                      On schedule for {activeAnnualChallenge.year}
+                    </span>
+                  )}
+                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                    · {activeAnnualChallenge.daysRemaining} days left
+                  </span>
+                </div>
               </div>
             </div>
           </div>

@@ -244,8 +244,11 @@ export const statsService = {
   },
 
   computeStats(books: Book[]): ReadingStats {
-    const dailyGoal = useSettingsStore?.getState()?.dailyGoal || 30;
-    return calculateStats(books, aggregates, dailyGoal);
+    const settings = useSettingsStore?.getState();
+    const dailyGoal = settings?.dailyGoal || 30;
+    const annualGoal = settings?.annualBookGoal || 20;
+    const annualGoalYear = settings?.annualGoalYear;
+    return calculateStats(books, aggregates, dailyGoal, annualGoal, annualGoalYear);
   },
 
   async fetchGoals(api: SanctuaryApiClient, isPersistent: boolean) {

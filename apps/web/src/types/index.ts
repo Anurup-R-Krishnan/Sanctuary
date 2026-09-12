@@ -1,3 +1,6 @@
+import type { AnnualChallenge } from "./challenge";
+
+export * from "./challenge";
 export * from "./search";
 export * from "./vocabulary";
 export type { ReaderSettings } from "@sanctuary/core";
@@ -99,6 +102,7 @@ export interface Badge {
 }
 
 export interface ReadingStats {
+  annualChallenge?: AnnualChallenge;
   authorNetwork: { author: string; books: number }[];
   averageReadingSpeed: number;
   badges: Badge[];

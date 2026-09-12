@@ -2,6 +2,7 @@ import type { ReadingSession, SessionAggregates, Book, ReadingStats } from "@/ty
 
 import { GENRE_PALETTE } from "@/config/readerConfig";
 import { DEFAULT_PERSONALITY, DEFAULT_BADGES } from "@/types";
+import { calculateAnnualChallenge } from "@/utils/challenge";
 
 export const toLocalDateKey = (date: Date): string => {
   const year = date.getFullYear();
@@ -103,10 +104,13 @@ const calculateStreak = (sessionDates: Set<string>, now: Date): { current: numbe
 export const calculateStats = (
   books: Book[],
   aggregates: SessionAggregates,
-  dailyGoal: number
+  dailyGoal: number,
+  annualGoal = 20,
+  annualGoalYear?: number
 ): ReadingStats => {
   const now = new Date();
   const today = toLocalDateKey(now);
+  const annualChallenge = calculateAnnualChallenge(books, annualGoal, now, annualGoalYear);
   let completedBooksCount = 0;
   const completedBooksByMonth = new Map<string, number>();
   const genreMap = new Map<string, number>();
@@ -208,23 +212,24 @@ export const calculateStats = (
   }
 
   return {
+    annualChallenge,
+    authorNetwork,
+    averageReadingSpeed: totalReadingTime > 0 ? Math.round(totalPagesRead / (totalReadingTime / 60)) : 0,
+    badges: DEFAULT_BADGES,
+    booksCompletedThisMonth: monthlyData[5]?.books || 0,
     currentStreak,
+    dailyGoal,
+    dailyProgress,
+    genreDistribution,
+    heatmapData,
     longestStreak,
-    totalBooksRead: completedBooksCount,
+    monthlyData,
+    personalityDescription,
+    readingPersonality,
     totalBooksInLibrary: books.length,
+    totalBooksRead: completedBooksCount,
     totalPagesRead,
     totalReadingTime,
-    averageReadingSpeed: totalReadingTime > 0 ? Math.round(totalPagesRead / (totalReadingTime / 60)) : 0,
-    dailyProgress,
-    dailyGoal,
-    booksCompletedThisMonth: monthlyData[5]?.books || 0,
     weeklyData,
-    monthlyData,
-    heatmapData,
-    genreDistribution,
-    authorNetwork,
-    badges: DEFAULT_BADGES,
-    readingPersonality,
-    personalityDescription,
   };
 };

@@ -22,7 +22,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Cross-Book Library Full-Text Search](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/cross-book-library-full-text-search.md) | Client-side inverted index, idle worker & global search | Search & Discovery | Batch Library Ops | VERIFIED |
 | [Authenticated OPDS & Private Calibre Sync](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/authenticated-opds-and-calibre-sync.md) | Password-protected OPDS feeds, Calibre/Kavita/Komga integration | Library Management | OPDS Catalog Discovery | VERIFIED |
 | [Custom Speech Voices & Natural Cadence](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/custom-tts-voices-and-audio-profiles.md) | Multi-lingual voice selection, smart paragraph pauses & audio dock | Reader Experience | In-Book TTS | VERIFIED |
-| [Annual Reading Challenges & Habit Analytics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-challenges-and-habit-analytics.md) | Yearly book goals, ahead/behind pace tracking & streak preservation | Habit Formation | Storage Dashboard | READY |
+| [Annual Reading Challenges & Habit Analytics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-challenges-and-habit-analytics.md) | Yearly book goals, ahead/behind pace tracking & streak preservation | Habit Formation | Storage Dashboard | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -43,7 +43,6 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Cross-Book Library Full-Text Search**: Inverted index across personal book collection with snippet previews and one-click navigation.
    - **Authenticated OPDS & Private Calibre Sync**: Password-protected feeds for personal Calibre, Kavita, and Komga library servers.
    - **Custom Speech Voices & Natural Cadence**: Multi-lingual voice selection, persistent book voice preferences, and smart breathing pauses.
-2. **Upcoming Capabilities**:
    - **Annual Reading Challenges & Habit Analytics**: Yearly reading goals with dynamic ahead/behind pace tracking and milestone badges.
 
 ## Evaluated Architectural Alternatives

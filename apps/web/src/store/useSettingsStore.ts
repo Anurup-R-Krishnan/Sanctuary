@@ -15,76 +15,80 @@ type Keybinds = {
 };
 
 type SettingsValues = {
-  fontSize: number;
-  lineHeight: number;
-  textAlignment: TextAlignment;
+  annualBookGoal: number;
+  annualGoalYear: number;
+  barPosition: "top" | "bottom";
+  bookVoiceOverrides: Record<string, string>;
+  brightness: number;
+  continuous: boolean;
+  dailyGoal: number;
+  direction: "auto" | "ltr" | "rtl";
   fontPairing: string;
-  maxTextWidth: number;
+  fontSize: number;
+  grayscale: boolean;
   hyphenation: boolean;
+  keybinds: Keybinds;
+  lineHeight: number;
+  maxTextWidth: number;
   pageMargin: number;
   paragraphSpacing: number;
-  continuous: boolean;
-  direction: "auto" | "ltr" | "rtl";
-  spread: boolean;
-  writingMode: "horizontal-tb" | "vertical-rl";
-  brightness: number;
-  grayscale: boolean;
-  showScrollbar: boolean;
-  showPageCounter: boolean;
   progressBarType: "bar" | "none";
-  barPosition: "top" | "bottom";
-  showFloatingCapsule: boolean;
-  readerForeground: string;
-  readerBackground: string;
   readerAccent: string;
-  keybinds: Keybinds;
-  dailyGoal: number;
-  weeklyGoal: number;
-  showStreakReminder: boolean;
-  trackingEnabled: boolean;
+  readerBackground: string;
+  readerForeground: string;
   reduceMotion: boolean;
-  bookVoiceOverrides: Record<string, string>;
-  ttsVoiceURI: string | null;
-  ttsRate: number;
-  ttsPitch: number;
+  showFloatingCapsule: boolean;
+  showPageCounter: boolean;
+  showScrollbar: boolean;
+  showStreakReminder: boolean;
+  spread: boolean;
+  textAlignment: TextAlignment;
+  trackingEnabled: boolean;
   ttsParagraphPauseMs: number;
+  ttsPitch: number;
+  ttsRate: number;
+  ttsVoiceURI: string | null;
+  weeklyGoal: number;
+  writingMode: "horizontal-tb" | "vertical-rl";
 };
 
 type SettingsActions = {
-  setFontSize: (v: number) => void;
-  setLineHeight: (v: number) => void;
-  setTextAlignment: (v: TextAlignment) => void;
+  resetToDefaults: () => void;
+  setAnnualBookGoal: (v: number) => void;
+  setAnnualGoalYear: (v: number) => void;
+  setBarPosition: (v: "top" | "bottom") => void;
+  setBookVoiceOverride: (bookId: string, voiceURI: string) => void;
+  setBrightness: (v: number) => void;
+  setContinuous: (v: boolean) => void;
+  setDailyGoal: (v: number) => void;
+  setDirection: (v: "auto" | "ltr" | "rtl") => void;
   setFontPairing: (v: string) => void;
-  setMaxTextWidth: (v: number) => void;
+  setFontSize: (v: number) => void;
+  setGrayscale: (v: boolean) => void;
   setHyphenation: (v: boolean) => void;
+  setKeybinds: (v: Keybinds) => void;
+  setLineHeight: (v: number) => void;
+  setMaxTextWidth: (v: number) => void;
   setPageMargin: (v: number) => void;
   setParagraphSpacing: (v: number) => void;
-  setContinuous: (v: boolean) => void;
-  setDirection: (v: "auto" | "ltr" | "rtl") => void;
-  setSpread: (v: boolean) => void;
-  setWritingMode: (v: "horizontal-tb" | "vertical-rl") => void;
-  setBrightness: (v: number) => void;
-  setGrayscale: (v: boolean) => void;
-  setShowScrollbar: (v: boolean) => void;
-  setShowPageCounter: (v: boolean) => void;
   setProgressBarType: (v: "bar" | "none") => void;
-  setBarPosition: (v: "top" | "bottom") => void;
-  setShowFloatingCapsule: (v: boolean) => void;
-  setReaderForeground: (v: string) => void;
-  setReaderBackground: (v: string) => void;
   setReaderAccent: (v: string) => void;
-  setKeybinds: (v: Keybinds) => void;
-  setDailyGoal: (v: number) => void;
-  setWeeklyGoal: (v: number) => void;
-  setShowStreakReminder: (v: boolean) => void;
-  setTrackingEnabled: (v: boolean) => void;
+  setReaderBackground: (v: string) => void;
+  setReaderForeground: (v: string) => void;
   setReduceMotion: (v: boolean) => void;
-  setBookVoiceOverride: (bookId: string, voiceURI: string) => void;
-  setTtsVoiceURI: (v: string | null) => void;
-  setTtsRate: (v: number) => void;
-  setTtsPitch: (v: number) => void;
+  setShowFloatingCapsule: (v: boolean) => void;
+  setShowPageCounter: (v: boolean) => void;
+  setShowScrollbar: (v: boolean) => void;
+  setShowStreakReminder: (v: boolean) => void;
+  setSpread: (v: boolean) => void;
+  setTextAlignment: (v: TextAlignment) => void;
+  setTrackingEnabled: (v: boolean) => void;
   setTtsParagraphPauseMs: (v: number) => void;
-  resetToDefaults: () => void;
+  setTtsPitch: (v: number) => void;
+  setTtsRate: (v: number) => void;
+  setTtsVoiceURI: (v: string | null) => void;
+  setWeeklyGoal: (v: number) => void;
+  setWritingMode: (v: "horizontal-tb" | "vertical-rl") => void;
 };
 
 type Settings = SettingsValues & SettingsActions;
@@ -120,6 +124,8 @@ const DEFAULTS: SettingsValues = {
     toggleUI: ["m", "M"],
     close: ["Escape"]
   },
+  annualBookGoal: 20,
+  annualGoalYear: new Date().getFullYear(),
   dailyGoal: DEFAULT_DAILY_GOAL,
   weeklyGoal: 150,
   showStreakReminder: true,
@@ -159,6 +165,8 @@ const normalizeKeybinds = (raw: unknown): Keybinds | undefined => {
 };
 
 export const pickValues = (state: Settings): SettingsValues => ({
+  annualBookGoal: state.annualBookGoal,
+  annualGoalYear: state.annualGoalYear,
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
   textAlignment: state.textAlignment,
@@ -221,7 +229,9 @@ export const toRemotePayload = (state: SettingsValues) => ({
   barPosition: state.barPosition,
   showFloatingCapsule: state.showFloatingCapsule,
   keybinds: state.keybinds,
-  // Goals & tracking
+  // Reading goals & habits
+  annualBookGoal: state.annualBookGoal,
+  annualGoalYear: state.annualGoalYear,
   dailyGoal: state.dailyGoal,
   weeklyGoal: state.weeklyGoal,
   showStreakReminder: state.showStreakReminder,
@@ -265,6 +275,8 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.readerForeground === "string") out.readerForeground = raw.readerForeground;
   if (typeof raw.readerBackground === "string") out.readerBackground = raw.readerBackground;
   if (typeof raw.readerAccent === "string") out.readerAccent = raw.readerAccent;
+  if (typeof raw.annualBookGoal === "number") out.annualBookGoal = raw.annualBookGoal;
+  if (typeof raw.annualGoalYear === "number") out.annualGoalYear = raw.annualGoalYear;
   if (typeof raw.dailyGoal === "number") out.dailyGoal = raw.dailyGoal;
   if (typeof raw.weeklyGoal === "number") out.weeklyGoal = raw.weeklyGoal;
   if (typeof raw.showStreakReminder === "boolean") out.showStreakReminder = raw.showStreakReminder;
@@ -286,7 +298,9 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   const remote = input as Record<string, unknown>;
   const out: Partial<SettingsValues> = {};
 
-  // ── Goals & tracking ─────────────────────────────────────────────────────
+  // ── Reading goals & habits ───────────────────────────────────────────────
+  if (typeof remote.annualBookGoal === "number") out.annualBookGoal = remote.annualBookGoal;
+  if (typeof remote.annualGoalYear === "number") out.annualGoalYear = remote.annualGoalYear;
   if (typeof remote.dailyGoal === "number") out.dailyGoal = remote.dailyGoal;
   if (typeof remote.weeklyGoal === "number") out.weeklyGoal = remote.weeklyGoal;
   if (typeof remote.showStreakReminder === "boolean") out.showStreakReminder = remote.showStreakReminder;
@@ -381,6 +395,8 @@ export const useSettingsStore = create<Settings>((set) => ({
   setReaderBackground: createSetAction("readerBackground", set),
   setReaderAccent: createSetAction("readerAccent", set),
   setKeybinds: createSetAction("keybinds", set),
+  setAnnualBookGoal: createSetAction("annualBookGoal", set),
+  setAnnualGoalYear: createSetAction("annualGoalYear", set),
   setDailyGoal: createSetAction("dailyGoal", set),
   setWeeklyGoal: createSetAction("weeklyGoal", set),
   setShowStreakReminder: createSetAction("showStreakReminder", set),
