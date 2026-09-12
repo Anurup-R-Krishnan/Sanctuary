@@ -180,7 +180,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     }, []);
 
     const goToPage = useCallback((page: number) => {
-        if (!sessionRef.current?.epubBook) return;
+        if (!sessionRef.current) return;
+        if (typeof sessionRef.current.goToPage === "function") {
+            sessionRef.current.goToPage(page);
+            return;
+        }
+        if (!sessionRef.current.epubBook) return;
         const total = sessionRef.current.totalLocations;
         
         // Prevent crashes if locations aren't generated yet or total is invalid

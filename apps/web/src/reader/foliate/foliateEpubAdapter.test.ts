@@ -13,6 +13,7 @@ beforeAll(() => {
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.NodeFilter = dom.window.NodeFilter;
   globalThis.customElements = dom.window.customElements;
+  globalThis.ProcessingInstruction = dom.window.ProcessingInstruction;
 });
 
 describe("FoliateEpubAdapter", () => {

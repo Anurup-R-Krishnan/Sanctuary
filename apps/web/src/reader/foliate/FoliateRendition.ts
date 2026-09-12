@@ -7,6 +7,7 @@ import type { ReaderPosition } from "@/types/reader";
 
 import type { DocumentLocator, DocumentSelection } from "../contracts/locator";
 import type {
+  DocumentAnnotationOptions,
   DocumentAnnotationsApi,
   DocumentRendition,
   ReaderFlowOptions,
@@ -52,6 +53,40 @@ export class FoliateRendition implements DocumentRendition {
     this.view.style.backgroundColor = background;
 
     this.container.appendChild(this.view);
+
+    this.annotations = {
+      clear: () => {
+        // Clear annotations
+      },
+      highlight: (cfiRange: string, options?: DocumentAnnotationOptions) => {
+        try {
+          this.view?.addAnnotation?.({
+            color: options?.color,
+            value: cfiRange,
+          });
+        } catch (err) {
+          console.warn("Foliate highlight failed:", err);
+        }
+      },
+      remove: (cfiRange: string) => {
+        try {
+          this.view?.deleteAnnotation?.({ value: cfiRange });
+        } catch (err) {
+          console.warn("Foliate remove annotation failed:", err);
+        }
+      },
+      underline: (cfiRange: string, options?: DocumentAnnotationOptions) => {
+        try {
+          this.view?.addAnnotation?.({
+            color: options?.color,
+            underline: true,
+            value: cfiRange,
+          });
+        } catch (err) {
+          console.warn("Foliate underline failed:", err);
+        }
+      },
+    };
 
     this.setupViewEventListeners();
   }
@@ -106,11 +141,12 @@ export class FoliateRendition implements DocumentRendition {
       this.emit("relocated", pos);
     });
 
-    // Content load hook to inject theme styles
+    // Content load hook to inject theme styles and forward keys
     this.view.addEventListener("load", (e: CustomEvent) => {
       const { doc } = e.detail ?? {};
       if (doc) {
         this.injectStylesToDocument(doc);
+        this.setupDocumentKeyboardForwarding(doc);
       }
     });
 
@@ -160,6 +196,29 @@ export class FoliateRendition implements DocumentRendition {
     }
   }
 
+  private setupDocumentKeyboardForwarding(doc: Document): void {
+    try {
+      const forwardKey = (e: KeyboardEvent) => {
+        window.dispatchEvent(
+          new KeyboardEvent(e.type, {
+            altKey: e.altKey,
+            bubbles: true,
+            cancelable: true,
+            code: e.code,
+            ctrlKey: e.ctrlKey,
+            key: e.key,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+          })
+        );
+      };
+      doc.addEventListener("keydown", forwardKey, { capture: true });
+      doc.addEventListener("keyup", forwardKey, { capture: true });
+    } catch {
+      // ignore
+    }
+  }
+
   private async applyFlowToRenderer(): Promise<void> {
     const renderer = this.view.renderer;
     if (!renderer) return;
@@ -202,8 +261,14 @@ export class FoliateRendition implements DocumentRendition {
   public async display(target?: string | DocumentLocator): Promise<boolean> {
     if (!this.view) return false;
     try {
-      if (typeof target === "string") {
-        if (!target.trim()) return false;
+      if (typeof target === "string" && target.trim()) {
+        if (target.startsWith("fraction:")) {
+          const fraction = parseFloat(target.slice("fraction:".length));
+          if (Number.isFinite(fraction)) {
+            await this.goToFraction(Math.max(0, Math.min(1, fraction)));
+            return true;
+          }
+        }
         await this.view.goTo(target);
         return true;
       }
@@ -218,7 +283,12 @@ export class FoliateRendition implements DocumentRendition {
       return true;
     } catch (err) {
       console.warn("Foliate display target failed:", err);
-      return false;
+      try {
+        await this.view.goTo(0);
+        return true;
+      } catch {
+        return false;
+      }
     }
   }
 
@@ -231,6 +301,47 @@ export class FoliateRendition implements DocumentRendition {
   public async prev(): Promise<void> {
     if (this.view) {
       await this.view.prev();
+    }
+  }
+
+  public async goToFraction(frac: number): Promise<void> {
+    if (this.view && typeof this.view.goToFraction === "function") {
+      await this.view.goToFraction(Math.max(0, Math.min(1, frac)));
+    }
+  }
+
+  public deselect(): void {
+    if (this.view && typeof this.view.deselect === "function") {
+      this.view.deselect();
+    }
+  }
+
+  public getContents(): Array<{ doc: Document; window?: Window }> {
+    const renderer = this.view?.renderer;
+    if (renderer && typeof renderer.getContents === "function") {
+      const contents = renderer.getContents();
+      if (Array.isArray(contents)) {
+        return contents
+          .filter((c: { doc?: Document }) => Boolean(c.doc))
+          .map((c: { doc: Document }) => ({
+            doc: c.doc,
+            window: c.doc.defaultView ?? undefined,
+          }));
+      }
+    }
+    return [];
+  }
+
+  public setStyles(styles: Record<string, Record<string, string>>): void {
+    this.flowOptions.themeStyles = styles;
+    const renderer = this.view?.renderer;
+    if (renderer && typeof renderer.getContents === "function") {
+      const contents = renderer.getContents();
+      if (Array.isArray(contents)) {
+        contents.forEach((c: { doc?: Document }) => {
+          if (c.doc) this.injectStylesToDocument(c.doc);
+        });
+      }
     }
   }
 
