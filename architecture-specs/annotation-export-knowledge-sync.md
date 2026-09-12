@@ -16,7 +16,7 @@
 - **Prerequisites**: Collections, Custom Shelves & Batch Library Operations
 - **Category**: Knowledge Management
 - **Documented at**: commit `5128ed0`, 2026-09-13
-- **Status**: READY
+- **Status**: VERIFIED (commit `7ffd477`, 2026-09-13)
 
 ## Why this matters
 
