@@ -35,7 +35,34 @@ function isZipHeader(bytes: Uint8Array): boolean {
       (bytes[2] === 0x07 && bytes[3] === 0x08));
 }
 
-export async function verifyBookContent(bookId: string, blob: Blob | null | undefined, expectedHash?: string): Promise<VerifiedBookContent> {
+function isValidBookHeader(bytes: Uint8Array, fileName?: string): boolean {
+  if (isZipHeader(bytes)) return true;
+  if (bytes.length >= 68) {
+    const magic = String.fromCharCode(...bytes.slice(60, 68));
+    if (magic === "BOOKMOBI") return true;
+  }
+  try {
+    const snippet = new TextDecoder().decode(bytes.slice(0, 1024)).trimStart().toLowerCase();
+    if (snippet.includes("<fictionbook")) return true;
+    if (snippet.startsWith("<!doctype html") || snippet.startsWith("<html")) return true;
+  } catch {
+    // ignore
+  }
+  if (fileName) {
+    const lower = fileName.toLowerCase();
+    if (lower.endsWith(".txt") || lower.endsWith(".text") || lower.endsWith(".md") || lower.endsWith(".markdown")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export async function verifyBookContent(
+  bookId: string,
+  blob: Blob | null | undefined,
+  expectedHash?: string,
+  fileName?: string
+): Promise<VerifiedBookContent> {
   if (!blob) {
     recordReaderDiagnostic({ bookId, stage: "content-verification", error: "EPUB content is missing." });
     throw new BookContentError("BOOK_CONTENT_MISSING", `No EPUB content is stored for book ${bookId}.`);
@@ -53,7 +80,8 @@ export async function verifyBookContent(bookId: string, blob: Blob | null | unde
     throw new BookContentError("BOOK_CONTENT_READ_FAILED", `The stored EPUB for book ${bookId} could not be read.`, error);
   }
 
-  if (!isZipHeader(new Uint8Array(buffer))) {
+  const bytes = new Uint8Array(buffer);
+  if (!isValidBookHeader(bytes, fileName)) {
     recordReaderDiagnostic({ bookId, stage: "content-verification", error: "EPUB does not have a ZIP header.", details: { byteLength: blob.size, mimeType: blob.type } });
     throw new BookContentError("BOOK_CONTENT_INVALID", `The stored file for book ${bookId} is not a valid EPUB archive.`);
   }

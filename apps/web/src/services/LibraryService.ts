@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Book, Bookmark } from "@/types";
 
 import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
+import { isSupportedExtension } from "@/reader/formats/FormatDetector";
 import { BookContentError, getVerifiedBookContent, saveBookContent, verifyBookContent } from "@/services/bookContentRepository";
 import { bookService } from "@/services/bookService";
 import { logErrorOnce, HttpError } from "@/services/http";
@@ -334,16 +335,16 @@ export const libraryService = {
   async replaceBookContent(id: string, file: File, api: SanctuaryApiClient, isPersistent: boolean) {
     const existing = useBookStore.getState().books.find((book) => book.id === id);
     if (!existing) throw new Error("This book is no longer in your library.");
-    if (!file.name.toLowerCase().endsWith(".epub")) throw new Error("Only EPUB files can repair a book.");
+    if (!isSupportedExtension(file.name)) throw new Error("Unsupported format for book replacement.");
 
     let adapter: FoliateEpubAdapter | null = null;
     try {
       const arrayBuffer = await file.arrayBuffer();
       const contentHash = await calculateEpubHash(arrayBuffer);
-      const epubBlob = new Blob([arrayBuffer], { type: "application/epub+zip" });
-      await verifyBookContent(id, epubBlob, contentHash);
+      const epubBlob = new Blob([arrayBuffer], { type: file.type || "application/octet-stream" });
+      await verifyBookContent(id, epubBlob, contentHash, file.name);
 
-      adapter = await FoliateEpubAdapter.create(epubBlob);
+      adapter = await FoliateEpubAdapter.create(epubBlob, file.name);
       const title = adapter.metadata.title || existing.title;
       const author = adapter.metadata.author || existing.author;
       const coverBlob = await adapter.getCoverBlob();
@@ -396,8 +397,8 @@ export const libraryService = {
         throw new Error(`The exact file "${file.name}" is already in your library.`);
       }
 
-      const epubBlob = new Blob([epubArrayBuffer], { type: "application/epub+zip" });
-      adapter = await FoliateEpubAdapter.create(epubBlob);
+      const epubBlob = new Blob([epubArrayBuffer], { type: file.type || "application/octet-stream" });
+      adapter = await FoliateEpubAdapter.create(epubBlob, file.name);
 
       const title = adapter.metadata.title ?? "Untitled";
       const author = adapter.metadata.author || "Unknown";
@@ -460,7 +461,7 @@ export const libraryService = {
       console.error("Error adding book:", error);
       if (error instanceof Error && error.message.includes("already in your library")) throw error;
       if (error instanceof Error && error.message.includes("currently being imported")) throw error;
-      throw new Error(`Failed to import EPUB file: ${error instanceof Error ? error.message : "Invalid format"}`);
+      throw new Error(`Failed to import book file: ${error instanceof Error ? error.message : "Invalid format"}`);
     } finally {
       adapter?.destroy();
       if (importKey) pendingImports.delete(importKey);

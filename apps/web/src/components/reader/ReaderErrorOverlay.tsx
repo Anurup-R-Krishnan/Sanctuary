@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import type { ReaderError } from "@/types/reader";
 
 import { Button } from "@/components/ui/Button";
+import { SUPPORTED_FILE_ACCEPT } from "@/reader/formats/FormatDetector";
 
 interface ReaderErrorOverlayProps {
     error: ReaderError;
@@ -49,7 +50,7 @@ export function ReaderErrorOverlay({ error, onRetry, onRetryFromStart, onReplace
                     {error.message}
                 </p>
                 {replaceError && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{replaceError}</p>}
-                <input ref={inputRef} type="file" accept=".epub" className="hidden" onChange={handleReplacement} />
+                <input ref={inputRef} type="file" accept={SUPPORTED_FILE_ACCEPT} className="hidden" onChange={handleReplacement} />
                 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button

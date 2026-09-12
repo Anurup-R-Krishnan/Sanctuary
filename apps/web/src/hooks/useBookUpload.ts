@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { isSupportedExtension, SUPPORTED_FILE_ACCEPT } from "@/reader/formats/FormatDetector";
+
 export interface UseBookUploadResult {
   clearError: () => void;
   /** Drag-and-drop handlers to spread onto a drop target. */
@@ -48,8 +50,8 @@ export function useBookUpload(onAddBook: (file: File) => Promise<void>): UseBook
 
   const handleFile = useCallback(
     async (file: File) => {
-      if (!file.name.toLowerCase().endsWith(".epub")) {
-        setErrorMessage("Only EPUB files are supported.");
+      if (!isSupportedExtension(file.name)) {
+        setErrorMessage("Unsupported format. Supported: EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown.");
         return;
       }
       setIsLoading(true);
@@ -103,7 +105,7 @@ export function useBookUpload(onAddBook: (file: File) => Promise<void>): UseBook
     inputRef,
     inputProps: {
       type: "file",
-      accept: ".epub",
+      accept: SUPPORTED_FILE_ACCEPT,
       className: "hidden",
       onChange: handleChange,
     },
