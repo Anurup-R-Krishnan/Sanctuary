@@ -4,6 +4,7 @@ import {
 import React, { useState } from "react";
 
 import { Slider } from "@/components/settings/Slider";
+import { StorageManagerCard } from "@/components/settings/StorageManagerCard";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { Toggle } from "@/components/ui/Toggle";
@@ -108,6 +109,7 @@ function SettingsView() {
                         <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Data & Storage</h3>
                         <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">Manage your local data.</p>
                     </div>
+                    <StorageManagerCard />
                     <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
                         <div className="flex items-center gap-3 mb-3 text-red-600 dark:text-red-400">
                             <AlertTriangle className="w-5 h-5" />
