@@ -1,4 +1,4 @@
-import { BookOpen, Copy, Edit3, Highlighter, Underline, Volume2 } from "lucide-react";
+import { BookOpen, Copy, Edit3, Highlighter, Quote, Underline, Volume2 } from "lucide-react";
 import React, { memo } from "react";
 
 import type { ReaderSelection } from "@/types/reader";
@@ -6,6 +6,7 @@ import type { ReaderSelection } from "@/types/reader";
 interface ReaderSelectionMenuProps {
     onAddNote: () => void;
     onCopy: () => void;
+    onCreateQuoteCard?: () => void;
     onDefine?: () => void;
     onHighlight: (color?: string) => void;
     onSpeak: () => void;
@@ -16,6 +17,7 @@ interface ReaderSelectionMenuProps {
 function ReaderSelectionMenuImpl({
     onAddNote,
     onCopy,
+    onCreateQuoteCard,
     onDefine,
     onHighlight,
     onSpeak,
@@ -67,6 +69,9 @@ function ReaderSelectionMenuImpl({
             <div className="w-px h-8 bg-black/10 dark:bg-white/10" />
             <ActionBtn aria-label="Add note" icon={Edit3} label="Note" onClick={onAddNote} />
             <ActionBtn aria-label="Copy selection" icon={Copy} label="Copy" onClick={onCopy} />
+            {onCreateQuoteCard && (
+                <ActionBtn aria-label="Create quote card" icon={Quote} label="Quote" onClick={onCreateQuoteCard} />
+            )}
             <div className="w-px h-8 bg-black/10 dark:bg-white/10" />
             <ActionBtn aria-label="Speak selection" icon={Volume2} label="Speak" onClick={onSpeak} />
         </div>

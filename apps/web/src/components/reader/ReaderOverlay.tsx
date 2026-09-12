@@ -39,6 +39,7 @@ interface ReaderOverlayProps {
   onCloseSearch: () => void;
   onCloseSettings: () => void;
   onCloseTTS?: () => void;
+  onCreateQuoteCard?: (text: string, chapterLabel?: string) => void;
   onDeleteAnnotation: (cfiRange: string) => void;
   onGoToSearchResult: (index: number) => void;
   onJumpToBottom: () => void;
@@ -167,10 +168,11 @@ function ReaderOverlay(props: ReaderOverlayProps) {
           {props.showAnnotations && (
             <ReaderAnnotationsPanel
               annotations={props.annotations}
-              bookTitle={props.book.title}
               bookAuthor={props.book.author}
-              onGoToAnnotation={props.onNavigate}
+              bookTitle={props.book.title}
+              onCreateQuoteCard={props.onCreateQuoteCard}
               onDeleteAnnotation={props.onDeleteAnnotation}
+              onGoToAnnotation={props.onNavigate}
               onUpdateAnnotation={props.onUpdateAnnotation}
             />
           )}

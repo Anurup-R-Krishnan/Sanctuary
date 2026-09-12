@@ -1,4 +1,4 @@
-import { FileJson, FileText, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { FileJson, FileText, MessageSquare, Pencil, Quote, Trash2 } from "lucide-react";
 import React, { useCallback, useState } from "react";
 
 import type { ReaderAnnotation } from "@/types/reader";
@@ -13,6 +13,7 @@ interface ReaderAnnotationsPanelProps {
   annotations: ReaderAnnotation[];
   bookAuthor?: string;
   bookTitle?: string;
+  onCreateQuoteCard?: (text: string, chapterLabel?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onGoToAnnotation: (cfi: string) => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
@@ -20,10 +21,11 @@ interface ReaderAnnotationsPanelProps {
 
 export function ReaderAnnotationsPanel({
   annotations,
-  bookTitle = "Untitled Book",
   bookAuthor = "Unknown Author",
-  onGoToAnnotation,
+  bookTitle = "Untitled Book",
+  onCreateQuoteCard,
   onDeleteAnnotation,
+  onGoToAnnotation,
   onUpdateAnnotation,
 }: ReaderAnnotationsPanelProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -204,6 +206,21 @@ export function ReaderAnnotationsPanel({
                       <span>Add note</span>
                     </button>
                   </div>
+                )}
+
+                {onCreateQuoteCard && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCreateQuoteCard(item.text, item.chapterLabel);
+                    }}
+                    className="absolute right-9 top-3.5 p-1.5 text-light-text-muted hover:text-light-accent dark:hover:text-dark-accent opacity-0 group-hover:opacity-100 transition-opacity rounded hover:bg-black/5 dark:hover:bg-white/5"
+                    title="Generate quote card"
+                    aria-label="Generate quote card"
+                  >
+                    <Quote className="w-3.5 h-3.5" />
+                  </button>
                 )}
 
                 <button

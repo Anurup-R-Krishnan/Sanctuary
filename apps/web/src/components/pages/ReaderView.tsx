@@ -14,6 +14,12 @@ import ReaderOverlay from "@/components/reader/ReaderOverlay";
 import { ReaderSelectionMenu } from "@/components/reader/ReaderSelectionMenu";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
+const QuoteCardModal = lazy(() =>
+  import("@/components/reader/QuoteCardModal").then((m) => ({
+    default: m.QuoteCardModal,
+  }))
+);
+
 const WordDefinitionModal = lazy(() =>
   import("@/components/reader/WordDefinitionModal").then((m) => ({
     default: m.WordDefinitionModal,
@@ -167,6 +173,26 @@ function ReaderView({
     });
     engineRef.current?.clearSelection();
   }, [selection, book?.title]);
+
+  const [activeQuoteTarget, setActiveQuoteTarget] = useState<{
+    chapterLabel?: string;
+    text: string;
+  } | null>(null);
+
+  const handleOpenQuoteCard = useCallback(
+    (text?: string, chapter?: string) => {
+      const quoteText = text || selection?.text?.trim();
+      if (!quoteText) return;
+      setActiveQuoteTarget({
+        chapterLabel: chapter || position.chapterLabel || undefined,
+        text: quoteText,
+      });
+      if (selection) {
+        engineRef.current?.clearSelection();
+      }
+    },
+    [selection, position.chapterLabel]
+  );
 
   const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
     bookId: book?.id ?? "",
@@ -412,6 +438,7 @@ function ReaderView({
         onChangeTTSRate={changeRate}
         onChangeTTSVoice={changeVoice}
         onCloseTTS={handleCloseTTS}
+        onCreateQuoteCard={(text, chapter) => handleOpenQuoteCard(text, chapter)}
         onNextTTSSentence={nextSentence}
         onPrevTTSSentence={prevSentence}
         onToggleTTS={handleToggleTTS}
@@ -423,6 +450,7 @@ function ReaderView({
       <ReaderSelectionMenu
         onAddNote={handleAddNote}
         onCopy={handleCopy}
+        onCreateQuoteCard={() => handleOpenQuoteCard()}
         onDefine={handleDefine}
         onHighlight={handleHighlight}
         onSpeak={handleSpeak}
@@ -452,6 +480,19 @@ function ReaderView({
             isOpen={!!activeDefineWord}
             onClose={() => setActiveDefineWord(null)}
             word={activeDefineWord.word}
+          />
+        </Suspense>
+      )}
+
+      {activeQuoteTarget && (
+        <Suspense fallback={null}>
+          <QuoteCardModal
+            bookAuthor={book?.author}
+            bookTitle={book?.title || "Untitled"}
+            chapterLabel={activeQuoteTarget.chapterLabel}
+            isOpen={!!activeQuoteTarget}
+            onClose={() => setActiveQuoteTarget(null)}
+            quote={activeQuoteTarget.text}
           />
         </Suspense>
       )}
