@@ -15,7 +15,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Native Media Session Audio Integration](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/media-session-background-audio.md) | System lockscreen controls & background audio playback | Reader Engine | In-Book TTS | VERIFIED |
 | [Native PDF Fixed-Layout Support](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/pdf-fixed-layout-support.md) | PDF document ingestion, canvas rendering & zoom controls | Format Architecture | None | VERIFIED |
 | [Collections & Batch Library Operations](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/library-collections-and-batch-ops.md) | Custom shelves, metadata editing & multi-select actions | Library Management | D1 Reading Sync | VERIFIED |
-| [Storage Dashboard & Offline Caching](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/storage-manager-and-offline-caching.md) | Quota meter, selective offline caching & LRU cache eviction | Device Storage | None | READY |
+| [Storage Dashboard & Offline Caching](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/storage-manager-and-offline-caching.md) | Quota meter, selective offline caching & LRU cache eviction | Device Storage | None | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -26,7 +26,6 @@ Each module contains self-contained technical specifications, scope definitions,
    - **In-Book Speech Synthesis**: Continuous chapter walking and sentence highlighting with Foliate engine.
    - **Cloudflare D1 Reading Sync**: Conflict-free monotonic progress resolution and cross-device annotation sync.
    - **OPDS Catalog Feed Discovery**: Open catalog browsing (Standard Ebooks & Project Gutenberg) with direct import.
-2. **Upcoming Capabilities**:
    - **Media Session Integration**: Extends speech synthesis to OS-level lockscreen, notification trays, and Bluetooth earbud controls.
    - **PDF Document Engine**: Adds fixed-layout PDF viewing and zoom controls without ballooning bundle size.
    - **Collections & Batch Library Management**: Empowers power readers with custom shelves, bulk editing, and multi-book management.

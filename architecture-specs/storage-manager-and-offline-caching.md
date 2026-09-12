@@ -16,6 +16,7 @@
 - **Prerequisites**: None
 - **Category**: dx
 - **Documented at**: commit `54f0583`, 2026-09-12
+- **Status**: VERIFIED (commit `0effadc`, 2026-09-13)
 
 ## Why this matters
 
