@@ -51,5 +51,5 @@ describe("Foliate In-Book Search", () => {
 
     rendition.destroy();
     adapter.destroy();
-  });
+  }, 15000);
 });

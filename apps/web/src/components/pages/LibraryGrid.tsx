@@ -12,6 +12,7 @@ import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { SectionHeader } from "@/components/library/SectionHeader";
 import { SkeletonCard } from "@/components/library/SkeletonCard";
+import { formatBatchAnnotationsAsMarkdown, triggerFileDownload } from "@/services/annotationExportService";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -139,6 +140,14 @@ function LibraryGrid({
 
   const handleBatchDelete = (bookIds: string[]) => {
     onBatchDelete(bookIds);
+    clearSelection();
+  };
+
+  const handleBatchExportAnnotations = (bookIds: string[]) => {
+    const selectedBooks = books.filter((b) => bookIds.includes(b.id));
+    if (selectedBooks.length === 0) return;
+    const md = formatBatchAnnotationsAsMarkdown(selectedBooks);
+    triggerFileDownload(md, `sanctuary_notes_${Date.now()}.md`, "text/markdown");
     clearSelection();
   };
 
@@ -425,6 +434,7 @@ function LibraryGrid({
         onAssignCollection={handleAssignCollection}
         onClearSelection={clearSelection}
         onDelete={handleBatchDelete}
+        onExportAnnotations={handleBatchExportAnnotations}
         onMarkFinished={handleBatchMarkFinished}
         selectedBookIds={[...selectedBookIds]}
       />

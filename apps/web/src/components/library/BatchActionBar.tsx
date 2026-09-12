@@ -1,10 +1,11 @@
-import { BookMarked, CheckCircle, Trash2, X } from "lucide-react";
+import { BookMarked, CheckCircle, FileDown, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface BatchActionBarProps {
   onAssignCollection: (bookIds: string[], collection: string) => void;
   onClearSelection: () => void;
   onDelete: (bookIds: string[]) => void;
+  onExportAnnotations?: (bookIds: string[]) => void;
   onMarkFinished: (bookIds: string[]) => void;
   selectedBookIds: string[];
 }
@@ -13,6 +14,7 @@ export function BatchActionBar({
   onAssignCollection,
   onClearSelection,
   onDelete,
+  onExportAnnotations,
   onMarkFinished,
   selectedBookIds,
 }: BatchActionBarProps) {
@@ -119,6 +121,17 @@ export function BatchActionBar({
           <CheckCircle className="h-4 w-4" />
           Finished
         </button>
+
+        {/* Export Annotations */}
+        {onExportAnnotations && (
+          <button
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-light-text dark:text-dark-text hover:bg-black/[0.06] dark:hover:bg-white/[0.06] transition-colors"
+            onClick={() => onExportAnnotations(selectedBookIds)}
+          >
+            <FileDown className="h-4 w-4" />
+            Export Notes
+          </button>
+        )}
 
         {/* Delete */}
         <button
