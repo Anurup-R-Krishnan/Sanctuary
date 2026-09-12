@@ -225,19 +225,6 @@ export async function deleteMutation(id: string): Promise<void> {
   return dbDelete(MUTATIONS_STORE, id);
 }
 
-// Reader Cache helpers
-export async function putReaderCache(id: string, payload: unknown): Promise<void> {
-  return dbPut(READER_CACHE_STORE, { id, payload });
-}
-
-export async function getReaderCache<T>(id: string): Promise<T | null> {
-  const result = await dbGet<{ id: string; payload: T }>(READER_CACHE_STORE, id);
-  return result ? result.payload : null;
-}
-
-export async function deleteReaderCache(id: string): Promise<void> {
-  return dbDelete(READER_CACHE_STORE, id);
-}
 
 // Annotations helpers
 import type { ReaderAnnotation } from "@/types/reader";

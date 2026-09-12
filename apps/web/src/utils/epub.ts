@@ -122,10 +122,6 @@ export type EpubBookHandle = {
   spine?: EpubSpineApi;
 };
 
-export function revokeObjectUrl(url: string | null | undefined): void {
-  if (!url?.startsWith("blob:")) return;
-  URL.revokeObjectURL(url);
-}
 
 export async function extractCoverBlobFromEpubSource(source: ArrayBuffer | Blob): Promise<Blob | null> {
   let adapter: FoliateEpubAdapter | null = null;

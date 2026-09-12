@@ -1,7 +1,3 @@
-import type {
-  ReadingSession as CoreReadingSession,
-} from "@sanctuary/core";
-
 export type { ReaderSettings } from "@sanctuary/core";
 
 export enum Theme {
@@ -180,29 +176,3 @@ export type SessionAggregates = {
   monthMinutes: Map<string, number>;
   sessionCount: number;
 };
-
-export function sessionToCore(session: ReadingSession): CoreReadingSession {
-  return {
-    bookId: session.bookId,
-    device: session.device ?? "web",
-    durationSec: session.duration * 60,
-    endedAt: session.endedAt ?? null,
-    id: session.id,
-    pagesAdvanced: session.pagesRead,
-    startedAt: session.startedAt ?? session.date,
-  };
-}
-
-export function sessionFromCore(session: CoreReadingSession, bookTitle: string, date: string): ReadingSession {
-  return {
-    bookId: session.bookId,
-    bookTitle,
-    date,
-    device: session.device,
-    duration: Math.round(session.durationSec / 60),
-    endedAt: session.endedAt ?? undefined,
-    id: session.id,
-    pagesRead: session.pagesAdvanced,
-    startedAt: session.startedAt,
-  };
-}
