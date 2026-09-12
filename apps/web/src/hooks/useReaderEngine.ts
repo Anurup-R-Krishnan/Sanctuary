@@ -51,12 +51,13 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         paragraphSpacing: state.paragraphSpacing,
         maxTextWidth: state.maxTextWidth,
     }));
-    const { continuous, spread, direction } = useSettingsShallow((state) => ({
+    const { continuous, spread, direction, writingMode } = useSettingsShallow((state) => ({
         continuous: state.continuous,
-        spread: state.spread,
         direction: state.direction,
+        spread: state.spread,
+        writingMode: state.writingMode,
     }));
-    const builtFlowRef = useRef({ continuous, spread, direction });
+    const builtFlowRef = useRef({ continuous, direction, spread, writingMode });
 
     useEffect(() => {
         onUpdateProgressRef.current = onUpdateProgress;
@@ -74,7 +75,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     }, [themeConfig]);
 
     // Engine Initialization — only when the book itself (or its bytes) changes.
-    // Layout-mode toggles (continuous/spread/direction) go through
+    // Layout-mode toggles (continuous/spread/direction/writingMode) go through
     // session.setFlow() below, which reuses the parsed book instead of
     // destroying everything and re-parsing the ZIP.
     useEffect(() => {
@@ -87,18 +88,19 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         }
 
         const styles = themeControllerRef.current.buildStyles(themeConfig);
-        builtFlowRef.current = { continuous, spread, direction };
+        builtFlowRef.current = { continuous, direction, spread, writingMode };
 
         sessionRef.current = new ReaderSession({
-            bookId: activeBookId,
             blob: activeBlob,
+            bookId: activeBookId,
             container,
-            initialCfi: book.lastLocation,
             continuous,
-            spread,
             direction,
-            themeStyles: styles,
+            initialCfi: book.lastLocation,
             readerBackground: themeConfig.readerBackground,
+            spread,
+            themeStyles: styles,
+            writingMode,
         }, {
             onStatusChange: (s) => {
                 if (!mounted) return;
@@ -139,7 +141,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         if (
             builtFlowRef.current.continuous === continuous &&
             builtFlowRef.current.spread === spread &&
-            builtFlowRef.current.direction === direction
+            builtFlowRef.current.direction === direction &&
+            builtFlowRef.current.writingMode === writingMode
         ) {
             return;
         }
@@ -148,23 +151,24 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             if (!session?.epubBook) {
                 // Book hasn't finished parsing yet; the creation effect
                 // already used the latest values, so just record them.
-                builtFlowRef.current = { continuous, spread, direction };
+                builtFlowRef.current = { continuous, direction, spread, writingMode };
                 return;
             }
             const styles = themeControllerRef.current.buildStyles(themeConfig);
             session.setFlow({
                 continuous,
-                spread,
                 direction,
-                themeStyles: styles,
                 readerBackground: themeConfig.readerBackground,
+                spread,
+                themeStyles: styles,
+                writingMode,
             }).then(() => {
-                builtFlowRef.current = { continuous, spread, direction };
+                builtFlowRef.current = { continuous, direction, spread, writingMode };
             }).catch((err) => console.warn("Flow switch failed:", err));
         }, 150);
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [continuous, spread, direction]);
+    }, [continuous, spread, direction, writingMode]);
 
     // Actions
     const nextPage = useCallback(() => {

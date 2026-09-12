@@ -18,6 +18,7 @@ export interface ReaderEngineOptions {
   readerBackground?: string;
   spread: boolean;
   themeStyles: Record<string, Record<string, string>>;
+  writingMode?: "horizontal-tb" | "vertical-rl";
 }
 
 export interface ReaderEngineCallbacks {

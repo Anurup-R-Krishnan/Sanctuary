@@ -37,12 +37,17 @@ describe("Foliate In-Book Search", () => {
     expect(firstMatch.excerpt.toLowerCase()).toContain("ishmael");
     expect(firstMatch.chapterLabel).toBeDefined();
 
+    // Verify active search result highlighting
+    rendition.highlightSearchResult(firstMatch.cfi);
+    expect(rendition.getActiveSearchCfi()).toBe(firstMatch.cfi);
+
     // Verify search with a different query
     const whaleResults = await rendition.search("whale");
     expect(whaleResults.length).toBeGreaterThan(5);
 
-    // Clear search
+    // Clear search and verify active search state resets
     rendition.clearSearch();
+    expect(rendition.getActiveSearchCfi()).toBeNull();
 
     rendition.destroy();
     adapter.destroy();

@@ -268,6 +268,15 @@ export default function ReaderSettings() {
                 { value: "rtl", label: "RTL" },
               ]}
             />
+            <ButtonGroup
+              label="Writing Mode"
+              value={state.writingMode}
+              onChange={(v) => state.setWritingMode(v as "horizontal-tb" | "vertical-rl")}
+              options={[
+                { value: "horizontal-tb", label: "Horizontal" },
+                { value: "vertical-rl", label: "Vertical (CJK)" },
+              ]}
+            />
           </div>
         </div>
 

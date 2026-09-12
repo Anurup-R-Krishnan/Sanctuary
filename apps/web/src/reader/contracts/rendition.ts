@@ -12,6 +12,7 @@ export interface ReaderFlowOptions {
   readerBackground?: string;
   spread: boolean;
   themeStyles: Record<string, Record<string, string>>;
+  writingMode?: "horizontal-tb" | "vertical-rl";
 }
 
 export interface DocumentAnnotationOptions {
@@ -31,11 +32,17 @@ export interface DocumentAnnotationsApi {
 export interface DocumentRendition {
   readonly annotations?: DocumentAnnotationsApi;
 
+  /** Clear any visual search match highlights */
+  clearSearch?(): void;
+
   /** Destroy view and clean up DOM nodes */
   destroy(): void;
 
   /** Display a specific location or section */
   display(target?: string | DocumentLocator): Promise<boolean>;
+
+  /** Highlight an active search result */
+  highlightSearchResult?(cfi: string | null): void;
 
   /** Advance to next page / scroll downward */
   next(): Promise<void>;

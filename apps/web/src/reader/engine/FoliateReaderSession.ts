@@ -44,6 +44,7 @@ export class FoliateReaderSession implements IReaderSession {
       readerBackground: options.readerBackground,
       spread: options.spread,
       themeStyles: options.themeStyles,
+      writingMode: options.writingMode,
     };
 
     this.init(options);
@@ -151,6 +152,7 @@ export class FoliateReaderSession implements IReaderSession {
 
     this.epubBook = {
       clearSearch: () => this.renditionInstance?.clearSearch(),
+      highlightSearchResult: (cfi: string | null) => this.renditionInstance?.highlightSearchResult(cfi),
       locations: {
         cfiFromPercentage: (percentage: number) => {
           if (!this.renditionInstance) return `fraction:${percentage}`;

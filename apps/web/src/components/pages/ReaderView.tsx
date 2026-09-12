@@ -138,6 +138,11 @@ function ReaderView({
       display: (target) => engineRef.current?.display(target),
     });
 
+  const handleDismissSearch = useCallback(() => {
+    handleCloseSearch();
+    clearSearch();
+  }, [handleCloseSearch, clearSearch]);
+
   const [noteTarget, setNoteTarget] = useState<ReaderSelection | null>(null);
 
   const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
@@ -306,7 +311,7 @@ function ReaderView({
         onRemoveBookmark={onRemoveBookmark}
         onCloseSettings={handleCloseSettings}
         onCloseControls={handleCloseControls}
-        onCloseSearch={handleCloseSearch}
+        onCloseSearch={handleDismissSearch}
         onCloseAnnotations={handleCloseAnnotations}
         onDeleteAnnotation={removeAnnotation}
         onUpdateAnnotation={updateAnnotation}

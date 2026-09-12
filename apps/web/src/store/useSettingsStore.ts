@@ -24,8 +24,9 @@ type SettingsValues = {
   pageMargin: number;
   paragraphSpacing: number;
   continuous: boolean;
-  spread: boolean;
   direction: "auto" | "ltr" | "rtl";
+  spread: boolean;
+  writingMode: "horizontal-tb" | "vertical-rl";
   brightness: number;
   grayscale: boolean;
   showScrollbar: boolean;
@@ -57,8 +58,9 @@ type SettingsActions = {
   setPageMargin: (v: number) => void;
   setParagraphSpacing: (v: number) => void;
   setContinuous: (v: boolean) => void;
-  setSpread: (v: boolean) => void;
   setDirection: (v: "auto" | "ltr" | "rtl") => void;
+  setSpread: (v: boolean) => void;
+  setWritingMode: (v: "horizontal-tb" | "vertical-rl") => void;
   setBrightness: (v: number) => void;
   setGrayscale: (v: boolean) => void;
   setShowScrollbar: (v: boolean) => void;
@@ -93,8 +95,9 @@ const DEFAULTS: SettingsValues = {
   pageMargin: 40,
   paragraphSpacing: 17,
   continuous: false,
-  spread: false,
   direction: "auto",
+  spread: false,
+  writingMode: "horizontal-tb",
   brightness: 100,
   grayscale: false,
   showScrollbar: false,
@@ -159,8 +162,9 @@ export const pickValues = (state: Settings): SettingsValues => ({
   pageMargin: state.pageMargin,
   paragraphSpacing: state.paragraphSpacing,
   continuous: state.continuous,
-  spread: state.spread,
   direction: state.direction,
+  spread: state.spread,
+  writingMode: state.writingMode,
   brightness: state.brightness,
   grayscale: state.grayscale,
   showScrollbar: state.showScrollbar,
@@ -201,8 +205,9 @@ export const toRemotePayload = (state: SettingsValues) => ({
   accent: state.readerAccent,
   // Reader behavior
   continuous: state.continuous,
-  spread: state.spread,
   direction: state.direction,
+  spread: state.spread,
+  writingMode: state.writingMode,
   showScrollbar: state.showScrollbar,
   progressBarType: state.progressBarType,
   barPosition: state.barPosition,
@@ -239,6 +244,7 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.continuous === "boolean") out.continuous = raw.continuous;
   if (typeof raw.spread === "boolean") out.spread = raw.spread;
   if (raw.direction === "auto" || raw.direction === "ltr" || raw.direction === "rtl") out.direction = raw.direction;
+  if (raw.writingMode === "horizontal-tb" || raw.writingMode === "vertical-rl") out.writingMode = raw.writingMode;
   if (typeof raw.brightness === "number") out.brightness = raw.brightness;
   if (typeof raw.grayscale === "boolean") out.grayscale = raw.grayscale;
   if (typeof raw.showScrollbar === "boolean") out.showScrollbar = raw.showScrollbar;
@@ -303,6 +309,7 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   if (typeof remote.continuous === "boolean") out.continuous = remote.continuous;
   if (typeof remote.spread === "boolean") out.spread = remote.spread;
   if (remote.direction === "auto" || remote.direction === "ltr" || remote.direction === "rtl") out.direction = remote.direction;
+  if (remote.writingMode === "horizontal-tb" || remote.writingMode === "vertical-rl") out.writingMode = remote.writingMode;
   if (typeof remote.showScrollbar === "boolean") out.showScrollbar = remote.showScrollbar;
   if (remote.progressBarType === "bar" || remote.progressBarType === "none") {
     out.progressBarType = remote.progressBarType;
@@ -347,8 +354,9 @@ export const useSettingsStore = create<Settings>((set) => ({
   setPageMargin: createSetAction("pageMargin", set),
   setParagraphSpacing: createSetAction("paragraphSpacing", set),
   setContinuous: createSetAction("continuous", set),
-  setSpread: createSetAction("spread", set),
   setDirection: createSetAction("direction", set),
+  setSpread: createSetAction("spread", set),
+  setWritingMode: createSetAction("writingMode", set),
   setBrightness: createSetAction("brightness", set),
   setGrayscale: createSetAction("grayscale", set),
   setShowScrollbar: createSetAction("showScrollbar", set),

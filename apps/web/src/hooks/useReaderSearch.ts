@@ -153,9 +153,11 @@ export const useReaderSearch = ({ epubBook, display }: UseReaderSearchProps) => 
             if (s.results.length === 0 || index < 0 || index >= s.results.length) return s;
             const result = s.results[index];
             display(result.cfi);
+            const candidate = epubBook as unknown as { highlightSearchResult?: (cfi: string) => void };
+            candidate?.highlightSearchResult?.(result.cfi);
             return { ...s, activeIndex: index };
         });
-    }, [display]);
+    }, [display, epubBook]);
 
     const nextResult = useCallback(() => {
         setSearchState(s => {
@@ -163,9 +165,11 @@ export const useReaderSearch = ({ epubBook, display }: UseReaderSearchProps) => 
             const nextIndex = (s.activeIndex + 1) % s.results.length;
             const result = s.results[nextIndex];
             display(result.cfi);
+            const candidate = epubBook as unknown as { highlightSearchResult?: (cfi: string) => void };
+            candidate?.highlightSearchResult?.(result.cfi);
             return { ...s, activeIndex: nextIndex };
         });
-    }, [display]);
+    }, [display, epubBook]);
 
     const prevResult = useCallback(() => {
         setSearchState(s => {
@@ -173,9 +177,11 @@ export const useReaderSearch = ({ epubBook, display }: UseReaderSearchProps) => 
             const prevIndex = (s.activeIndex - 1 + s.results.length) % s.results.length;
             const result = s.results[prevIndex];
             display(result.cfi);
+            const candidate = epubBook as unknown as { highlightSearchResult?: (cfi: string) => void };
+            candidate?.highlightSearchResult?.(result.cfi);
             return { ...s, activeIndex: prevIndex };
         });
-    }, [display]);
+    }, [display, epubBook]);
 
     return {
         searchState,

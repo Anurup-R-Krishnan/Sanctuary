@@ -30,6 +30,7 @@ export class FoliateRendition implements DocumentRendition {
   private currentProgress = 0;
   private currentSectionIndex = 0;
   private totalSections = 1;
+  private activeSearchCfi: string | null = null;
 
   public readonly progressEstimator: SpineWeightProgressEstimator;
   public annotations?: DocumentAnnotationsApi;
@@ -111,6 +112,9 @@ export class FoliateRendition implements DocumentRendition {
     // Open the book inside foliate-view
     await this.view.open(this.documentAdapter.rawBook);
 
+    // Setup visual search marks hook
+    this.setupSearchAnnotationHook();
+
     // Apply layout flow options
     await this.applyFlowToRenderer();
   }
@@ -182,6 +186,23 @@ export class FoliateRendition implements DocumentRendition {
         doc.body.style.backgroundColor = this.background;
       }
 
+      // Direction handling (auto | ltr | rtl)
+      const docDirection = this.flowOptions.direction && this.flowOptions.direction !== "auto"
+        ? this.flowOptions.direction
+        : this.documentAdapter?.metadata?.direction || "ltr";
+
+      doc.documentElement.setAttribute("dir", docDirection);
+      if (doc.body) {
+        doc.body.setAttribute("dir", docDirection);
+      }
+
+      // Writing mode handling (horizontal-tb | vertical-rl)
+      const writingMode = this.flowOptions.writingMode || "horizontal-tb";
+      doc.documentElement.style.writingMode = writingMode;
+      if (doc.body) {
+        doc.body.style.writingMode = writingMode;
+      }
+
       // Inject reader theme styles
       let styleEl = doc.getElementById("sanctuary-theme-override") as HTMLStyleElement | null;
       if (!styleEl) {
@@ -192,7 +213,7 @@ export class FoliateRendition implements DocumentRendition {
 
       // Convert theme styles
       const styles = this.flowOptions.themeStyles;
-      let cssText = "";
+      let cssText = `html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; }\n`;
       if (styles) {
         for (const [selector, rules] of Object.entries(styles)) {
           cssText += `${selector} {`;
@@ -310,6 +331,9 @@ export class FoliateRendition implements DocumentRendition {
           }
         }
         await this.view.goTo(target);
+        if (target.includes("epubcfi(") || target.startsWith("epubcfi")) {
+          this.highlightSearchResult(target);
+        }
         return true;
       }
       if (target && typeof target === "object") {
@@ -465,11 +489,134 @@ export class FoliateRendition implements DocumentRendition {
   }
 
   public clearSearch(): void {
+    this.activeSearchCfi = null;
     try {
       this.view?.clearSearch?.();
     } catch {
       // benign
     }
+    const renderer = this.view?.renderer;
+    if (renderer && typeof renderer.getContents === "function") {
+      const contents = renderer.getContents();
+      if (Array.isArray(contents)) {
+        for (const c of contents) {
+          if (c.overlayer?.element) {
+            const matches = c.overlayer.element.querySelectorAll(".sanctuary-search-match");
+            matches.forEach((node: Element) => node.remove());
+          }
+        }
+      }
+    }
+  }
+
+  public highlightSearchResult(cfi: string | null): void {
+    this.activeSearchCfi = cfi;
+    const renderer = this.view?.renderer;
+    if (renderer && typeof renderer.getContents === "function") {
+      const contents = renderer.getContents();
+      if (Array.isArray(contents)) {
+        for (const c of contents) {
+          if (c.overlayer?.element) {
+            const matches = c.overlayer.element.querySelectorAll(".sanctuary-search-match");
+            matches.forEach((node: Element) => {
+              const nodeCfi = node.getAttribute("data-cfi");
+              const isMatchActive = Boolean(cfi && nodeCfi === cfi);
+              if (isMatchActive) {
+                node.classList.add("sanctuary-search-active");
+                node.setAttribute("fill", "rgba(59, 130, 246, 0.45)");
+                node.setAttribute("stroke", "#2563eb");
+                node.setAttribute("stroke-width", "2.5");
+                node.scrollIntoView?.({ behavior: "smooth", block: "center" });
+              } else {
+                node.classList.remove("sanctuary-search-active");
+                node.setAttribute("fill", "rgba(245, 158, 11, 0.35)");
+                node.setAttribute("stroke", "rgba(217, 119, 6, 0.7)");
+                node.setAttribute("stroke-width", "1.5");
+              }
+            });
+          }
+        }
+      }
+    }
+  }
+
+  public getActiveSearchCfi(): string | null {
+    return this.activeSearchCfi;
+  }
+
+  private setupSearchAnnotationHook(): void {
+    if (!this.view) return;
+    const originalAdd = typeof this.view.addAnnotation === "function"
+      ? this.view.addAnnotation.bind(this.view)
+      : null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.view.addAnnotation = async (annotation: any, remove?: boolean) => {
+      if (!this.view) return;
+      const value = annotation?.value;
+      if (typeof value === "string" && value.startsWith("foliate-search:")) {
+        const cfi = value.replace("foliate-search:", "");
+        try {
+          const resolved = await this.view?.resolveNavigation?.(cfi);
+          if (resolved && this.view) {
+            const { index, anchor } = resolved;
+            const contents = this.view?.renderer?.getContents?.() || [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const obj = contents.find((x: any) => x.index === index && x.overlayer);
+            if (obj) {
+              const { overlayer, doc } = obj;
+              if (remove) {
+                overlayer.remove(value);
+                return;
+              }
+              const range = doc ? anchor(doc) : anchor;
+              const isActive = this.activeSearchCfi === cfi;
+              overlayer.add(value, range, this.drawSearchMatch.bind(this), {
+                cfi,
+                isActive,
+                value,
+              });
+              return;
+            }
+          }
+        } catch {
+          // benign: search marks for unrendered sections will attach when navigated
+        }
+      }
+      if (originalAdd && this.view) {
+        return originalAdd(annotation, remove);
+      }
+    };
+  }
+
+  private drawSearchMatch(
+    rects: DOMRect[],
+    options: { cfi?: string; isActive?: boolean; value?: string } = {}
+  ): SVGGElement {
+    const isActive = Boolean(options.isActive);
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute(
+      "class",
+      isActive
+        ? "sanctuary-search-match sanctuary-search-active"
+        : "sanctuary-search-match"
+    );
+    if (options.cfi) g.setAttribute("data-cfi", options.cfi);
+    if (options.value) g.setAttribute("data-value", options.value);
+    g.setAttribute("fill", isActive ? "rgba(59, 130, 246, 0.45)" : "rgba(245, 158, 11, 0.35)");
+    g.setAttribute("stroke", isActive ? "#2563eb" : "rgba(217, 119, 6, 0.7)");
+    g.setAttribute("stroke-width", isActive ? "2.5" : "1.5");
+
+    for (const { left, top, height, width } of rects) {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      el.setAttribute("x", String(left - 2));
+      el.setAttribute("y", String(top - 1));
+      el.setAttribute("height", String(height + 2));
+      el.setAttribute("width", String(width + 4));
+      el.setAttribute("rx", "3");
+      g.append(el);
+    }
+    return g;
   }
 
   public on(event: "relocated", callback: (location: ReaderPosition) => void): void;
@@ -496,6 +643,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public destroy(): void {
     this.listeners.clear();
+    this.clearSearch();
     try {
       this.view?.close();
       this.view?.remove();

@@ -74,6 +74,15 @@ describe("Foliate Reader Navigation & TOC", () => {
       themeStyles: { body: { "font-size": "18px", color: "#e0e0e0" } },
     });
 
+    // Update layout flow with RTL direction and CJK vertical writing mode
+    await rendition.setFlow({
+      continuous: false,
+      direction: "rtl",
+      spread: false,
+      themeStyles: { body: { "font-size": "18px" } },
+      writingMode: "vertical-rl",
+    });
+
     rendition.destroy();
     adapter.destroy();
   });

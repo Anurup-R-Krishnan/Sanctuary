@@ -10,7 +10,7 @@ export interface ReaderSettings {
   // Reader behavior
   continuous?: boolean;
   dailyGoal?: number;
-  direction?: "ltr" | "rtl";
+  direction?: "auto" | "ltr" | "rtl";
   fontPairing?: string;
   fontScale?: number;
   // Typography
@@ -26,14 +26,14 @@ export interface ReaderSettings {
   progressBarType?: "bar" | "none";
   readerBackground?: string;
   readerForeground?: string;
-
   reduceMotion?: boolean;
+
   // Accessibility
   screenReaderMode?: boolean;
   showFloatingCapsule?: boolean;
   showPageCounter?: boolean;
-
   showPageMeta?: boolean;
+
   showProgress?: boolean;
   showScrollbar?: boolean;
   // Goals & tracking
@@ -42,17 +42,18 @@ export interface ReaderSettings {
   swipeNav?: boolean;
   tapZones?: boolean;
   textAlignment?: "left" | "justify" | "center";
-
   textWidth?: number;
-  themePreset?: "paper" | "ivory" | "ink";
 
+  themePreset?: "paper" | "ivory" | "ink";
   trackingEnabled?: boolean;
+
   ttsPitch?: number;
   ttsRate?: number;
-
   // Text-to-speech
   ttsVoiceURI?: string | null;
+
   weeklyGoal?: number;
+  writingMode?: "horizontal-tb" | "vertical-rl";
 }
 
 export interface LibraryItem {
