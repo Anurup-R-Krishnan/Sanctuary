@@ -36,7 +36,16 @@ function persistCatalogs(catalogs: CatalogSource[]) {
 
 interface CatalogStoreState {
   activeCatalogId: string;
-  addCatalog: (name: string, url: string) => void;
+  addCatalog: (
+    name: string,
+    url: string,
+    auth?: {
+      authType?: "basic" | "bearer" | "none";
+      bearerToken?: string;
+      password?: string;
+      username?: string;
+    }
+  ) => void;
   catalogs: CatalogSource[];
   removeCatalog: (id: string) => void;
   setActiveCatalog: (id: string) => void;
@@ -46,13 +55,17 @@ export const useCatalogStore = create<CatalogStoreState>((set) => {
   const initial = loadStoredCatalogs();
   return {
     activeCatalogId: initial[0]?.id || "standard-ebooks",
-    addCatalog: (name: string, url: string) =>
+    addCatalog: (name: string, url: string, auth) =>
       set((state) => {
         const newCatalog: CatalogSource = {
+          authType: auth?.authType,
+          bearerToken: auth?.bearerToken?.trim(),
           id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           isDefault: false,
           name: name.trim(),
+          password: auth?.password,
           url: url.trim(),
+          username: auth?.username?.trim(),
         };
         const updated = [...state.catalogs, newCatalog];
         persistCatalogs(updated);

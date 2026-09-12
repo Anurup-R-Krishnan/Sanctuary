@@ -16,7 +16,7 @@
 - **Prerequisites**: OPDS 1.2 & 2.0 Catalog Feed Discovery
 - **Category**: Library Management / Cloud Connectivity
 - **Documented at**: commit `d7e5ea7`, 2026-09-13
-- **Status**: READY
+- **Status**: VERIFIED
 
 ## Why this matters
 

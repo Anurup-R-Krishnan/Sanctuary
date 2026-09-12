@@ -28,8 +28,12 @@ export interface OpdsEntry {
 }
 
 export interface CatalogSource {
+  authType?: "basic" | "bearer" | "none";
+  bearerToken?: string;
   id: string;
   isDefault?: boolean;
   name: string;
+  password?: string;
   url: string;
+  username?: string;
 }

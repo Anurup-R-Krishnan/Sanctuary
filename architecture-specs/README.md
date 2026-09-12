@@ -20,7 +20,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Annotation Knowledge Export & Markdown Sync](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/annotation-export-knowledge-sync.md) | Obsidian callouts, Markdown frontmatter & CSV export | Knowledge Management | Batch Library Ops | VERIFIED |
 | [Interactive Dictionary & Vocabulary Builder](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/in-reader-dictionary-vocabulary-builder.md) | In-reader definition popover, audio phonetics & Leitner SRS | Reader Experience | In-Book TTS | VERIFIED |
 | [Cross-Book Library Full-Text Search](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/cross-book-library-full-text-search.md) | Client-side inverted index, idle worker & global search | Search & Discovery | Batch Library Ops | VERIFIED |
-| [Authenticated OPDS & Private Calibre Sync](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/authenticated-opds-and-calibre-sync.md) | Password-protected OPDS feeds, Calibre/Kavita/Komga integration | Library Management | OPDS Catalog Discovery | READY |
+| [Authenticated OPDS & Private Calibre Sync](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/authenticated-opds-and-calibre-sync.md) | Password-protected OPDS feeds, Calibre/Kavita/Komga integration | Library Management | OPDS Catalog Discovery | VERIFIED |
 | [Custom Speech Voices & Natural Cadence](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/custom-tts-voices-and-audio-profiles.md) | Multi-lingual voice selection, smart paragraph pauses & audio dock | Reader Experience | In-Book TTS | READY |
 | [Annual Reading Challenges & Habit Analytics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-challenges-and-habit-analytics.md) | Yearly book goals, ahead/behind pace tracking & streak preservation | Habit Formation | Storage Dashboard | READY |
 
@@ -41,8 +41,8 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Annotation Knowledge Export & Markdown Sync**: Obsidian-compatible Markdown export, blockquote callouts, and multi-book annotation bundles.
    - **Interactive Dictionary & Vocabulary Builder**: In-reader definition lookups and Leitner spaced-repetition vocabulary learning queue.
    - **Cross-Book Library Full-Text Search**: Inverted index across personal book collection with snippet previews and one-click navigation.
-2. **Upcoming Capabilities**:
    - **Authenticated OPDS & Private Calibre Sync**: Password-protected feeds for personal Calibre, Kavita, and Komga library servers.
+2. **Upcoming Capabilities**:
    - **Custom Speech Voices & Natural Cadence**: Multi-lingual voice selection, persistent book voice preferences, and smart breathing pauses.
    - **Annual Reading Challenges & Habit Analytics**: Yearly reading goals with dynamic ahead/behind pace tracking and milestone badges.
 

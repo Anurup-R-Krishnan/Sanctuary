@@ -293,13 +293,71 @@ export function parseOpdsFeed(rawText: string, baseUrl: string): OpdsFeed {
   return parseOpdsXml(trimmed, baseUrl);
 }
 
-export async function fetchCatalogFeed(url: string): Promise<OpdsFeed> {
-  const res = await fetch(url, {
-    headers: {
-      Accept:
-        "application/atom+xml,application/xml,application/opds+json,application/json;q=0.9,*/*;q=0.8",
-    },
-  });
+export function buildCatalogAuthHeader(catalog?: CatalogSource): string | undefined {
+  if (!catalog) return undefined;
+  if (catalog.authType === "bearer" && catalog.bearerToken) {
+    return `Bearer ${catalog.bearerToken.trim()}`;
+  }
+  if (catalog.authType === "basic" && (catalog.username || catalog.password)) {
+    const creds = `${catalog.username || ""}:${catalog.password || ""}`;
+    const encoded = typeof btoa === "function" ? btoa(creds) : Buffer.from(creds).toString("base64");
+    return `Basic ${encoded}`;
+  }
+  return undefined;
+}
+
+const CUSTOM_CATALOGS_KEY = "sanctuary_custom_catalogs";
+
+export function getSavedCustomCatalogs(): CatalogSource[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_CATALOGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomCatalog(catalog: CatalogSource): CatalogSource[] {
+  const current = getSavedCustomCatalogs();
+  const existingIdx = current.findIndex((c) => c.id === catalog.id);
+  let updated: CatalogSource[];
+  if (existingIdx >= 0) {
+    updated = [...current];
+    updated[existingIdx] = catalog;
+  } else {
+    updated = [...current, catalog];
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(CUSTOM_CATALOGS_KEY, JSON.stringify(updated));
+  }
+  return updated;
+}
+
+export function removeCustomCatalog(id: string): CatalogSource[] {
+  const current = getSavedCustomCatalogs();
+  const updated = current.filter((c) => c.id !== id);
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(CUSTOM_CATALOGS_KEY, JSON.stringify(updated));
+  }
+  return updated;
+}
+
+export async function fetchCatalogFeed(
+  url: string,
+  catalog?: CatalogSource
+): Promise<OpdsFeed> {
+  const headers: Record<string, string> = {
+    Accept:
+      "application/atom+xml,application/xml,application/opds+json,application/json;q=0.9,*/*;q=0.8",
+  };
+
+  const authHeader = buildCatalogAuthHeader(catalog);
+  if (authHeader) {
+    headers.Authorization = authHeader;
+  }
+
+  const res = await fetch(url, { headers });
 
   if (!res.ok) {
     throw new Error(`Failed to load catalog feed: ${res.status} ${res.statusText}`);
@@ -311,9 +369,16 @@ export async function fetchCatalogFeed(url: string): Promise<OpdsFeed> {
 
 export async function downloadCatalogBook(
   acquisitionUrl: string,
-  fallbackTitle: string
+  fallbackTitle: string,
+  catalog?: CatalogSource
 ): Promise<File> {
-  const res = await fetch(acquisitionUrl);
+  const headers: Record<string, string> = {};
+  const authHeader = buildCatalogAuthHeader(catalog);
+  if (authHeader) {
+    headers.Authorization = authHeader;
+  }
+
+  const res = await fetch(acquisitionUrl, { headers });
   if (!res.ok) {
     throw new Error(`Failed to download book: ${res.status} ${res.statusText}`);
   }

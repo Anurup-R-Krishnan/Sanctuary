@@ -1,5 +1,5 @@
-import { AlertCircle, BookOpen, Globe, Loader2, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import { AlertCircle, BookOpen, Globe, Loader2, Lock, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import type { OpdsEntry, OpdsFeed } from "@/types/opds";
@@ -41,6 +41,10 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCatalogName, setNewCatalogName] = useState("");
   const [newCatalogUrl, setNewCatalogUrl] = useState("");
+  const [authType, setAuthType] = useState<"basic" | "bearer" | "none">("none");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [bearerToken, setBearerToken] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
 
   const activeCatalog = useMemo(
@@ -54,25 +58,28 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
     setHistory([]);
   }, [isOpen, activeCatalogId, activeCatalog]);
 
-  const loadFeed = async (url: string) => {
-    if (!url) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await fetchCatalogFeed(url);
-      setFeed(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load catalog feed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const loadFeed = useCallback(
+    async (url: string) => {
+      if (!url) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await fetchCatalogFeed(url, activeCatalog);
+        setFeed(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load catalog feed");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeCatalog]
+  );
 
   useEffect(() => {
     if (isOpen && currentUrl) {
       void loadFeed(currentUrl);
     }
-  }, [isOpen, currentUrl]);
+  }, [isOpen, currentUrl, loadFeed]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -101,7 +108,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
     if (!entry.acquisitionUrl) return;
     setImportingId(entry.id);
     try {
-      const file = await downloadCatalogBook(entry.acquisitionUrl, entry.title);
+      const file = await downloadCatalogBook(entry.acquisitionUrl, entry.title, activeCatalog);
       await onImport(file);
       setImportedIds((prev) => new Set([...prev, entry.id]));
     } catch (err) {
@@ -125,9 +132,18 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
       return;
     }
 
-    addCatalog(newCatalogName, newCatalogUrl);
+    addCatalog(newCatalogName, newCatalogUrl, {
+      authType,
+      bearerToken: authType === "bearer" ? bearerToken.trim() : undefined,
+      password: authType === "basic" ? password : undefined,
+      username: authType === "basic" ? username.trim() : undefined,
+    });
     setNewCatalogName("");
     setNewCatalogUrl("");
+    setAuthType("none");
+    setUsername("");
+    setPassword("");
+    setBearerToken("");
     setShowAddForm(false);
     setAddError(null);
   };
@@ -181,7 +197,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
             {catalogs.map((catalog) => (
               <div key={catalog.id} className="flex items-center group">
                 <button
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all ${
+                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all inline-flex items-center gap-1.5 ${
                     activeCatalogId === catalog.id
                       ? "bg-[rgb(var(--accent))] text-white shadow-sm"
                       : "bg-black/[0.04] dark:bg-white/[0.06] text-light-text dark:text-dark-text hover:bg-black/[0.08] dark:hover:bg-white/[0.1]"
@@ -189,7 +205,10 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
                   onClick={() => setActiveCatalog(catalog.id)}
                   type="button"
                 >
-                  {catalog.name}
+                  {catalog.authType && catalog.authType !== "none" && (
+                    <Lock className="w-3 h-3 opacity-80" />
+                  )}
+                  <span>{catalog.name}</span>
                 </button>
                 {!catalog.isDefault && (
                   <button
@@ -234,45 +253,108 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ isOpen, onClose,
         {/* Add Catalog Form Dropdown */}
         {showAddForm && (
           <form
-            className="px-6 py-4 bg-black/[0.03] dark:bg-white/[0.04] border-b border-black/[0.08] dark:border-white/[0.08] flex flex-wrap items-end gap-3 animate-fadeIn"
+            className="px-6 py-4 bg-black/[0.03] dark:bg-white/[0.04] border-b border-black/[0.08] dark:border-white/[0.08] flex flex-col gap-3 animate-fadeIn"
             onSubmit={handleAddCatalogSubmit}
           >
-            <div className="flex-1 min-w-[180px]">
-              <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
-                Catalog Name
-              </label>
-              <input
-                className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
-                onChange={(e) => setNewCatalogName(e.target.value)}
-                placeholder="e.g. My Calibre Server"
-                required
-                type="text"
-                value={newCatalogName}
-              />
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                  Catalog Name
+                </label>
+                <input
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
+                  onChange={(e) => setNewCatalogName(e.target.value)}
+                  placeholder="e.g. My Calibre Server"
+                  required
+                  type="text"
+                  value={newCatalogName}
+                />
+              </div>
+              <div className="flex-2 min-w-[240px]">
+                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                  OPDS Feed URL
+                </label>
+                <input
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
+                  onChange={(e) => setNewCatalogUrl(e.target.value)}
+                  placeholder="https://example.com/opds"
+                  required
+                  type="url"
+                  value={newCatalogUrl}
+                />
+              </div>
+              <div className="w-48">
+                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                  Authentication
+                </label>
+                <select
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
+                  onChange={(e) => setAuthType(e.target.value as "basic" | "bearer" | "none")}
+                  value={authType}
+                >
+                  <option value="none">Public / None</option>
+                  <option value="basic">HTTP Basic (Calibre / Kavita)</option>
+                  <option value="bearer">Bearer Token / API Key</option>
+                </select>
+              </div>
             </div>
-            <div className="flex-2 min-w-[240px]">
-              <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
-                OPDS Feed URL
-              </label>
-              <input
-                className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
-                onChange={(e) => setNewCatalogUrl(e.target.value)}
-                placeholder="https://example.com/opds"
-                required
-                type="url"
-                value={newCatalogUrl}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" type="submit" variant="primary">
-                Save
-              </Button>
+
+            {authType === "basic" && (
+              <div className="flex flex-wrap items-end gap-3 pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
+                <div className="flex-1 min-w-[160px]">
+                  <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                    Username
+                  </label>
+                  <input
+                    autoComplete="username"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Calibre username"
+                    type="text"
+                    value={username}
+                  />
+                </div>
+                <div className="flex-1 min-w-[160px]">
+                  <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                    Password
+                  </label>
+                  <input
+                    autoComplete="current-password"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text"
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Calibre password"
+                    type="password"
+                    value={password}
+                  />
+                </div>
+              </div>
+            )}
+
+            {authType === "bearer" && (
+              <div className="pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
+                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                  Bearer Token or API Key
+                </label>
+                <input
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-surface dark:bg-dark-surface border border-black/[0.1] dark:border-white/[0.1] text-light-text dark:text-dark-text font-mono"
+                  onChange={(e) => setBearerToken(e.target.value)}
+                  placeholder="eyJhbGciOi..."
+                  type="password"
+                  value={bearerToken}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 justify-end pt-1">
               <Button onClick={() => setShowAddForm(false)} size="sm" variant="ghost">
                 Cancel
               </Button>
+              <Button size="sm" type="submit" variant="primary">
+                Save Catalog
+              </Button>
             </div>
             {addError && (
-              <p className="w-full text-xs text-red-500 mt-1 font-medium">{addError}</p>
+              <p className="w-full text-xs text-red-500 font-medium">{addError}</p>
             )}
           </form>
         )}

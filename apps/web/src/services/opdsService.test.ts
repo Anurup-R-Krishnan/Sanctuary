@@ -2,11 +2,16 @@ import { beforeAll, describe, expect, it } from "bun:test";
 
 import { ensureTestDom } from "../reader/foliate/testEnv";
 import {
+  buildCatalogAuthHeader,
   DEFAULT_CATALOGS,
   downloadCatalogBook,
+  fetchCatalogFeed,
+  getSavedCustomCatalogs,
   parseOpdsFeed,
   parseOpdsJson,
   parseOpdsXml,
+  removeCustomCatalog,
+  saveCustomCatalog,
 } from "./opdsService";
 
 beforeAll(() => {
@@ -249,5 +254,121 @@ describe("DEFAULT_CATALOGS constant", () => {
     const gutenberg = DEFAULT_CATALOGS.find((c) => c.id === "project-gutenberg");
     expect(gutenberg).toBeDefined();
     expect(gutenberg?.url).toContain("gutenberg.org");
+  });
+});
+
+describe("Authenticated OPDS Feeds & Credential Handling", () => {
+  it("buildCatalogAuthHeader correctly encodes Basic and Bearer auth", () => {
+    expect(buildCatalogAuthHeader(undefined)).toBeUndefined();
+    expect(
+      buildCatalogAuthHeader({
+        id: "public",
+        name: "Public Feed",
+        url: "https://example.com/opds",
+      })
+    ).toBeUndefined();
+
+    const basicAuth = buildCatalogAuthHeader({
+      authType: "basic",
+      id: "calibre",
+      name: "Calibre Server",
+      password: "secretpassword",
+      url: "https://calibre.home/opds",
+      username: "reader",
+    });
+    expect(basicAuth).toBe("Basic cmVhZGVyOnNlY3JldHBhc3N3b3Jk");
+
+    const bearerAuth = buildCatalogAuthHeader({
+      authType: "bearer",
+      bearerToken: "my-jwt-token-123",
+      id: "kavita",
+      name: "Kavita",
+      url: "https://kavita.home/opds",
+    });
+    expect(bearerAuth).toBe("Bearer my-jwt-token-123");
+  });
+
+  it("fetchCatalogFeed attaches Authorization header for authenticated sources", async () => {
+    const originalFetch = globalThis.fetch;
+    let interceptedAuth: string | null = null;
+
+    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+      interceptedAuth = (init?.headers as Record<string, string>)?.Authorization || null;
+      return new Response(
+        `<feed xmlns="http://www.w3.org/2005/Atom"><title>Secure Calibre</title></feed>`,
+        { headers: { "Content-Type": "application/atom+xml" }, status: 200 }
+      );
+    }) as typeof fetch;
+
+    try {
+      const feed = await fetchCatalogFeed("https://calibre.home/opds", {
+        authType: "basic",
+        id: "calibre-1",
+        name: "Calibre 1",
+        password: "pw",
+        url: "https://calibre.home/opds",
+        username: "user",
+      });
+
+      expect(feed.title).toBe("Secure Calibre");
+      expect(interceptedAuth).toBe("Basic dXNlcjpwdw==");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("downloadCatalogBook transmits Authorization header to acquisition endpoints", async () => {
+    const originalFetch = globalThis.fetch;
+    let interceptedAuth: string | null = null;
+    const fakeEpub = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+
+    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+      interceptedAuth = (init?.headers as Record<string, string>)?.Authorization || null;
+      return new Response(fakeEpub, {
+        headers: {
+          "Content-Disposition": 'attachment; filename="secure_book.epub"',
+          "Content-Type": "application/epub+zip",
+        },
+        status: 200,
+      });
+    }) as typeof fetch;
+
+    try {
+      const file = await downloadCatalogBook(
+        "https://kavita.home/download/123",
+        "Secure Book",
+        {
+          authType: "bearer",
+          bearerToken: "token-abc-xyz",
+          id: "kavita-1",
+          name: "Kavita",
+          url: "https://kavita.home/opds",
+        }
+      );
+
+      expect(file.name).toBe("secure_book.epub");
+      expect(interceptedAuth).toBe("Bearer token-abc-xyz");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("persists and removes custom catalogs in localStorage", () => {
+    const testCatalog = {
+      authType: "basic" as const,
+      id: "test-calibre-custom",
+      name: "Home Calibre",
+      password: "pass",
+      url: "https://calibre.home/opds",
+      username: "admin",
+    };
+
+    saveCustomCatalog(testCatalog);
+    let list = getSavedCustomCatalogs();
+    expect(list.some((c) => c.id === "test-calibre-custom")).toBe(true);
+
+    removeCustomCatalog("test-calibre-custom");
+    list = getSavedCustomCatalogs();
+    expect(list.some((c) => c.id === "test-calibre-custom")).toBe(false);
   });
 });

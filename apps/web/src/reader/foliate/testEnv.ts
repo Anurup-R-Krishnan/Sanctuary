@@ -25,6 +25,7 @@ export function ensureTestDom(): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   globalThis.window = dom.window as any;
   globalThis.document = dom.window.document;
+  globalThis.localStorage = dom.window.localStorage;
   globalThis.DOMParser = dom.window.DOMParser;
   globalThis.HTMLElement = dom.window.HTMLElement;
   globalThis.NodeFilter = dom.window.NodeFilter;
