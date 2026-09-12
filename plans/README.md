@@ -9,7 +9,7 @@ Each executor must: read the plan fully before starting, honor its STOP conditio
 | Plan | Title | Priority | Effort | Category | Depends on | Status |
 |---|---|---|---|---|---|---|
 | [004](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/004-zero-tolerance-lint-and-e2e.md) | Zero-Tolerance Quality Gate & Multi-Format Robustness Tests | P1 | S | dx | — | DONE |
-| [001](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/001-tts-audiobook-sync.md) | Audio & Synchronized In-Book TTS with Foliate Engine | P1 | M | direction | — | TODO |
+| [001](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/001-tts-audiobook-sync.md) | Audio & Synchronized In-Book TTS with Foliate Engine | P1 | M | direction | — | DONE |
 | [003](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/003-cloud-annotation-sync-d1.md) | Zero-Conflict Reading State & Cloudflare D1 Annotation Sync | P1 | M | architecture | — | TODO |
 | [002](file:///home/anuruprkris/Project/sanctuary-book-reader/plans/002-opds-catalog-feed.md) | OPDS 1.2 & 2.0 Catalog Feed Support | P2 | M | direction | — | TODO |
 

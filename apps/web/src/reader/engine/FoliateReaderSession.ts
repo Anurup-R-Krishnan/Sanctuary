@@ -5,6 +5,7 @@ import { recordReaderDiagnostic } from "@/services/readerDiagnostics";
 
 import type { IReaderSession, ReaderEngineCallbacks, ReaderEngineOptions } from "../contracts/engine";
 import type { ReaderFlowOptions } from "../contracts/rendition";
+import type { TTSControllerState } from "../foliate/FoliateTTSController";
 
 import { FoliateEpubAdapter } from "../foliate/FoliateEpubAdapter";
 import { FoliateRendition } from "../foliate/FoliateRendition";
@@ -264,6 +265,47 @@ export class FoliateReaderSession implements IReaderSession {
     }
     this.renditionInstance?.updateBackground(bg);
   }
+
+  public async startTTS(fromCurrentLocation: boolean = true): Promise<void> {
+    if (this.aborted || !this.renditionInstance) return;
+    await this.renditionInstance.startTTS(fromCurrentLocation);
+  }
+
+  public pauseTTS(): void {
+    if (this.aborted || !this.renditionInstance) return;
+    this.renditionInstance.pauseTTS();
+  }
+
+  public resumeTTS(): void {
+    if (this.aborted || !this.renditionInstance) return;
+    this.renditionInstance.resumeTTS();
+  }
+
+  public stopTTS(): void {
+    if (this.aborted || !this.renditionInstance) return;
+    this.renditionInstance.stopTTS();
+  }
+
+  public nextTTS(): void {
+    if (this.aborted || !this.renditionInstance) return;
+    this.renditionInstance.nextTTS();
+  }
+
+  public prevTTS(): void {
+    if (this.aborted || !this.renditionInstance) return;
+    this.renditionInstance.prevTTS();
+  }
+
+  public setTTSRate(rate: number): void {
+    if (this.aborted || !this.renditionInstance) return;
+    this.renditionInstance.setTTSRate(rate);
+  }
+
+  public getTTSState(): TTSControllerState | null {
+    if (this.aborted || !this.renditionInstance) return null;
+    return this.renditionInstance.getTTSState();
+  }
+
 
   public destroy(): void {
     this.aborted = true;

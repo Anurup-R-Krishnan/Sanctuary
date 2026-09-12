@@ -15,6 +15,7 @@ import type {
 import type { FoliateEpubAdapter } from "./FoliateEpubAdapter";
 
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
+import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
 
 // foliate-view is registered dynamically via foliate-js/view.js
 type EventListenerCallback = (...args: unknown[]) => void;
@@ -31,6 +32,7 @@ export class FoliateRendition implements DocumentRendition {
   private currentSectionIndex = 0;
   private totalSections = 1;
   private activeSearchCfi: string | null = null;
+  private ttsController: FoliateTTSController | null = null;
 
   public readonly progressEstimator: SpineWeightProgressEstimator;
   public annotations?: DocumentAnnotationsApi;
@@ -641,9 +643,129 @@ export class FoliateRendition implements DocumentRendition {
     }
   }
 
+  public getCurrentDocument(): Document | null {
+    const contents = this.view?.renderer?.getContents?.();
+    if (Array.isArray(contents) && contents.length > 0) {
+      return contents[0].doc || null;
+    }
+    return null;
+  }
+
+  public highlightTTSRange(range: Range): void {
+    const renderer = this.view?.renderer;
+    if (!renderer || typeof renderer.getContents !== "function") return;
+    const contents = renderer.getContents();
+    if (Array.isArray(contents)) {
+      for (const c of contents) {
+        if (c.overlayer) {
+          c.overlayer.remove("sanctuary-tts-sentence");
+          c.overlayer.add("sanctuary-tts-sentence", range, this.drawTtsHighlight.bind(this));
+        }
+      }
+    }
+  }
+
+  public clearTTSHighlight(): void {
+    const renderer = this.view?.renderer;
+    if (!renderer || typeof renderer.getContents !== "function") return;
+    const contents = renderer.getContents();
+    if (Array.isArray(contents)) {
+      for (const c of contents) {
+        if (c.overlayer) {
+          c.overlayer.remove("sanctuary-tts-sentence");
+        }
+      }
+    }
+  }
+
+  private drawTtsHighlight(rects: DOMRect[]): SVGGElement {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "sanctuary-tts-active");
+    g.setAttribute("fill", "rgba(245, 158, 11, 0.28)");
+    g.setAttribute("stroke", "rgba(217, 119, 6, 0.7)");
+    g.setAttribute("stroke-width", "1.5");
+    for (const { left, top, height, width } of rects) {
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", String(left));
+      rect.setAttribute("y", String(top));
+      rect.setAttribute("height", String(height));
+      rect.setAttribute("width", String(width));
+      rect.setAttribute("rx", "2");
+      g.appendChild(rect);
+    }
+    return g;
+  }
+
+  public getTTSController(): FoliateTTSController {
+    if (!this.ttsController) {
+      this.ttsController = new FoliateTTSController({
+        getDoc: () => this.getCurrentDocument(),
+        highlightRange: (r) => this.highlightTTSRange(r),
+        clearHighlight: () => this.clearTTSHighlight(),
+        onNextChapter: async () => {
+          if (!this.view) return false;
+          try {
+            await this.next();
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        onPrevChapter: async () => {
+          if (!this.view) return false;
+          try {
+            await this.prev();
+            return true;
+          } catch {
+            return false;
+          }
+        },
+      });
+    }
+    return this.ttsController;
+  }
+
+  public async startTTS(fromCurrentLocation: boolean = true): Promise<void> {
+    const controller = this.getTTSController();
+    await controller.start(fromCurrentLocation);
+  }
+
+  public pauseTTS(): void {
+    this.ttsController?.pause();
+  }
+
+  public resumeTTS(): void {
+    this.ttsController?.resume();
+  }
+
+  public stopTTS(): void {
+    this.ttsController?.stop();
+  }
+
+  public nextTTS(): void {
+    this.ttsController?.next();
+  }
+
+  public prevTTS(): void {
+    this.ttsController?.prev();
+  }
+
+  public setTTSRate(rate: number): void {
+    this.ttsController?.setRate(rate);
+  }
+
+  public getTTSState(): TTSControllerState | null {
+    return this.ttsController?.getState() || null;
+  }
+
   public destroy(): void {
     this.listeners.clear();
     this.clearSearch();
+    this.clearTTSHighlight();
+    if (this.ttsController) {
+      this.ttsController.destroy();
+      this.ttsController = null;
+    }
     try {
       this.view?.close();
       this.view?.remove();

@@ -151,7 +151,35 @@ function ReaderView({
     clearSelection: () => engineRef.current?.clearSelection(),
   });
 
-  const { speak, stop: stopSpeech } = useReaderSpeech();
+  const [isTTSActive, setIsTTSActive] = useState(false);
+  const {
+    speak,
+    stop: stopSpeech,
+    speechState,
+    startBookSpeech,
+    nextSentence,
+    prevSentence,
+    changeRate,
+    stopBookSpeech,
+  } = useReaderSpeech({ session: engineRef.current });
+
+  const handleToggleTTS = useCallback(() => {
+    setIsTTSActive((prev) => {
+      const next = !prev;
+      if (next) {
+        void startBookSpeech(true);
+      } else {
+        stopBookSpeech();
+      }
+      return next;
+    });
+  }, [startBookSpeech, stopBookSpeech]);
+
+  const handleCloseTTS = useCallback(() => {
+    setIsTTSActive(false);
+    stopBookSpeech();
+  }, [stopBookSpeech]);
+
   const { trackLocationProgress, stats: sessionStats } = useReaderSessionStats(
     book?.id ?? "",
     totalLocations
@@ -173,8 +201,11 @@ function ReaderView({
 
   // Cleanup speech on unmount
   useEffect(() => {
-    return () => stopSpeech();
-  }, [stopSpeech]);
+    return () => {
+      stopSpeech();
+      stopBookSpeech();
+    };
+  }, [stopSpeech, stopBookSpeech]);
 
   // Bookmarks
   const { isBookmarked, handleToggleBookmark } = useReaderBookmarks({
@@ -321,6 +352,13 @@ function ReaderView({
         onNextSearchResult={nextResult}
         onPrevSearchResult={prevResult}
         onGoToSearchResult={goToResult}
+        isTTSActive={isTTSActive}
+        onToggleTTS={handleToggleTTS}
+        onCloseTTS={handleCloseTTS}
+        speechState={speechState}
+        onNextTTSSentence={nextSentence}
+        onPrevTTSSentence={prevSentence}
+        onChangeTTSRate={changeRate}
       />
 
       <ReaderSelectionMenu

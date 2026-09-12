@@ -8,6 +8,7 @@ import {
     Minimize2,
     Search,
     Highlighter,
+    Headphones,
 } from "lucide-react";
 import React from "react";
 
@@ -20,6 +21,7 @@ interface ReaderHeaderProps {
     book: Book;
     isBookmarked: boolean;
     isFullscreen: boolean;
+    isTTSActive?: boolean;
     onClose: () => void;
     onToggleAnnotations: () => void;
     onToggleBookmark: () => void;
@@ -27,6 +29,7 @@ interface ReaderHeaderProps {
     onToggleSearch: () => void;
     onToggleSettings: () => void;
     onToggleTOC: () => void;
+    onToggleTTS?: () => void;
     showUI: boolean;
 }
 
@@ -34,6 +37,7 @@ function ReaderHeader({
     book,
     isBookmarked,
     isFullscreen,
+    isTTSActive,
     showUI,
     onClose,
     onToggleBookmark,
@@ -42,6 +46,7 @@ function ReaderHeader({
     onToggleSearch,
     onToggleAnnotations,
     onToggleFullscreen,
+    onToggleTTS,
 }: ReaderHeaderProps) {
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
@@ -108,6 +113,14 @@ function ReaderHeader({
                     <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
                     <ActionBtn icon={List} label="Contents" onClick={onToggleTOC} />
                     <ActionBtn icon={Search} label="Search" onClick={onToggleSearch} />
+                    {onToggleTTS && (
+                        <ActionBtn 
+                            icon={Headphones} 
+                            label="Read Aloud" 
+                            onClick={onToggleTTS} 
+                            active={isTTSActive} 
+                        />
+                    )}
                     <ActionBtn icon={Highlighter} label="Annotations" onClick={onToggleAnnotations} />
                     <ActionBtn icon={Settings} label="Appearance" onClick={onToggleSettings} />
 

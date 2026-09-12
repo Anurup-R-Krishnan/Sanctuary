@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 
+import type { SpeechState } from "@/hooks/useReaderSpeech";
 import type { Book, Bookmark } from "@/types";
 import type { ReaderSearchState, ReaderAnnotation } from "@/types/reader";
 
@@ -9,7 +10,7 @@ import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
 import ReaderSettings from "@/components/reader/ReaderSettings";
-
+import { ReaderTTSBar } from "@/components/reader/ReaderTTSBar";
 
 interface ReaderOverlayProps {
   annotations: ReaderAnnotation[];
@@ -21,12 +22,15 @@ interface ReaderOverlayProps {
   isBookmarked: boolean;
   isFullscreen: boolean;
   isLoading: boolean;
+  isTTSActive?: boolean;
+  onChangeTTSRate?: (rate: number) => void;
   onClearSearch: () => void;
   onClose: () => void;
   onCloseAnnotations: () => void;
   onCloseControls: () => void;
   onCloseSearch: () => void;
   onCloseSettings: () => void;
+  onCloseTTS?: () => void;
   onDeleteAnnotation: (cfiRange: string) => void;
   onGoToSearchResult: (index: number) => void;
   onJumpToBottom: () => void;
@@ -34,9 +38,11 @@ interface ReaderOverlayProps {
   onNavigate: (href: string) => void;
   onNextPage: () => void;
   onNextSearchResult: () => void;
+  onNextTTSSentence?: () => void;
   onPageChange: (page: number) => void;
   onPrevPage: () => void;
   onPrevSearchResult: () => void;
+  onPrevTTSSentence?: () => void;
   onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
   onSearch: (q: string) => void;
   onToggleAnnotations: () => void;
@@ -45,6 +51,7 @@ interface ReaderOverlayProps {
   onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleTOC: () => void;
+  onToggleTTS?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   searchState: ReaderSearchState;
   showAnnotations: boolean;
@@ -52,6 +59,7 @@ interface ReaderOverlayProps {
   showSearch: boolean;
   showSettings: boolean;
   showUI: boolean;
+  speechState?: SpeechState;
   toc: Array<{ id?: string; href: string; label: string; subitems?: Array<{ id?: string; href: string; label: string }> }>;
   totalPages: number;
 }
@@ -76,6 +84,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         book={props.book}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
+        isTTSActive={props.isTTSActive}
         showUI={props.showUI}
         onClose={props.onClose}
         onToggleBookmark={props.onToggleBookmark}
@@ -84,7 +93,19 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleSearch={props.onToggleSearch}
         onToggleAnnotations={props.onToggleAnnotations}
         onToggleFullscreen={props.onToggleFullscreen}
+        onToggleTTS={props.onToggleTTS}
       />
+
+      {props.isTTSActive && props.speechState && (
+        <ReaderTTSBar
+          speechState={props.speechState}
+          onTogglePlayPause={props.onToggleTTS || (() => {})}
+          onNextSentence={props.onNextTTSSentence || (() => {})}
+          onPrevSentence={props.onPrevTTSSentence || (() => {})}
+          onChangeRate={props.onChangeTTSRate || (() => {})}
+          onClose={props.onCloseTTS || props.onToggleTTS || (() => {})}
+        />
+      )}
 
       <ReaderFooter
         currentPage={props.currentPage}

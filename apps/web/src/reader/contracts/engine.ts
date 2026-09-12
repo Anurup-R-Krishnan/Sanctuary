@@ -6,6 +6,7 @@
 import type { ReaderError, ReaderPosition, ReaderSelection, ReaderStatus } from "@/types/reader";
 import type { TocItem } from "@/utils/epub";
 
+import type { TTSControllerState } from "../foliate/FoliateTTSController";
 import type { ReaderFlowOptions } from "./rendition";
 
 export interface ReaderEngineOptions {
@@ -32,10 +33,17 @@ export interface ReaderEngineCallbacks {
 export interface IReaderSession {
   destroy(): void;
   display(target: string): Promise<boolean>;
-
+  getTTSState?(): TTSControllerState | null;
   next(): Promise<void>;
+  nextTTS?(): void;
+  pauseTTS?(): void;
   prev(): Promise<void>;
+  prevTTS?(): void;
+  resumeTTS?(): void;
   setFlow(next: ReaderFlowOptions): Promise<void>;
+  setTTSRate?(rate: number): void;
+  startTTS?(fromCurrentLocation?: boolean): Promise<void>;
+  stopTTS?(): void;
   readonly tocItems: TocItem[];
   readonly totalLocations: number;
   updateReaderBackground(bg: string): void;
