@@ -95,6 +95,8 @@ export class FoliateReaderSession implements IReaderSession {
         return;
       }
 
+      this.totalLocations = this.renditionInstance.progressEstimator.totalLocations;
+
       this.setupShims();
       this.setupListeners();
 
@@ -150,7 +152,12 @@ export class FoliateReaderSession implements IReaderSession {
     this.epubBook = {
       clearSearch: () => this.renditionInstance?.clearSearch(),
       locations: {
-        cfiFromPercentage: (percentage: number) => `fraction:${percentage}`,
+        cfiFromPercentage: (percentage: number) => {
+          if (!this.renditionInstance) return `fraction:${percentage}`;
+          const { sectionIndex, fraction } = this.renditionInstance.progressEstimator.getSectionAndFraction(percentage);
+          const section = this.adapter?.getSectionByIndex(sectionIndex);
+          return section ? `${section.href}#fraction:${fraction}` : `fraction:${percentage}`;
+        },
         generate: async () => {},
         length: () => this.totalLocations,
         percentageFromCfi: (cfi: string) => {
@@ -235,8 +242,7 @@ export class FoliateReaderSession implements IReaderSession {
 
   public async goToPage(page: number): Promise<void> {
     if (this.aborted || !this.renditionInstance) return;
-    const fraction = (Math.max(1, Math.min(page, this.totalLocations)) - 1) / this.totalLocations;
-    await this.renditionInstance.goToFraction(fraction);
+    await this.renditionInstance.goToLocation(page);
   }
 
   public async setFlow(next: ReaderFlowOptions): Promise<void> {

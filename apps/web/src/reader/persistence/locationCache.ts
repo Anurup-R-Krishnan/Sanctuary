@@ -1,3 +1,7 @@
+/**
+ * @deprecated Deprecated in favor of SpineWeightProgressEstimator.
+ * Retained for backwards compatibility with legacy caches.
+ */
 import { getReaderCache, putReaderCache, deleteReaderCache } from "../../utils/db";
 import { safeStorageGet } from "./storage";
 

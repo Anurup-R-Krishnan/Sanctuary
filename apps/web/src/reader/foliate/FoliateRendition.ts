@@ -14,6 +14,8 @@ import type {
 } from "../contracts/rendition";
 import type { FoliateEpubAdapter } from "./FoliateEpubAdapter";
 
+import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
+
 // foliate-view is registered dynamically via foliate-js/view.js
 type EventListenerCallback = (...args: unknown[]) => void;
 
@@ -29,6 +31,7 @@ export class FoliateRendition implements DocumentRendition {
   private currentSectionIndex = 0;
   private totalSections = 1;
 
+  public readonly progressEstimator: SpineWeightProgressEstimator;
   public annotations?: DocumentAnnotationsApi;
 
   constructor(
@@ -42,6 +45,7 @@ export class FoliateRendition implements DocumentRendition {
     this.flowOptions = flowOptions;
     this.background = background;
     this.totalSections = Math.max(1, documentAdapter.sections.length);
+    this.progressEstimator = new SpineWeightProgressEstimator(documentAdapter.sections);
 
     this.container.style.backgroundColor = background;
 
@@ -119,9 +123,11 @@ export class FoliateRendition implements DocumentRendition {
       this.currentSectionIndex = index;
 
       // Section weight progress estimation
-      const totalSecs = this.totalSections;
-      const overallFraction = Math.max(0, Math.min(1, (index + fraction) / totalSecs));
+      const overallFraction = this.progressEstimator.getProgress(index, fraction);
       this.currentProgress = Math.round(overallFraction * 100);
+
+      const location = this.progressEstimator.getLocation(index, fraction);
+      const totalLocations = this.progressEstimator.totalLocations;
 
       const section = this.documentAdapter.getSectionByIndex(index);
       const chapterLabel = detail.tocItem?.label?.trim() || this.findChapterLabel(section?.href ?? "");
@@ -131,11 +137,11 @@ export class FoliateRendition implements DocumentRendition {
         cfi: cfi || (section ? section.href : `sec-${index}`),
         chapterLabel,
         chapterProgress: Math.round(fraction * 100),
-        displayedPage: index + 1,
-        displayedPages: totalSecs,
+        displayedPage: location,
+        displayedPages: totalLocations,
         href: section?.href ?? "",
-        location: index + 1,
-        totalLocations: totalSecs,
+        location,
+        totalLocations,
       };
 
       this.emit("relocated", pos);
@@ -342,6 +348,27 @@ export class FoliateRendition implements DocumentRendition {
     if (this.view && typeof this.view.goToFraction === "function") {
       await this.view.goToFraction(Math.max(0, Math.min(1, frac)));
     }
+  }
+
+  public async goToProgress(progress: number): Promise<void> {
+    if (!this.view) return;
+    const clamped = Math.max(0, Math.min(1, progress));
+    if (typeof this.view.goToFraction === "function") {
+      try {
+        await this.view.goToFraction(clamped);
+        return;
+      } catch {
+        // fallback to section jump
+      }
+    }
+    const { sectionIndex } = this.progressEstimator.getSectionAndFraction(clamped);
+    await this.view.goTo(sectionIndex);
+  }
+
+  public async goToLocation(location: number): Promise<void> {
+    const total = this.progressEstimator.totalLocations;
+    const progress = (Math.max(1, Math.min(location, total)) - 1) / Math.max(1, total - 1);
+    await this.goToProgress(progress);
   }
 
   public deselect(): void {
