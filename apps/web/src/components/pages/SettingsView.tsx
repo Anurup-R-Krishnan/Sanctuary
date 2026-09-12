@@ -38,7 +38,7 @@ function SettingsView() {
         }
     };
 
-    const NavAnchor = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
+    const NavAnchor = ({ id, label, icon: Icon }: { id: string, label: string, icon: React.ComponentType<{ className?: string }> }) => (
         <a href={`#${id}`} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-black/[0.04] dark:hover:bg-white/[0.04] rounded-lg transition-colors">
             <Icon className="w-4 h-4" />
             <span className="hidden sm:inline">{label}</span>

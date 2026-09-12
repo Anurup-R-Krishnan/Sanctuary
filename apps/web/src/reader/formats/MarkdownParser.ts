@@ -177,6 +177,10 @@ export async function parseMarkdownToBook(
     md = new TextDecoder().decode(source);
   }
 
+  if (md.charCodeAt(0) === 0xfeff) {
+    md = md.slice(1);
+  }
+
   let title = fallbackTitle;
   let author = "Unknown Author";
 

@@ -250,4 +250,46 @@ The waters were calm.`;
       adapter.destroy();
     });
   });
+
+  describe("Multi-Format Pipeline Edge Cases & Resilience", () => {
+    it("strips UTF-8 BOM from plain text without corrupting title", async () => {
+      const bomText = "\uFEFFClean Title\n\nThis is the first chapter after BOM.";
+      const book = await parseTxtToBook(bomText);
+      expect(book.metadata.title).toBe("Clean Title");
+      expect(book.sections.length).toBeGreaterThan(0);
+      book.destroy?.();
+    });
+
+    it("strips UTF-8 BOM from Markdown with frontmatter", async () => {
+      const bomMd = "\uFEFF---\ntitle: BOM Book\nauthor: Test Author\n---\n\n# Heading 1\nContent.";
+      const book = await parseMarkdownToBook(bomMd);
+      expect(book.metadata.title).toBe("BOM Book");
+      expect(book.metadata.author).toBe("Test Author");
+      book.destroy?.();
+    });
+
+    it("handles headless HTML snippets gracefully", async () => {
+      const headlessHtml = `<h2>Fragment Title</h2><p>A standalone snippet without html doctype.</p>`;
+      const book = await parseHtmlToBook(headlessHtml, "Fallback Fragment");
+      expect(book.sections.length).toBe(1);
+      expect(book.toc.length).toBeGreaterThan(0);
+      expect(book.toc[0].label).toContain("Fragment Title");
+      book.destroy?.();
+    });
+
+    it("handles empty and whitespace-only documents safely", async () => {
+      const emptyTxt = "    \n\n   ";
+      const bookTxt = await parseTxtToBook(emptyTxt, "Empty Doc");
+      expect(bookTxt.metadata.title).toBe("Empty Doc");
+      expect(bookTxt.sections.length).toBe(1);
+      bookTxt.destroy?.();
+
+      const emptyMd = "";
+      const bookMd = await parseMarkdownToBook(emptyMd, "Empty MD");
+      expect(bookMd.metadata.title).toBe("Empty MD");
+      expect(bookMd.sections.length).toBe(1);
+      bookMd.destroy?.();
+    });
+  });
 });
+

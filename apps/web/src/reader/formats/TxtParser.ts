@@ -62,6 +62,10 @@ export async function parseTxtToBook(
     text = new TextDecoder().decode(source);
   }
 
+  if (text.charCodeAt(0) === 0xfeff) {
+    text = text.slice(1);
+  }
+
   const lines = text.split(/\r?\n/);
   const firstNonEmpty = lines.find((l) => l.trim().length > 0)?.trim() || fallbackTitle;
   const title = firstNonEmpty.length < 80 ? firstNonEmpty : fallbackTitle;
