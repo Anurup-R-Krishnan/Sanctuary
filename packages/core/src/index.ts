@@ -125,7 +125,8 @@ export class SanctuaryApiClient {
 
   private async fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
     const baseHeaders = await this.headers();
-    const res = await fetch(`${this.options.baseUrl}${path}`, {
+    const targetUrl = new URL(path.replace(/^\/+/, ""), this.options.baseUrl.endsWith("/") ? this.options.baseUrl : `${this.options.baseUrl}/`).toString();
+    const res = await fetch(targetUrl, {
       ...init,
       headers: { ...baseHeaders, ...init?.headers }
     });
@@ -144,7 +145,8 @@ export class SanctuaryApiClient {
       headers.delete("Content-Type");
     }
 
-    return fetch(`${this.options.baseUrl}${path}`, {
+    const targetUrl = new URL(path.replace(/^\/+/, ""), this.options.baseUrl.endsWith("/") ? this.options.baseUrl : `${this.options.baseUrl}/`).toString();
+    return fetch(targetUrl, {
       ...init,
       headers
     });
