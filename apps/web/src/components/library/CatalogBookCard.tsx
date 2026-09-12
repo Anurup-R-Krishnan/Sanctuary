@@ -1,9 +1,10 @@
-import { BookOpen, Check, Download, Loader2 } from "lucide-react";
+import { Check, Download, Loader2 } from "lucide-react";
 import React, { useState } from "react";
 
 import type { OpdsEntry } from "@/types/opds";
 
 import { Button } from "@/components/ui/Button";
+import { GenerativeBookCover } from "@/components/ui/GenerativeBookCover";
 
 interface CatalogBookCardProps {
   entry: OpdsEntry;
@@ -34,7 +35,7 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
               src={entry.coverUrl}
             />
           ) : (
-            <BookOpen className="w-8 h-8 text-light-text-muted/40 dark:text-dark-text-muted/40" />
+            <GenerativeBookCover author={entry.author} title={entry.title} variant="compact" />
           )}
         </div>
 

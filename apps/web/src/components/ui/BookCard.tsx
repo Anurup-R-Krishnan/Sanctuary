@@ -8,6 +8,7 @@ import { cx } from "@/utils/cx";
 import { clampPercent } from "@/utils/number";
 
 import { ConfirmDialog } from "./Dialog";
+import { GenerativeBookCover } from "./GenerativeBookCover";
 import { IconButton } from "./IconButton";
 
 type BookCardVariant = "default" | "compact" | "featured";
@@ -68,11 +69,7 @@ const BookCover = ({
           onError={handleImageError}
         />
       ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center border-l-4 border-l-light-accent dark:border-l-dark-accent bg-light-secondary dark:bg-dark-secondary relative">
-          <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black/5 dark:from-white/5 to-transparent pointer-events-none" />
-          <span className="font-sans font-semibold text-xs leading-snug text-light-text dark:text-dark-text line-clamp-4 z-10">{book.title}</span>
-          {book.author && <span className="font-sans text-[0.65rem] mt-1.5 text-light-text-muted dark:text-dark-text-muted line-clamp-2 z-10">{book.author}</span>}
-        </div>
+        <GenerativeBookCover author={book.author} title={book.title} variant={variant} />
       )}
     </div>
   );

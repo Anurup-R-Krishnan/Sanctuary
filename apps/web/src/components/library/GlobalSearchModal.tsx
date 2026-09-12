@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import type { Book, BookSearchResult } from "@/types";
 
+import { GenerativeBookCover } from "@/components/ui/GenerativeBookCover";
 import { searchLibrary } from "@/services/librarySearchIndex";
 
 interface GlobalSearchModalProps {
@@ -194,8 +195,8 @@ export function GlobalSearchModal({
                               src={item.coverUrl}
                             />
                           ) : (
-                            <div className="w-7 h-10 rounded bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0">
-                              <BookOpen className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" />
+                            <div className="w-7 h-10 rounded overflow-hidden shadow-sm shrink-0">
+                              <GenerativeBookCover author={item.author} title={item.title} variant="compact" />
                             </div>
                           )}
                           <div>
