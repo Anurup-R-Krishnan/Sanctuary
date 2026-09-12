@@ -1,18 +1,26 @@
 import { BookOpen } from "lucide-react";
-import { useEffect, useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { FoliateTestHarness } from "@/components/dev/FoliateTestHarness";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
+import { libraryIndexManager } from "@/services/librarySearchIndex";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
 import { syncQueue } from "@/services/SyncQueue";
+import { useBookStore } from "@/store/useBookStore";
 import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { View } from "@/types";
+
+const GlobalSearchModal = lazy(() =>
+  import("@/components/library/GlobalSearchModal").then((m) => ({
+    default: m.GlobalSearchModal,
+  }))
+);
 
 import LibraryGrid from "./components/pages/LibraryGrid";
 import ReaderView from "./components/pages/ReaderView";
@@ -52,6 +60,8 @@ function App() {
 
   // Global UI State
   const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
+  const books = useBookStore((state) => state.books);
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const selectedBookId = useReaderProgressStore((state) => state.active?.bookId ?? null);
 
   // Custom Hooks (Encapsulated Logic)
@@ -63,10 +73,38 @@ function App() {
   const handleGetBookContent = useCallback((id: string) => libraryService.getBookContent(id, api, isPersistent), [api, isPersistent]);
   const handleAddBook = useCallback((file: File) => libraryService.addBook(file, api, isPersistent), [api, isPersistent]);
   const handleToggleFavorite = useCallback((id: string) => libraryService.toggleFavorite(id, api, isPersistent), [api, isPersistent]);
-  const handleDeleteBook = useCallback((id: string) => libraryService.deleteBook(id, api, isPersistent), [api, isPersistent]);
+  const handleDeleteBook = useCallback((id: string) => {
+    void libraryIndexManager.removeBook(id);
+    return libraryService.deleteBook(id, api, isPersistent);
+  }, [api, isPersistent]);
   const handleUpdateBook = useCallback((id: string, updates: Parameters<typeof libraryService.updateBook>[1]) => libraryService.updateBook(id, updates, api, isPersistent), [api, isPersistent]);
-  const handleBatchDelete = useCallback((ids: string[]) => { ids.forEach((id) => libraryService.deleteBook(id, api, isPersistent)); }, [api, isPersistent]);
+  const handleBatchDelete = useCallback((ids: string[]) => {
+    ids.forEach((id) => {
+      void libraryIndexManager.removeBook(id);
+      libraryService.deleteBook(id, api, isPersistent);
+    });
+  }, [api, isPersistent]);
   const handleReplaceBookContent = useCallback((id: string, file: File) => libraryService.replaceBookContent(id, file, api, isPersistent), [api, isPersistent]);
+
+  // Background Full-Text Indexing Queue
+  useEffect(() => {
+    if (books.length === 0) return;
+    for (const b of books) {
+      libraryIndexManager.queueBook(b.id, (id) => handleGetBookContent(id));
+    }
+  }, [books, handleGetBookContent]);
+
+  // Global Cmd+K / Ctrl+K Search Shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsGlobalSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (mode === "initializing") return;
@@ -124,14 +162,15 @@ function App() {
       <MigrationDialog />
       {!isReader && (
         <Header
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          searchTerm={searchTerm}
-          onSearch={setSearchTerm}
-          onAddBook={handleAddBook}
           isGuest={isGuest}
+          onAddBook={handleAddBook}
+          onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
+          onSearch={setSearchTerm}
           onShowLogin={isGuest ? handleShowLogin : undefined}
           onSignOut={isSignedIn ? handleSignOut : undefined}
+          onToggleTheme={toggleTheme}
+          searchTerm={searchTerm}
+          theme={theme}
           userEmail={user?.email || undefined}
           userImage={user?.imageUrl || undefined}
         />
@@ -160,18 +199,29 @@ function App() {
         {view === View.READER && selectedBookId && (
           <ReaderView
             bookId={selectedBookId}
-            onClose={endSession}
-            onUpdateProgress={handleReaderProgress}
-            onAddBookmark={addBookmark}
-            onRemoveBookmark={removeBookmark}
             getBookContent={handleGetBookContent}
+            onAddBookmark={addBookmark}
+            onClose={endSession}
+            onRemoveBookmark={removeBookmark}
             onReplaceContent={handleReplaceBookContent}
+            onUpdateProgress={handleReaderProgress}
           />
         )}
       </main>
 
       {!isReader && (
-        <Navigation activeView={view} onNavigate={setView} isReaderActive={!!selectedBookId} />
+        <Navigation activeView={view} isReaderActive={!!selectedBookId} onNavigate={setView} />
+      )}
+
+      {isGlobalSearchOpen && (
+        <Suspense fallback={null}>
+          <GlobalSearchModal
+            books={books}
+            isOpen={isGlobalSearchOpen}
+            onClose={() => setIsGlobalSearchOpen(false)}
+            onSelectBook={(book, cfi) => startSession(book, cfi)}
+          />
+        </Suspense>
       )}
     </div>
   );

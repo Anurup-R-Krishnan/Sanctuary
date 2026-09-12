@@ -1,3 +1,4 @@
+export * from "./search";
 export * from "./vocabulary";
 export type { ReaderSettings } from "@sanctuary/core";
 

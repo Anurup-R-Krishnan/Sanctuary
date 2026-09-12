@@ -1,7 +1,7 @@
-import type { Book, VocabularyItem } from "@/types";
+import type { Book, IndexedBookRecord, VocabularyItem } from "@/types";
 
 const DB_NAME = "SanctuaryReaderDB";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const BOOKS_STORE = "books";
 const BOOK_CONTENTS_STORE = "book_contents";
 const VOCAB_STORE = "vocabulary";
@@ -9,6 +9,7 @@ const SESSIONS_STORE = "sessions";
 const MUTATIONS_STORE = "mutations";
 const READER_CACHE_STORE = "reader_cache";
 const ANNOTATIONS_STORE = "annotations";
+const SEARCH_INDEX_STORE = "search_index";
 
 let db: IDBDatabase | undefined;
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -72,6 +73,9 @@ function openDB(): Promise<IDBDatabase> {
       if (!database.objectStoreNames.contains(ANNOTATIONS_STORE)) {
         const annStore = database.createObjectStore(ANNOTATIONS_STORE, { keyPath: "id" });
         annStore.createIndex("bookId", "bookId", { unique: false });
+      }
+      if (!database.objectStoreNames.contains(SEARCH_INDEX_STORE)) {
+        database.createObjectStore(SEARCH_INDEX_STORE, { keyPath: "bookId" });
       }
     };
   });
@@ -269,4 +273,21 @@ export async function getVocabWord(id: string): Promise<VocabularyItem | undefin
 
 export async function deleteVocabWord(id: string): Promise<void> {
   return dbDelete(VOCAB_STORE, id);
+}
+
+// Full-text search index store helpers
+export async function putSearchIndex(record: IndexedBookRecord): Promise<void> {
+  return dbPut(SEARCH_INDEX_STORE, record);
+}
+
+export async function getSearchIndex(bookId: string): Promise<IndexedBookRecord | undefined> {
+  return dbGet<IndexedBookRecord>(SEARCH_INDEX_STORE, bookId);
+}
+
+export async function getAllSearchIndexes(): Promise<IndexedBookRecord[]> {
+  return dbGetAll<IndexedBookRecord>(SEARCH_INDEX_STORE);
+}
+
+export async function deleteSearchIndex(bookId: string): Promise<void> {
+  return dbDelete(SEARCH_INDEX_STORE, bookId);
 }

@@ -11,6 +11,7 @@ import { Input } from "./Input";
 interface HeaderProps {
   isGuest?: boolean;
   onAddBook?: (file: File) => Promise<void>;
+  onOpenGlobalSearch?: () => void;
   onSearch: (term: string) => void;
   onShowLogin?: (() => void) | undefined;
   onSignOut?: (() => void) | undefined;
@@ -84,14 +85,15 @@ function AccountControls({
 }
 
 function Header({
-  theme,
-  onToggleTheme,
-  searchTerm,
-  onSearch,
-  onAddBook,
   isGuest = false,
+  onAddBook,
+  onOpenGlobalSearch,
+  onSearch,
   onShowLogin,
   onSignOut,
+  onToggleTheme,
+  searchTerm,
+  theme,
   userEmail,
   userImage,
 }: HeaderProps) {
@@ -122,6 +124,15 @@ function Header({
                   variant="ghost"
                   className="h-7 w-7 !p-0"
                 />
+              ) : onOpenGlobalSearch ? (
+                <button
+                  className="hidden sm:flex items-center px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono text-light-text-muted hover:text-light-text dark:hover:text-dark-text transition-colors mr-1"
+                  onClick={onOpenGlobalSearch}
+                  title="Full-text search (Cmd+K)"
+                  type="button"
+                >
+                  ⌘K
+                </button>
               ) : undefined
             }
           />

@@ -16,10 +16,10 @@ export function useReadingSession(
 ) {
   const setView = useUIStore((state) => state.setView);
 
-  const startSession = useCallback((book: Book) => {
+  const startSession = useCallback((book: Book, initialLocation?: string) => {
     // Clear any stale progress from a previous session before starting a new one
     useReaderProgressStore.getState().clearActiveBook();
-    useReaderProgressStore.getState().setActiveBook(book.id, book.progress, book.lastLocation);
+    useReaderProgressStore.getState().setActiveBook(book.id, book.progress, initialLocation || book.lastLocation);
     setView(View.READER);
     statsService.startSession(book.id, book.progress);
   }, [setView]);
