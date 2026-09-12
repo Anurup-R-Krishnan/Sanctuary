@@ -1,9 +1,10 @@
-import { Search, Clock, Star, ChevronRight } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ChevronRight, Clock, Search, Star } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
-import type { Book, SortOption, FilterOption, ViewMode } from "@/types";
+import type { Book, FilterOption, SortOption, ViewMode } from "@/types";
 
+import { CatalogBrowser } from "@/components/library/CatalogBrowser";
 import { HorizontalScroll } from "@/components/library/HorizontalScroll";
 import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
@@ -59,20 +60,21 @@ function LibraryGrid({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
 
   const SORT_LABELS: Record<SortOption, string> = {
-    recent: "Recently Opened",
-    title: "Title",
+    added: "Date Added",
     author: "Author",
     progress: "Progress",
-    added: "Date Added",
+    recent: "Recently Opened",
+    title: "Title",
   };
   const FILTER_LABELS: Record<FilterOption, string> = {
     all: "All Books",
     favorites: "Favorites",
-    "to-read": "To Read",
-    reading: "Reading",
     finished: "Finished",
+    reading: "Reading",
+    "to-read": "To Read",
   };
   const sortLabel = SORT_LABELS[sortBy] ?? sortBy;
   const filterLabel = FILTER_LABELS[filterBy] ?? filterBy;
@@ -107,25 +109,35 @@ function LibraryGrid({
   }
 
   if (books.length === 0) {
-    return <LibraryEmptyState onAddBook={addBook} />;
+    return (
+      <>
+        <LibraryEmptyState onAddBook={addBook} onOpenCatalog={() => setIsCatalogOpen(true)} />
+        <CatalogBrowser
+          isOpen={isCatalogOpen}
+          onClose={() => setIsCatalogOpen(false)}
+          onImport={addBook}
+        />
+      </>
+    );
   }
 
   return (
     <div className="page-stack">
       <LibraryToolbar
         bookCount={books.length}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        sortLabel={sortLabel}
-        showSortMenu={showSortMenu}
-        setShowSortMenu={setShowSortMenu}
         filterBy={filterBy}
-        setFilterBy={setFilterBy}
         filterLabel={filterLabel}
-        showFilterMenu={showFilterMenu}
+        onOpenCatalog={() => setIsCatalogOpen(true)}
+        setFilterBy={setFilterBy}
         setShowFilterMenu={setShowFilterMenu}
+        setShowSortMenu={setShowSortMenu}
+        setSortBy={setSortBy}
+        setViewMode={setViewMode}
+        showFilterMenu={showFilterMenu}
+        showSortMenu={showSortMenu}
+        sortBy={sortBy}
+        sortLabel={sortLabel}
+        viewMode={viewMode}
       />
 
       {recentBooks.length > 0 && filterBy === "all" && !searchTerm && (
@@ -223,6 +235,12 @@ function LibraryGrid({
           </div>
         )}
       </section>
+
+      <CatalogBrowser
+        isOpen={isCatalogOpen}
+        onClose={() => setIsCatalogOpen(false)}
+        onImport={addBook}
+      />
     </div>
   );
 };

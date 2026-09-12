@@ -1,7 +1,7 @@
-import { Grid3X3, List, SortAsc, Filter, ChevronDown } from "lucide-react";
+import { ChevronDown, Filter, Globe, Grid3X3, List, SortAsc } from "lucide-react";
 import React from "react";
 
-import type { SortOption, FilterOption, ViewMode } from "@/types";
+import type { FilterOption, SortOption, ViewMode } from "@/types";
 
 import { Button } from "@/components/ui/Button";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
@@ -11,6 +11,7 @@ interface LibraryToolbarProps {
   bookCount: number;
   filterBy: FilterOption;
   filterLabel: string;
+  onOpenCatalog?: () => void;
   setFilterBy: (v: FilterOption) => void;
   setShowFilterMenu: (v: boolean) => void;
   setShowSortMenu: (v: boolean) => void;
@@ -23,36 +24,37 @@ interface LibraryToolbarProps {
   viewMode: ViewMode;
 }
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "recent", label: "Recently Opened" },
-  { value: "title", label: "Title" },
-  { value: "author", label: "Author" },
-  { value: "progress", label: "Progress" },
-  { value: "added", label: "Date Added" },
+const SORT_OPTIONS: { label: string; value: SortOption }[] = [
+  { label: "Recently Opened", value: "recent" },
+  { label: "Title", value: "title" },
+  { label: "Author", value: "author" },
+  { label: "Progress", value: "progress" },
+  { label: "Date Added", value: "added" },
 ];
 
-const FILTER_OPTIONS: { value: FilterOption; label: string }[] = [
-  { value: "all", label: "All Books" },
-  { value: "favorites", label: "Favorites" },
-  { value: "to-read", label: "To Read" },
-  { value: "reading", label: "Reading" },
-  { value: "finished", label: "Finished" },
+const FILTER_OPTIONS: { label: string; value: FilterOption }[] = [
+  { label: "All Books", value: "all" },
+  { label: "Favorites", value: "favorites" },
+  { label: "To Read", value: "to-read" },
+  { label: "Reading", value: "reading" },
+  { label: "Finished", value: "finished" },
 ];
 
 export function LibraryToolbar({
   bookCount,
-  viewMode,
-  setViewMode,
-  sortBy,
-  setSortBy,
-  sortLabel,
-  showSortMenu,
-  setShowSortMenu,
   filterBy,
-  setFilterBy,
   filterLabel,
-  showFilterMenu,
+  onOpenCatalog,
+  setFilterBy,
   setShowFilterMenu,
+  setShowSortMenu,
+  setSortBy,
+  setViewMode,
+  showFilterMenu,
+  showSortMenu,
+  sortBy,
+  sortLabel,
+  viewMode,
 }: LibraryToolbarProps) {
   const sortMenuId = "library-sort-menu";
   const filterMenuId = "library-filter-menu";
@@ -134,14 +136,26 @@ export function LibraryToolbar({
           </Button>
           <DropdownMenu
             id={filterMenuId}
-            show={showFilterMenu}
-            options={FILTER_OPTIONS}
-            value={filterBy}
-            onSelect={(v) => setFilterBy(v as FilterOption)}
             onClose={() => setShowFilterMenu(false)}
+            onSelect={(v) => setFilterBy(v as FilterOption)}
+            options={FILTER_OPTIONS}
+            show={showFilterMenu}
             triggerId={filterTriggerId}
+            value={filterBy}
           />
         </div>
+
+        {onOpenCatalog && (
+          <Button
+            aria-label="Open OPDS Catalogs"
+            className="gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted"
+            onClick={onOpenCatalog}
+            variant="secondary"
+          >
+            <Globe className="w-4 h-4" />
+            <span className="hidden sm:inline">Catalogs</span>
+          </Button>
+        )}
       </div>
     </div>
   );
