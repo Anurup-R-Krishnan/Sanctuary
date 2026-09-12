@@ -1,19 +1,11 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import * as fs from "fs";
-import { JSDOM } from "jsdom";
 
 import { FoliateEpubAdapter } from "./FoliateEpubAdapter";
+import { ensureTestDom } from "./testEnv";
 
 beforeAll(() => {
-  const dom = new JSDOM("", { url: "http://localhost" });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  globalThis.window = dom.window as any;
-  globalThis.document = dom.window.document;
-  globalThis.DOMParser = dom.window.DOMParser;
-  globalThis.HTMLElement = dom.window.HTMLElement;
-  globalThis.NodeFilter = dom.window.NodeFilter;
-  globalThis.customElements = dom.window.customElements;
-  globalThis.ProcessingInstruction = dom.window.ProcessingInstruction;
+  ensureTestDom();
 });
 
 describe("FoliateEpubAdapter", () => {

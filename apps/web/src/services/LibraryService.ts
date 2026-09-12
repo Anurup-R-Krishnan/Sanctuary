@@ -357,6 +357,7 @@ export const libraryService = {
         coverBlob: coverBlob || existing.coverBlob || null,
         coverUrl,
         epubBlob,
+        format: adapter.format,
         title,
       };
 
@@ -415,6 +416,7 @@ export const libraryService = {
         coverBlob: coverBlob || null,
         contentHash,
         contentStatus: "available",
+        format: adapter.format,
         syncStatus: isPersistent ? "synced" : "local-only",
         progress: 0,
         lastLocation: "",

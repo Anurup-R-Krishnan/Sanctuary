@@ -35,7 +35,7 @@ function isZipHeader(bytes: Uint8Array): boolean {
       (bytes[2] === 0x07 && bytes[3] === 0x08));
 }
 
-function isValidBookHeader(bytes: Uint8Array, fileName?: string): boolean {
+function isValidBookHeader(bytes: Uint8Array, formatOrFileName?: string): boolean {
   if (isZipHeader(bytes)) return true;
   if (bytes.length >= 68) {
     const magic = String.fromCharCode(...bytes.slice(60, 68));
@@ -48,9 +48,18 @@ function isValidBookHeader(bytes: Uint8Array, fileName?: string): boolean {
   } catch {
     // ignore
   }
-  if (fileName) {
-    const lower = fileName.toLowerCase();
-    if (lower.endsWith(".txt") || lower.endsWith(".text") || lower.endsWith(".md") || lower.endsWith(".markdown")) {
+  if (formatOrFileName) {
+    const lower = formatOrFileName.toLowerCase();
+    if (
+      lower.endsWith(".txt") ||
+      lower.endsWith(".text") ||
+      lower.endsWith(".md") ||
+      lower.endsWith(".markdown") ||
+      lower === "txt" ||
+      lower === "text" ||
+      lower === "md" ||
+      lower === "markdown"
+    ) {
       return true;
     }
   }
@@ -61,7 +70,7 @@ export async function verifyBookContent(
   bookId: string,
   blob: Blob | null | undefined,
   expectedHash?: string,
-  fileName?: string
+  formatOrFileName?: string
 ): Promise<VerifiedBookContent> {
   if (!blob) {
     recordReaderDiagnostic({ bookId, stage: "content-verification", error: "EPUB content is missing." });
@@ -81,7 +90,7 @@ export async function verifyBookContent(
   }
 
   const bytes = new Uint8Array(buffer);
-  if (!isValidBookHeader(bytes, fileName)) {
+  if (!isValidBookHeader(bytes, formatOrFileName)) {
     recordReaderDiagnostic({ bookId, stage: "content-verification", error: "EPUB does not have a ZIP header.", details: { byteLength: blob.size, mimeType: blob.type } });
     throw new BookContentError("BOOK_CONTENT_INVALID", `The stored file for book ${bookId} is not a valid EPUB archive.`);
   }
@@ -102,14 +111,14 @@ export async function getVerifiedBookContent(bookId: string): Promise<VerifiedBo
   const book = await getBookById(bookId).catch(() => null);
   if (!book) return null;
   const stored = await getBookContent(bookId).catch(() => null);
-  return verifyBookContent(bookId, stored?.blob ?? book.epubBlob, stored?.contentHash ?? book.contentHash);
+  return verifyBookContent(bookId, stored?.blob ?? book.epubBlob, stored?.contentHash ?? book.contentHash, book.format);
 }
 
 export async function saveBookContent(book: Book): Promise<void> {
   if (!book.epubBlob) {
     throw new BookContentError("BOOK_CONTENT_MISSING", `Cannot save book ${book.id} without EPUB content.`);
   }
-  await verifyBookContent(book.id, book.epubBlob, book.contentHash);
+  await verifyBookContent(book.id, book.epubBlob, book.contentHash, book.format);
   await putBookContent({
     bookId: book.id,
     blob: book.epubBlob,

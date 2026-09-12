@@ -57,6 +57,7 @@ export interface Book extends Omit<LibraryItem, "bookmarks" | "favorite" | "last
   contentStatus?: "available" | "missing" | "invalid";
   coverBlob?: Blob | null;
   epubBlob: Blob | null;
+  format?: string;
   genre?: string;
   highlights?: Highlight[];
   isFavorite?: boolean;

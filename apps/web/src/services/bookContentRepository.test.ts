@@ -37,4 +37,34 @@ describe("verifyBookContent", () => {
       code: "BOOK_CONTENT_INVALID",
     });
   });
+
+  test("accepts TXT and Markdown content when format or filename is specified", async () => {
+    const txtBlob = new Blob(["Hello, this is a plain text book."]);
+    await expect(verifyBookContent("book-txt", txtBlob, undefined, "txt")).resolves.toMatchObject({
+      byteLength: txtBlob.size,
+    });
+    await expect(verifyBookContent("book-txt-fn", txtBlob, undefined, "novel.txt")).resolves.toMatchObject({
+      byteLength: txtBlob.size,
+    });
+
+    const mdBlob = new Blob(["# Chapter 1\n\nSome markdown content"]);
+    await expect(verifyBookContent("book-md", mdBlob, undefined, "markdown")).resolves.toMatchObject({
+      byteLength: mdBlob.size,
+    });
+    await expect(verifyBookContent("book-md-fn", mdBlob, undefined, "story.md")).resolves.toMatchObject({
+      byteLength: mdBlob.size,
+    });
+  });
+
+  test("accepts FB2 XML and HTML content via header inspection", async () => {
+    const fb2Blob = new Blob(["<?xml version='1.0'?><FictionBook xmlns='http://www.gribuser.ru/xml/fictionbook/2.0'></FictionBook>"]);
+    await expect(verifyBookContent("book-fb2", fb2Blob)).resolves.toMatchObject({
+      byteLength: fb2Blob.size,
+    });
+
+    const htmlBlob = new Blob(["<!DOCTYPE html><html><head><title>Test</title></head><body><p>Hello</p></body></html>"]);
+    await expect(verifyBookContent("book-html", htmlBlob)).resolves.toMatchObject({
+      byteLength: htmlBlob.size,
+    });
+  });
 });
