@@ -20,6 +20,7 @@ export const SUPPORTED_EXTENSIONS = [
   ".xhtml",
   ".md",
   ".markdown",
+  ".pdf",
 ] as const;
 
 export const SUPPORTED_FILE_ACCEPT = SUPPORTED_EXTENSIONS.join(",");
@@ -46,6 +47,7 @@ export async function detectBookFormat(
   if (lowerName.endsWith(".md") || lowerName.endsWith(".markdown")) return "markdown";
   if (lowerName.endsWith(".xhtml")) return "xhtml";
   if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) return "html";
+  if (lowerName.endsWith(".pdf")) return "pdf";
 
   // 2. Read first 1024 bytes for signature sniffing
   let bytes: Uint8Array;
@@ -58,6 +60,17 @@ export async function detectBookFormat(
     bytes = new Uint8Array(head);
   } else {
     return "txt";
+  }
+
+  // PDF header: %PDF- (0x25 0x50 0x44 0x46)
+  if (
+    bytes.length >= 4 &&
+    bytes[0] === 0x25 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x44 &&
+    bytes[3] === 0x46
+  ) {
+    return "pdf";
   }
 
   // ZIP header: PK\x03\x04

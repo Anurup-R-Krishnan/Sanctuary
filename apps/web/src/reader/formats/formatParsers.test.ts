@@ -27,8 +27,9 @@ describe("Multi-Format Pipeline & Decoders", () => {
       expect(isSupportedExtension("book.xhtml")).toBe(true);
       expect(isSupportedExtension("book.md")).toBe(true);
       expect(isSupportedExtension("book.markdown")).toBe(true);
+      expect(isSupportedExtension("doc.pdf")).toBe(true);
       expect(isSupportedExtension("image.png")).toBe(false);
-      expect(isSupportedExtension("doc.pdf")).toBe(false);
+      expect(isSupportedExtension("executable.bin")).toBe(false);
     });
 
     it("detects formats from file names and magic bytes", async () => {
@@ -40,10 +41,15 @@ describe("Multi-Format Pipeline & Decoders", () => {
       expect(await detectBookFormat(new Blob(), "novel.fb2")).toBe("fb2");
       expect(await detectBookFormat(new Blob(), "novel.mobi")).toBe("mobi");
       expect(await detectBookFormat(new Blob(), "novel.azw3")).toBe("azw3");
+      expect(await detectBookFormat(new Blob(), "document.pdf")).toBe("pdf");
 
       // ZIP magic byte
       const zipBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00]);
       expect(await detectBookFormat(zipBytes)).toBe("epub");
+
+      // PDF magic bytes
+      const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]);
+      expect(await detectBookFormat(pdfBytes)).toBe("pdf");
 
       // MOBI magic byte at offset 60
       const mobiBytes = new Uint8Array(80);

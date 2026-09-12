@@ -20,6 +20,7 @@ import type {
 import { detectBookFormat } from "../formats/FormatDetector";
 import { parseHtmlToBook } from "../formats/HtmlParser";
 import { parseMarkdownToBook } from "../formats/MarkdownParser";
+import { parsePdfToBook } from "../formats/PdfParser";
 import { parseTxtToBook } from "../formats/TxtParser";
 
 export interface FoliateRawSection {
@@ -45,6 +46,7 @@ export interface FoliateRawBook {
   dir?: "ltr" | "rtl";
   getCover?(): Promise<Blob | null>;
   metadata?: Record<string, unknown>;
+  rendition?: { layout?: string };
   resolveHref(href: string): { index: number; anchor?: (doc: Document) => Element | Range | null } | null;
   sections: FoliateRawSection[];
   splitTOCHref?(href: string): number[];
@@ -210,6 +212,11 @@ export class FoliateDocumentAdapter implements BookDocument {
       case "html":
       case "xhtml": {
         rawBook = await parseHtmlToBook(source, fileName);
+        break;
+      }
+
+      case "pdf": {
+        rawBook = await parsePdfToBook(source, fileName);
         break;
       }
 

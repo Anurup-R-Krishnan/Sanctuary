@@ -43,6 +43,7 @@ export interface RawFoliateBook {
     language?: string;
     title?: string;
   };
+  rendition?: { layout?: string };
   resolveHref(href: string): { index: number; anchor?: (doc: Document) => Element | Range | null } | null;
   sections: RawFoliateSection[];
   splitTOCHref?(href: string): number[];

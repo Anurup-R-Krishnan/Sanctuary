@@ -12,7 +12,8 @@ export type BookFormat =
   | "txt"
   | "html"
   | "xhtml"
-  | "markdown";
+  | "markdown"
+  | "pdf";
 
 export interface DocumentMetadata {
   author?: string;
