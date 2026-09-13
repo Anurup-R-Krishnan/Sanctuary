@@ -21,6 +21,10 @@ const CatalogBrowser = lazy(() =>
   import("@/components/library/CatalogBrowser").then((m) => ({ default: m.CatalogBrowser }))
 );
 
+const SeriesShelfModal = lazy(() =>
+  import("@/components/library/SeriesShelfModal").then((m) => ({ default: m.SeriesShelfModal }))
+);
+
 interface LibraryGridProps {
   addBook: (file: File) => Promise<void>;
   deleteBook: (id: string) => void;
@@ -81,6 +85,7 @@ function LibraryGrid({
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [isSeriesShelfOpen, setIsSeriesShelfOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const isSelecting = selectedBookIds.size > 0;
 
@@ -294,7 +299,17 @@ function LibraryGrid({
 
           {Object.keys(seriesGroups).length > 0 && (
             <div>
-              <SectionHeader title="Series" variant="quiet" />
+              <div className="flex items-center justify-between mb-2">
+                <SectionHeader title="Series" variant="quiet" />
+                <button
+                  onClick={() => setIsSeriesShelfOpen(true)}
+                  type="button"
+                  className="text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline flex items-center gap-1"
+                >
+                  <span>View All Series</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
               <div className="space-y-4">
                 {Object.entries(seriesGroups)
                   .slice(0, 2)
@@ -436,6 +451,17 @@ function LibraryGrid({
           onImport={addBook}
         />
       </Suspense>
+
+      {isSeriesShelfOpen && (
+        <Suspense fallback={null}>
+          <SeriesShelfModal
+            books={books}
+            isOpen={isSeriesShelfOpen}
+            onClose={() => setIsSeriesShelfOpen(false)}
+            onSelectBook={onSelectBook}
+          />
+        </Suspense>
+      )}
 
       <BatchActionBar
         onAssignCollection={handleAssignCollection}

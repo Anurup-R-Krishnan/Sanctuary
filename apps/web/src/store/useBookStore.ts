@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 import type { Book, FilterOption, SortOption } from "@/types";
 
+import { groupBooksBySeries } from "@/utils/seriesEngine";
+
 type BookStoreState = {
   activeCollection: string | null;
   allCollections: string[];
@@ -62,21 +64,17 @@ const computeDerivedState = (
   });
 
   const seriesGroups: Record<string, Book[]> = {};
-  books
-    .filter((book) => book.series)
-    .forEach((book) => {
-      const seriesKey = book.series!;
-      let group = seriesGroups[seriesKey];
-      if (!group) {
-        group = [];
-        seriesGroups[seriesKey] = group;
-      }
-      group.push(book);
-    });
+  const detectedSeries = groupBooksBySeries(books, { minVolumes: 1 });
+  const bookMap = new Map(books.map((b) => [b.id, b]));
 
-  Object.values(seriesGroups).forEach((group) => {
-    group.sort((a, b) => (a.seriesIndex || 0) - (b.seriesIndex || 0));
-  });
+  for (const group of detectedSeries) {
+    const groupBooks = group.books
+      .map((item) => bookMap.get(item.id))
+      .filter((b): b is Book => Boolean(b));
+    if (groupBooks.length > 0) {
+      seriesGroups[group.seriesTitle] = groupBooks;
+    }
+  }
 
   const collectionSet = new Set<string>();
   books.forEach((book) => {

@@ -38,6 +38,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [X-Ray Character & Entity Dossier Index](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/xray-entity-dossier-index.md) | Client-side heuristic NER, entity frequency timelines, character dossier cards & context excerpts | Reader Experience | Chapter Readability Metrics | VERIFIED |
 | [Reading Activity Calendar Heatmap & Velocity Analytics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-activity-calendar-and-velocity.md) | GitHub-style 52-week activity calendar, circadian time-of-day breakdown & reading velocity analytics | Habit Formation | Annual Reading Challenges | VERIFIED |
 | [Smart Reading Streaks, Grace Shields & Habit Protection Engine](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/smart-reading-streaks-and-habit-protection.md) | Timezone-aware streak continuity, automatic grace shields, flame tiers & streak repair challenges | Habit Formation | Reading Activity Calendar Heatmap | VERIFIED |
+| [Book Series Organization, Reading Order & Auto-Next Progression](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/book-series-organization-and-progression.md) | Series detection, sequential reading order shelf, volume gap warnings & auto-next transition | Library Experience | Collections & Batch Operations | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -73,6 +74,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **X-Ray Character & Entity Dossier Index**: Client-side heuristic NER, entity frequency timelines, character dossier cards, and contextual excerpts.
    - **Reading Activity Calendar Heatmap & Velocity Analytics**: GitHub-style 52-week activity calendar, circadian time-of-day breakdown, and reading velocity metrics.
    - **Smart Reading Streaks, Grace Shields & Habit Protection Engine**: Timezone-aware streak continuity, automatic grace shields, flame tiers, and streak repair challenges.
+   - **Book Series Organization, Reading Order & Auto-Next Progression**: Heuristic series extraction, sequential shelf collation, missing volume warnings, and seamless auto-next book continuation.
 
 ## Evaluated Architectural Alternatives
 

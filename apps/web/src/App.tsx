@@ -207,6 +207,7 @@ function App() {
             getBookContent={handleGetBookContent}
             onAddBookmark={addBookmark}
             onClose={endSession}
+            onOpenBook={startSession}
             onRemoveBookmark={removeBookmark}
             onReplaceContent={handleReplaceBookContent}
             onUpdateProgress={handleReaderProgress}

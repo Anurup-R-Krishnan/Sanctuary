@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import type { ReaderEngineRef } from "@/components/reader/ReaderEngineHost";
-import type { Bookmark } from "@/types";
+import type { Book, Bookmark } from "@/types";
 import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
 import type { TocItem } from "@/utils/epub";
 
@@ -23,6 +23,12 @@ const QuoteCardModal = lazy(() =>
 const ReaderAutoScrollController = lazy(() =>
   import("@/components/reader/ReaderAutoScrollController").then((m) => ({
     default: m.ReaderAutoScrollController,
+  }))
+);
+
+const ReaderNextInSeriesBanner = lazy(() =>
+  import("@/components/reader/ReaderNextInSeriesBanner").then((m) => ({
+    default: m.ReaderNextInSeriesBanner,
   }))
 );
 
@@ -78,6 +84,7 @@ interface ReaderViewProps {
   getBookContent: (id: string) => Promise<Blob>;
   onAddBookmark: (bookId: string, bookmark: Omit<Bookmark, "id" | "createdAt">) => void;
   onClose: () => void;
+  onOpenBook?: (book: Book) => void;
   onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
   onReplaceContent: (id: string, file: File) => Promise<void>;
   onUpdateProgress: (id: string, progress: number, location: string) => void;
@@ -85,14 +92,16 @@ interface ReaderViewProps {
 
 function ReaderView({
   bookId,
-  onClose,
-  onUpdateProgress,
-  onAddBookmark,
-  onRemoveBookmark,
   getBookContent,
+  onAddBookmark,
+  onClose,
+  onOpenBook,
+  onRemoveBookmark,
   onReplaceContent,
+  onUpdateProgress,
 }: ReaderViewProps) {
   const book = useBookStore((state) => state.getBookById(bookId));
+  const books = useBookStore((state) => state.books);
   const rootRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<ReaderEngineRef>(null);
 
@@ -548,6 +557,9 @@ function ReaderView({
     isEnabled: true,
   });
 
+  const isAtEndOfBook =
+    (book?.progress ?? 0) >= 95 || (totalLocations > 1 && currentPage >= totalLocations);
+
   if (!book) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-black font-sans">
@@ -806,6 +818,16 @@ function ReaderView({
           onReplaceContent={(file) => onReplaceContent(bookId, file)}
           onClose={onClose}
         />
+      )}
+
+      {book && isAtEndOfBook && onOpenBook && (
+        <Suspense fallback={null}>
+          <ReaderNextInSeriesBanner
+            books={books}
+            currentBook={book}
+            onOpenBook={onOpenBook}
+          />
+        </Suspense>
       )}
     </div>
   );
