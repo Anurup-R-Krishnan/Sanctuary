@@ -32,6 +32,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Multi-Color Highlighting & Sticky Marginalia Notes](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/multicolor-highlighting-and-marginalia.md) | 5-color semantic palette, one-tap color picker, marginalia notes & category filtering | Reader Experience | Annotation Knowledge Sync | VERIFIED |
 | [Inline Image Lightbox & Deep Pan-Zoom Viewer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/inline-image-lightbox-and-pan-zoom.md) | In-document image tap/click interception, pan-and-zoom modal & dark-mode inversion | Reader Experience | Inline Footnote Popover | VERIFIED |
 | [RSVP Speed Reading & Visual Cadence Acceleration](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/rsvp-speed-reading-cadence.md) | Rapid serial visual presentation, ORP fixation anchor & cadence pacing | Reader Experience | High-Legibility Typography | VERIFIED |
+| [Zen Focus Immersion & Timed Reading Sprints](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/zen-focus-immersion-and-sprints.md) | Distraction-free full-bleed reading, ambient edge vignette & Web Audio focus sprints | Reader Experience | Ambient Soundscapes | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -61,6 +62,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Multi-Color Highlighting & Sticky Marginalia Notes**: 5-color semantic palette, one-tap color picker, marginalia notes & category filtering.
    - **Inline Image Lightbox & Deep Pan-Zoom Viewer**: In-document image click/tap interception, pan-and-zoom modal & dark-mode inversion.
    - **RSVP Speed Reading & Visual Cadence Acceleration**: Rapid serial visual presentation, optimal recognition point (ORP) fixation, and variable cadence.
+   - **Zen Focus Immersion & Timed Reading Sprints**: Distraction-free full-bleed reading, ambient edge vignette, and Web Audio focus sprint bells.
 
 ## Evaluated Architectural Alternatives
 

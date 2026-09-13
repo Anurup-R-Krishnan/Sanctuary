@@ -26,6 +26,12 @@ const ReaderSpeedReaderModal = lazy(() =>
   }))
 );
 
+const ReaderZenFocusOverlay = lazy(() =>
+  import("@/components/reader/ReaderZenFocusOverlay").then((m) => ({
+    default: m.ReaderZenFocusOverlay,
+  }))
+);
+
 const WordDefinitionModal = lazy(() =>
   import("@/components/reader/WordDefinitionModal").then((m) => ({
     default: m.WordDefinitionModal,
@@ -230,6 +236,12 @@ function ReaderView({
     engineRef.current?.clearSelection();
   }, [selection, position.chapterLabel, book?.title]);
 
+  const [isZenModeActive, setIsZenModeActive] = useState(false);
+  const handleToggleZenMode = useCallback(
+    () => setIsZenModeActive((prev) => !prev),
+    []
+  );
+
   const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
     bookId: book?.id ?? "",
     rendition: engineRef.current?.rendition ?? null,
@@ -361,6 +373,7 @@ function ReaderView({
     goToStart: handleJumpToTop,
     goToEnd: handleJumpToBottom,
     onClose,
+    onToggleZenMode: handleToggleZenMode,
     toggleBookmark: handleToggleBookmark,
     toggleFullscreen: handleToggleFullscreen,
     toggleUI: () => setShowUI((prev) => !prev),
@@ -429,7 +442,7 @@ function ReaderView({
         book={book}
         bookmarks={book.bookmarks || []}
         annotations={annotations}
-        showUI={showUI}
+        showUI={showUI && !isZenModeActive}
         showSettings={showSettings}
         showControls={showControls}
         showSearch={showSearch}
@@ -438,6 +451,7 @@ function ReaderView({
         currentPage={currentPage}
         totalPages={totalLocations}
         isBookmarked={isBookmarked}
+        isZenModeActive={isZenModeActive}
         currentCfi={currentCfi}
         toc={tocItems}
         chapterEstimatedMinutesRemaining={sessionStats.chapterEstimatedMinutesRemaining}
@@ -482,6 +496,7 @@ function ReaderView({
         onPrevTTSSentence={prevSentence}
         onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
+        onToggleZenMode={handleToggleZenMode}
         paragraphPauseMs={paragraphPauseMs}
         speechState={speechState}
         voices={voices}
@@ -551,6 +566,16 @@ function ReaderView({
             isOpen={!!speedReaderTarget}
             onClose={() => setSpeedReaderTarget(null)}
             rawText={speedReaderTarget.text}
+          />
+        </Suspense>
+      )}
+
+      {isZenModeActive && (
+        <Suspense fallback={null}>
+          <ReaderZenFocusOverlay
+            isOpen={isZenModeActive}
+            onClose={() => setIsZenModeActive(false)}
+            readingSpeedWpm={sessionStats.readingSpeedWpm}
           />
         </Suspense>
       )}

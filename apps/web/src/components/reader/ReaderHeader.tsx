@@ -9,6 +9,7 @@ import {
     Minimize2,
     Search,
     Settings,
+    Sparkles,
     Waves,
     Zap,
 } from "lucide-react";
@@ -27,6 +28,7 @@ interface ReaderHeaderProps {
     isBookmarked: boolean;
     isFullscreen: boolean;
     isTTSActive?: boolean;
+    isZenModeActive?: boolean;
     onClose: () => void;
     onToggleAmbient?: () => void;
     onToggleAnnotations: () => void;
@@ -37,6 +39,7 @@ interface ReaderHeaderProps {
     onToggleSpeedReader?: () => void;
     onToggleTOC: () => void;
     onToggleTTS?: () => void;
+    onToggleZenMode?: () => void;
     readingSpeedWpm?: number | null;
     showUI: boolean;
 }
@@ -49,6 +52,7 @@ function ReaderHeader({
     isBookmarked,
     isFullscreen,
     isTTSActive,
+    isZenModeActive,
     onClose,
     onToggleAmbient,
     onToggleAnnotations,
@@ -59,6 +63,7 @@ function ReaderHeader({
     onToggleSpeedReader,
     onToggleTOC,
     onToggleTTS,
+    onToggleZenMode,
     readingSpeedWpm,
     showUI,
 }: ReaderHeaderProps) {
@@ -151,6 +156,14 @@ function ReaderHeader({
                             icon={Zap} 
                             label="Speed Read" 
                             onClick={onToggleSpeedReader} 
+                        />
+                    )}
+                    {onToggleZenMode && (
+                        <ActionBtn 
+                            active={isZenModeActive}
+                            icon={Sparkles} 
+                            label="Zen Focus (Z)" 
+                            onClick={onToggleZenMode} 
                         />
                     )}
                     {onToggleAmbient && (

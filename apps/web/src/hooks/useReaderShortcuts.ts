@@ -18,6 +18,7 @@ interface UseReaderShortcutsOptions {
   keybinds: ReaderKeybinds;
   nextPage: () => void;
   onClose: () => void;
+  onToggleZenMode?: () => void;
   prevPage: () => void;
   setShowControls: (value: boolean) => void;
   setShowSearch: (value: boolean) => void;
@@ -52,6 +53,7 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         goToStart,
         goToEnd,
         onClose,
+        onToggleZenMode,
         toggleBookmark,
         toggleFullscreen,
         toggleUI,
@@ -129,6 +131,14 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           event.preventDefault();
           if (!event.repeat) setShowSettings(!showSettings);
           return;
+        case "z":
+        case "Z":
+          if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+            event.preventDefault();
+            if (!event.repeat) onToggleZenMode?.();
+            return;
+          }
+          break;
         case "Escape":
           if (hasSelection) {
               clearSelection();

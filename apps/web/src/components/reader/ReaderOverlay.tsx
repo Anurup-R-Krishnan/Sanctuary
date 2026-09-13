@@ -42,6 +42,7 @@ interface ReaderOverlayProps {
   isFullscreen: boolean;
   isLoading: boolean;
   isTTSActive?: boolean;
+  isZenModeActive?: boolean;
   onChangeTTSParagraphPause?: (ms: number) => void;
   onChangeTTSRate?: (rate: number) => void;
   onChangeTTSVoice?: (voiceURI: string) => void;
@@ -75,6 +76,7 @@ interface ReaderOverlayProps {
   onToggleSpeedReader?: () => void;
   onToggleTOC: () => void;
   onToggleTTS?: () => void;
+  onToggleZenMode?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   paragraphPauseMs?: number;
   readingSpeedWpm?: number | null;
@@ -99,15 +101,18 @@ function ReaderOverlay(props: ReaderOverlayProps) {
       href: sub.href,
       id: `toc-${i}-${j}`,
       label: sub.label,
-    }))
+    })),
   }));
 
-  const isAmbientPlaying = useAmbientSoundStore((s) => s.isPlaying);
-  const isAmbientPopoverOpen = useAmbientSoundStore((s) => s.isPopoverOpen);
-  const toggleAmbientPopover = useAmbientSoundStore((s) => s.togglePopover);
-  const closeAmbientPopover = useAmbientSoundStore((s) => s.setPopoverOpen);
+  const isAnyPanelOpen =
+    props.showSettings ||
+    props.showControls ||
+    props.showSearch ||
+    props.showAnnotations;
 
-  const isAnyPanelOpen = props.showControls || props.showSettings || props.showSearch || props.showAnnotations;
+  const isAmbientPopoverOpen = useAmbientSoundStore((state) => state.isPopoverOpen);
+  const toggleAmbientPopover = useAmbientSoundStore((state) => state.togglePopover);
+  const closeAmbientPopover = useAmbientSoundStore((state) => state.setPopoverOpen);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-50">
@@ -115,10 +120,11 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         book={props.book}
         chapterEstimatedMinutesRemaining={props.chapterEstimatedMinutesRemaining}
         chapterLabel={props.chapterLabel}
-        isAmbientActive={isAmbientPlaying}
+        isAmbientActive={useAmbientSoundStore.getState().isPlaying}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
         isTTSActive={props.isTTSActive}
+        isZenModeActive={props.isZenModeActive}
         onClose={props.onClose}
         onToggleAmbient={toggleAmbientPopover}
         onToggleAnnotations={props.onToggleAnnotations}
@@ -129,6 +135,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleSpeedReader={props.onToggleSpeedReader}
         onToggleTOC={props.onToggleTOC}
         onToggleTTS={props.onToggleTTS}
+        onToggleZenMode={props.onToggleZenMode}
         readingSpeedWpm={props.readingSpeedWpm}
         showUI={props.showUI}
       />
