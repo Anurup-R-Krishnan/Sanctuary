@@ -41,6 +41,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Book Series Organization, Reading Order & Auto-Next Progression](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/book-series-organization-and-progression.md) | Series detection, sequential reading order shelf, volume gap warnings & auto-next transition | Library Experience | Collections & Batch Operations | VERIFIED |
 | [Custom Reader Themes, Paper Palettes & OLED Contrast Studio](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/custom-reader-themes-and-contrast-studio.md) | WCAG 2.1 contrast math, curated atmospheric palettes, live studio preview & custom themes | Reader Experience | High-Legibility Typography | VERIFIED |
 | [Interactive Reading Goals & Time-Budgeted Daily Session Timer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/interactive-reading-goals-and-session-timer.md) | Time-budgeted session goals, circular progress ring, harmonic completion chime & idle protection | Habit Formation | Smart Reading Streaks | VERIFIED |
+| [Reading Milestones, Achievement Badges & Trophy Showcase Engine](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-milestones-and-trophy-showcase.md) | Dynamic achievement evaluation, multi-tiered milestone progression & trophy showcase | Habit Formation | Interactive Reading Goals | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 

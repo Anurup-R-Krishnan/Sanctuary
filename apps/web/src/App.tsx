@@ -23,10 +23,10 @@ const GlobalSearchModal = lazy(() =>
 );
 
 const SettingsView = lazy(() => import("./components/pages/SettingsView"));
+const StatsView = lazy(() => import("./components/pages/StatsView"));
 
 import LibraryGrid from "./components/pages/LibraryGrid";
 import ReaderView from "./components/pages/ReaderView";
-import StatsView from "./components/pages/StatsView";
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
 import { useAppTheme } from "./hooks/useAppTheme";
@@ -198,7 +198,11 @@ function App() {
                 <SettingsView />
               </Suspense>
             )}
-            {v === View.STATS && <StatsView />}
+            {v === View.STATS && (
+              <Suspense fallback={null}>
+                <StatsView />
+              </Suspense>
+            )}
           </div>
         ))}
         {view === View.READER && selectedBookId && (

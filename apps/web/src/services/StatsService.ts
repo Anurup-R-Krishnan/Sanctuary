@@ -243,6 +243,10 @@ export const statsService = {
     currentSessionStartProgress = 0;
   },
 
+  getAggregates() {
+    return aggregates;
+  },
+
   computeStats(books: Book[]): ReadingStats {
     const settings = useSettingsStore?.getState();
     const dailyGoal = settings?.dailyGoal || 30;

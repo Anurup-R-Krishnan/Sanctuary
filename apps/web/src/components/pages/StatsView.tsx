@@ -7,9 +7,11 @@ import { BarChart } from "@/components/stats/BarChart";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { statsService } from "@/services/StatsService";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
+import { calculateBadgeSummary, evaluateBadges } from "@/utils/badgeEngine";
 import { calculateAnnualChallenge } from "@/utils/challenge";
 import { clampPercent } from "@/utils/number";
 
@@ -106,6 +108,29 @@ function StatsView() {
   };
   
   const [activeTab, setActiveTab] = useState<StatsTab>("overview");
+  const [badgeFilter, setBadgeFilter] = useState<"all" | "in-progress" | "locked" | "unlocked">("all");
+
+  const evaluatedBadges = useMemo(() => {
+    return evaluateBadges({
+      aggregates: statsService.getAggregates(),
+      books,
+      currentStreak: stats.currentStreak,
+      longestStreak: stats.longestStreak,
+    });
+  }, [books, stats.currentStreak, stats.longestStreak]);
+
+  const badgeSummary = useMemo(() => {
+    return calculateBadgeSummary(evaluatedBadges);
+  }, [evaluatedBadges]);
+
+  const filteredBadges = useMemo(() => {
+    return evaluatedBadges.filter((b) => {
+      if (badgeFilter === "unlocked") return b.unlocked;
+      if (badgeFilter === "locked") return !b.unlocked;
+      if (badgeFilter === "in-progress") return !b.unlocked && Boolean(b.target && (b.progress ?? 0) > 0);
+      return true;
+    });
+  }, [evaluatedBadges, badgeFilter]);
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
   const dailyProgressPercent = dailyGoal > 0 ? clampPercent((stats.dailyProgress / dailyGoal) * 100) : 0;
@@ -452,15 +477,62 @@ function StatsView() {
       )}
 
       {activeTab === "badges" && (
-        <div className="space-y-5">
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
-            {stats.badges.filter((b) => b.unlocked).length} of {stats.badges.length} unlocked
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {stats.badges.map((badge) => (
-              <BadgeCard key={badge.id} badge={badge} />
+        <div className="space-y-6">
+          {/* Showcase Mastery Banner */}
+          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-light-text dark:text-dark-text flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-500" />
+                <span>Reading Trophy Case</span>
+              </h3>
+              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                {badgeSummary.unlocked} of {badgeSummary.total} accomplishments unlocked ({badgeSummary.percent}%)
+              </p>
+            </div>
+            <div className="w-full sm:w-48 space-y-1.5">
+              <div className="h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
+                  style={{ width: `${badgeSummary.percent}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-light-text-muted dark:text-dark-text-muted font-mono">
+                <span>{badgeSummary.unlocked} Unlocked</span>
+                <span>{badgeSummary.percent}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(["all", "unlocked", "in-progress", "locked"] as const).map((status) => (
+              <button
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
+                  badgeFilter === status
+                    ? "bg-light-accent dark:bg-dark-accent text-white shadow-sm"
+                    : "bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] text-light-text-muted dark:text-dark-text-muted"
+                }`}
+                key={status}
+                onClick={() => setBadgeFilter(status)}
+                type="button"
+              >
+                {status === "all" ? "All Trophies" : status.replace("-", " ")}
+              </button>
             ))}
           </div>
+
+          {/* Grid */}
+          {filteredBadges.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {filteredBadges.map((badge) => (
+                <BadgeCard badge={badge} key={badge.id} />
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
+              No trophies match this filter. Keep reading to unlock more!
+            </div>
+          )}
         </div>
       )}
 

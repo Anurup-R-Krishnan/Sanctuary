@@ -91,11 +91,13 @@ export interface ReadingGoals {
 }
 
 export interface Badge {
+  category?: "books" | "habits" | "pages" | "special" | "streaks" | "time";
   description: string;
   icon: string;
   id: string;
   name: string;
   progress?: number;
+  rarity?: "common" | "epic" | "legendary" | "rare";
   target?: number;
   unlocked: boolean;
   unlockedAt?: string;
