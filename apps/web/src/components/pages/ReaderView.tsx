@@ -20,6 +20,12 @@ const QuoteCardModal = lazy(() =>
   }))
 );
 
+const ReaderAutoScrollController = lazy(() =>
+  import("@/components/reader/ReaderAutoScrollController").then((m) => ({
+    default: m.ReaderAutoScrollController,
+  }))
+);
+
 const ReaderReadabilityModal = lazy(() =>
   import("@/components/reader/ReaderReadabilityModal").then((m) => ({
     default: m.ReaderReadabilityModal,
@@ -55,6 +61,10 @@ import { useReaderSpeech } from "@/hooks/useReaderSpeech";
 import { useReaderTextActions } from "@/hooks/useReaderTextActions";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import {
+  computeDeltaScroll,
+  shouldResumeAfterInteraction,
+} from "@/utils/autoScrollEngine";
 import { extractTextFromDocument } from "@/utils/rsvpTokenEngine";
 
 interface ReaderViewProps {
@@ -276,6 +286,72 @@ function ReaderView({
     []
   );
 
+  const [isAutoScrollActive, setIsAutoScrollActive] = useState(false);
+  const [isAutoScrollPlaying, setIsAutoScrollPlaying] = useState(false);
+  const [autoScrollVelocity, setAutoScrollVelocity] = useState(36);
+  const [isPacerEnabled, setIsPacerEnabled] = useState(false);
+  const lastInteractionTimeRef = useRef(0);
+  const scrollRemainderRef = useRef(0);
+
+  const handleToggleAutoScroll = useCallback(() => {
+    setIsAutoScrollActive((prev) => {
+      const next = !prev;
+      setIsAutoScrollPlaying(next);
+      return next;
+    });
+  }, []);
+
+  const handleToggleAutoScrollPlay = useCallback(() => {
+    setIsAutoScrollPlaying((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    if (!isAutoScrollActive || !isAutoScrollPlaying) return;
+
+    let lastTime = performance.now();
+    let animationFrameId: number;
+
+    const onUserInteraction = () => {
+      lastInteractionTimeRef.current = Date.now();
+    };
+
+    window.addEventListener("pointerdown", onUserInteraction, { passive: true });
+    window.addEventListener("wheel", onUserInteraction, { passive: true });
+
+    const loop = (currentTime: number) => {
+      const deltaMs = currentTime - lastTime;
+      lastTime = currentTime;
+
+      const canScroll = shouldResumeAfterInteraction(
+        lastInteractionTimeRef.current,
+        Date.now()
+      );
+
+      if (canScroll && deltaMs > 0) {
+        const { deltaInt, remainder } = computeDeltaScroll(
+          deltaMs,
+          autoScrollVelocity,
+          scrollRemainderRef.current
+        );
+        scrollRemainderRef.current = remainder;
+
+        if (deltaInt > 0) {
+          engineRef.current?.scrollBy?.(deltaInt);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(loop);
+    };
+
+    animationFrameId = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("pointerdown", onUserInteraction);
+      window.removeEventListener("wheel", onUserInteraction);
+    };
+  }, [isAutoScrollActive, isAutoScrollPlaying, autoScrollVelocity]);
+
   const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
     bookId: book?.id ?? "",
     rendition: engineRef.current?.rendition ?? null,
@@ -407,6 +483,7 @@ function ReaderView({
     goToStart: handleJumpToTop,
     goToEnd: handleJumpToBottom,
     onClose,
+    onToggleAutoScroll: handleToggleAutoScroll,
     onToggleReadability: handleOpenReadabilityFromChapter,
     onToggleZenMode: handleToggleZenMode,
     toggleBookmark: handleToggleBookmark,
@@ -529,7 +606,9 @@ function ReaderView({
         onCreateQuoteCard={(text, chapter) => handleOpenQuoteCard(text, chapter)}
         onNextTTSSentence={nextSentence}
         onPrevTTSSentence={prevSentence}
+        isAutoScrollActive={isAutoScrollActive}
         isReadabilityActive={!!readabilityTarget}
+        onToggleAutoScroll={handleToggleAutoScroll}
         onToggleReadability={handleOpenReadabilityFromChapter}
         onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
@@ -626,6 +705,24 @@ function ReaderView({
             isOpen={isZenModeActive}
             onClose={() => setIsZenModeActive(false)}
             readingSpeedWpm={sessionStats.readingSpeedWpm}
+          />
+        </Suspense>
+      )}
+
+      {isAutoScrollActive && (
+        <Suspense fallback={null}>
+          <ReaderAutoScrollController
+            isActive={isAutoScrollActive}
+            isPacerEnabled={isPacerEnabled}
+            isPlaying={isAutoScrollPlaying}
+            onClose={() => {
+              setIsAutoScrollActive(false);
+              setIsAutoScrollPlaying(false);
+            }}
+            onSpeedChange={setAutoScrollVelocity}
+            onTogglePacer={() => setIsPacerEnabled((prev) => !prev)}
+            onTogglePlay={handleToggleAutoScrollPlay}
+            velocityPxPerSec={autoScrollVelocity}
           />
         </Suspense>
       )}

@@ -3,6 +3,7 @@ import {
     BarChart2,
     Bookmark,
     BookmarkCheck,
+    ChevronsDown,
     Headphones,
     Highlighter,
     List,
@@ -26,6 +27,7 @@ interface ReaderHeaderProps {
     chapterEstimatedMinutesRemaining?: number | null;
     chapterLabel?: string;
     isAmbientActive?: boolean;
+    isAutoScrollActive?: boolean;
     isBookmarked: boolean;
     isFullscreen: boolean;
     isReadabilityActive?: boolean;
@@ -34,6 +36,7 @@ interface ReaderHeaderProps {
     onClose: () => void;
     onToggleAmbient?: () => void;
     onToggleAnnotations: () => void;
+    onToggleAutoScroll?: () => void;
     onToggleBookmark: () => void;
     onToggleFullscreen: () => void;
     onToggleReadability?: () => void;
@@ -52,6 +55,7 @@ function ReaderHeader({
     chapterEstimatedMinutesRemaining,
     chapterLabel,
     isAmbientActive,
+    isAutoScrollActive,
     isBookmarked,
     isFullscreen,
     isReadabilityActive,
@@ -60,6 +64,7 @@ function ReaderHeader({
     onClose,
     onToggleAmbient,
     onToggleAnnotations,
+    onToggleAutoScroll,
     onToggleBookmark,
     onToggleFullscreen,
     onToggleReadability,
@@ -177,6 +182,14 @@ function ReaderHeader({
                             icon={Sparkles} 
                             label="Zen Focus (Z)" 
                             onClick={onToggleZenMode} 
+                        />
+                    )}
+                    {onToggleAutoScroll && (
+                        <ActionBtn 
+                            active={isAutoScrollActive}
+                            icon={ChevronsDown} 
+                            label="Auto-Scroll (A)" 
+                            onClick={onToggleAutoScroll} 
                         />
                     )}
                     {onToggleAmbient && (

@@ -38,6 +38,7 @@ interface ReaderOverlayProps {
   currentCfi: string;
   currentPage: number;
   estimatedMinutesRemaining?: number | null;
+  isAutoScrollActive?: boolean;
   isBookmarked: boolean;
   isFullscreen: boolean;
   isLoading: boolean;
@@ -70,6 +71,7 @@ interface ReaderOverlayProps {
   onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
   onSearch: (q: string) => void;
   onToggleAnnotations: () => void;
+  onToggleAutoScroll?: () => void;
   onToggleBookmark: () => void;
   onToggleFullscreen: () => void;
   onToggleReadability?: () => void;
@@ -123,6 +125,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         chapterEstimatedMinutesRemaining={props.chapterEstimatedMinutesRemaining}
         chapterLabel={props.chapterLabel}
         isAmbientActive={useAmbientSoundStore.getState().isPlaying}
+        isAutoScrollActive={props.isAutoScrollActive}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
         isReadabilityActive={props.isReadabilityActive}
@@ -131,6 +134,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onClose={props.onClose}
         onToggleAmbient={toggleAmbientPopover}
         onToggleAnnotations={props.onToggleAnnotations}
+        onToggleAutoScroll={props.onToggleAutoScroll}
         onToggleBookmark={props.onToggleBookmark}
         onToggleFullscreen={props.onToggleFullscreen}
         onToggleReadability={props.onToggleReadability}

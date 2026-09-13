@@ -18,6 +18,7 @@ interface UseReaderShortcutsOptions {
   keybinds: ReaderKeybinds;
   nextPage: () => void;
   onClose: () => void;
+  onToggleAutoScroll?: () => void;
   onToggleReadability?: () => void;
   onToggleZenMode?: () => void;
   prevPage: () => void;
@@ -58,6 +59,7 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         isEnabled,
         keybinds,
         onClose,
+        onToggleAutoScroll,
         onToggleReadability,
         onToggleZenMode,
         setShowControls,
@@ -128,6 +130,14 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           event.preventDefault();
           if (!event.repeat) setShowControls(!showControls);
           return;
+        case "a":
+        case "A":
+          if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+            event.preventDefault();
+            if (!event.repeat) onToggleAutoScroll?.();
+            return;
+          }
+          break;
         case "s":
         case "S":
           event.preventDefault();

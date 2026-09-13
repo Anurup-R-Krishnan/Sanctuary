@@ -34,6 +34,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [RSVP Speed Reading & Visual Cadence Acceleration](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/rsvp-speed-reading-cadence.md) | Rapid serial visual presentation, ORP fixation anchor & cadence pacing | Reader Experience | High-Legibility Typography | VERIFIED |
 | [Zen Focus Immersion & Timed Reading Sprints](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/zen-focus-immersion-and-sprints.md) | Distraction-free full-bleed reading, ambient edge vignette & Web Audio focus sprints | Reader Experience | Ambient Soundscapes | VERIFIED |
 | [Chapter Readability & Cognitive Complexity Metrics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/chapter-readability-and-complexity.md) | Flesch ease, Kincaid grade level, Gunning fog, lexical diversity & polysyllabic analytics | Reader Experience | Dynamic Reading Speed | VERIFIED |
+| [Hands-Free Continuous Auto-Scroll & Calibrated Pacing](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/hands-free-continuous-autoscroll.md) | Delta-time rAF smooth auto-scrolling, calibrated speed presets, user interaction pauses & pacer hairline | Reader Experience | Zen Focus Immersion | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -65,6 +66,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **RSVP Speed Reading & Visual Cadence Acceleration**: Rapid serial visual presentation, optimal recognition point (ORP) fixation, and variable cadence.
    - **Zen Focus Immersion & Timed Reading Sprints**: Distraction-free full-bleed reading, ambient edge vignette, and Web Audio focus sprint bells.
    - **Chapter Readability & Cognitive Complexity Metrics**: Flesch reading ease, Kincaid grade level, Gunning fog, lexical diversity, and polysyllabic vocabulary inspection.
+   - **Hands-Free Continuous Auto-Scroll & Calibrated Pacing**: Delta-time rAF smooth scrolling, speed presets, user interaction pauses, and ocular pacer guideline.
 
 ## Evaluated Architectural Alternatives
 
