@@ -40,6 +40,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Smart Reading Streaks, Grace Shields & Habit Protection Engine](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/smart-reading-streaks-and-habit-protection.md) | Timezone-aware streak continuity, automatic grace shields, flame tiers & streak repair challenges | Habit Formation | Reading Activity Calendar Heatmap | VERIFIED |
 | [Book Series Organization, Reading Order & Auto-Next Progression](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/book-series-organization-and-progression.md) | Series detection, sequential reading order shelf, volume gap warnings & auto-next transition | Library Experience | Collections & Batch Operations | VERIFIED |
 | [Custom Reader Themes, Paper Palettes & OLED Contrast Studio](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/custom-reader-themes-and-contrast-studio.md) | WCAG 2.1 contrast math, curated atmospheric palettes, live studio preview & custom themes | Reader Experience | High-Legibility Typography | VERIFIED |
+| [Interactive Reading Goals & Time-Budgeted Daily Session Timer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/interactive-reading-goals-and-session-timer.md) | Time-budgeted session goals, circular progress ring, harmonic completion chime & idle protection | Habit Formation | Smart Reading Streaks | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 

@@ -16,13 +16,15 @@ import {
     Waves,
     Zap,
 } from "lucide-react";
-import React from "react";
+import React, { Suspense, lazy } from "react";
 
 import type { Book } from "@/types";
 
 import { IconButton } from "@/components/ui/IconButton";
 import { useSettings } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
+
+const ReaderSessionTimer = lazy(() => import("@/components/reader/ReaderSessionTimer"));
 
 interface ReaderHeaderProps {
     book: Book;
@@ -120,37 +122,43 @@ function ReaderHeader({
                     variant="ghost"
                 />
 
-                {/* Center: Title & Chapter Progress (Floating Capsule) */}
+                {/* Center: Title, Chapter Progress & Session Timer (Floating Capsule) */}
                 {showFloatingCapsule && (
                     <div 
-                        className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-md px-5 py-2 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex flex-col items-center justify-center transition-all duration-instant"
+                        className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-lg px-4 py-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex items-center gap-2.5 transition-all duration-instant"
                         style={{ backgroundColor: `${readerBackground}E6` }}
                     >
-                        <h1 
-                            className="font-medium text-xs sm:text-sm truncate max-w-[280px] text-center"
-                            style={{ color: readerForeground }}
-                        >
-                            {chapterLabel || book.title}
-                        </h1>
-                        {(chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null) ? (
-                            <span 
-                                className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[280px] text-center"
+                        <Suspense fallback={null}>
+                            <ReaderSessionTimer />
+                        </Suspense>
+                        <div className="w-px h-5 bg-black/10 dark:bg-white/10" />
+                        <div className="flex flex-col items-center justify-center min-w-0">
+                            <h1 
+                                className="font-medium text-xs sm:text-sm truncate max-w-[240px] text-center"
                                 style={{ color: readerForeground }}
                             >
-                                {chapterEstimatedMinutesRemaining < 1
-                                    ? "< 1 min in chapter"
-                                    : `${Math.round(chapterEstimatedMinutesRemaining)} min in chapter`}
-                                {readingSpeedWpm ? ` · ${readingSpeedWpm} wpm` : ""}
-                                {currentStreak > 0 ? ` · 🔥 ${currentStreak}d` : ""}
-                            </span>
-                        ) : currentStreak > 0 ? (
-                            <span 
-                                className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[280px] text-center"
-                                style={{ color: readerForeground }}
-                            >
-                                🔥 {currentStreak} day streak
-                            </span>
-                        ) : null}
+                                {chapterLabel || book.title}
+                            </h1>
+                            {(chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null) ? (
+                                <span 
+                                    className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[240px] text-center"
+                                    style={{ color: readerForeground }}
+                                >
+                                    {chapterEstimatedMinutesRemaining < 1
+                                        ? "< 1 min in chapter"
+                                        : `${Math.round(chapterEstimatedMinutesRemaining)} min in chapter`}
+                                    {readingSpeedWpm ? ` · ${readingSpeedWpm} wpm` : ""}
+                                    {currentStreak > 0 ? ` · 🔥 ${currentStreak}d` : ""}
+                                </span>
+                            ) : currentStreak > 0 ? (
+                                <span 
+                                    className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[240px] text-center"
+                                    style={{ color: readerForeground }}
+                                >
+                                    🔥 {currentStreak} day streak
+                                </span>
+                            ) : null}
+                        </div>
                     </div>
                 )}
 
