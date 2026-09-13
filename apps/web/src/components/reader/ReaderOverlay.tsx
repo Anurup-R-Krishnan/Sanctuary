@@ -4,7 +4,6 @@ import type { SpeechState } from "@/hooks/useReaderSpeech";
 import type { Book, Bookmark } from "@/types";
 import type { ReaderAnnotation, ReaderSearchState } from "@/types/reader";
 
-import { ReaderAnnotationsPanel } from "@/components/reader/ReaderAnnotationsPanel";
 import ReaderControls from "@/components/reader/ReaderControls";
 import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
@@ -14,6 +13,12 @@ import { useAmbientSoundStore } from "@/store/useAmbientSoundStore";
 const ReaderAmbientSoundPopover = lazy(() =>
   import("@/components/reader/ReaderAmbientSoundPopover").then((m) => ({
     default: m.ReaderAmbientSoundPopover,
+  }))
+);
+
+const ReaderAnnotationsPanel = lazy(() =>
+  import("@/components/reader/ReaderAnnotationsPanel").then((m) => ({
+    default: m.ReaderAnnotationsPanel,
   }))
 );
 
@@ -191,15 +196,17 @@ function ReaderOverlay(props: ReaderOverlayProps) {
             />
           )}
           {props.showAnnotations && (
-            <ReaderAnnotationsPanel
-              annotations={props.annotations}
-              bookAuthor={props.book.author}
-              bookTitle={props.book.title}
-              onCreateQuoteCard={props.onCreateQuoteCard}
-              onDeleteAnnotation={props.onDeleteAnnotation}
-              onGoToAnnotation={props.onNavigate}
-              onUpdateAnnotation={props.onUpdateAnnotation}
-            />
+            <Suspense fallback={null}>
+              <ReaderAnnotationsPanel
+                annotations={props.annotations}
+                bookAuthor={props.book.author}
+                bookTitle={props.book.title}
+                onCreateQuoteCard={props.onCreateQuoteCard}
+                onDeleteAnnotation={props.onDeleteAnnotation}
+                onGoToAnnotation={props.onNavigate}
+                onUpdateAnnotation={props.onUpdateAnnotation}
+              />
+            </Suspense>
           )}
         </div>
       )}

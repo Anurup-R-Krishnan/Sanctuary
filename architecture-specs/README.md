@@ -29,6 +29,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [High-Legibility Typography & Bionic Reading Fixation](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/bionic-reading-and-high-legibility.md) | Bionic fixation saccade acceleration, OpenDyslexic typeface & letter spacing | Accessibility | Quality Gate | VERIFIED |
 | [Inline Footnote & Endnote Instant Popover](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/inline-footnote-instant-popover.md) | In-reader footnote preview popover, cross-document note resolution & backlink stripping | Reader Experience | High-Legibility Typography | VERIFIED |
 | [Ambient Soundscapes & Focus Audio Synthesizer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/ambient-soundscapes-and-focus-audio.md) | Procedural Web Audio API soundscapes, zero-asset acoustic masking & sleep timer | Reader Audio | In-Book Speech Synthesis | VERIFIED |
+| [Multi-Color Highlighting & Sticky Marginalia Notes](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/multicolor-highlighting-and-marginalia.md) | 5-color semantic palette, one-tap color picker, marginalia notes & category filtering | Reader Experience | Annotation Knowledge Sync | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -53,6 +54,9 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Dynamic Chapter Reading Time & Adaptive Speed Estimator**: Real-time chapter ETA, calibrated reading speed (WPM), and dual footer indicators.
    - **Quote Card Generator & Typographic Excerpt Staging**: High-DPI canvas quote cards, 4 aesthetic themes, multi-ratio presets, and social export.
    - **Fallback Generative SVG Book Covers**: Procedural book cloth SVG covers, deterministic palettes, foil framing, and spine crease shading.
+   - **Inline Footnote & Endnote Instant Popover**: In-reader footnote preview popover, cross-document note resolution & backlink stripping.
+   - **Ambient Soundscapes & Focus Audio Synthesizer**: Procedural Web Audio API soundscapes, zero-asset acoustic masking & sleep timer.
+   - **Multi-Color Highlighting & Sticky Marginalia Notes**: 5-color semantic palette, one-tap color picker, marginalia notes & category filtering.
 
 ## Evaluated Architectural Alternatives
 

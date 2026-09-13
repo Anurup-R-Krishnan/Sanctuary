@@ -156,6 +156,7 @@ function ReaderView({
   }, [handleCloseSearch, clearSearch]);
 
   const [noteTarget, setNoteTarget] = useState<ReaderSelection | null>(null);
+  const [noteTargetColor, setNoteTargetColor] = useState<string | undefined>(undefined);
   const [activeDefineWord, setActiveDefineWord] = useState<{
     bookTitle?: string;
     cfi?: string;
@@ -253,11 +254,14 @@ function ReaderView({
 
   const { handleHighlight, handleUnderline, handleAddNote, handleCopy, handleSpeak } =
     useReaderTextActions({
-      selection,
       addAnnotation,
-      speak,
       clearSelection: () => engineRef.current?.clearSelection(),
-      onRequestNote: (sel) => setNoteTarget(sel),
+      onRequestNote: (sel, color) => {
+        setNoteTarget(sel);
+        setNoteTargetColor(color);
+      },
+      selection,
+      speak,
     });
 
   // Reading speed and progress updates
@@ -459,12 +463,17 @@ function ReaderView({
       />
 
       <ReaderNoteDialog
+        initialColor={noteTargetColor}
         isOpen={!!noteTarget}
-        onCancel={() => setNoteTarget(null)}
-        onSave={(note) => {
+        onCancel={() => {
+          setNoteTarget(null);
+          setNoteTargetColor(undefined);
+        }}
+        onSave={(note, color) => {
           if (noteTarget) {
-            addAnnotation(noteTarget, "note", undefined, note);
+            addAnnotation(noteTarget, "note", color, note);
             setNoteTarget(null);
+            setNoteTargetColor(undefined);
           }
         }}
         selectedText={noteTarget?.text}
