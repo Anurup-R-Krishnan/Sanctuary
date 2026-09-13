@@ -36,6 +36,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Chapter Readability & Cognitive Complexity Metrics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/chapter-readability-and-complexity.md) | Flesch ease, Kincaid grade level, Gunning fog, lexical diversity & polysyllabic analytics | Reader Experience | Dynamic Reading Speed | VERIFIED |
 | [Hands-Free Continuous Auto-Scroll & Calibrated Pacing](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/hands-free-continuous-autoscroll.md) | Delta-time rAF smooth auto-scrolling, calibrated speed presets, user interaction pauses & pacer hairline | Reader Experience | Zen Focus Immersion | VERIFIED |
 | [X-Ray Character & Entity Dossier Index](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/xray-entity-dossier-index.md) | Client-side heuristic NER, entity frequency timelines, character dossier cards & context excerpts | Reader Experience | Chapter Readability Metrics | VERIFIED |
+| [Reading Activity Calendar Heatmap & Velocity Analytics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-activity-calendar-and-velocity.md) | GitHub-style 52-week activity calendar, circadian time-of-day breakdown & reading velocity analytics | Habit Formation | Annual Reading Challenges | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -69,6 +70,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Chapter Readability & Cognitive Complexity Metrics**: Flesch reading ease, Kincaid grade level, Gunning fog, lexical diversity, and polysyllabic vocabulary inspection.
    - **Hands-Free Continuous Auto-Scroll & Calibrated Pacing**: Delta-time rAF smooth scrolling, speed presets, user interaction pauses, and ocular pacer guideline.
    - **X-Ray Character & Entity Dossier Index**: Client-side heuristic NER, entity frequency timelines, character dossier cards, and contextual excerpts.
+   - **Reading Activity Calendar Heatmap & Velocity Analytics**: GitHub-style 52-week activity calendar, circadian time-of-day breakdown, and reading velocity metrics.
 
 ## Evaluated Architectural Alternatives
 

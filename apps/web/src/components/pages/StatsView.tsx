@@ -4,7 +4,6 @@ import { useShallow } from "zustand/react/shallow";
 
 import { BadgeCard } from "@/components/stats/BadgeCard";
 import { BarChart } from "@/components/stats/BarChart";
-import { HeatmapCell } from "@/components/stats/HeatmapCell";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -13,6 +12,12 @@ import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
 import { calculateAnnualChallenge } from "@/utils/challenge";
 import { clampPercent } from "@/utils/number";
+
+const ReadingActivityHeatmap = lazy(() =>
+  import("@/components/stats/ReadingActivityHeatmap").then((m) => ({
+    default: m.ReadingActivityHeatmap,
+  }))
+);
 
 const VocabularyReviewCard = lazy(() =>
   import("@/components/vocabulary/VocabularyReviewCard").then((m) => ({
@@ -60,10 +65,11 @@ function GoalProgress({
 }
 
 function StatsView() {
-  const { stats, goals, goalsStale } = useStatsStore(useShallow((state) => ({
-    stats: state.stats,
+  const { goals, goalsStale, sessions, stats } = useStatsStore(useShallow((state) => ({
     goals: state.goals,
     goalsStale: state.goalsStale,
+    sessions: state.sessions,
+    stats: state.stats,
   })));
   const books = useBookStore((state) => state.books);
   const {
@@ -369,25 +375,12 @@ function StatsView() {
 
       {activeTab === "charts" && (
         <div className="space-y-8">
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
-            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-4">Activity (14 weeks)</h3>
-            <div className="flex gap-0.5 overflow-x-auto pb-2">
-              {stats.heatmapData.map((week, wi) => (
-                <div key={`week-${wi}`} className="flex flex-col gap-0.5">
-                  {week.map((level, di) => (
-                    <HeatmapCell key={`w${wi}-d${di}`} level={level} />
-                  ))}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-1 mt-3 text-[10px] text-light-text-muted dark:text-dark-text-muted">
-              <span>Less</span>
-              {[0, 1, 2, 3].map((l) => (
-                <HeatmapCell key={l} level={l} />
-              ))}
-              <span>More</span>
-            </div>
-          </div>
+          <Suspense fallback={null}>
+            <ReadingActivityHeatmap
+              dailyTargetMinutes={dailyGoal}
+              sessions={sessions}
+            />
+          </Suspense>
 
           <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
             <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
