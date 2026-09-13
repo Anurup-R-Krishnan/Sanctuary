@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
+import type { CustomPalette } from "@/config/readerConfig";
+
 import { DEFAULT_DAILY_GOAL } from "@/types";
 
 type TextAlignment = "left" | "justify" | "center";
@@ -22,6 +24,7 @@ type SettingsValues = {
   bookVoiceOverrides: Record<string, string>;
   brightness: number;
   continuous: boolean;
+  customPalettes: CustomPalette[];
   dailyGoal: number;
   direction: "auto" | "ltr" | "rtl";
   fontPairing: string;
@@ -55,6 +58,8 @@ type SettingsValues = {
 };
 
 type SettingsActions = {
+  addCustomPalette: (palette: Omit<CustomPalette, "createdAt" | "id">) => void;
+  deleteCustomPalette: (id: string) => void;
   resetToDefaults: () => void;
   setAnnualBookGoal: (v: number) => void;
   setAnnualGoalYear: (v: number) => void;
@@ -108,6 +113,7 @@ const DEFAULTS: SettingsValues = {
   pageMargin: 40,
   paragraphSpacing: 17,
   continuous: false,
+  customPalettes: [],
   direction: "auto",
   spread: false,
   writingMode: "horizontal-tb",
@@ -184,6 +190,7 @@ export const pickValues = (state: Settings): SettingsValues => ({
   pageMargin: state.pageMargin,
   paragraphSpacing: state.paragraphSpacing,
   continuous: state.continuous,
+  customPalettes: state.customPalettes,
   direction: state.direction,
   spread: state.spread,
   writingMode: state.writingMode,
@@ -229,6 +236,7 @@ export const toRemotePayload = (state: SettingsValues) => ({
   readerForeground: state.readerForeground,
   readerBackground: state.readerBackground,
   accent: state.readerAccent,
+  customPalettes: state.customPalettes,
   // Reader behavior
   continuous: state.continuous,
   direction: state.direction,
@@ -287,6 +295,18 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.readerForeground === "string") out.readerForeground = raw.readerForeground;
   if (typeof raw.readerBackground === "string") out.readerBackground = raw.readerBackground;
   if (typeof raw.readerAccent === "string") out.readerAccent = raw.readerAccent;
+  if (Array.isArray(raw.customPalettes)) {
+    out.customPalettes = raw.customPalettes.filter(
+      (p: unknown): p is CustomPalette =>
+        typeof p === "object" &&
+        p !== null &&
+        typeof (p as CustomPalette).id === "string" &&
+        typeof (p as CustomPalette).label === "string" &&
+        typeof (p as CustomPalette).bg === "string" &&
+        typeof (p as CustomPalette).fg === "string" &&
+        typeof (p as CustomPalette).accent === "string"
+    );
+  }
   if (typeof raw.annualBookGoal === "number") out.annualBookGoal = raw.annualBookGoal;
   if (typeof raw.annualGoalYear === "number") out.annualGoalYear = raw.annualGoalYear;
   if (typeof raw.dailyGoal === "number") out.dailyGoal = raw.dailyGoal;
@@ -344,6 +364,18 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   // readerAccent: prefer the new field; fall back to legacy accent alias
   if (typeof remote.readerAccent === "string") out.readerAccent = remote.readerAccent;
   else if (typeof remote.accent === "string") out.readerAccent = remote.accent;
+  if (Array.isArray(remote.customPalettes)) {
+    out.customPalettes = remote.customPalettes.filter(
+      (p: unknown): p is CustomPalette =>
+        typeof p === "object" &&
+        p !== null &&
+        typeof (p as CustomPalette).id === "string" &&
+        typeof (p as CustomPalette).label === "string" &&
+        typeof (p as CustomPalette).bg === "string" &&
+        typeof (p as CustomPalette).fg === "string" &&
+        typeof (p as CustomPalette).accent === "string"
+    );
+  }
 
   // ── Reader behavior ───────────────────────────────────────────────────────
   if (typeof remote.continuous === "boolean") out.continuous = remote.continuous;
@@ -429,6 +461,20 @@ export const useSettingsStore = create<Settings>((set) => ({
   setTtsRate: createSetAction("ttsRate", set),
   setTtsPitch: createSetAction("ttsPitch", set),
   setTtsParagraphPauseMs: createSetAction("ttsParagraphPauseMs", set),
+  addCustomPalette: (palette) => {
+    const newPalette: CustomPalette = {
+      ...palette,
+      createdAt: Date.now(),
+      id: `palette_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    };
+    set((state) => ({
+      customPalettes: [...state.customPalettes, newPalette],
+    }));
+  },
+  deleteCustomPalette: (id) =>
+    set((state) => ({
+      customPalettes: state.customPalettes.filter((p) => p.id !== id),
+    })),
   resetToDefaults: () => set(DEFAULTS)
 }));
 

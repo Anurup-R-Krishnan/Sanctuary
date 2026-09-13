@@ -1,5 +1,5 @@
-import { AlignCenter, AlignJustify, AlignLeft, BookOpen, Check, Columns2, Layers, Plus, X } from "lucide-react";
-import React, { useState } from "react";
+import { AlignCenter, AlignJustify, AlignLeft, BookOpen, Check, Columns2, Layers, Palette, Plus, X } from "lucide-react";
+import React, { lazy, Suspense, useState } from "react";
 
 import { SOUNDSCAPES, type SoundscapeType } from "@/audio/ambientTypes";
 import { Button } from "@/components/ui/Button";
@@ -8,7 +8,12 @@ import { COLOR_PRESETS, FONT_PAIRINGS } from "@/config/readerConfig";
 import { useReaderSpeech } from "@/hooks/useReaderSpeech";
 import { useAmbientSoundStore } from "@/store/useAmbientSoundStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import { getWcagRating } from "@/utils/contrastEngine";
 import { cx } from "@/utils/cx";
+
+const ThemeStudioModal = lazy(() =>
+  import("@/components/reader/ThemeStudioModal").then((m) => ({ default: m.ThemeStudioModal }))
+);
 
 // ── Small local primitives (kept lightweight for the slide-in panel) ─────────
 
@@ -160,6 +165,9 @@ export default function ReaderSettings() {
   const togglePlayAmbient = useAmbientSoundStore((s) => s.togglePlay);
   const ambientVolume = useAmbientSoundStore((s) => s.volume);
   const setAmbientVolume = useAmbientSoundStore((s) => s.setVolume);
+  const [isThemeStudioOpen, setIsThemeStudioOpen] = useState(false);
+
+  const currentWcag = getWcagRating(state.readerForeground, state.readerBackground);
 
   return (
     <div className="flex flex-col h-full">
@@ -171,9 +179,19 @@ export default function ReaderSettings() {
 
         {/* Colors */}
         <div>
-          <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight mb-4">Theme</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight">Theme</h3>
+            <button
+              onClick={() => setIsThemeStudioOpen(true)}
+              type="button"
+              className="text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline flex items-center gap-1.5"
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span>Theme Studio</span>
+            </button>
+          </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            {COLOR_PRESETS.map((preset) => {
+            {COLOR_PRESETS.slice(0, 6).map((preset) => {
               const isActive = preset.bg === state.readerBackground;
               return (
                 <button
@@ -213,6 +231,12 @@ export default function ReaderSettings() {
               <div className="w-6 h-6 rounded-md border border-black/10 dark:border-white/10" style={{ backgroundColor: state.readerAccent }} />
               <span className="text-[11px] font-medium text-light-text dark:text-dark-text">Accent</span>
             </label>
+          </div>
+          <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-light-text-muted dark:text-dark-text-muted">
+            <span>Contrast: {currentWcag.ratio}:1</span>
+            <span className={currentWcag.isAccessible ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-amber-600 dark:text-amber-400 font-medium"}>
+              {currentWcag.label}
+            </span>
           </div>
         </div>
 
@@ -403,6 +427,15 @@ export default function ReaderSettings() {
           </div>
         </div>
       </div>
+
+      {isThemeStudioOpen && (
+        <Suspense fallback={null}>
+          <ThemeStudioModal
+            isOpen={isThemeStudioOpen}
+            onClose={() => setIsThemeStudioOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
