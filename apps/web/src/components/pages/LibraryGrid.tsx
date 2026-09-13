@@ -21,6 +21,10 @@ const CatalogBrowser = lazy(() =>
   import("@/components/library/CatalogBrowser").then((m) => ({ default: m.CatalogBrowser }))
 );
 
+const DailyDigestModal = lazy(() =>
+  import("@/components/digest/DailyDigestModal").then((m) => ({ default: m.DailyDigestModal }))
+);
+
 const SeriesShelfModal = lazy(() =>
   import("@/components/library/SeriesShelfModal").then((m) => ({ default: m.SeriesShelfModal }))
 );
@@ -85,6 +89,7 @@ function LibraryGrid({
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [isDailyDigestOpen, setIsDailyDigestOpen] = useState(false);
   const [isSeriesShelfOpen, setIsSeriesShelfOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const isSelecting = selectedBookIds.size > 0;
@@ -206,6 +211,7 @@ function LibraryGrid({
             filterBy={filterBy}
             filterLabel={filterLabel}
             onOpenCatalog={() => setIsCatalogOpen(true)}
+            onOpenDailyDigest={() => setIsDailyDigestOpen(true)}
             setFilterBy={setFilterBy}
             setShowFilterMenu={setShowFilterMenu}
             setShowSortMenu={setShowSortMenu}
@@ -459,6 +465,19 @@ function LibraryGrid({
             isOpen={isSeriesShelfOpen}
             onClose={() => setIsSeriesShelfOpen(false)}
             onSelectBook={onSelectBook}
+          />
+        </Suspense>
+      )}
+
+      {isDailyDigestOpen && (
+        <Suspense fallback={null}>
+          <DailyDigestModal
+            isOpen={isDailyDigestOpen}
+            onClose={() => setIsDailyDigestOpen(false)}
+            onOpenBook={(bookId) => {
+              const target = books.find((b) => b.id === bookId);
+              if (target) onSelectBook(target);
+            }}
           />
         </Suspense>
       )}

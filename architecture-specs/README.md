@@ -42,6 +42,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Custom Reader Themes, Paper Palettes & OLED Contrast Studio](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/custom-reader-themes-and-contrast-studio.md) | WCAG 2.1 contrast math, curated atmospheric palettes, live studio preview & custom themes | Reader Experience | High-Legibility Typography | VERIFIED |
 | [Interactive Reading Goals & Time-Budgeted Daily Session Timer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/interactive-reading-goals-and-session-timer.md) | Time-budgeted session goals, circular progress ring, harmonic completion chime & idle protection | Habit Formation | Smart Reading Streaks | VERIFIED |
 | [Reading Milestones, Achievement Badges & Trophy Showcase Engine](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-milestones-and-trophy-showcase.md) | Dynamic achievement evaluation, multi-tiered milestone progression & trophy showcase | Habit Formation | Interactive Reading Goals | VERIFIED |
+| [Daily Highlight Digest & Spaced Retrieval Review Engine](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/daily-highlight-digest-and-spaced-retrieval.md) | Spaced repetition daily digest queue, flip card retrieval review deck & quote cards | Knowledge Management | Reading Milestones & Badges | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 

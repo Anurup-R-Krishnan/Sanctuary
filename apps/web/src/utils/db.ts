@@ -258,6 +258,10 @@ export async function deleteAnnotation(id: string): Promise<void> {
   return dbDelete(ANNOTATIONS_STORE, id);
 }
 
+export async function getAllAnnotations(): Promise<ReaderAnnotation[]> {
+  return dbGetAll<ReaderAnnotation>(ANNOTATIONS_STORE);
+}
+
 // Vocabulary store helpers
 export async function putVocabWord(item: VocabularyItem): Promise<void> {
   return dbPut(VOCAB_STORE, item);

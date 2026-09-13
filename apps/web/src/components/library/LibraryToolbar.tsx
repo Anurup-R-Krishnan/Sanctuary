@@ -1,4 +1,4 @@
-import { ChevronDown, Filter, Globe, Grid3X3, List, SortAsc } from "lucide-react";
+import { ChevronDown, Filter, Globe, Grid3X3, List, SortAsc, Sparkles } from "lucide-react";
 import React from "react";
 
 import type { FilterOption, SortOption, ViewMode } from "@/types";
@@ -12,6 +12,7 @@ interface LibraryToolbarProps {
   filterBy: FilterOption;
   filterLabel: string;
   onOpenCatalog?: () => void;
+  onOpenDailyDigest?: () => void;
   setFilterBy: (v: FilterOption) => void;
   setShowFilterMenu: (v: boolean) => void;
   setShowSortMenu: (v: boolean) => void;
@@ -45,6 +46,7 @@ export function LibraryToolbar({
   filterBy,
   filterLabel,
   onOpenCatalog,
+  onOpenDailyDigest,
   setFilterBy,
   setShowFilterMenu,
   setShowSortMenu,
@@ -154,6 +156,18 @@ export function LibraryToolbar({
           >
             <Globe className="w-4 h-4" />
             <span className="hidden sm:inline">Catalogs</span>
+          </Button>
+        )}
+
+        {onOpenDailyDigest && (
+          <Button
+            aria-label="Open Daily Highlight Digest"
+            className="gap-1.5 !px-3 !py-2 !rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20"
+            onClick={onOpenDailyDigest}
+            variant="secondary"
+          >
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span className="hidden sm:inline">Daily Digest</span>
           </Button>
         )}
       </div>
