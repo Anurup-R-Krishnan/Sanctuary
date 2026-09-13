@@ -37,6 +37,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Hands-Free Continuous Auto-Scroll & Calibrated Pacing](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/hands-free-continuous-autoscroll.md) | Delta-time rAF smooth auto-scrolling, calibrated speed presets, user interaction pauses & pacer hairline | Reader Experience | Zen Focus Immersion | VERIFIED |
 | [X-Ray Character & Entity Dossier Index](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/xray-entity-dossier-index.md) | Client-side heuristic NER, entity frequency timelines, character dossier cards & context excerpts | Reader Experience | Chapter Readability Metrics | VERIFIED |
 | [Reading Activity Calendar Heatmap & Velocity Analytics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/reading-activity-calendar-and-velocity.md) | GitHub-style 52-week activity calendar, circadian time-of-day breakdown & reading velocity analytics | Habit Formation | Annual Reading Challenges | VERIFIED |
+| [Smart Reading Streaks, Grace Shields & Habit Protection Engine](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/smart-reading-streaks-and-habit-protection.md) | Timezone-aware streak continuity, automatic grace shields, flame tiers & streak repair challenges | Habit Formation | Reading Activity Calendar Heatmap | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -71,6 +72,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Hands-Free Continuous Auto-Scroll & Calibrated Pacing**: Delta-time rAF smooth scrolling, speed presets, user interaction pauses, and ocular pacer guideline.
    - **X-Ray Character & Entity Dossier Index**: Client-side heuristic NER, entity frequency timelines, character dossier cards, and contextual excerpts.
    - **Reading Activity Calendar Heatmap & Velocity Analytics**: GitHub-style 52-week activity calendar, circadian time-of-day breakdown, and reading velocity metrics.
+   - **Smart Reading Streaks, Grace Shields & Habit Protection Engine**: Timezone-aware streak continuity, automatic grace shields, flame tiers, and streak repair challenges.
 
 ## Evaluated Architectural Alternatives
 

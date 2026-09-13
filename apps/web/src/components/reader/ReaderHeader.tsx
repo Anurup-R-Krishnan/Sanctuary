@@ -22,6 +22,7 @@ import type { Book } from "@/types";
 
 import { IconButton } from "@/components/ui/IconButton";
 import { useSettings } from "@/store/useSettingsStore";
+import { useStatsStore } from "@/store/useStatsStore";
 
 interface ReaderHeaderProps {
     book: Book;
@@ -85,6 +86,7 @@ function ReaderHeader({
     const readerForeground = useSettings((state) => state.readerForeground);
     const readerBackground = useSettings((state) => state.readerBackground);
     const showFloatingCapsule = useSettings((state) => state.showFloatingCapsule);
+    const currentStreak = useStatsStore((state) => state.stats.currentStreak);
 
     const ActionBtn = ({ icon: Icon, label, onClick, active }: {
         icon: React.ElementType;
@@ -130,7 +132,7 @@ function ReaderHeader({
                         >
                             {chapterLabel || book.title}
                         </h1>
-                        {chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null && (
+                        {(chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null) ? (
                             <span 
                                 className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[280px] text-center"
                                 style={{ color: readerForeground }}
@@ -139,8 +141,16 @@ function ReaderHeader({
                                     ? "< 1 min in chapter"
                                     : `${Math.round(chapterEstimatedMinutesRemaining)} min in chapter`}
                                 {readingSpeedWpm ? ` · ${readingSpeedWpm} wpm` : ""}
+                                {currentStreak > 0 ? ` · 🔥 ${currentStreak}d` : ""}
                             </span>
-                        )}
+                        ) : currentStreak > 0 ? (
+                            <span 
+                                className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[280px] text-center"
+                                style={{ color: readerForeground }}
+                            >
+                                🔥 {currentStreak} day streak
+                            </span>
+                        ) : null}
                     </div>
                 )}
 

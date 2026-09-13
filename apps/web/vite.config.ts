@@ -57,6 +57,7 @@ export default defineConfig(({ mode }) => {
             'vendor-react': ['react', 'react-dom'],
             'vendor-ui': ['lucide-react'],
             'vendor-auth': ['@clerk/clerk-react'],
+            'vendor-state': ['zustand'],
           }
         }
       }

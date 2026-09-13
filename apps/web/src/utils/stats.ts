@@ -1,8 +1,9 @@
 import type { ReadingSession, SessionAggregates, Book, ReadingStats } from "@/types";
 
 import { GENRE_PALETTE } from "@/config/readerConfig";
-import { DEFAULT_PERSONALITY, DEFAULT_BADGES } from "@/types";
+import { DEFAULT_BADGES, DEFAULT_PERSONALITY } from "@/types";
 import { calculateAnnualChallenge } from "@/utils/challenge";
+import { calculateSmartStreak } from "@/utils/streakEngine";
 
 export const toLocalDateKey = (date: Date): string => {
   const year = date.getFullYear();
@@ -15,16 +16,6 @@ const toLocalMonthKey = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
-};
-
-const dateKeyToEpochDay = (dateKey: string): number | null => {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
-  if (!match) return null;
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
-  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
 };
 
 export const createEmptyAggregates = (): SessionAggregates => ({
@@ -65,40 +56,8 @@ export const applySessionToAggregates = (aggregates: SessionAggregates, session:
 };
 
 const calculateStreak = (sessionDates: Set<string>, now: Date): { current: number; longest: number } => {
-  let current = 0;
-  const streakProbe = new Date(now);
-  // Check today first
-  if (sessionDates.has(toLocalDateKey(streakProbe))) {
-    current++;
-    streakProbe.setDate(streakProbe.getDate() - 1);
-  }
-  // Then check consecutive days backwards
-  for (let i = 0; i < 365; i++) {
-    const dateStr = toLocalDateKey(streakProbe);
-    if (sessionDates.has(dateStr)) {
-      current++;
-      streakProbe.setDate(streakProbe.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  let longest = 0;
-  let tempStreak = 0;
-  const sortedDatesAsc = Array.from(sessionDates).sort();
-  for (let i = 0; i < sortedDatesAsc.length; i++) {
-    if (i === 0) {
-      tempStreak = 1;
-    } else {
-      const prevDay = dateKeyToEpochDay(sortedDatesAsc[i - 1]!);
-      const currDay = dateKeyToEpochDay(sortedDatesAsc[i]!);
-      const diffDays = prevDay !== null && currDay !== null ? currDay - prevDay : 0;
-      tempStreak = diffDays === 1 ? tempStreak + 1 : 1;
-    }
-    longest = Math.max(longest, tempStreak);
-  }
-
-  return { current, longest };
+  const result = calculateSmartStreak(sessionDates, { now });
+  return { current: result.currentStreak, longest: result.longestStreak };
 };
 
 export const calculateStats = (

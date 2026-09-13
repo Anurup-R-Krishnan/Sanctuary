@@ -22,9 +22,10 @@ const GlobalSearchModal = lazy(() =>
   }))
 );
 
+const SettingsView = lazy(() => import("./components/pages/SettingsView"));
+
 import LibraryGrid from "./components/pages/LibraryGrid";
 import ReaderView from "./components/pages/ReaderView";
-import SettingsView from "./components/pages/SettingsView";
 import StatsView from "./components/pages/StatsView";
 import Header from "./components/ui/Header";
 import Navigation from "./components/ui/Navigation";
@@ -192,7 +193,11 @@ function App() {
                 toggleFavorite={handleToggleFavorite}
               />
             )}
-            {v === View.SETTINGS && <SettingsView />}
+            {v === View.SETTINGS && (
+              <Suspense fallback={null}>
+                <SettingsView />
+              </Suspense>
+            )}
             {v === View.STATS && <StatsView />}
           </div>
         ))}

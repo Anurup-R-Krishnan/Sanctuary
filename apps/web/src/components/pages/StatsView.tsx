@@ -19,6 +19,12 @@ const ReadingActivityHeatmap = lazy(() =>
   }))
 );
 
+const StreakProtectionCard = lazy(() =>
+  import("@/components/stats/StreakProtectionCard").then((m) => ({
+    default: m.StreakProtectionCard,
+  }))
+);
+
 const VocabularyReviewCard = lazy(() =>
   import("@/components/vocabulary/VocabularyReviewCard").then((m) => ({
     default: m.VocabularyReviewCard,
@@ -323,6 +329,17 @@ function StatsView() {
               </div>
             </div>
           </div>
+
+          {/* Smart Reading Streak & Habit Protection Showcase */}
+          <Suspense
+            fallback={
+              <div className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-center min-h-[220px]">
+                <LoadingSpinner className="w-5 h-5 text-light-text-muted dark:text-dark-text-muted" />
+              </div>
+            }
+          >
+            <StreakProtectionCard dailyGoal={dailyGoal} sessions={sessions} />
+          </Suspense>
 
           <div>
             <div className="flex items-center justify-between mb-4">
