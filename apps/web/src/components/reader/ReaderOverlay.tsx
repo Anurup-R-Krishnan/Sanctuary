@@ -72,6 +72,7 @@ interface ReaderOverlayProps {
   onToggleFullscreen: () => void;
   onToggleSearch: () => void;
   onToggleSettings: () => void;
+  onToggleSpeedReader?: () => void;
   onToggleTOC: () => void;
   onToggleTTS?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
@@ -125,6 +126,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleFullscreen={props.onToggleFullscreen}
         onToggleSearch={props.onToggleSearch}
         onToggleSettings={props.onToggleSettings}
+        onToggleSpeedReader={props.onToggleSpeedReader}
         onToggleTOC={props.onToggleTOC}
         onToggleTTS={props.onToggleTTS}
         readingSpeedWpm={props.readingSpeedWpm}

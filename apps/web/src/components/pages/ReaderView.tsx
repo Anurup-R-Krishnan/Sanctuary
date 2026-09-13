@@ -20,6 +20,12 @@ const QuoteCardModal = lazy(() =>
   }))
 );
 
+const ReaderSpeedReaderModal = lazy(() =>
+  import("@/components/reader/ReaderSpeedReaderModal").then((m) => ({
+    default: m.ReaderSpeedReaderModal,
+  }))
+);
+
 const WordDefinitionModal = lazy(() =>
   import("@/components/reader/WordDefinitionModal").then((m) => ({
     default: m.WordDefinitionModal,
@@ -37,6 +43,7 @@ import { useReaderSpeech } from "@/hooks/useReaderSpeech";
 import { useReaderTextActions } from "@/hooks/useReaderTextActions";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import { extractTextFromDocument } from "@/utils/rsvpTokenEngine";
 
 interface ReaderViewProps {
   bookId: string;
@@ -194,6 +201,34 @@ function ReaderView({
     },
     [selection, position.chapterLabel]
   );
+
+  const [speedReaderTarget, setSpeedReaderTarget] = useState<{
+    chapterLabel?: string;
+    text: string;
+  } | null>(null);
+
+  const handleOpenSpeedReaderFromChapter = useCallback(() => {
+    const rendition = engineRef.current?.rendition;
+    const doc =
+      rendition?.getCurrentDocument?.() ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.doc ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.document ||
+      null;
+    const text = extractTextFromDocument(doc);
+    setSpeedReaderTarget({
+      chapterLabel: position.chapterLabel || book?.title || "Chapter",
+      text,
+    });
+  }, [position.chapterLabel, book?.title]);
+
+  const handleOpenSpeedReaderFromSelection = useCallback(() => {
+    if (!selection?.text) return;
+    setSpeedReaderTarget({
+      chapterLabel: position.chapterLabel || book?.title || "Selection",
+      text: selection.text.trim(),
+    });
+    engineRef.current?.clearSelection();
+  }, [selection, position.chapterLabel, book?.title]);
 
   const { annotations, addAnnotation, removeAnnotation, updateAnnotation } = useReaderAnnotations({
     bookId: book?.id ?? "",
@@ -445,6 +480,7 @@ function ReaderView({
         onCreateQuoteCard={(text, chapter) => handleOpenQuoteCard(text, chapter)}
         onNextTTSSentence={nextSentence}
         onPrevTTSSentence={prevSentence}
+        onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
         paragraphPauseMs={paragraphPauseMs}
         speechState={speechState}
@@ -458,6 +494,7 @@ function ReaderView({
         onDefine={handleDefine}
         onHighlight={handleHighlight}
         onSpeak={handleSpeak}
+        onSpeedRead={handleOpenSpeedReaderFromSelection}
         onUnderline={handleUnderline}
         selection={selection}
       />
@@ -502,6 +539,18 @@ function ReaderView({
             isOpen={!!activeQuoteTarget}
             onClose={() => setActiveQuoteTarget(null)}
             quote={activeQuoteTarget.text}
+          />
+        </Suspense>
+      )}
+
+      {speedReaderTarget && (
+        <Suspense fallback={null}>
+          <ReaderSpeedReaderModal
+            chapterLabel={speedReaderTarget.chapterLabel}
+            initialWpm={sessionStats.readingSpeedWpm || 350}
+            isOpen={!!speedReaderTarget}
+            onClose={() => setSpeedReaderTarget(null)}
+            rawText={speedReaderTarget.text}
           />
         </Suspense>
       )}

@@ -67,6 +67,7 @@ export interface EpubAnnotationsApi {
 }
 
 export interface EpubContentsLike {
+  doc?: Document;
   document?: Document;
   window?: Window;
 }
@@ -76,6 +77,7 @@ export type EpubRendition = {
   destroy: () => void;
   display: (target?: string) => Promise<void> | void;
   getContents?(): EpubContentsLike[];
+  getCurrentDocument?: () => Document | null;
   hooks?: {
     content?: {
       register: (cb: (contents: EpubContentsLike) => void) => void;

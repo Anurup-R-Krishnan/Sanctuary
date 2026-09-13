@@ -10,6 +10,7 @@ import {
     Search,
     Settings,
     Waves,
+    Zap,
 } from "lucide-react";
 import React from "react";
 
@@ -33,6 +34,7 @@ interface ReaderHeaderProps {
     onToggleFullscreen: () => void;
     onToggleSearch: () => void;
     onToggleSettings: () => void;
+    onToggleSpeedReader?: () => void;
     onToggleTOC: () => void;
     onToggleTTS?: () => void;
     readingSpeedWpm?: number | null;
@@ -54,6 +56,7 @@ function ReaderHeader({
     onToggleFullscreen,
     onToggleSearch,
     onToggleSettings,
+    onToggleSpeedReader,
     onToggleTOC,
     onToggleTTS,
     readingSpeedWpm,
@@ -141,6 +144,13 @@ function ReaderHeader({
                             label="Read Aloud" 
                             onClick={onToggleTTS} 
                             active={isTTSActive} 
+                        />
+                    )}
+                    {onToggleSpeedReader && (
+                        <ActionBtn 
+                            icon={Zap} 
+                            label="Speed Read" 
+                            onClick={onToggleSpeedReader} 
                         />
                     )}
                     {onToggleAmbient && (

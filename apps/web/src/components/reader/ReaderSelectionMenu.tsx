@@ -7,6 +7,7 @@ import {
   Quote,
   Underline,
   Volume2,
+  Zap,
 } from "lucide-react";
 import React, { memo, useState } from "react";
 
@@ -24,6 +25,7 @@ interface ReaderSelectionMenuProps {
   onDefine?: () => void;
   onHighlight: (color?: string) => void;
   onSpeak: () => void;
+  onSpeedRead?: () => void;
   onUnderline: () => void;
   selection: ReaderSelection | null;
 }
@@ -35,6 +37,7 @@ function ReaderSelectionMenuImpl({
   onDefine,
   onHighlight,
   onSpeak,
+  onSpeedRead,
   onUnderline,
   selection,
 }: ReaderSelectionMenuProps) {
@@ -165,6 +168,14 @@ function ReaderSelectionMenuImpl({
           label="Speak"
           onClick={onSpeak}
         />
+        {onSpeedRead && (
+          <ActionBtn
+            ariaLabel="Speed read selection"
+            icon={Zap}
+            label="Speed"
+            onClick={onSpeedRead}
+          />
+        )}
       </div>
     </div>
   );
