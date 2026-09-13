@@ -5,6 +5,7 @@
 
 import type { ReaderPosition } from "@/types/reader";
 
+import type { LightboxImageTarget } from "../contracts/engine";
 import type { DocumentLocator, DocumentSelection } from "../contracts/locator";
 import type {
   DocumentAnnotationOptions,
@@ -169,6 +170,7 @@ export class FoliateRendition implements DocumentRendition {
         this.injectStylesToDocument(doc);
         this.setupDocumentKeyboardForwarding(doc);
         this.setupDocumentSelection(doc, index);
+        this.setupDocumentImageInteraction(doc);
       }
     });
 
@@ -262,7 +264,7 @@ export class FoliateRendition implements DocumentRendition {
 
       // Convert theme styles
       const styles = this.flowOptions.themeStyles;
-      let cssText = `html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; }\n`;
+      let cssText = `html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; }\nimg, svg image, picture img { cursor: zoom-in !important; max-width: 100%; }\n`;
       if (styles) {
         for (const [selector, rules] of Object.entries(styles)) {
           cssText += `${selector} {`;
@@ -341,6 +343,76 @@ export class FoliateRendition implements DocumentRendition {
 
     doc.addEventListener("pointerup", handleSelection);
     doc.addEventListener("keyup", handleSelection);
+  }
+
+  private setupDocumentImageInteraction(doc: Document): void {
+    try {
+      doc.body?.addEventListener("click", (e: MouseEvent) => {
+        const target = (e.target as Element)?.closest("img, image, picture");
+        if (!target) return;
+
+        let alt = "";
+        let src = "";
+        let title = "";
+
+        if (target.tagName.toLowerCase() === "img") {
+          const img = target as HTMLImageElement;
+          src = img.currentSrc || img.src || img.getAttribute("src") || "";
+          alt = img.alt || "";
+          title = img.title || "";
+        } else if (target.tagName.toLowerCase() === "image") {
+          src =
+            target.getAttribute("href") ||
+            target.getAttribute("xlink:href") ||
+            "";
+          title = target.getAttribute("title") || "";
+        } else if (target.tagName.toLowerCase() === "picture") {
+          const img = target.querySelector("img");
+          if (img) {
+            src = img.currentSrc || img.src || img.getAttribute("src") || "";
+            alt = img.alt || "";
+            title = img.title || "";
+          }
+        }
+
+        if (!src) return;
+
+        // Skip tiny inline glyphs or icons (<= 28px)
+        const htmlImg =
+          target.tagName.toLowerCase() === "img"
+            ? (target as HTMLImageElement)
+            : target.querySelector("img");
+        if (
+          htmlImg &&
+          htmlImg.clientWidth > 0 &&
+          htmlImg.clientWidth <= 28 &&
+          htmlImg.clientHeight <= 28
+        ) {
+          return;
+        }
+
+        // Extract caption if wrapped in <figure>
+        const figure = target.closest("figure");
+        const figcaption = figure?.querySelector("figcaption");
+        const caption = figcaption?.textContent?.trim() || title || alt;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const payload: LightboxImageTarget = {
+          alt,
+          caption,
+          naturalHeight: htmlImg?.naturalHeight || undefined,
+          naturalWidth: htmlImg?.naturalWidth || undefined,
+          src,
+          title,
+        };
+
+        this.emit("image-click", payload);
+      });
+    } catch {
+      // Benign: handle cross-origin or detached frames gracefully
+    }
   }
 
   private async applyFlowToRenderer(): Promise<void> {
@@ -688,6 +760,7 @@ export class FoliateRendition implements DocumentRendition {
   public on(event: "relocated", callback: (location: ReaderPosition) => void): void;
   public on(event: "selected", callback: (selection: DocumentSelection | null) => void): void;
   public on(event: "footnote", callback: (data: { anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null; footnote: ResolvedFootnote }) => void): void;
+  public on(event: "image-click", callback: (data: LightboxImageTarget) => void): void;
   public on(event: string, callback: (...args: unknown[]) => void): void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public on(event: string, callback: (arg?: any) => void): void {

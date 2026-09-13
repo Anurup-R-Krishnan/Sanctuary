@@ -14,6 +14,12 @@ const ReaderFootnotePopover = React.lazy(() =>
   }))
 );
 
+const ReaderImageLightbox = React.lazy(() =>
+  import("@/components/reader/ReaderImageLightbox").then((m) => ({
+    default: m.ReaderImageLightbox,
+  }))
+);
+
 export interface ReaderEngineRef {
     clearSelection: () => void;
     display: (target: string) => void;
@@ -46,8 +52,10 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
     
     const {
         activeFootnote,
+        activeLightboxImage,
         clearSelection,
         closeFootnote,
+        closeLightboxImage,
         display,
         error,
         goToPage,
@@ -95,6 +103,14 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
                             closeFootnote();
                             display(href);
                         }}
+                    />
+                </React.Suspense>
+            )}
+            {activeLightboxImage && (
+                <React.Suspense fallback={null}>
+                    <ReaderImageLightbox
+                        image={activeLightboxImage}
+                        onClose={closeLightboxImage}
                     />
                 </React.Suspense>
             )}

@@ -24,12 +24,22 @@ export interface ReaderEngineOptions {
   writingMode?: "horizontal-tb" | "vertical-rl";
 }
 
+export interface LightboxImageTarget {
+  alt?: string;
+  caption?: string;
+  naturalHeight?: number;
+  naturalWidth?: number;
+  src: string;
+  title?: string;
+}
+
 export interface ReaderEngineCallbacks {
   onError: (error: ReaderError | null) => void;
   onFootnote?: (data: {
     anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null;
     footnote: ResolvedFootnote;
   }) => void;
+  onImageClick?: (data: LightboxImageTarget) => void;
   onPositionChange: (position: Partial<ReaderPosition>) => void;
   onSelection: (selection: ReaderSelection | null) => void;
   onStatusChange: (status: ReaderStatus) => void;

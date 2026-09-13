@@ -16,7 +16,7 @@
 - **Prerequisites**: Inline Footnote & Endnote Instant Popover, Multi-Color Highlighting
 - **Category**: Reader Experience / Media & Formatting
 - **Documented at**: commit `d09c109`, 2026-09-13
-- **Status**: READY
+- **Status**: VERIFIED
 
 ## Why this matters
 

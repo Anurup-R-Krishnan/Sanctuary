@@ -218,6 +218,11 @@ export class FoliateReaderSession implements IReaderSession {
       if (this.aborted) return;
       this.callbacks.onFootnote?.(data);
     });
+
+    this.renditionInstance.on("image-click", (data) => {
+      if (this.aborted) return;
+      this.callbacks.onImageClick?.(data);
+    });
   }
 
   private async displayWithFallbacks(startLocation?: string): Promise<boolean> {

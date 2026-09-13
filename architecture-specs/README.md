@@ -30,7 +30,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Inline Footnote & Endnote Instant Popover](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/inline-footnote-instant-popover.md) | In-reader footnote preview popover, cross-document note resolution & backlink stripping | Reader Experience | High-Legibility Typography | VERIFIED |
 | [Ambient Soundscapes & Focus Audio Synthesizer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/ambient-soundscapes-and-focus-audio.md) | Procedural Web Audio API soundscapes, zero-asset acoustic masking & sleep timer | Reader Audio | In-Book Speech Synthesis | VERIFIED |
 | [Multi-Color Highlighting & Sticky Marginalia Notes](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/multicolor-highlighting-and-marginalia.md) | 5-color semantic palette, one-tap color picker, marginalia notes & category filtering | Reader Experience | Annotation Knowledge Sync | VERIFIED |
-| [Inline Image Lightbox & Deep Pan-Zoom Viewer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/inline-image-lightbox-and-pan-zoom.md) | In-document image tap/click interception, pan-and-zoom modal & dark-mode inversion | Reader Experience | Inline Footnote Popover | READY |
+| [Inline Image Lightbox & Deep Pan-Zoom Viewer](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/inline-image-lightbox-and-pan-zoom.md) | In-document image tap/click interception, pan-and-zoom modal & dark-mode inversion | Reader Experience | Inline Footnote Popover | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -58,6 +58,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Inline Footnote & Endnote Instant Popover**: In-reader footnote preview popover, cross-document note resolution & backlink stripping.
    - **Ambient Soundscapes & Focus Audio Synthesizer**: Procedural Web Audio API soundscapes, zero-asset acoustic masking & sleep timer.
    - **Multi-Color Highlighting & Sticky Marginalia Notes**: 5-color semantic palette, one-tap color picker, marginalia notes & category filtering.
+   - **Inline Image Lightbox & Deep Pan-Zoom Viewer**: In-document image click/tap interception, pan-and-zoom modal & dark-mode inversion.
 
 ## Evaluated Architectural Alternatives
 

@@ -2,8 +2,9 @@ import type { RefObject } from "react";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
+import type { LightboxImageTarget } from "@/reader/contracts/engine";
 import type { Book } from "@/types";
-import type { ReaderStatus, ReaderError, ReaderPosition, ReaderSelection } from "@/types/reader";
+import type { ReaderError, ReaderPosition, ReaderSelection, ReaderStatus } from "@/types/reader";
 import type { TocItem } from "@/utils/epub";
 import type { ResolvedFootnote } from "@/utils/footnoteResolver";
 
@@ -35,6 +36,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         anchorRect: { bottom: number; height: number; left: number; right: number; top: number; width: number } | null;
         footnote: ResolvedFootnote;
     } | null>(null);
+    const [activeLightboxImage, setActiveLightboxImage] = useState<LightboxImageTarget | null>(null);
 
     // Refs
     const sessionRef = useRef<ReaderSession | null>(null);
@@ -114,6 +116,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             onFootnote: (data) => {
                 if (!mounted) return;
                 setActiveFootnote(data);
+            },
+            onImageClick: (data) => {
+                if (!mounted) return;
+                setActiveLightboxImage(data);
             },
             onPositionChange: (pos) => {
                 if (!mounted) return;
@@ -232,9 +238,14 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         setActiveFootnote(null);
     }, []);
 
+    const closeLightboxImage = useCallback(() => {
+        setActiveLightboxImage(null);
+    }, []);
+
     return {
         // State
         activeFootnote,
+        activeLightboxImage,
         status,
         error,
         position,
@@ -244,6 +255,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         // Actions
         clearSelection,
         closeFootnote,
+        closeLightboxImage,
         display,
         goToPage,
         nextPage,
