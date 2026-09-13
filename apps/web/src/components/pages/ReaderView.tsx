@@ -44,6 +44,12 @@ const ReaderZenFocusOverlay = lazy(() =>
   }))
 );
 
+const ReaderXRayDrawer = lazy(() =>
+  import("@/components/reader/ReaderXRayDrawer").then((m) => ({
+    default: m.ReaderXRayDrawer,
+  }))
+);
+
 const WordDefinitionModal = lazy(() =>
   import("@/components/reader/WordDefinitionModal").then((m) => ({
     default: m.WordDefinitionModal,
@@ -280,6 +286,47 @@ function ReaderView({
     engineRef.current?.clearSelection();
   }, [selection, position.chapterLabel, book?.title]);
 
+  const [xrayTarget, setXrayTarget] = useState<{
+    chapterIndex?: number;
+    chapterLabel?: string;
+    initialQuery?: string;
+    text: string;
+  } | null>(null);
+
+  const handleOpenXRayFromChapter = useCallback(() => {
+    const rendition = engineRef.current?.rendition;
+    const doc =
+      rendition?.getCurrentDocument?.() ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.doc ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.document ||
+      null;
+    const text = extractTextFromDocument(doc);
+    setXrayTarget({
+      chapterIndex: position.sectionIndex ?? 0,
+      chapterLabel: position.chapterLabel || book?.title || "Chapter",
+      text,
+    });
+  }, [position.sectionIndex, position.chapterLabel, book?.title]);
+
+  const handleOpenXRayFromSelection = useCallback(() => {
+    if (!selection?.text) return;
+    const selectedWord = selection.text.trim();
+    const rendition = engineRef.current?.rendition;
+    const doc =
+      rendition?.getCurrentDocument?.() ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.doc ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.document ||
+      null;
+    const text = extractTextFromDocument(doc);
+    setXrayTarget({
+      chapterIndex: position.sectionIndex ?? 0,
+      chapterLabel: position.chapterLabel || book?.title || "Chapter",
+      initialQuery: selectedWord,
+      text,
+    });
+    engineRef.current?.clearSelection();
+  }, [selection, position.sectionIndex, position.chapterLabel, book?.title]);
+
   const [isZenModeActive, setIsZenModeActive] = useState(false);
   const handleToggleZenMode = useCallback(
     () => setIsZenModeActive((prev) => !prev),
@@ -485,6 +532,7 @@ function ReaderView({
     onClose,
     onToggleAutoScroll: handleToggleAutoScroll,
     onToggleReadability: handleOpenReadabilityFromChapter,
+    onToggleXRay: () => (xrayTarget ? setXrayTarget(null) : handleOpenXRayFromChapter()),
     onToggleZenMode: handleToggleZenMode,
     toggleBookmark: handleToggleBookmark,
     toggleFullscreen: handleToggleFullscreen,
@@ -608,10 +656,12 @@ function ReaderView({
         onPrevTTSSentence={prevSentence}
         isAutoScrollActive={isAutoScrollActive}
         isReadabilityActive={!!readabilityTarget}
+        isXRayActive={!!xrayTarget}
         onToggleAutoScroll={handleToggleAutoScroll}
         onToggleReadability={handleOpenReadabilityFromChapter}
         onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
+        onToggleXRay={handleOpenXRayFromChapter}
         onToggleZenMode={handleToggleZenMode}
         paragraphPauseMs={paragraphPauseMs}
         speechState={speechState}
@@ -628,6 +678,7 @@ function ReaderView({
         onSpeak={handleSpeak}
         onSpeedRead={handleOpenSpeedReaderFromSelection}
         onUnderline={handleUnderline}
+        onXRay={handleOpenXRayFromSelection}
         selection={selection}
       />
 
@@ -683,6 +734,26 @@ function ReaderView({
             onClose={() => setReadabilityTarget(null)}
             rawText={readabilityTarget.text}
             readingSpeedWpm={sessionStats.readingSpeedWpm || 250}
+          />
+        </Suspense>
+      )}
+
+      {xrayTarget && (
+        <Suspense fallback={null}>
+          <ReaderXRayDrawer
+            activeChapterIndex={xrayTarget.chapterIndex}
+            activeChapterText={xrayTarget.text}
+            activeChapterTitle={xrayTarget.chapterLabel}
+            initialEntityQuery={xrayTarget.initialQuery}
+            isOpen={!!xrayTarget}
+            onClose={() => setXrayTarget(null)}
+            onNavigateToChapter={(chapterIndex) => {
+              if (tocItems && tocItems[chapterIndex]?.href) {
+                engineRef.current?.display(tocItems[chapterIndex].href);
+              } else {
+                engineRef.current?.display(String(chapterIndex));
+              }
+            }}
           />
         </Suspense>
       )}

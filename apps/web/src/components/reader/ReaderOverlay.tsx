@@ -44,6 +44,7 @@ interface ReaderOverlayProps {
   isLoading: boolean;
   isReadabilityActive?: boolean;
   isTTSActive?: boolean;
+  isXRayActive?: boolean;
   isZenModeActive?: boolean;
   onChangeTTSParagraphPause?: (ms: number) => void;
   onChangeTTSRate?: (rate: number) => void;
@@ -80,6 +81,7 @@ interface ReaderOverlayProps {
   onToggleSpeedReader?: () => void;
   onToggleTOC: () => void;
   onToggleTTS?: () => void;
+  onToggleXRay?: () => void;
   onToggleZenMode?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   paragraphPauseMs?: number;
@@ -130,6 +132,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         isFullscreen={props.isFullscreen}
         isReadabilityActive={props.isReadabilityActive}
         isTTSActive={props.isTTSActive}
+        isXRayActive={props.isXRayActive}
         isZenModeActive={props.isZenModeActive}
         onClose={props.onClose}
         onToggleAmbient={toggleAmbientPopover}
@@ -143,6 +146,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleSpeedReader={props.onToggleSpeedReader}
         onToggleTOC={props.onToggleTOC}
         onToggleTTS={props.onToggleTTS}
+        onToggleXRay={props.onToggleXRay}
         onToggleZenMode={props.onToggleZenMode}
         readingSpeedWpm={props.readingSpeedWpm}
         showUI={props.showUI}

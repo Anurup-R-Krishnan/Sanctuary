@@ -35,6 +35,7 @@ Each module contains self-contained technical specifications, scope definitions,
 | [Zen Focus Immersion & Timed Reading Sprints](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/zen-focus-immersion-and-sprints.md) | Distraction-free full-bleed reading, ambient edge vignette & Web Audio focus sprints | Reader Experience | Ambient Soundscapes | VERIFIED |
 | [Chapter Readability & Cognitive Complexity Metrics](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/chapter-readability-and-complexity.md) | Flesch ease, Kincaid grade level, Gunning fog, lexical diversity & polysyllabic analytics | Reader Experience | Dynamic Reading Speed | VERIFIED |
 | [Hands-Free Continuous Auto-Scroll & Calibrated Pacing](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/hands-free-continuous-autoscroll.md) | Delta-time rAF smooth auto-scrolling, calibrated speed presets, user interaction pauses & pacer hairline | Reader Experience | Zen Focus Immersion | VERIFIED |
+| [X-Ray Character & Entity Dossier Index](file:///home/anuruprkris/Project/sanctuary-book-reader/architecture-specs/xray-entity-dossier-index.md) | Client-side heuristic NER, entity frequency timelines, character dossier cards & context excerpts | Reader Experience | Chapter Readability Metrics | VERIFIED |
 
 *Status values: `READY` | `IN PROGRESS` | `VERIFIED` | `BLOCKED`*
 
@@ -67,6 +68,7 @@ Each module contains self-contained technical specifications, scope definitions,
    - **Zen Focus Immersion & Timed Reading Sprints**: Distraction-free full-bleed reading, ambient edge vignette, and Web Audio focus sprint bells.
    - **Chapter Readability & Cognitive Complexity Metrics**: Flesch reading ease, Kincaid grade level, Gunning fog, lexical diversity, and polysyllabic vocabulary inspection.
    - **Hands-Free Continuous Auto-Scroll & Calibrated Pacing**: Delta-time rAF smooth scrolling, speed presets, user interaction pauses, and ocular pacer guideline.
+   - **X-Ray Character & Entity Dossier Index**: Client-side heuristic NER, entity frequency timelines, character dossier cards, and contextual excerpts.
 
 ## Evaluated Architectural Alternatives
 

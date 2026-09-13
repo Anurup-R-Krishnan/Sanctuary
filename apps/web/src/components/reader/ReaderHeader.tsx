@@ -12,6 +12,7 @@ import {
     Search,
     Settings,
     Sparkles,
+    Users,
     Waves,
     Zap,
 } from "lucide-react";
@@ -32,6 +33,7 @@ interface ReaderHeaderProps {
     isFullscreen: boolean;
     isReadabilityActive?: boolean;
     isTTSActive?: boolean;
+    isXRayActive?: boolean;
     isZenModeActive?: boolean;
     onClose: () => void;
     onToggleAmbient?: () => void;
@@ -45,6 +47,7 @@ interface ReaderHeaderProps {
     onToggleSpeedReader?: () => void;
     onToggleTOC: () => void;
     onToggleTTS?: () => void;
+    onToggleXRay?: () => void;
     onToggleZenMode?: () => void;
     readingSpeedWpm?: number | null;
     showUI: boolean;
@@ -60,6 +63,7 @@ function ReaderHeader({
     isFullscreen,
     isReadabilityActive,
     isTTSActive,
+    isXRayActive,
     isZenModeActive,
     onClose,
     onToggleAmbient,
@@ -73,6 +77,7 @@ function ReaderHeader({
     onToggleSpeedReader,
     onToggleTOC,
     onToggleTTS,
+    onToggleXRay,
     onToggleZenMode,
     readingSpeedWpm,
     showUI,
@@ -182,6 +187,14 @@ function ReaderHeader({
                             icon={Sparkles} 
                             label="Zen Focus (Z)" 
                             onClick={onToggleZenMode} 
+                        />
+                    )}
+                    {onToggleXRay && (
+                        <ActionBtn 
+                            active={isXRayActive}
+                            icon={Users} 
+                            label="X-Ray Dossier (X)" 
+                            onClick={onToggleXRay} 
                         />
                     )}
                     {onToggleAutoScroll && (

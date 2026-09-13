@@ -7,6 +7,7 @@ import {
   Highlighter,
   Quote,
   Underline,
+  Users,
   Volume2,
   Zap,
 } from "lucide-react";
@@ -29,6 +30,7 @@ interface ReaderSelectionMenuProps {
   onSpeak: () => void;
   onSpeedRead?: () => void;
   onUnderline: () => void;
+  onXRay?: () => void;
   selection: ReaderSelection | null;
 }
 
@@ -42,6 +44,7 @@ function ReaderSelectionMenuImpl({
   onSpeak,
   onSpeedRead,
   onUnderline,
+  onXRay,
   selection,
 }: ReaderSelectionMenuProps) {
   const [activeColor, setActiveColor] = useState<string>(
@@ -185,6 +188,14 @@ function ReaderSelectionMenuImpl({
             icon={BarChart2}
             label="Metrics"
             onClick={onAnalyzeReadability}
+          />
+        )}
+        {onXRay && (
+          <ActionBtn
+            ariaLabel="Lookup character in X-Ray Dossier"
+            icon={Users}
+            label="X-Ray"
+            onClick={onXRay}
           />
         )}
       </div>
