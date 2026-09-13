@@ -18,6 +18,7 @@ interface UseReaderShortcutsOptions {
   keybinds: ReaderKeybinds;
   nextPage: () => void;
   onClose: () => void;
+  onToggleReadability?: () => void;
   onToggleZenMode?: () => void;
   prevPage: () => void;
   setShowControls: (value: boolean) => void;
@@ -50,23 +51,24 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
 
     const onKeyDown = (event: KeyboardEvent) => {
       const {
-        goToStart,
-        goToEnd,
-        onClose,
-        onToggleZenMode,
-        toggleBookmark,
-        toggleFullscreen,
-        toggleUI,
-        showSettings,
-        showControls,
-        showSearch,
-        setShowSettings,
-        setShowControls,
-        setShowSearch,
         clearSelection,
+        goToEnd,
+        goToStart,
         hasSelection,
         isEnabled,
         keybinds,
+        onClose,
+        onToggleReadability,
+        onToggleZenMode,
+        setShowControls,
+        setShowSearch,
+        setShowSettings,
+        showControls,
+        showSearch,
+        showSettings,
+        toggleBookmark,
+        toggleFullscreen,
+        toggleUI,
       } = optionsRef.current;
 
       if (isEnabled === false) return;
@@ -131,6 +133,14 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           event.preventDefault();
           if (!event.repeat) setShowSettings(!showSettings);
           return;
+        case "m":
+        case "M":
+          if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+            event.preventDefault();
+            if (!event.repeat) onToggleReadability?.();
+            return;
+          }
+          break;
         case "z":
         case "Z":
           if (!event.metaKey && !event.ctrlKey && !event.altKey) {

@@ -41,6 +41,7 @@ interface ReaderOverlayProps {
   isBookmarked: boolean;
   isFullscreen: boolean;
   isLoading: boolean;
+  isReadabilityActive?: boolean;
   isTTSActive?: boolean;
   isZenModeActive?: boolean;
   onChangeTTSParagraphPause?: (ms: number) => void;
@@ -71,6 +72,7 @@ interface ReaderOverlayProps {
   onToggleAnnotations: () => void;
   onToggleBookmark: () => void;
   onToggleFullscreen: () => void;
+  onToggleReadability?: () => void;
   onToggleSearch: () => void;
   onToggleSettings: () => void;
   onToggleSpeedReader?: () => void;
@@ -123,6 +125,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         isAmbientActive={useAmbientSoundStore.getState().isPlaying}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
+        isReadabilityActive={props.isReadabilityActive}
         isTTSActive={props.isTTSActive}
         isZenModeActive={props.isZenModeActive}
         onClose={props.onClose}
@@ -130,6 +133,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleAnnotations={props.onToggleAnnotations}
         onToggleBookmark={props.onToggleBookmark}
         onToggleFullscreen={props.onToggleFullscreen}
+        onToggleReadability={props.onToggleReadability}
         onToggleSearch={props.onToggleSearch}
         onToggleSettings={props.onToggleSettings}
         onToggleSpeedReader={props.onToggleSpeedReader}

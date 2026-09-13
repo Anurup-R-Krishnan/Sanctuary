@@ -1,5 +1,6 @@
 import {
     ArrowLeft,
+    BarChart2,
     Bookmark,
     BookmarkCheck,
     Headphones,
@@ -27,6 +28,7 @@ interface ReaderHeaderProps {
     isAmbientActive?: boolean;
     isBookmarked: boolean;
     isFullscreen: boolean;
+    isReadabilityActive?: boolean;
     isTTSActive?: boolean;
     isZenModeActive?: boolean;
     onClose: () => void;
@@ -34,6 +36,7 @@ interface ReaderHeaderProps {
     onToggleAnnotations: () => void;
     onToggleBookmark: () => void;
     onToggleFullscreen: () => void;
+    onToggleReadability?: () => void;
     onToggleSearch: () => void;
     onToggleSettings: () => void;
     onToggleSpeedReader?: () => void;
@@ -51,6 +54,7 @@ function ReaderHeader({
     isAmbientActive,
     isBookmarked,
     isFullscreen,
+    isReadabilityActive,
     isTTSActive,
     isZenModeActive,
     onClose,
@@ -58,6 +62,7 @@ function ReaderHeader({
     onToggleAnnotations,
     onToggleBookmark,
     onToggleFullscreen,
+    onToggleReadability,
     onToggleSearch,
     onToggleSettings,
     onToggleSpeedReader,
@@ -156,6 +161,14 @@ function ReaderHeader({
                             icon={Zap} 
                             label="Speed Read" 
                             onClick={onToggleSpeedReader} 
+                        />
+                    )}
+                    {onToggleReadability && (
+                        <ActionBtn 
+                            active={isReadabilityActive}
+                            icon={BarChart2} 
+                            label="Readability & Complexity" 
+                            onClick={onToggleReadability} 
                         />
                     )}
                     {onToggleZenMode && (

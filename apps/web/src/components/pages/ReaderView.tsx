@@ -20,6 +20,12 @@ const QuoteCardModal = lazy(() =>
   }))
 );
 
+const ReaderReadabilityModal = lazy(() =>
+  import("@/components/reader/ReaderReadabilityModal").then((m) => ({
+    default: m.ReaderReadabilityModal,
+  }))
+);
+
 const ReaderSpeedReaderModal = lazy(() =>
   import("@/components/reader/ReaderSpeedReaderModal").then((m) => ({
     default: m.ReaderSpeedReaderModal,
@@ -236,6 +242,34 @@ function ReaderView({
     engineRef.current?.clearSelection();
   }, [selection, position.chapterLabel, book?.title]);
 
+  const [readabilityTarget, setReadabilityTarget] = useState<{
+    chapterLabel?: string;
+    text: string;
+  } | null>(null);
+
+  const handleOpenReadabilityFromChapter = useCallback(() => {
+    const rendition = engineRef.current?.rendition;
+    const doc =
+      rendition?.getCurrentDocument?.() ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.doc ||
+      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.document ||
+      null;
+    const text = extractTextFromDocument(doc);
+    setReadabilityTarget({
+      chapterLabel: position.chapterLabel || book?.title || "Chapter",
+      text,
+    });
+  }, [position.chapterLabel, book?.title]);
+
+  const handleOpenReadabilityFromSelection = useCallback(() => {
+    if (!selection?.text) return;
+    setReadabilityTarget({
+      chapterLabel: position.chapterLabel || book?.title || "Selection",
+      text: selection.text.trim(),
+    });
+    engineRef.current?.clearSelection();
+  }, [selection, position.chapterLabel, book?.title]);
+
   const [isZenModeActive, setIsZenModeActive] = useState(false);
   const handleToggleZenMode = useCallback(
     () => setIsZenModeActive((prev) => !prev),
@@ -373,6 +407,7 @@ function ReaderView({
     goToStart: handleJumpToTop,
     goToEnd: handleJumpToBottom,
     onClose,
+    onToggleReadability: handleOpenReadabilityFromChapter,
     onToggleZenMode: handleToggleZenMode,
     toggleBookmark: handleToggleBookmark,
     toggleFullscreen: handleToggleFullscreen,
@@ -494,6 +529,8 @@ function ReaderView({
         onCreateQuoteCard={(text, chapter) => handleOpenQuoteCard(text, chapter)}
         onNextTTSSentence={nextSentence}
         onPrevTTSSentence={prevSentence}
+        isReadabilityActive={!!readabilityTarget}
+        onToggleReadability={handleOpenReadabilityFromChapter}
         onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
         onToggleZenMode={handleToggleZenMode}
@@ -504,6 +541,7 @@ function ReaderView({
 
       <ReaderSelectionMenu
         onAddNote={handleAddNote}
+        onAnalyzeReadability={handleOpenReadabilityFromSelection}
         onCopy={handleCopy}
         onCreateQuoteCard={() => handleOpenQuoteCard()}
         onDefine={handleDefine}
@@ -554,6 +592,18 @@ function ReaderView({
             isOpen={!!activeQuoteTarget}
             onClose={() => setActiveQuoteTarget(null)}
             quote={activeQuoteTarget.text}
+          />
+        </Suspense>
+      )}
+
+      {readabilityTarget && (
+        <Suspense fallback={null}>
+          <ReaderReadabilityModal
+            chapterLabel={readabilityTarget.chapterLabel}
+            isOpen={!!readabilityTarget}
+            onClose={() => setReadabilityTarget(null)}
+            rawText={readabilityTarget.text}
+            readingSpeedWpm={sessionStats.readingSpeedWpm || 250}
           />
         </Suspense>
       )}

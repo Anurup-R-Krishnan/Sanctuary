@@ -1,4 +1,5 @@
 import {
+  BarChart2,
   BookOpen,
   Check,
   Copy,
@@ -20,6 +21,7 @@ import {
 
 interface ReaderSelectionMenuProps {
   onAddNote: (color?: string) => void;
+  onAnalyzeReadability?: () => void;
   onCopy: () => void;
   onCreateQuoteCard?: () => void;
   onDefine?: () => void;
@@ -32,6 +34,7 @@ interface ReaderSelectionMenuProps {
 
 function ReaderSelectionMenuImpl({
   onAddNote,
+  onAnalyzeReadability,
   onCopy,
   onCreateQuoteCard,
   onDefine,
@@ -174,6 +177,14 @@ function ReaderSelectionMenuImpl({
             icon={Zap}
             label="Speed"
             onClick={onSpeedRead}
+          />
+        )}
+        {onAnalyzeReadability && (
+          <ActionBtn
+            ariaLabel="Analyze readability and complexity"
+            icon={BarChart2}
+            label="Metrics"
+            onClick={onAnalyzeReadability}
           />
         )}
       </div>
