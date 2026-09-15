@@ -128,8 +128,10 @@ export async function lookupWord(term: string): Promise<VocabularyDefinition | n
 export async function saveVocabularyWord(params: SaveWordParams): Promise<VocabularyItem> {
   const normalized = normalizeWord(params.word);
   const now = new Date();
-  const schedule = calculateNextReview(0, "again", now);
 
+  // A brand-new word hasn't been reviewed yet, so it should be due
+  // immediately rather than pre-scheduled a day out the way calculateNextReview("again")
+  // would push an already-forgotten word.
   const item: VocabularyItem = {
     audioUrl: params.audioUrl,
     bookId: params.bookId,
@@ -140,8 +142,8 @@ export async function saveVocabularyWord(params: SaveWordParams): Promise<Vocabu
     definition: params.definition,
     example: params.example,
     id: normalized,
-    intervalDays: schedule.intervalDays,
-    nextReviewAt: schedule.nextReviewAt,
+    intervalDays: 0,
+    nextReviewAt: now.toISOString(),
     partOfSpeech: params.partOfSpeech,
     phonetic: params.phonetic,
     repetitionLevel: 0,

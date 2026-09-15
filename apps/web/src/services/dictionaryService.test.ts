@@ -151,7 +151,7 @@ describe("dictionaryService — vocabulary lookup & Leitner spaced repetition", 
   });
 
   describe("saveVocabularyWord and reviewVocabularyWord", () => {
-    it("saves a word with initial Leitner level 0 and 1-day interval", async () => {
+    it("saves a word at Leitner level 0, immediately due for its first review", async () => {
       const saved = await saveVocabularyWord({
         bookId: "book-123",
         bookTitle: "Moby Dick",
@@ -163,8 +163,21 @@ describe("dictionaryService — vocabulary lookup & Leitner spaced repetition", 
       expect(saved.id).toBe("ishmael");
       expect(saved.word).toBe("ishmael");
       expect(saved.repetitionLevel).toBe(0);
-      expect(saved.intervalDays).toBe(1);
+      expect(saved.intervalDays).toBe(0);
+      expect(new Date(saved.nextReviewAt).getTime()).toBeLessThanOrEqual(Date.now());
       expect(db.putVocabWord).toHaveBeenCalled();
+    });
+
+    it("surfaces a just-saved word in the due queue right away", async () => {
+      const saved = await saveVocabularyWord({
+        definition: "Present participle of see.",
+        word: "seeing",
+      });
+
+      (db.getAllVocabWords as ReturnType<typeof mock>).mockResolvedValue([saved]);
+
+      const dueWords = await getDueVocabularyWords();
+      expect(dueWords.map((w) => w.id)).toContain("seeing");
     });
 
     it("advances Leitner level on successful review", async () => {
