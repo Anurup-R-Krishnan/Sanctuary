@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import * as fs from "fs";
+import path from "path";
 
 import { FoliateEpubAdapter } from "./FoliateEpubAdapter";
 import { FoliateRendition } from "./FoliateRendition";
@@ -11,7 +12,7 @@ beforeAll(() => {
 
 describe("Foliate Reader Navigation & TOC", () => {
   it("extracts TOC hierarchy and navigates section anchors", async () => {
-    const buffer = fs.readFileSync("mobydick.epub");
+    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
     const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
     const adapter = await FoliateEpubAdapter.create(file);
 
@@ -45,7 +46,7 @@ describe("Foliate Reader Navigation & TOC", () => {
   });
 
   it("manages reader flow options and background transitions", async () => {
-    const buffer = fs.readFileSync("mobydick.epub");
+    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
     const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
     const adapter = await FoliateEpubAdapter.create(file);
     const container = document.getElementById("reader-container") as HTMLDivElement;

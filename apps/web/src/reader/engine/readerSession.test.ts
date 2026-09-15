@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import * as fs from "fs";
+import path from "path";
 
 import { ensureTestDom } from "../foliate/testEnv";
 import { getReaderEngineType, ReaderSession } from "./ReaderSession";
@@ -14,7 +15,7 @@ describe("ReaderSession Facade", () => {
   });
 
   it("instantiates Foliate engine and exposes format-agnostic session", async () => {
-    const buffer = fs.readFileSync("mobydick.epub");
+    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
     const blob = new Blob([buffer], { type: "application/epub+zip" });
     const container = document.getElementById("reader") as HTMLDivElement;
 

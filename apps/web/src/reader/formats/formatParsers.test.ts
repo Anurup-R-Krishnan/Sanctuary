@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import * as fs from "fs";
+import path from "path";
 
 import { FoliateDocumentAdapter } from "../foliate/FoliateDocumentAdapter";
 import { FoliateRendition } from "../foliate/FoliateRendition";
@@ -249,7 +250,7 @@ The waters were calm.`;
     });
 
     it("renders EPUB file through FoliateDocumentAdapter", async () => {
-      const buffer = fs.readFileSync("mobydick.epub");
+      const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
       const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
       const adapter = await FoliateDocumentAdapter.create(file);
 
