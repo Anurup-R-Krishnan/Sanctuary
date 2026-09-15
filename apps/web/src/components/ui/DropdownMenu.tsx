@@ -93,6 +93,8 @@ export const DropdownMenu = ({
           break;
         case "Escape":
           e.preventDefault();
+          e.stopPropagation();
+          e.nativeEvent?.stopImmediatePropagation();
           onClose();
           break;
         case "Tab":
@@ -114,7 +116,7 @@ export const DropdownMenu = ({
       aria-orientation="vertical"
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      className="absolute right-0 top-full mt-1.5 w-44 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-black/[0.08] dark:border-white/[0.08] z-50 animate-scaleIn origin-top-right"
+      className="absolute right-0 top-full mt-1.5 w-44 py-1 rounded-xl bg-light-surface dark:bg-dark-surface shadow-lg border border-light-border dark:border-dark-border z-50 animate-scaleIn origin-top-right"
     >
       {options.map((opt, index) => {
         const isSelected = value === opt.value;
@@ -137,10 +139,10 @@ export const DropdownMenu = ({
             }}
             className={[
               "w-full text-left px-3 py-2 text-sm transition-colors outline-none",
-              "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))]",
+              "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent",
               isSelected
-                ? "text-light-accent dark:text-dark-accent font-medium bg-light-accent/5 dark:bg-dark-accent/5"
-                : "text-light-text dark:text-dark-text hover:bg-black/[0.04] dark:hover:bg-white/[0.04]",
+                ? "text-light-accent dark:text-dark-accent font-semibold bg-light-accent/10 dark:bg-dark-accent/10"
+                : "text-light-text dark:text-dark-text hover:bg-light-primary dark:hover:bg-dark-primary",
             ].join(" ")}
           >
             {opt.label}

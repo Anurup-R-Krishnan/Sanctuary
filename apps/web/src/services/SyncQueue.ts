@@ -1,5 +1,7 @@
 import type { CoreAnnotation, ReaderSettings, ReadingSession, SanctuaryApiClient } from "@sanctuary/core";
 
+import { useEffect, useState } from "react";
+
 import { deleteMutation, getAllMutations, putMutation, type SyncMutation } from "@/utils/db";
 
 export type SyncQueueStatus = "local-only" | "idle" | "syncing" | "failed";
@@ -26,6 +28,90 @@ async function rawApiCall(mutation: SyncMutation, api: SanctuaryApiClient) {
   }
 }
 
+/**
+ * Coalesces redundant or superseded offline mutations into a minimal set.
+ * - Consecutively enqueued SAVE_SETTINGS are collapsed to the latest state snapshot.
+ * - Multiple PATCH_LIBRARY updates for the same book ID are merged into a single composite patch.
+ * - A DELETE_LIBRARY mutation removes any prior un-dispatched PATCH_LIBRARY mutations for the same book.
+ * - Superseded mutation IDs are returned as obsoleteIds so they can be purged from IndexedDB in parallel.
+ */
+export function coalesceMutations(mutations: SyncMutation[]): {
+  coalesced: SyncMutation[];
+  obsoleteIds: string[];
+} {
+  if (mutations.length <= 1) {
+    return { coalesced: mutations, obsoleteIds: [] };
+  }
+
+  const obsoleteIds: string[] = [];
+  const result: SyncMutation[] = [];
+  let lastSettingsIndex = -1;
+  const patchIndexByBookId = new Map<string, number>();
+
+  for (const mut of mutations) {
+    if (mut.type === "SAVE_SETTINGS") {
+      if (lastSettingsIndex !== -1) {
+        obsoleteIds.push(result[lastSettingsIndex].id);
+        result[lastSettingsIndex] = mut;
+      } else {
+        lastSettingsIndex = result.length;
+        result.push(mut);
+      }
+    } else if (mut.type === "PATCH_LIBRARY") {
+      const payload = mut.payload as { id: string; data?: Record<string, unknown> };
+      const bookId = payload?.id;
+      const existingIndex = bookId ? patchIndexByBookId.get(bookId) : undefined;
+
+      if (existingIndex !== undefined) {
+        const existing = result[existingIndex];
+        const existingPayload = existing.payload as { id: string; data?: Record<string, unknown> };
+        const mergedPayload = {
+          id: bookId,
+          data: {
+            ...(existingPayload?.data || {}),
+            ...(payload?.data || {}),
+          },
+        };
+        obsoleteIds.push(existing.id);
+        result[existingIndex] = {
+          ...mut,
+          payload: mergedPayload,
+        };
+      } else {
+        if (bookId) {
+          patchIndexByBookId.set(bookId, result.length);
+        }
+        result.push(mut);
+      }
+    } else if (mut.type === "DELETE_LIBRARY") {
+      const payload = mut.payload as { id: string };
+      const bookId = payload?.id;
+      const existingPatchIndex = bookId ? patchIndexByBookId.get(bookId) : undefined;
+
+      if (existingPatchIndex !== undefined) {
+        obsoleteIds.push(result[existingPatchIndex].id);
+        result.splice(existingPatchIndex, 1);
+        patchIndexByBookId.delete(bookId);
+
+        // Adjust remaining indexed positions
+        for (const [id, idx] of patchIndexByBookId.entries()) {
+          if (idx > existingPatchIndex) {
+            patchIndexByBookId.set(id, idx - 1);
+          }
+        }
+        if (lastSettingsIndex > existingPatchIndex) {
+          lastSettingsIndex--;
+        }
+      }
+      result.push(mut);
+    } else {
+      result.push(mut);
+    }
+  }
+
+  return { coalesced: result, obsoleteIds };
+}
+
 class SyncQueueManager {
   private isProcessing = false;
   private api: SanctuaryApiClient | null = null;
@@ -33,6 +119,7 @@ class SyncQueueManager {
   private retryTimeout: number | null = null;
   private backoffMs = 1200;
   private status: SyncQueueStatus = "idle";
+  private listeners = new Set<(status: SyncQueueStatus) => void>();
 
   getApi(): SanctuaryApiClient | null {
     return this.api;
@@ -42,8 +129,24 @@ class SyncQueueManager {
     return this.status;
   }
 
+  subscribe(callback: (status: SyncQueueStatus) => void): () => void {
+    this.listeners.add(callback);
+    callback(this.status);
+    return () => {
+      this.listeners.delete(callback);
+    };
+  }
+
   private setStatus(status: SyncQueueStatus) {
+    if (this.status === status) return;
     this.status = status;
+    this.listeners.forEach((cb) => {
+      try {
+        cb(status);
+      } catch (err) {
+        console.warn("SyncQueue listener error:", err);
+      }
+    });
   }
 
   init(api: SanctuaryApiClient, isPersistent: boolean) {
@@ -90,8 +193,14 @@ class SyncQueueManager {
         // Sort by creation time (oldest first)
         mutations.sort((a, b) => a.createdAt - b.createdAt);
 
+        // Coalesce mutations to collapse redundant roundtrips
+        const { coalesced, obsoleteIds } = coalesceMutations(mutations);
+        if (obsoleteIds.length > 0) {
+          await Promise.allSettled(obsoleteIds.map((id) => deleteMutation(id)));
+        }
+
         let processedAny = false;
-        for (const mutation of mutations) {
+        for (const mutation of coalesced) {
           try {
             await rawApiCall(mutation, this.api);
             await deleteMutation(mutation.id);
@@ -135,3 +244,11 @@ class SyncQueueManager {
 }
 
 export const syncQueue = new SyncQueueManager();
+
+export function useSyncStatus(): SyncQueueStatus {
+  const [status, setStatus] = useState<SyncQueueStatus>(() => syncQueue.getStatus());
+  useEffect(() => {
+    return syncQueue.subscribe(setStatus);
+  }, []);
+  return status;
+}

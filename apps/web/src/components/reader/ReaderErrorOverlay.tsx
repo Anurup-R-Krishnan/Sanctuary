@@ -37,7 +37,7 @@ export function ReaderErrorOverlay({ error, onRetry, onRetryFromStart, onReplace
 
     return (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-sm p-6 pointer-events-auto">
-            <div className="max-w-md w-full bg-light-surface dark:bg-dark-surface rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-8 text-center animate-scaleIn">
+            <div className="max-w-md w-full bg-light-surface dark:bg-dark-surface rounded-2xl shadow-2xl border border-light-border dark:border-dark-border p-8 text-center animate-scaleIn">
                 <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                     <AlertCircle className="w-8 h-8" />
                 </div>

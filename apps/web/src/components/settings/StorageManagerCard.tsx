@@ -27,7 +27,7 @@ interface BreakdownBadgeProps {
 
 function BreakdownBadge({ bytes, icon: Icon, label }: BreakdownBadgeProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.05]">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border">
       <Icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted shrink-0" />
       <div>
         <p className="text-xs font-semibold text-light-text dark:text-dark-text">{formatBytes(bytes)}</p>
@@ -91,7 +91,7 @@ export function StorageManagerCard() {
 
   return (
     <>
-      <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] space-y-5">
+      <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -100,28 +100,29 @@ export function StorageManagerCard() {
           </div>
           <button
             aria-label="Refresh storage estimate"
-            className="rounded-lg p-1.5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-black/[0.06] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-40"
+            className="rounded-lg p-1.5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent disabled:opacity-40"
             disabled={isLoading || isCleaning}
             onClick={refresh}
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+           type="button"
+
+           >            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {isLoading ? (
           <div className="space-y-3 animate-pulse-soft">
-            <div className="h-2.5 w-full rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
-            <div className="h-4 w-40 rounded bg-black/[0.05] dark:bg-white/[0.06]" />
+            <div className="h-2.5 w-full rounded-full bg-light-border dark:bg-dark-border" />
+            <div className="h-4 w-40 rounded bg-light-border/60 dark:bg-dark-border/60" />
             <div className="flex gap-2">
-              <div className="h-12 w-28 rounded-xl bg-black/[0.04] dark:bg-white/[0.05]" />
-              <div className="h-12 w-28 rounded-xl bg-black/[0.04] dark:bg-white/[0.05]" />
+              <div className="h-12 w-28 rounded-xl bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/50 dark:border-dark-border/50" />
+              <div className="h-12 w-28 rounded-xl bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/50 dark:border-dark-border/50" />
             </div>
           </div>
         ) : breakdown ? (
           <>
             {/* Usage bar */}
             <div className="space-y-1.5">
-              <div className="h-2.5 w-full rounded-full bg-black/[0.06] dark:bg-white/[0.10] overflow-hidden">
+              <div className="h-2.5 w-full rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${barColor}`}
                   style={{ width: `${(breakdown.usageFraction * 100).toFixed(1)}%` }}

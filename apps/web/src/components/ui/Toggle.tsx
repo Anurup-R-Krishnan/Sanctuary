@@ -21,10 +21,10 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                 aria-checked={checked}
                 onClick={() => onChange(!checked)}
                 className={cx(
-                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))]",
+                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent",
                     checked
                         ? "bg-light-accent/10 dark:bg-dark-accent/10 border border-light-accent/20 dark:border-dark-accent/20"
-                        : "bg-black/[0.02] dark:bg-white/[0.02] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.04] active:bg-black/[0.06] dark:active:bg-white/[0.06]",
+                        : "bg-light-surface/50 dark:bg-dark-surface/50 border border-light-border/60 dark:border-dark-border/60 hover:bg-light-surface/80 dark:hover:bg-dark-surface/80 hover:border-light-accent/30 dark:hover:border-dark-accent/30",
                     className
                 )}
                 {...props}
@@ -42,10 +42,10 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                 </div>
                 <div className={cx(
                     "relative flex-shrink-0 w-12 h-6 rounded-full transition-all duration-fast ease-out",
-                    checked ? "bg-light-accent dark:bg-dark-accent" : "bg-black/20 dark:bg-white/20"
+                    checked ? "bg-light-accent dark:bg-dark-accent" : "bg-light-border dark:bg-dark-border"
                 )}>
                     <div className={cx(
-                        "absolute top-1 w-4 h-4 bg-white rounded-full shadow-md transition-all duration-fast ease-out flex items-center justify-center",
+                        "absolute top-1 w-4 h-4 bg-white dark:bg-dark-text rounded-full shadow-md transition-all duration-fast ease-out flex items-center justify-center",
                         checked ? "left-7" : "left-1"
                     )}>
                         {checked && (

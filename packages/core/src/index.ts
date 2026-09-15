@@ -240,6 +240,22 @@ export class SanctuaryApiClient {
   async getGoals(): Promise<ReadingGoals> {
     return this.fetchJson<ReadingGoals>("/api/goals");
   }
+
+  // Fetches an arbitrary external URL (an OPDS feed, or a book acquisition
+  // link) through the backend, which sidesteps the target server's own CORS
+  // policy — most OPDS servers, self-hosted ones especially, don't send
+  // CORS headers at all. `targetAuth` is the Authorization value the TARGET
+  // server expects (e.g. "Basic ..."), kept separate from this client's own
+  // bearer token so it's never sent to us and this token is never forwarded
+  // to the target.
+  async fetchOpdsProxy(targetUrl: string, targetAuth?: string, targetAccept?: string): Promise<Response> {
+    return this.fetchRaw(`/api/opds-proxy?url=${encodeURIComponent(targetUrl)}`, {
+      headers: {
+        ...(targetAuth ? { "X-Target-Authorization": targetAuth } : {}),
+        ...(targetAccept ? { "X-Target-Accept": targetAccept } : {}),
+      },
+    });
+  }
 }
 
 export const STORAGE_KEYS = {

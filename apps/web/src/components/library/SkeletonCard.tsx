@@ -8,17 +8,17 @@ import React from "react";
  */
 export function SkeletonCard() {
   return (
-    <div className="w-full rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface overflow-hidden">
+    <div className="w-full rounded-2xl border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface overflow-hidden">
       {/* Cover placeholder (aspect ratio matches the real 2/3 cover) */}
-      <div className="relative aspect-[2/3] w-full bg-black/[0.03] dark:bg-white/[0.04]">
+      <div className="relative aspect-[2/3] w-full bg-light-primary dark:bg-dark-primary">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent animate-shimmer" />
       </div>
       {/* Metadata placeholder below the cover */}
       <div className="p-3 sm:p-4 space-y-3">
-        <div className="relative h-4 w-5/6 rounded bg-black/[0.05] dark:bg-white/[0.06] overflow-hidden">
+        <div className="relative h-4 w-5/6 rounded bg-light-border/40 dark:bg-dark-border/40 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent animate-shimmer" />
         </div>
-        <div className="relative h-3 w-2/5 rounded bg-black/[0.04] dark:bg-white/[0.05] overflow-hidden">
+        <div className="relative h-3 w-2/5 rounded bg-light-border/30 dark:bg-dark-border/30 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent animate-shimmer" />
         </div>
       </div>

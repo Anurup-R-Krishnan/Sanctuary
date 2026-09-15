@@ -128,6 +128,31 @@ describe('X-Ray Character & Entity Dossier Index Engine', () => {
       expect(watson).toBeDefined();
       expect(watson!.aliases).toContain('Watson');
     });
+
+    it('filters case-insensitive structural terms like CHAPTER, Prologue, Epilogue', () => {
+      const text = 'CHAPTER 1. The Loomings. Sherlock Holmes arrived in London.';
+      const matches = scanRawEntities(text);
+      const names = matches.map((m) => m.name);
+
+      expect(names).not.toContain('CHAPTER');
+      expect(names).not.toContain('Chapter');
+      expect(names).toContain('Sherlock Holmes');
+      expect(names).toContain('London');
+    });
+
+    it('deduplicates entities with equivalent normalized slugs in indexChapterEntities', () => {
+      const text = 'Moby Dick was sighted in the distance. Later, Moby-Dick struck the ship.';
+      const entities = indexChapterEntities(text);
+      const ids = entities.map((e) => e.id);
+
+      // Verify no duplicate IDs exist
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(ids.length);
+
+      const moby = entities.find((e) => e.id === 'moby-dick');
+      expect(moby).toBeDefined();
+      expect(moby!.mentionsCount).toBe(2);
+    });
   });
 
   describe('buildXRayBookIndex', () => {

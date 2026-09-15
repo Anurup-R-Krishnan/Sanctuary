@@ -33,21 +33,21 @@ function SettingsView() {
             }
             window.location.reload();
         } catch (e) {
-            console.error(e);
+            console.error("Factory reset failed:", e);
             setIsResetting(false);
             setResetError("Factory reset failed. Please try again.");
         }
     };
 
     const NavAnchor = ({ id, label, icon: Icon }: { id: string, label: string, icon: React.ComponentType<{ className?: string }> }) => (
-        <a href={`#${id}`} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-black/[0.04] dark:hover:bg-white/[0.04] rounded-lg transition-colors">
+        <a href={`#${id}`} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 rounded-lg transition-colors">
             <Icon className="w-4 h-4" />
             <span className="hidden sm:inline">{label}</span>
         </a>
     );
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 pb-32">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 pb-40">
             <aside className="md:w-64 flex-shrink-0">
                <div className="sticky top-24 space-y-1">
                    <h2 className="px-3 mb-4 text-2xl font-sans font-bold tracking-tight text-light-text dark:text-dark-text">Settings</h2>
@@ -73,13 +73,13 @@ function SettingsView() {
                         <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">App-wide interaction preferences.</p>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                        <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
                             <Toggle checked={state.reduceMotion} onChange={state.setReduceMotion} label="Reduce Motion" sublabel="Disable animations and transitions across the app" />
                         </div>
                     </div>
                 </section>
 
-                <hr className="border-black/5 dark:border-white/5" />
+                <hr className="border-light-border dark:border-dark-border" />
 
                 <section id="goals" className="space-y-6 scroll-mt-24">
                     <div>
@@ -87,22 +87,22 @@ function SettingsView() {
                         <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">Track your reading habits and maintain streaks.</p>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
                         <Slider label="Daily Goal" value={state.dailyGoal} onChange={state.setDailyGoal} min={5} max={120} step={5} displayValue={`${state.dailyGoal} pages`} />
                         <Slider label="Weekly Goal" value={state.weeklyGoal} onChange={state.setWeeklyGoal} min={20} max={500} step={10} displayValue={`${state.weeklyGoal} pages`} />
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                        <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
                              <Toggle checked={state.trackingEnabled} onChange={state.setTrackingEnabled} label="Analytics" sublabel="Track reading time and progress" />
                         </div>
-                        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                        <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
                              <Toggle checked={state.showStreakReminder} onChange={state.setShowStreakReminder} label="Streak Reminders" sublabel="Remind me to read daily" />
                         </div>
                     </div>
                 </section>
 
-                <hr className="border-black/5 dark:border-white/5" />
+                <hr className="border-light-border dark:border-dark-border" />
 
                 <section id="data" className="space-y-6 scroll-mt-24">
                     <div>

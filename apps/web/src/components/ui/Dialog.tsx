@@ -66,6 +66,8 @@ export function Dialog({
 
       if (e.key === "Escape") {
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         onClose();
         return;
       }
@@ -153,10 +155,10 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descId : undefined}
-        className="w-full max-w-md rounded-2xl bg-light-primary dark:bg-dark-primary border border-black/[0.08] dark:border-white/[0.08] shadow-2xl overflow-hidden animate-scaleIn"
+        className="w-full max-w-md rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl overflow-hidden animate-scaleIn"
       >
         {(title || description) && (
-          <div className="px-6 py-4 border-b border-black/[0.05] dark:border-white/[0.05] flex justify-between items-start">
+          <div className="px-6 py-4 border-b border-light-border dark:border-dark-border flex justify-between items-start">
             <div>
               {title && (
                 <h2 id={titleId} className="text-lg font-bold text-light-text dark:text-dark-text">
@@ -184,7 +186,7 @@ export function Dialog({
         </div>
 
         {footer && (
-          <div className="px-6 py-4 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/[0.05] dark:border-white/[0.05]">
+          <div className="px-6 py-4 bg-light-surface/50 dark:bg-dark-surface/50 border-t border-light-border dark:border-dark-border">
             {footer}
           </div>
         )}

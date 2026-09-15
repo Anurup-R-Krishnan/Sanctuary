@@ -1,5 +1,6 @@
 import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, Layers, Search, Sparkles, X } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import type { Book } from '@/types';
 import type { SeriesGroup } from '@/utils/seriesEngine';
@@ -28,6 +29,20 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
     );
   }, [seriesGroups, searchQuery]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleBookClick = (bookId: string) => {
@@ -38,17 +53,29 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-3xl max-h-[85vh] bg-light-primary dark:bg-dark-primary rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden">
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="series-shelf-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      tabIndex={-1}
+    >
+      <div className="relative w-full max-w-3xl max-h-[85vh] bg-light-primary dark:bg-dark-primary rounded-3xl shadow-2xl border border-light-border dark:border-dark-border flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-light-border dark:border-dark-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-light-text dark:text-dark-text">
+              <h2 id="series-shelf-modal-title" className="text-xl font-bold tracking-tight text-light-text dark:text-dark-text">
                 Book Series & Sagas
               </h2>
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
@@ -60,7 +87,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
           <button
             onClick={onClose}
             type="button"
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
+            className="p-2 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
             aria-label="Close series modal"
           >
             <X className="w-5 h-5" />
@@ -68,7 +95,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
         </div>
 
         {/* Search Bar */}
-        <div className="p-4 border-b border-black/[0.04] dark:border-white/[0.04] bg-black/[0.01] dark:bg-white/[0.01]">
+        <div className="p-4 border-b border-light-border/60 dark:border-dark-border/60 bg-light-surface/30 dark:bg-dark-surface/30">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-light-text-muted dark:text-dark-text-muted" />
             <input
@@ -76,7 +103,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search series title or author..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-light-secondary dark:bg-dark-secondary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
             />
           </div>
         </div>
@@ -93,7 +120,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
             filteredGroups.map((series: SeriesGroup) => (
               <div
                 key={series.id}
-                className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex flex-col gap-4 transition-all"
+                className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border flex flex-col gap-4 transition-all"
               >
                 {/* Series Header Info */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -123,7 +150,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
                     <button
                       onClick={() => handleBookClick(series.nextBookToRead!.id)}
                       type="button"
-                      className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white text-xs font-bold transition-all shadow-sm shrink-0"
+                      className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white dark:text-black text-xs font-bold transition-all shadow-sm shrink-0"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Continue Vol. {series.nextBookToRead.seriesIndex}</span>
@@ -140,7 +167,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
                       {series.percentComplete}%
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-black/[0.05] dark:bg-white/[0.05] rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
                       style={{ width: `${series.percentComplete}%` }}
@@ -160,17 +187,17 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
                 )}
 
                 {/* Volumes Shelf Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2 border-t border-black/[0.04] dark:border-white/[0.04]">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2 border-t border-light-border/60 dark:border-dark-border/60">
                   {series.books.map((bookItem) => (
                     <button
                       key={bookItem.id}
                       onClick={() => handleBookClick(bookItem.id)}
                       type="button"
-                      className="group p-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] border border-black/[0.04] dark:border-white/[0.04] text-left transition-all flex flex-col justify-between"
+                      className="group p-2.5 rounded-xl bg-light-card dark:bg-dark-card hover:bg-light-surface dark:hover:bg-dark-surface border border-light-border/60 dark:border-dark-border/60 text-left transition-all flex flex-col justify-between"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-black/[0.06] dark:bg-white/[0.08] text-light-text dark:text-dark-text">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text border border-light-border/60 dark:border-dark-border/60">
                             #{bookItem.seriesIndex}
                           </span>
                           {bookItem.status === 'finished' ? (
@@ -186,7 +213,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
                         </h4>
                       </div>
 
-                      <div className="mt-2.5 h-1 w-full bg-black/[0.05] dark:bg-white/[0.05] rounded-full overflow-hidden">
+                      <div className="mt-2.5 h-1 w-full bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
                             bookItem.status === 'finished' ? 'bg-emerald-500' : 'bg-light-accent dark:bg-dark-accent'
@@ -202,6 +229,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -156,7 +156,7 @@ export function ReaderZenFocusOverlay({
       />
 
       {/* 2. Top Hairline Sprint Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-[2.5px] z-[62] bg-black/5 dark:bg-white/5 pointer-events-none overflow-hidden">
+      <div className="fixed top-0 left-0 right-0 h-[2.5px] z-[62] bg-light-border/40 dark:bg-dark-border/40 pointer-events-none overflow-hidden">
         <div
           className="h-full bg-light-accent dark:bg-dark-accent transition-[width] duration-300 ease-out"
           style={{ width: `${progressPercent}%` }}
@@ -168,17 +168,17 @@ export function ReaderZenFocusOverlay({
         className={`fixed top-4 right-4 z-[65] pointer-events-auto transition-all duration-300 ${
           isHudVisible
             ? "opacity-100 translate-y-0"
-            : "opacity-0 -translate-y-2 pointer-events-none"
+            : "opacity-40 hover:opacity-100 translate-y-0"
         }`}
       >
-        <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-light-primary/90 dark:bg-dark-primary/90 backdrop-blur-xl border border-black/10 dark:border-white/10 shadow-lg text-light-text dark:text-dark-text">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-light-primary/90 dark:bg-dark-primary/90 backdrop-blur-xl border border-light-border dark:border-dark-border shadow-lg text-light-text dark:text-dark-text">
           {/* Zen Icon Pill */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-light-accent dark:text-dark-accent">
             <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Zen Focus</span>
           </div>
 
-          <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-0.5" />
+          <div className="w-px h-4 bg-light-border dark:bg-dark-border mx-0.5" />
 
           {/* Sprint Timer Display */}
           <div className="flex items-center gap-1.5 px-2 text-xs font-mono font-medium tabular-nums">
@@ -189,7 +189,7 @@ export function ReaderZenFocusOverlay({
           {/* Play/Pause Toggle */}
           <button
             aria-label={isRunning ? "Pause focus sprint" : "Resume focus sprint"}
-            className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="p-1.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
             onClick={() => setIsRunning((prev) => !prev)}
             title={isRunning ? "Pause" : "Resume"}
             type="button"
@@ -204,7 +204,7 @@ export function ReaderZenFocusOverlay({
           {/* Restart Sprint */}
           <button
             aria-label="Restart sprint timer"
-            className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="p-1.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
             onClick={handleRestartSprint}
             title="Restart Sprint"
             type="button"
@@ -212,12 +212,12 @@ export function ReaderZenFocusOverlay({
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
-          <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-0.5" />
+          <div className="w-px h-4 bg-light-border dark:bg-dark-border mx-0.5" />
 
           {/* Exit Zen Button */}
           <button
             aria-label="Exit Zen Focus Mode (Esc or Z)"
-            className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="p-1.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
             onClick={onClose}
             title="Exit Zen Mode (Esc or Z)"
             type="button"
@@ -235,7 +235,7 @@ export function ReaderZenFocusOverlay({
           className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
           role="dialog"
         >
-          <div className="relative w-full max-w-sm p-6 sm:p-7 rounded-3xl bg-light-primary dark:bg-dark-primary border border-black/10 dark:border-white/10 shadow-2xl flex flex-col items-center text-center gap-4 animate-scaleUp text-light-text dark:text-dark-text">
+          <div className="relative w-full max-w-sm p-6 sm:p-7 rounded-3xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl flex flex-col items-center text-center gap-4 animate-scaleUp text-light-text dark:text-dark-text">
             {/* Celebration Icon */}
             <div className="w-12 h-12 rounded-2xl bg-light-accent/15 dark:bg-dark-accent/15 flex items-center justify-center text-light-accent dark:text-dark-accent">
               <Flame className="w-6 h-6" />
@@ -254,7 +254,7 @@ export function ReaderZenFocusOverlay({
             </div>
 
             {/* Performance Stats Pill */}
-            <div className="w-full p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 flex items-center justify-around text-center">
+            <div className="w-full p-3 rounded-2xl bg-light-surface/50 dark:bg-dark-surface/50 border border-light-border dark:border-dark-border flex items-center justify-around text-center">
               <div>
                 <span className="text-lg font-bold font-mono text-light-accent dark:text-dark-accent block">
                   {selectedDuration}m
@@ -263,7 +263,7 @@ export function ReaderZenFocusOverlay({
                   Sprint Duration
                 </span>
               </div>
-              <div className="w-px h-8 bg-black/5 dark:bg-white/5" />
+              <div className="w-px h-8 bg-light-border dark:bg-dark-border" />
               <div>
                 <span className="text-lg font-bold font-mono text-light-accent dark:text-dark-accent block">
                   ~{estimatedWords}
@@ -285,8 +285,8 @@ export function ReaderZenFocusOverlay({
                     aria-label={`Start ${dur} minute sprint`}
                     className={`py-1.5 rounded-xl text-xs font-semibold transition-all ${
                       selectedDuration === dur
-                        ? "bg-light-accent dark:bg-dark-accent text-white shadow-sm"
-                        : "bg-black/5 dark:bg-white/5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                        ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold shadow-sm"
+                        : "bg-light-border/40 dark:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
                     }`}
                     key={dur}
                     onClick={() => handleDurationSelect(dur)}
@@ -301,7 +301,7 @@ export function ReaderZenFocusOverlay({
             {/* Close Button */}
             <button
               aria-label="Continue reading in Zen Mode"
-              className="w-full py-2.5 rounded-full bg-light-accent dark:bg-dark-accent text-white text-sm font-semibold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 mt-1 shadow-md"
+              className="w-full py-2.5 rounded-full bg-light-accent dark:bg-dark-accent text-white dark:text-black text-sm font-semibold hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 mt-1 shadow-md"
               onClick={() => setShowCompletionModal(false)}
               type="button"
             >

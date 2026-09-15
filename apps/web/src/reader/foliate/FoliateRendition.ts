@@ -5,6 +5,8 @@
 
 import type { ReaderPosition } from "@/types/reader";
 
+import { generateCustomFontFaceCss, getLoadedCustomFonts } from "@/services/customFontService";
+
 import type { LightboxImageTarget } from "../contracts/engine";
 import type { DocumentLocator, DocumentSelection } from "../contracts/locator";
 import type {
@@ -19,6 +21,7 @@ import { applyBionicReading } from "../../utils/bionicReading";
 import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
+import { ScrollContinuity } from "./ScrollContinuity";
 
 // foliate-view is registered dynamically via foliate-js/view.js
 type EventListenerCallback = (...args: unknown[]) => void;
@@ -37,6 +40,7 @@ export class FoliateRendition implements DocumentRendition {
   private activeSearchCfi: string | null = null;
   private ttsController: FoliateTTSController | null = null;
   private bionicCleanups = new WeakMap<Document, () => void>();
+  private readonly scrollContinuity = new ScrollContinuity();
 
   public readonly progressEstimator: SpineWeightProgressEstimator;
   public annotations?: DocumentAnnotationsApi;
@@ -52,7 +56,7 @@ export class FoliateRendition implements DocumentRendition {
     this.flowOptions = flowOptions;
     this.background = background;
     this.totalSections = Math.max(1, documentAdapter.sections.length);
-    this.progressEstimator = new SpineWeightProgressEstimator(documentAdapter.sections);
+    this.progressEstimator = new SpineWeightProgressEstimator(documentAdapter.sections, 900);
 
     this.container.style.backgroundColor = background;
 
@@ -118,6 +122,11 @@ export class FoliateRendition implements DocumentRendition {
     // Open the book inside foliate-view
     await this.view.open(this.documentAdapter.rawBook);
 
+    if (this.view.renderer) {
+      this.scrollContinuity.attachRenderer(this.view.renderer);
+      this.setupRelocateListener();
+    }
+
     // Setup visual search marks hook
     this.setupSearchAnnotationHook();
 
@@ -125,11 +134,23 @@ export class FoliateRendition implements DocumentRendition {
     await this.applyFlowToRenderer();
   }
 
-  private setupViewEventListeners(): void {
-    // Relocate event from foliate-view
-    this.view.addEventListener("relocate", (e: CustomEvent) => {
+  // Listens on the renderer (foliate-paginator), not the outer <foliate-view>.
+  // <foliate-view> re-wraps the renderer's "relocate" event before re-dispatching
+  // it, and that wrapped shape has no top-level `index` (it nests under
+  // `section.current` instead) — every read of `detail.index` on the outer
+  // event silently defaulted to 0, forever, which is why progress never moved
+  // past chapter one's own weight. The renderer's own event carries the raw
+  // `{ index, fraction, range }` this class actually needs; `cfi` is
+  // recovered via the view's own (public) getCFI(index, range).
+  private setupRelocateListener(): void {
+    const renderer = this.view.renderer;
+    if (!renderer) return;
+    renderer.addEventListener("relocate", (e: CustomEvent) => {
       const detail = e.detail ?? {};
-      const { fraction = 0, index = 0, cfi = "" } = detail;
+      const { fraction = 0, index = 0, range } = detail;
+      if (index !== this.currentSectionIndex) {
+        this.scrollContinuity.noteSectionChange();
+      }
       this.currentSectionIndex = index;
 
       // Section weight progress estimation
@@ -140,19 +161,25 @@ export class FoliateRendition implements DocumentRendition {
       const totalLocations = this.progressEstimator.totalLocations;
 
       const section = this.documentAdapter.getSectionByIndex(index);
-      const chapterLabel = detail.tocItem?.label?.trim() || this.findChapterLabel(section?.href ?? "");
+      const chapterLabel = this.findChapterLabel(section?.href ?? "");
 
       const chapterRemainingWeight = this.progressEstimator.getRemainingSectionWeight(index, fraction);
       const totalRemainingWeight = this.progressEstimator.getRemainingTotalWeight(index, fraction);
 
+      let cfi = "";
+      try {
+        cfi = typeof this.view.getCFI === "function" ? this.view.getCFI(index, range) : "";
+      } catch {
+        cfi = "";
+      }
+
       const pos: ReaderPosition = {
+        bookFraction: overallFraction,
         bookProgress: this.currentProgress,
         cfi: cfi || (section ? section.href : `sec-${index}`),
         chapterLabel,
         chapterProgress: Math.round(fraction * 100),
         chapterRemainingWeight,
-        displayedPage: location,
-        displayedPages: totalLocations,
         href: section?.href ?? "",
         location,
         sectionIndex: index,
@@ -162,7 +189,9 @@ export class FoliateRendition implements DocumentRendition {
 
       this.emit("relocated", pos);
     });
+  }
 
+  private setupViewEventListeners(): void {
     // Content load hook to inject theme styles, forward keys, and wire selection
     this.view.addEventListener("load", (e: CustomEvent) => {
       const { doc, index = 0 } = e.detail ?? {};
@@ -171,6 +200,7 @@ export class FoliateRendition implements DocumentRendition {
         this.setupDocumentKeyboardForwarding(doc);
         this.setupDocumentSelection(doc, index);
         this.setupDocumentImageInteraction(doc);
+        this.scrollContinuity.attachDocument(doc);
       }
     });
 
@@ -264,7 +294,8 @@ export class FoliateRendition implements DocumentRendition {
 
       // Convert theme styles
       const styles = this.flowOptions.themeStyles;
-      let cssText = `html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; }\nimg, svg image, picture img { cursor: zoom-in !important; max-width: 100%; }\n`;
+      const customFontsCss = generateCustomFontFaceCss(getLoadedCustomFonts());
+      let cssText = `${customFontsCss}html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; box-sizing: border-box !important; overflow-wrap: break-word !important; word-break: normal !important; }\nimg, svg image, picture img { cursor: zoom-in !important; max-width: 100% !important; height: auto !important; object-fit: contain !important; }\npre, code { white-space: pre-wrap !important; word-break: break-word !important; }\ntable { max-width: 100% !important; }\n`;
       if (styles) {
         for (const [selector, rules] of Object.entries(styles)) {
           cssText += `${selector} {`;
@@ -421,9 +452,12 @@ export class FoliateRendition implements DocumentRendition {
 
     const flow = this.flowOptions.continuous ? "scrolled" : "paginated";
     renderer.setAttribute("flow", flow);
+    this.scrollContinuity.setEnabled(Boolean(this.flowOptions.continuous));
 
     if (!this.flowOptions.continuous) {
-      renderer.setAttribute("max-column-count", this.flowOptions.spread ? "2" : "1");
+      const isWideDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+      const shouldUseTwoUp = Boolean(this.flowOptions.spread || (isWideDesktop && (this.container?.clientWidth ?? 0) >= 1200));
+      renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");
     }
 
     // Refresh styles on visible documents
@@ -503,6 +537,10 @@ export class FoliateRendition implements DocumentRendition {
     }
   }
 
+  public scrollBy(delta: number): number {
+    return this.scrollContinuity.scrollByPixels(delta);
+  }
+
   public async goToFraction(frac: number): Promise<void> {
     if (this.view && typeof this.view.goToFraction === "function") {
       await this.view.goToFraction(Math.max(0, Math.min(1, frac)));
@@ -522,12 +560,6 @@ export class FoliateRendition implements DocumentRendition {
     }
     const { sectionIndex } = this.progressEstimator.getSectionAndFraction(clamped);
     await this.view.goTo(sectionIndex);
-  }
-
-  public async goToLocation(location: number): Promise<void> {
-    const total = this.progressEstimator.totalLocations;
-    const progress = (Math.max(1, Math.min(location, total)) - 1) / Math.max(1, total - 1);
-    await this.goToProgress(progress);
   }
 
   public deselect(): void {
@@ -595,7 +627,12 @@ export class FoliateRendition implements DocumentRendition {
   }
 
   public resize(): void {
-    // Foliate paginator has internal ResizeObservers; no manual resize needed.
+    const renderer = this.view?.renderer;
+    if (renderer && !this.flowOptions.continuous) {
+      const isWideDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+      const shouldUseTwoUp = Boolean(this.flowOptions.spread || (isWideDesktop && (this.container?.clientWidth ?? 0) >= 1200));
+      renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");
+    }
   }
 
   public async search(query: string): Promise<Array<{ cfi: string; chapterLabel: string; excerpt: string; href: string; id: string }>> {
@@ -722,7 +759,15 @@ export class FoliateRendition implements DocumentRendition {
         }
       }
       if (originalAdd && this.view) {
-        return originalAdd(annotation, remove);
+        try {
+          const res = originalAdd(annotation, remove);
+          if (res && typeof res.catch === "function") {
+            return res.catch(() => {});
+          }
+          return res;
+        } catch {
+          // Foliate can throw or reject if CFI target is not within currently loaded section
+        }
       }
     };
   }
@@ -898,6 +943,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public destroy(): void {
     this.listeners.clear();
+    this.scrollContinuity.detachRenderer();
     this.clearSearch();
     this.clearTTSHighlight();
     if (this.ttsController) {

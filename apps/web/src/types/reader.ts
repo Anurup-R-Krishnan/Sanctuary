@@ -29,13 +29,12 @@ export interface ReaderError {
 }
 
 export interface ReaderPosition {
+    bookFraction: number;
     bookProgress: number;
     cfi: string;
     chapterLabel: string;
     chapterProgress: number;
     chapterRemainingWeight?: number;
-    displayedPage: number;
-    displayedPages: number;
     href: string;
     location: number;
     sectionIndex?: number;

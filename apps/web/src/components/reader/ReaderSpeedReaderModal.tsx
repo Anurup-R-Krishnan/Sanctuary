@@ -14,6 +14,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
 import type { RsvpToken } from "@/utils/rsvpTokenEngine";
 
@@ -34,6 +35,9 @@ export interface ReaderSpeedReaderModalProps {
 
 const WPM_PRESETS = [250, 350, 450, 600];
 
+const SAMPLE_PASSAGE =
+  "Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, 'and what is the use of a book,' thought Alice 'without pictures or conversations?'";
+
 export function ReaderSpeedReaderModal({
   chapterLabel,
   initialWpm = 350,
@@ -45,11 +49,17 @@ export function ReaderSpeedReaderModal({
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [showSpeedCustomizer, setShowSpeedCustomizer] = useState<boolean>(false);
+  const [sampleText, setSampleText] = useState<string>("");
 
-  // Tokenize the provided raw text
+  // Tokenize the provided or sample raw text
+  const activeRawText = useMemo(() => {
+    if (rawText && rawText.trim().length > 0) return rawText;
+    return sampleText;
+  }, [rawText, sampleText]);
+
   const tokens = useMemo<RsvpToken[]>(
-    () => tokenizeRsvpText(rawText),
-    [rawText]
+    () => tokenizeRsvpText(activeRawText),
+    [activeRawText]
   );
 
   // Reset playback position whenever modal opens or text changes
@@ -58,6 +68,9 @@ export function ReaderSpeedReaderModal({
       setCurrentIndex(0);
       setIsPlaying(false);
       setShowSpeedCustomizer(false);
+      if (rawText && rawText.trim().length > 0) {
+        setSampleText("");
+      }
     }
   }, [isOpen, rawText]);
 
@@ -130,6 +143,7 @@ export function ReaderSpeedReaderModal({
   }, [isOpen, onClose, tokens.length]);
 
   const handleTogglePlay = useCallback(() => {
+    if (tokens.length === 0) return;
     if (currentIndex >= tokens.length - 1) {
       setCurrentIndex(0);
       setIsPlaying(true);
@@ -171,16 +185,23 @@ export function ReaderSpeedReaderModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       aria-labelledby="rsvp-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md animate-fadeIn"
       role="dialog"
     >
-      <div className="relative w-full max-w-xl bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text border border-black/10 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col p-5 sm:p-7 gap-5 animate-scaleUp">
+      <button
+        aria-label="Dismiss speed reader modal"
+        className="fixed inset-0 bg-transparent cursor-default border-none"
+        onClick={onClose}
+        tabIndex={-1}
+        type="button"
+      />
+      <div className="relative z-10 w-full max-w-xl bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text border border-light-border dark:border-dark-border rounded-3xl shadow-2xl overflow-hidden flex flex-col p-5 sm:p-7 gap-5 animate-scaleUp">
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/5 pb-3">
+        <div className="flex items-center justify-between gap-3 border-b border-light-border dark:border-dark-border pb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-full bg-light-accent/15 dark:bg-dark-accent/15 flex items-center justify-center shrink-0">
               <Zap className="w-4 h-4 text-light-accent dark:text-dark-accent" />
@@ -200,7 +221,7 @@ export function ReaderSpeedReaderModal({
 
           <button
             aria-label="Close speed reader"
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="p-2 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
             onClick={onClose}
             type="button"
           >
@@ -210,11 +231,18 @@ export function ReaderSpeedReaderModal({
 
         {/* Central RSVP Fixed Focal Display Box */}
         {tokens.length === 0 ? (
-          <div className="h-44 sm:h-52 flex items-center justify-center text-sm text-light-text-muted dark:text-dark-text-muted text-center px-4">
-            No readable text found in this chapter or selection.
+          <div className="h-44 sm:h-52 flex flex-col items-center justify-center gap-3 text-sm text-light-text-muted dark:text-dark-text-muted text-center px-4 bg-light-surface/30 dark:bg-dark-surface/30 rounded-2xl border border-dashed border-light-border dark:border-dark-border">
+            <p>No readable text found in this chapter or selection.</p>
+            <button
+              type="button"
+              onClick={() => setSampleText(SAMPLE_PASSAGE)}
+              className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-light-accent/10 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/25 transition-all active:scale-95"
+            >
+              Load Sample Passage
+            </button>
           </div>
         ) : (
-          <div className="relative flex flex-col items-center justify-center bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 rounded-2xl h-44 sm:h-52 select-none overflow-hidden px-4">
+          <div className="relative flex flex-col items-center justify-center bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border rounded-2xl h-44 sm:h-52 select-none overflow-hidden px-4">
             {/* Top Reticle Notch */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-3.5 bg-light-accent dark:bg-dark-accent rounded-full opacity-60 pointer-events-none" />
 
@@ -257,7 +285,7 @@ export function ReaderSpeedReaderModal({
             </div>
             <input
               aria-label="Speed reading progress"
-              className="w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-light-accent dark:accent-dark-accent"
+              className="w-full h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-lg appearance-none cursor-pointer accent-light-accent dark:accent-dark-accent"
               max={Math.max(0, tokens.length - 1)}
               min={0}
               onChange={(e) => setCurrentIndex(Number(e.target.value))}
@@ -273,7 +301,8 @@ export function ReaderSpeedReaderModal({
           <div className="flex items-center gap-2">
             <button
               aria-label="Restart from beginning"
-              className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+              className="p-2.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text disabled:opacity-30 disabled:pointer-events-none"
+              disabled={tokens.length === 0}
               onClick={handleRestart}
               title="Restart"
               type="button"
@@ -283,7 +312,8 @@ export function ReaderSpeedReaderModal({
 
             <button
               aria-label="Rewind 10 words (Left Arrow)"
-              className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+              className="p-2.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text disabled:opacity-30 disabled:pointer-events-none"
+              disabled={tokens.length === 0}
               onClick={handleRewind}
               title="Rewind 10 words"
               type="button"
@@ -293,7 +323,8 @@ export function ReaderSpeedReaderModal({
 
             <button
               aria-label={isPlaying ? "Pause (Space)" : "Play (Space)"}
-              className="px-5 py-2.5 rounded-full bg-light-accent dark:bg-dark-accent text-white font-medium flex items-center gap-2 shadow-md hover:opacity-90 active:scale-95 transition-all"
+              className="px-5 py-2.5 rounded-full bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold flex items-center gap-2 shadow-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
+              disabled={tokens.length === 0}
               onClick={handleTogglePlay}
               type="button"
             >
@@ -304,7 +335,7 @@ export function ReaderSpeedReaderModal({
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4 fill-white" />
+                  <Play className="w-4 h-4 fill-current" />
                   <span className="text-sm">Play</span>
                 </>
               )}
@@ -312,7 +343,8 @@ export function ReaderSpeedReaderModal({
 
             <button
               aria-label="Forward 10 words (Right Arrow)"
-              className="p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+              className="p-2.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text disabled:opacity-30 disabled:pointer-events-none"
+              disabled={tokens.length === 0}
               onClick={handleForward}
               title="Forward 10 words"
               type="button"
@@ -329,7 +361,7 @@ export function ReaderSpeedReaderModal({
                 className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
                   wpm === preset
                     ? "bg-light-accent/20 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent font-semibold"
-                    : "bg-black/5 dark:bg-white/5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                    : "bg-light-border/40 dark:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
                 }`}
                 key={preset}
                 onClick={() => setWpm(preset)}
@@ -344,7 +376,7 @@ export function ReaderSpeedReaderModal({
               className={`p-1.5 rounded-lg transition-all ${
                 showSpeedCustomizer
                   ? "bg-light-accent/20 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent"
-                  : "bg-black/5 dark:bg-white/5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                  : "bg-light-border/40 dark:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
               }`}
               onClick={() => setShowSpeedCustomizer((prev) => !prev)}
               title="Custom Speed"
@@ -357,13 +389,13 @@ export function ReaderSpeedReaderModal({
 
         {/* Custom Speed Slider Popover/Drawer */}
         {showSpeedCustomizer && (
-          <div className="flex items-center gap-3 p-3 bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 rounded-xl animate-fadeIn">
+          <div className="flex items-center gap-3 p-3 bg-light-surface/50 dark:bg-dark-surface/50 border border-light-border dark:border-dark-border rounded-xl animate-fadeIn">
             <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted shrink-0 w-16">
               {wpm} WPM
             </span>
             <input
               aria-label="Custom words per minute"
-              className="w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-light-accent dark:accent-dark-accent"
+              className="w-full h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-lg appearance-none cursor-pointer accent-light-accent dark:accent-dark-accent"
               max={900}
               min={100}
               onChange={(e) => setWpm(Number(e.target.value))}
@@ -375,13 +407,14 @@ export function ReaderSpeedReaderModal({
         )}
 
         {/* Bottom Keyboard Hint Bar */}
-        <div className="text-[11px] text-light-text-muted dark:text-dark-text-muted text-center pt-1 border-t border-black/5 dark:border-white/5">
-          <span className="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded mr-1">Space</span> toggle play ·{" "}
-          <span className="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded mr-1">←/→</span> ±10 words ·{" "}
-          <span className="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded mr-1">↑/↓</span> ±25 WPM ·{" "}
-          <span className="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded mr-1">Esc</span> close
+        <div className="text-[11px] text-light-text-muted dark:text-dark-text-muted text-center pt-1 border-t border-light-border/60 dark:border-dark-border/60">
+          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">Space</span> toggle play ·{" "}
+          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">←/→</span> ±10 words ·{" "}
+          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">↑/↓</span> ±25 WPM ·{" "}
+          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">Esc</span> close
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

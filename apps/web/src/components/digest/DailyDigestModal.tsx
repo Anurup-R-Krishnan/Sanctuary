@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { IconButton } from "@/components/ui/IconButton";
 import { getAllAnnotations, getAllBooks } from "@/utils/db";
@@ -139,6 +140,9 @@ export function DailyDigestModal({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         onClose();
       } else if (e.key === " " && items.length > 0) {
         e.preventDefault();
@@ -164,7 +168,7 @@ export function DailyDigestModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       aria-label="Daily Highlight Digest"
       aria-modal="true"
@@ -179,19 +183,19 @@ export function DailyDigestModal({
       tabIndex={-1}
     >
       <div
-        className="relative flex flex-col w-full max-w-xl max-h-[90vh] bg-surface-primary dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+        className="relative flex flex-col w-full max-w-xl max-h-[90vh] bg-light-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-surface-secondary/40 dark:bg-zinc-800/40">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-secondary/60 dark:bg-dark-secondary/60">
           <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-light-accent/10 text-light-accent dark:text-dark-accent">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-base font-semibold text-light-text dark:text-dark-text">
                 Daily Highlight Digest
               </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
                 Spaced retrieval reflection for {todayStr}
               </p>
             </div>
@@ -199,7 +203,7 @@ export function DailyDigestModal({
 
           <div className="flex items-center space-x-2">
             {summary.totalCount > 0 && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-light-surface dark:bg-dark-surface text-light-text-muted dark:text-dark-text-muted border border-light-border/60 dark:border-dark-border/60">
                 {summary.reviewedCount} of {summary.totalCount} reviewed
               </span>
             )}
@@ -215,9 +219,9 @@ export function DailyDigestModal({
 
         {/* Progress Bar */}
         {summary.totalCount > 0 && (
-          <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1">
+          <div className="w-full bg-light-border/40 dark:bg-dark-border/40 h-1">
             <div
-              className="bg-amber-500 h-1 transition-all duration-300"
+              className="bg-light-accent dark:bg-dark-accent h-1 transition-all duration-300"
               style={{ width: `${summary.completionPercentage}%` }}
             />
           </div>
@@ -227,21 +231,21 @@ export function DailyDigestModal({
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-              <RotateCw className="w-6 h-6 animate-spin text-zinc-400" />
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <RotateCw className="w-6 h-6 animate-spin text-light-text-muted" />
+              <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
                 Curating today&apos;s retrieval deck...
               </p>
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center max-w-sm mx-auto space-y-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 text-amber-500">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-light-accent/10 text-light-accent dark:text-dark-accent">
                 <BookOpen className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100">
+                <h3 className="text-base font-medium text-light-text dark:text-dark-text">
                   No Highlights in Sanctuary Yet
                 </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
                   As you read books, select meaningful passages to highlight or take marginalia notes.
                   Sanctuary will automatically schedule 5 quotes every day for cognitive spaced retrieval.
                 </p>
@@ -253,16 +257,16 @@ export function DailyDigestModal({
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100">
+                <h3 className="text-base font-medium text-light-text dark:text-dark-text">
                   Daily Retrieval Complete!
                 </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
                   You reviewed all {summary.totalCount} highlights scheduled for today.
                   Spaced intervals help encode knowledge into long-term recall.
                 </p>
               </div>
               <button
-                className="px-4 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition-colors"
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-light-surface hover:bg-light-surface/80 dark:bg-dark-surface dark:hover:bg-dark-surface/80 text-light-text dark:text-dark-text border border-light-border dark:border-dark-border transition-colors"
                 onClick={() => {
                   setCurrentIndex(0);
                   setIsFlipped(false);
@@ -275,12 +279,12 @@ export function DailyDigestModal({
           ) : (
             <div className="flex flex-col space-y-4">
               {/* Card Container */}
-              <div className="relative min-h-[260px] p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 shadow-sm flex flex-col justify-between">
+              <div className="relative min-h-[260px] p-6 rounded-xl border border-light-border dark:border-dark-border bg-light-card dark:bg-dark-card shadow-sm flex flex-col justify-between">
                 {!isFlipped ? (
                   /* Card Front: Quote & Book Metadata */
                   <button
                     aria-label="Reveal reflection notes and ratings"
-                    className="flex flex-col flex-1 justify-between space-y-4 text-left w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-lg"
+                    className="flex flex-col flex-1 justify-between space-y-4 text-left w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent rounded-lg"
                     onClick={() => setIsFlipped(true)}
                     type="button"
                   >
@@ -292,24 +296,24 @@ export function DailyDigestModal({
                             backgroundColor: currentItem.annotation.color || "#facc15",
                           }}
                         />
-                        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 tracking-wide uppercase">
+                        <span className="text-xs font-semibold text-light-text dark:text-dark-text tracking-wide uppercase">
                           {currentItem.bookTitle}
                         </span>
                       </div>
                       {currentItem.annotation.chapterLabel && (
-                        <span className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate max-w-[140px]">
+                        <span className="text-[11px] text-light-text-muted dark:text-dark-text-muted truncate max-w-[140px]">
                           {currentItem.annotation.chapterLabel}
                         </span>
                       )}
                     </div>
 
-                    <blockquote className="text-sm md:text-base font-serif italic text-zinc-800 dark:text-zinc-200 leading-relaxed pl-3 border-l-2 border-amber-500/40 my-auto">
+                    <blockquote className="text-sm md:text-base font-serif italic text-light-text dark:text-dark-text leading-relaxed pl-3 border-l-2 border-light-accent/50 dark:border-dark-accent/50 my-auto">
                       &ldquo;{currentItem.annotation.text}&rdquo;
                     </blockquote>
 
-                    <div className="flex items-center justify-between text-xs text-zinc-400 dark:text-zinc-500 pt-2 w-full">
+                    <div className="flex items-center justify-between text-xs text-light-text-muted dark:text-dark-text-muted pt-2 w-full">
                       <span>— {currentItem.bookAuthor}</span>
-                      <span className="flex items-center space-x-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                      <span className="flex items-center space-x-1 text-[11px] text-light-accent dark:text-dark-accent font-medium">
                         <RotateCw className="w-3 h-3" />
                         <span>Tap or Space to reveal</span>
                       </span>
@@ -318,9 +322,9 @@ export function DailyDigestModal({
                 ) : (
                   /* Card Back: Reflection & Rating */
                   <div className="flex flex-col flex-1 justify-between space-y-4 animate-fade-in">
-                    <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                    <div className="flex items-center justify-between border-b border-light-border/60 dark:border-dark-border/60 pb-2">
                       <button
-                        className="flex items-center space-x-1 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
+                        className="flex items-center space-x-1 text-xs font-medium text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
                         onClick={() => setIsFlipped(false)}
                         type="button"
                       >
@@ -328,7 +332,7 @@ export function DailyDigestModal({
                         <span>Flip back to quote</span>
                       </button>
                       {currentItem.reviewRecord && (
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted">
                           Box {currentItem.reviewRecord.box} (Reviewed {currentItem.reviewRecord.reviewCount}x)
                         </span>
                       )}
@@ -337,17 +341,17 @@ export function DailyDigestModal({
                     {/* Marginalia Note */}
                     <div className="flex-1 my-auto">
                       {currentItem.annotation.note ? (
-                        <div className="p-3.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 text-amber-900 dark:text-amber-200">
+                        <div className="p-3.5 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 border border-light-accent/30 dark:border-dark-accent/30 text-light-accent dark:text-dark-accent">
                           <div className="flex items-center space-x-1.5 text-xs font-semibold mb-1">
                             <MessageSquare className="w-3.5 h-3.5" />
                             <span>Your Marginalia Note:</span>
                           </div>
-                          <p className="text-xs leading-relaxed">
+                          <p className="text-xs leading-relaxed text-light-text dark:text-dark-text">
                             {currentItem.annotation.note}
                           </p>
                         </div>
                       ) : (
-                        <div className="p-3.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs text-center italic">
+                        <div className="p-3.5 rounded-lg bg-light-surface/50 dark:bg-dark-surface/50 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted text-xs text-center italic">
                           No note attached. How well do you recall the context and core insight of this passage?
                         </div>
                       )}
@@ -355,12 +359,12 @@ export function DailyDigestModal({
 
                     {/* Spaced Repetition Buttons */}
                     <div>
-                      <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-2 text-center">
+                      <p className="text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted mb-2 text-center">
                         Rate retrieval ease:
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         <button
-                          className="flex flex-col items-center justify-center p-2 rounded-lg border border-red-200/50 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300 transition-colors"
+                          className="flex flex-col items-center justify-center p-2 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/15 text-red-600 dark:text-red-400 transition-colors"
                           onClick={() => handleRate("hard")}
                           type="button"
                         >
@@ -368,7 +372,7 @@ export function DailyDigestModal({
                           <span className="text-[10px] opacity-75">Tomorrow</span>
                         </button>
                         <button
-                          className="flex flex-col items-center justify-center p-2 rounded-lg border border-blue-200/50 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 transition-colors"
+                          className="flex flex-col items-center justify-center p-2 rounded-lg border border-ink-500/30 bg-ink-500/10 hover:bg-ink-500/15 text-ink-600 dark:text-ink-400 transition-colors"
                           onClick={() => handleRate("good")}
                           type="button"
                         >
@@ -376,7 +380,7 @@ export function DailyDigestModal({
                           <span className="text-[10px] opacity-75">3-7 days</span>
                         </button>
                         <button
-                          className="flex flex-col items-center justify-center p-2 rounded-lg border border-emerald-200/50 dark:border-emerald-900/30 bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 transition-colors"
+                          className="flex flex-col items-center justify-center p-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 transition-colors"
                           onClick={() => handleRate("easy")}
                           type="button"
                         >
@@ -405,7 +409,7 @@ export function DailyDigestModal({
                     size="sm"
                     variant="ghost"
                   />
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 px-1">
+                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted px-1">
                     {currentIndex + 1} / {items.length}
                   </span>
                   <IconButton
@@ -425,17 +429,17 @@ export function DailyDigestModal({
 
                 <div className="flex items-center space-x-2">
                   <button
-                    className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors"
+                    className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-light-border dark:border-dark-border hover:bg-light-surface dark:hover:bg-dark-surface text-xs font-medium text-light-text dark:text-dark-text transition-colors"
                     onClick={() => setQuoteCardOpen(true)}
                     title="Generate high-DPI quote card"
                     type="button"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <Sparkles className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
                     <span className="hidden sm:inline">Quote Card</span>
                   </button>
 
                   <button
-                    className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors"
+                    className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-light-border dark:border-dark-border hover:bg-light-surface dark:hover:bg-dark-surface text-xs font-medium text-light-text dark:text-dark-text transition-colors"
                     onClick={handleCopy}
                     title="Copy excerpt with attribution"
                     type="button"
@@ -447,7 +451,7 @@ export function DailyDigestModal({
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                        <Copy className="w-3.5 h-3.5 text-light-text-muted dark:text-dark-text-muted" />
                         <span className="hidden sm:inline">Copy</span>
                       </>
                     )}
@@ -455,7 +459,7 @@ export function DailyDigestModal({
 
                   {onOpenBook && (
                     <button
-                      className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-medium text-white dark:text-zinc-900 transition-colors"
+                      className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-light-accent dark:bg-dark-accent hover:opacity-90 text-xs font-semibold text-white dark:text-black transition-opacity shadow-sm"
                       onClick={() => {
                         onClose();
                         onOpenBook(currentItem.bookId, currentItem.annotation.href);
@@ -487,6 +491,7 @@ export function DailyDigestModal({
           />
         </Suspense>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -36,9 +36,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 const RARITY_STYLES: Record<string, { badge: string; border: string; glow: string }> = {
   common: {
-    badge: "text-slate-600 dark:text-slate-400 bg-slate-500/10 border-slate-500/20",
-    border: "border-slate-500/20",
-    glow: "from-slate-500/10 to-slate-400/5",
+    badge: "text-ink-600 dark:text-ink-400 bg-ink-500/10 border-ink-500/20",
+    border: "border-ink-500/20",
+    glow: "from-ink-500/10 to-ink-400/5",
   },
   epic: {
     badge: "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20",
@@ -71,8 +71,8 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
     <div
       className={`relative p-4 rounded-2xl border text-center transition-all flex flex-col justify-between overflow-hidden ${
         badge.unlocked
-          ? `bg-black/[0.02] dark:bg-white/[0.02] ${rarityStyle.border} shadow-sm`
-          : "opacity-45 bg-black/[0.01] dark:bg-white/[0.01] border-black/[0.05] dark:border-white/[0.05]"
+          ? `bg-light-surface dark:bg-dark-surface ${rarityStyle.border} shadow-xs`
+          : "opacity-45 bg-light-surface/40 dark:bg-dark-surface/40 border-light-border dark:border-dark-border"
       }`}
     >
       {/* Top Meta: Rarity Tag */}
@@ -96,7 +96,7 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
           className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-2.5 transition-transform ${
             badge.unlocked
               ? `bg-gradient-to-br ${rarityStyle.glow} shadow-inner`
-              : "bg-black/[0.04] dark:bg-white/[0.04]"
+              : "bg-light-surface/60 dark:bg-dark-surface/60"
           }`}
         >
           <IconComponent
@@ -118,7 +118,7 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
       <div>
         {badge.target && !badge.unlocked && (
           <div className="mt-2">
-            <div className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
               <div
                 className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}

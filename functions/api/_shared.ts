@@ -26,7 +26,7 @@ export interface BookRow {
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Target-Authorization, X-Target-Accept",
 } as const;
 
 export const SECURITY_HEADERS = {

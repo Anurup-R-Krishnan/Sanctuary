@@ -37,6 +37,7 @@ apps/desktop/src-tauri/gen
 
 playwright-report/
 test-results/
+.playwright-cli/
 *.epub
 !apps/web/public/mobydick.epub
 .codegraph/

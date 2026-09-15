@@ -1,5 +1,6 @@
 import { ExternalLink, X } from "lucide-react";
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 import type { ResolvedFootnote } from "@/utils/footnoteResolver";
 
@@ -32,6 +33,9 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         onClose();
       }
     };
@@ -54,7 +58,7 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
     };
   }, [footnote, onClose]);
 
-  if (!footnote) return null;
+  if (!footnote || typeof document === "undefined") return null;
 
   // Calculate positioning relative to viewport
   const popoverWidth = typeof window !== "undefined" ? Math.min(340, window.innerWidth - 32) : 340;
@@ -72,7 +76,7 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
     }
   }
 
-  return (
+  return createPortal(
     <div
       aria-label={footnote.title}
       className="fixed z-50 animate-in fade-in zoom-in-95 duration-150"
@@ -84,16 +88,16 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
         width: `${popoverWidth}px`,
       }}
     >
-      <div className="bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-xl border border-black/10 dark:border-white/10 overflow-hidden flex flex-col backdrop-blur-md">
+      <div className="bg-light-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden flex flex-col backdrop-blur-md">
         {/* Header */}
-        <div className="px-4 py-2.5 bg-black/[0.03] dark:bg-white/[0.03] border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+        <div className="px-4 py-2.5 bg-light-surface/50 dark:bg-dark-surface/50 border-b border-light-border dark:border-dark-border flex items-center justify-between">
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent tracking-wide">
             {footnote.title}
           </span>
           <IconButton
             className="w-7 h-7 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text !rounded-full"
             icon={<X className="w-3.5 h-3.5" />}
-            label="Close footnote preview"
+            label="Close footnote preview (Esc)"
             onClick={onClose}
             size="sm"
             variant="ghost"
@@ -108,9 +112,9 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
 
         {/* Action Footer */}
         {onNavigate && footnote.href && (
-          <div className="px-4 py-2 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 flex justify-end">
+          <div className="px-4 py-2 bg-light-surface/40 dark:bg-dark-surface/40 border-t border-light-border dark:border-dark-border flex justify-end">
             <button
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-light-accent dark:text-dark-accent hover:underline active:opacity-80"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline active:opacity-80 transition-colors"
               onClick={() => {
                 onClose();
                 onNavigate(footnote.href);
@@ -123,6 +127,7 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -66,6 +66,27 @@ describe('readingTimerEngine', () => {
       expect(result.todayMinutesTotal).toBe(0);
       expect(result.dailyGoalMinutes).toBe(1);
     });
+
+    it('handles standard 25m Pomodoro target accurately', () => {
+      // 12.5 minutes (750s) read out of 25 min Pomodoro
+      const result = calculateSessionProgress(750, 25, 0, 50);
+
+      expect(result.sessionBudgetMinutes).toBe(25);
+      expect(result.remainingSeconds).toBe(750);
+      expect(result.sessionPercent).toBe(50);
+      expect(result.isSessionGoalMet).toBe(false);
+    });
+
+    it('handles extended 90m deep focus target accurately', () => {
+      // 90 minutes (5400s) read out of 90 min budget
+      const result = calculateSessionProgress(5400, 90, 10, 60);
+
+      expect(result.sessionBudgetMinutes).toBe(90);
+      expect(result.remainingSeconds).toBe(0);
+      expect(result.sessionPercent).toBe(100);
+      expect(result.isSessionGoalMet).toBe(true);
+      expect(result.isDailyGoalMet).toBe(true);
+    });
   });
 
   describe('formatDurationCompact', () => {

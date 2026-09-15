@@ -20,12 +20,15 @@ interface UseReaderShortcutsOptions {
   onClose: () => void;
   onToggleAutoScroll?: () => void;
   onToggleReadability?: () => void;
+  onToggleShortcutsHelp?: () => void;
   onToggleXRay?: () => void;
   onToggleZenMode?: () => void;
   prevPage: () => void;
+  setShowAnnotations?: (value: boolean) => void;
   setShowControls: (value: boolean) => void;
   setShowSearch: (value: boolean) => void;
   setShowSettings: (value: boolean) => void;
+  showAnnotations?: boolean;
   showControls: boolean;
   showSearch: boolean;
   showSettings: boolean;
@@ -62,11 +65,14 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         onClose,
         onToggleAutoScroll,
         onToggleReadability,
+        onToggleShortcutsHelp,
         onToggleXRay,
         onToggleZenMode,
+        setShowAnnotations,
         setShowControls,
         setShowSearch,
         setShowSettings,
+        showAnnotations,
         showControls,
         showSearch,
         showSettings,
@@ -169,6 +175,13 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
             return;
           }
           break;
+        case "?":
+          if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+            event.preventDefault();
+            if (!event.repeat) onToggleShortcutsHelp?.();
+            return;
+          }
+          break;
         case "Escape":
           if (hasSelection) {
               clearSelection();
@@ -178,12 +191,25 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
               setShowSearch(false);
               return;
           }
+          if (showAnnotations) {
+            setShowAnnotations?.(false);
+            return;
+          }
           if (showSettings) {
             setShowSettings(false);
             return;
           }
           if (showControls) {
             setShowControls(false);
+            return;
+          }
+          // Guard: if any modal, popover, or controller overlay is active, do not close reader
+          if (
+            typeof document !== "undefined" &&
+            document.querySelector(
+              '[role="dialog"], [role="region"][aria-label="Text-to-speech controls"], [role="region"][aria-label="Auto-scroll controls"], [role="region"][aria-label="Next book in series banner"]'
+            )
+          ) {
             return;
           }
           onClose();

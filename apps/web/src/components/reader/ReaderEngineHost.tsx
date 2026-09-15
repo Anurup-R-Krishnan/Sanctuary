@@ -24,11 +24,10 @@ export interface ReaderEngineRef {
     clearSelection: () => void;
     display: (target: string) => void;
     epubBook: EpubBookHandle | null;
-    goToPage: (page: number) => void;
     nextPage: () => void;
     prevPage: () => void;
     rendition: EpubRendition | null;
-    scrollBy?: (delta: number) => void;
+    scrollBy: (delta: number) => number;
 }
 
 interface ReaderEngineHostProps {
@@ -59,10 +58,10 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
         closeLightboxImage,
         display,
         error,
-        goToPage,
         nextPage,
         position,
         prevPage,
+        scrollBy,
         selection,
         status,
         tocItems,
@@ -70,34 +69,15 @@ export const ReaderEngineHost = memo(forwardRef<ReaderEngineRef, ReaderEngineHos
         _rendition,
     } = useReaderEngine({ book, containerRef, onUpdateProgress });
 
-    const scrollBy = React.useCallback((delta: number) => {
-        if (containerRef.current && containerRef.current.scrollHeight > containerRef.current.clientHeight) {
-            containerRef.current.scrollBy({ top: delta, behavior: "instant" });
-            return;
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rend = _rendition as any;
-        const renderer = rend?.view?.renderer || rend?.renditionInstance?.view?.renderer;
-        if (renderer && typeof renderer.scrollBy === "function") {
-            try {
-                renderer.scrollBy(0, delta);
-                return;
-            } catch {
-                /* benign */
-            }
-        }
-    }, [_rendition]);
-
     useImperativeHandle(ref, () => ({
         clearSelection,
         display,
         epubBook: _epubBook,
-        goToPage,
         nextPage,
         prevPage,
         rendition: _rendition,
         scrollBy,
-    }), [nextPage, prevPage, display, goToPage, clearSelection, _rendition, _epubBook, scrollBy]);
+    }), [nextPage, prevPage, display, clearSelection, _rendition, _epubBook, scrollBy]);
 
     // Sync engine state up to the UI shell.
     React.useEffect(() => {

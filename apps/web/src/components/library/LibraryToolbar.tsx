@@ -72,20 +72,20 @@ export function LibraryToolbar({
         </p>
       </div>
       <div className="flex items-center gap-1.5">
-        <div className="flex items-center p-0.5 rounded-lg border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface">
+        <div className="flex items-center p-0.5 rounded-lg border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface">
           <IconButton
             onClick={() => setViewMode("grid")}
             label="Grid view"
             icon={<Grid3X3 className="w-4 h-4" />}
             variant="ghost"
-            className={viewMode === "grid" ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text" : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"}
+            className={viewMode === "grid" ? "bg-light-primary dark:bg-dark-primary shadow-xs text-light-text dark:text-dark-text font-medium" : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"}
           />
           <IconButton
             onClick={() => setViewMode("list")}
             label="List view"
             icon={<List className="w-4 h-4" />}
             variant="ghost"
-            className={viewMode === "list" ? "bg-black/[0.05] dark:bg-white/[0.08] text-light-text dark:text-dark-text" : "text-light-text-muted/50 dark:text-dark-text-muted/50 hover:text-light-text dark:hover:text-dark-text"}
+            className={viewMode === "list" ? "bg-light-primary dark:bg-dark-primary shadow-xs text-light-text dark:text-dark-text font-medium" : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"}
           />
         </div>
 
@@ -101,11 +101,11 @@ export function LibraryToolbar({
             aria-haspopup="menu"
             aria-expanded={showSortMenu}
             aria-controls={showSortMenu ? sortMenuId : undefined}
-            className="gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted"
+            className="inline-flex items-center gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted whitespace-nowrap"
           >
-            <SortAsc className="w-4 h-4" />
-            <span className="hidden sm:inline">{sortLabel}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
+            <SortAsc className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">{sortLabel}</span>
+            <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${showSortMenu ? "rotate-180" : ""}`} />
           </Button>
           <DropdownMenu
             id={sortMenuId}
@@ -130,11 +130,11 @@ export function LibraryToolbar({
             aria-haspopup="menu"
             aria-expanded={showFilterMenu}
             aria-controls={showFilterMenu ? filterMenuId : undefined}
-            className="gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted"
+            className="inline-flex items-center gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted whitespace-nowrap"
           >
-            <Filter className="w-4 h-4" />
-            <span className="hidden sm:inline">{filterLabel}</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
+            <Filter className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">{filterLabel}</span>
+            <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${showFilterMenu ? "rotate-180" : ""}`} />
           </Button>
           <DropdownMenu
             id={filterMenuId}
@@ -150,24 +150,24 @@ export function LibraryToolbar({
         {onOpenCatalog && (
           <Button
             aria-label="Open OPDS Catalogs"
-            className="gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted"
+            className="inline-flex items-center gap-1.5 !px-3 !py-2 !rounded-lg text-light-text-muted dark:text-dark-text-muted whitespace-nowrap"
             onClick={onOpenCatalog}
             variant="secondary"
           >
-            <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline">Catalogs</span>
+            <Globe className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">Catalogs</span>
           </Button>
         )}
 
         {onOpenDailyDigest && (
           <Button
             aria-label="Open Daily Highlight Digest"
-            className="gap-1.5 !px-3 !py-2 !rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20"
+            className="inline-flex items-center gap-1.5 !px-3 !py-2 !rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 whitespace-nowrap"
             onClick={onOpenDailyDigest}
             variant="secondary"
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span className="hidden sm:inline">Daily Digest</span>
+            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">Daily Digest</span>
           </Button>
         )}
       </div>

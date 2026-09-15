@@ -26,7 +26,7 @@ export interface ReadingActivityHeatmapProps {
 }
 
 const CELL_BG_CLASSES = [
-  'bg-black/[0.04] dark:bg-white/[0.06] border-black/[0.02] dark:border-white/[0.04]',
+  'bg-light-border/40 dark:bg-dark-border/40 border-light-border/30 dark:border-dark-border/30',
   'bg-emerald-500/30 dark:bg-emerald-500/35 border-emerald-500/20',
   'bg-emerald-500/55 dark:bg-emerald-500/55 border-emerald-500/30',
   'bg-emerald-600/80 dark:bg-emerald-500/75 border-emerald-600/40',
@@ -61,10 +61,27 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
+  const [hoveredCell, setHoveredCell] = useState<{ cell: ActivityDayCell; x: number; y: number } | null>(null);
+
+  const handleCellHover = (cell: ActivityDayCell, e: React.MouseEvent | React.FocusEvent) => {
+    setActiveCell(cell);
+    const target = e.currentTarget as HTMLElement;
+    const container = target.closest('.heatmap-grid-scroll');
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      setHoveredCell({
+        cell,
+        x: targetRect.left - containerRect.left + targetRect.width / 2,
+        y: targetRect.top - containerRect.top,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Heatmap Card */}
-      <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] space-y-4">
+      <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-4">
         {/* Card Header & Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -79,11 +96,11 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center bg-black/[0.04] dark:bg-white/[0.06] p-0.5 rounded-lg text-xs font-medium self-start sm:self-auto">
+          <div className="flex items-center bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border p-0.5 rounded-lg text-xs font-medium self-start sm:self-auto">
             <button
               className={`px-2.5 py-1 rounded-md transition-all ${
                 selectedHorizon === 'recent'
-                  ? 'bg-white dark:bg-stone-800 shadow-xs text-light-text dark:text-dark-text font-semibold'
+                  ? 'bg-white dark:bg-dark-surface shadow-xs text-light-text dark:text-dark-text font-semibold'
                   : 'text-light-text-muted dark:text-dark-text-muted hover:text-light-text'
               }`}
               onClick={() => setSelectedHorizon('recent')}
@@ -94,7 +111,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             <button
               className={`px-2.5 py-1 rounded-md transition-all ${
                 selectedHorizon === 'annual'
-                  ? 'bg-white dark:bg-stone-800 shadow-xs text-light-text dark:text-dark-text font-semibold'
+                  ? 'bg-white dark:bg-dark-surface shadow-xs text-light-text dark:text-dark-text font-semibold'
                   : 'text-light-text-muted dark:text-dark-text-muted hover:text-light-text'
               }`}
               onClick={() => setSelectedHorizon('annual')}
@@ -106,17 +123,55 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
         </div>
 
         {/* Heatmap Grid Container */}
-        <div className="overflow-x-auto pb-2 -mx-2 px-2">
-          <div className="inline-block min-w-full">
+        <div className="heatmap-grid-scroll overflow-x-auto pb-3 -mx-2 px-2 relative">
+          <div className="inline-block min-w-full relative">
+            {/* Floating Rich Tooltip */}
+            {hoveredCell && (
+              <div
+                className="absolute z-30 px-3 py-1.5 rounded-lg bg-stone-900/95 text-stone-100 dark:bg-stone-100/95 dark:text-stone-900 shadow-xl pointer-events-none text-xs font-sans transition-opacity duration-150 -translate-x-1/2 -translate-y-full mb-2 whitespace-nowrap border border-white/10 dark:border-black/10 backdrop-blur-xs"
+                role="tooltip"
+                style={{
+                  left: `${Math.max(70, Math.min(hoveredCell.x, (weeksCount * 16) + 20))}px`,
+                  top: `${hoveredCell.y - 6}px`,
+                }}
+              >
+                <div className="font-semibold text-[11px] leading-tight">
+                  {hoveredCell.cell.formattedDate}
+                </div>
+                <div className="text-[10px] text-stone-300 dark:text-stone-600 mt-0.5 flex items-center gap-1.5">
+                  {hoveredCell.cell.minutes > 0 ? (
+                    <>
+                      <span className="font-bold text-emerald-400 dark:text-emerald-600">
+                        {hoveredCell.cell.minutes} min
+                      </span>
+                      <span>·</span>
+                      <span>{hoveredCell.cell.pages} pages</span>
+                      {hoveredCell.cell.sessionCount > 1 && (
+                        <span>({hoveredCell.cell.sessionCount} sessions)</span>
+                      )}
+                    </>
+                  ) : (
+                    <span>No reading recorded</span>
+                  )}
+                </div>
+                {hoveredCell.cell.minutes >= dailyTargetMinutes && (
+                  <div className="text-[9px] text-emerald-400 dark:text-emerald-700 font-semibold mt-0.5">
+                    ✓ Daily goal reached
+                  </div>
+                )}
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-stone-900/95 dark:border-t-stone-100/95" />
+              </div>
+            )}
+
             {/* Month Labels Row */}
             <div className="flex text-[10px] text-light-text-muted dark:text-dark-text-muted mb-1.5 h-4 relative">
-              <div className="w-6 shrink-0" /> {/* Day labels column spacer */}
+              <div className="w-[28px] shrink-0" /> {/* Day labels + gap spacer: 20px + 8px */}
               <div className="flex gap-1 flex-1 relative">
                 {gridData.monthLabels.map((m, idx) => (
                   <span
-                    className="absolute font-medium text-stone-500 dark:text-stone-400"
+                    className="absolute font-medium text-stone-500 dark:text-stone-400 select-none"
                     key={idx}
-                    style={{ left: `${m.weekIndex * 15}px` }}
+                    style={{ left: `${m.weekIndex * 16}px` }}
                   >
                     {m.label}
                   </span>
@@ -126,8 +181,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
 
             {/* Grid with Day Labels */}
             <div className="flex gap-2">
-              {/* Day of Week Labels (Mon, Wed, Fri) */}
-              <div className="flex flex-col justify-between text-[9px] text-light-text-muted dark:text-dark-text-muted w-5 py-0.5 select-none shrink-0 leading-none h-[92px]">
+              {/* Day of Week Labels (Mon, Wed, Fri, Sun) */}
+              <div className="flex flex-col justify-between text-[9px] text-light-text-muted dark:text-dark-text-muted w-5 py-0.5 select-none shrink-0 leading-none h-[108px]">
                 <span>Mon</span>
                 <span>Wed</span>
                 <span>Fri</span>
@@ -145,15 +200,17 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
                       return (
                         <button
                           aria-label={`${cell.formattedDate}: ${cell.minutes} minutes`}
-                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-xs transition-all border ${intensityClass} ${
+                          className={`w-3 h-3 rounded-xs transition-all border ${intensityClass} ${
                             cell.isToday
                               ? 'ring-1 ring-emerald-500 ring-offset-1 dark:ring-offset-stone-900'
                               : ''
-                          } ${isHovered ? 'scale-125 z-10 shadow-sm ring-1 ring-black/30 dark:ring-white/40' : ''}`}
+                          } ${isHovered ? 'scale-125 z-10 shadow-sm ring-1 ring-black/40 dark:ring-white/50' : ''}`}
                           key={cell.dateKey}
-                          onClick={() => setActiveCell(cell)}
-                          onFocus={() => setActiveCell(cell)}
-                          onMouseEnter={() => setActiveCell(cell)}
+                          onBlur={() => setHoveredCell(null)}
+                          onClick={(e) => handleCellHover(cell, e)}
+                          onFocus={(e) => handleCellHover(cell, e)}
+                          onMouseEnter={(e) => handleCellHover(cell, e)}
+                          onMouseLeave={() => setHoveredCell(null)}
                           type="button"
                         />
                       );
@@ -166,7 +223,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
         </div>
 
         {/* Legend & Active Cell Details Footer */}
-        <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.04] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+        <div className="pt-2 border-t border-light-border/60 dark:border-dark-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
           <div className="text-light-text dark:text-dark-text font-medium min-h-[1.25rem] flex items-center gap-1.5">
             {activeCell ? (
               <>
@@ -201,7 +258,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
 
       {/* Reading Velocity Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
           <div className="p-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
             <Clock className="w-4 h-4" />
           </div>
@@ -215,7 +272,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
           <div className="p-2 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
             <TrendingUp className="w-4 h-4" />
           </div>
@@ -229,7 +286,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
           <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
             <Timer className="w-4 h-4" />
           </div>
@@ -243,7 +300,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
           <div className="p-2 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
             <Flame className="w-4 h-4" />
           </div>
@@ -259,7 +316,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
       </div>
 
       {/* Circadian Time-of-Day Rhythm Breakdown */}
-      <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] space-y-4">
+      <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-xs font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
@@ -272,7 +329,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
         </div>
 
         {/* Stacked Percentage Bar */}
-        <div className="h-3 w-full rounded-full overflow-hidden flex bg-black/[0.04] dark:bg-white/[0.06]">
+        <div className="h-3 w-full rounded-full overflow-hidden flex bg-light-border/60 dark:bg-dark-border/60">
           {circadian.morningPercent > 0 && (
             <div
               className="bg-amber-400 dark:bg-amber-500 transition-all"

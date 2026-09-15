@@ -11,8 +11,8 @@ interface LibraryEmptyStateProps {
 
 export function LibraryEmptyState({ onAddBook, onOpenCatalog }: LibraryEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fadeInUp rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface">
-      <div className="mb-8 flex items-center justify-center w-20 h-20 rounded-2xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08]">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 animate-fadeInUp rounded-2xl border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface">
+      <div className="mb-8 flex items-center justify-center w-20 h-20 rounded-2xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border">
         <BookOpen className="w-9 h-9 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />
       </div>
       <h2 className="text-3xl font-sans font-bold text-light-text dark:text-dark-text mb-3">Your Library Awaits</h2>

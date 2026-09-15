@@ -1,17 +1,18 @@
 import { BookOpen } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { FoliateTestHarness } from "@/components/dev/FoliateTestHarness";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
+import { safeStorageGet } from "@/reader/persistence/storage";
 import { libraryIndexManager } from "@/services/librarySearchIndex";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
 import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
-import { useReaderProgressStore } from "@/store/useReaderProgressStore";
+import { ACTIVE_BOOK_STORAGE_KEY, useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { View } from "@/types";
@@ -62,8 +63,16 @@ function App() {
   // Global UI State
   const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
   const books = useBookStore((state) => state.books);
+  const isBookStoreLoading = useBookStore((state) => state.isLoading);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const selectedBookId = useReaderProgressStore((state) => state.active?.bookId ?? null);
+  const hasRestoredActiveBookRef = useRef(false);
+  // Only true when there's actually a remembered book to restore, so users
+  // with no prior reading session (or who closed the reader deliberately)
+  // never wait on this at all.
+  const [isRestoringSession, setIsRestoringSession] = useState(
+    () => !!safeStorageGet(ACTIVE_BOOK_STORAGE_KEY)
+  );
 
   // Custom Hooks (Encapsulated Logic)
   useAppTheme();
@@ -116,6 +125,27 @@ function App() {
     return () => libraryService.cleanupAllObjectUrls();
   }, [api, isPersistent, mode]);
 
+  // Resume the book that was open before a reload — the reader itself has no
+  // URL/route of its own, so without this a refresh always lands back on the
+  // library even mid-chapter. Runs once, after the library's initial load
+  // settles, so it can confirm the remembered book still exists. Held behind
+  // isRestoringSession so the library never gets a chance to render (and
+  // flash) before the reader does.
+  useEffect(() => {
+    if (hasRestoredActiveBookRef.current || isBookStoreLoading) return;
+    hasRestoredActiveBookRef.current = true;
+    const lastActiveBookId = safeStorageGet(ACTIVE_BOOK_STORAGE_KEY);
+    if (lastActiveBookId) {
+      const book = books.find((b) => b.id === lastActiveBookId);
+      if (book) {
+        startSession(book);
+      } else {
+        useReaderProgressStore.getState().clearActiveBook();
+      }
+    }
+    setIsRestoringSession(false);
+  }, [books, isBookStoreLoading, startSession]);
+
   // Handlers
   const handleShowLogin = useCallback(() => {
     setExplicitGuest(false);
@@ -155,6 +185,22 @@ function App() {
     return <AuthScreen onContinueAsGuest={() => setExplicitGuest(true)} />;
   }
 
+  if (isRestoringSession) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
+        <div className="relative mb-6">
+          <div className="relative w-20 h-20 rounded-3xl bg-light-accent dark:bg-dark-accent flex items-center justify-center shadow-2xl">
+            <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
+          </div>
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
+          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Returning to your book...</p>
+        </div>
+      </div>
+    );
+  }
+
   const isReader = view === View.READER;
 
 
@@ -186,6 +232,7 @@ function App() {
             {v === View.LIBRARY && (
               <LibraryGrid
                 addBook={handleAddBook}
+                api={api}
                 deleteBook={handleDeleteBook}
                 onBatchDelete={handleBatchDelete}
                 onSelectBook={startSession}

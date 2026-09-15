@@ -22,10 +22,10 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="flex flex-col justify-between p-4 rounded-xl bg-light-surface dark:bg-dark-surface border border-black/[0.08] dark:border-white/[0.08] hover:border-black/[0.15] dark:hover:border-white/[0.15] transition-all">
+    <div className="flex flex-col justify-between p-4 rounded-xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-all">
       <div className="flex gap-4">
         {/* Book Cover */}
-        <div className="w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.05] relative flex items-center justify-center">
+        <div className="w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-light-primary dark:bg-dark-primary border border-light-border/60 dark:border-dark-border/60 relative flex items-center justify-center">
           {entry.coverUrl && !imageError ? (
             <img
               alt={entry.title}
@@ -63,7 +63,7 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
       </div>
 
       {/* Action footer */}
-      <div className="mt-4 pt-3 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between">
+      <div className="mt-4 pt-3 border-t border-light-border/60 dark:border-dark-border/60 flex items-center justify-between">
         <span className="text-[11px] text-light-text-muted/70 dark:text-dark-text-muted/70 uppercase tracking-wider font-mono">
           {entry.format?.includes("epub") ? "EPUB" : entry.format || "EBOOK"}
         </span>

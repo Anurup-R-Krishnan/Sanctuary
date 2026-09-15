@@ -65,12 +65,12 @@ interface ReaderOverlayProps {
   onNextPage: () => void;
   onNextSearchResult: () => void;
   onNextTTSSentence?: () => void;
-  onPageChange: (page: number) => void;
   onPrevPage: () => void;
   onPrevSearchResult: () => void;
   onPrevTTSSentence?: () => void;
   onRemoveBookmark: (bookId: string, bookmarkId: string) => void;
   onSearch: (q: string) => void;
+  onSeekFraction: (fraction: number) => void;
   onToggleAnnotations: () => void;
   onToggleAutoScroll?: () => void;
   onToggleBookmark: () => void;
@@ -85,6 +85,7 @@ interface ReaderOverlayProps {
   onToggleZenMode?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   paragraphPauseMs?: number;
+  progressFraction: number;
   readingSpeedWpm?: number | null;
   searchState: ReaderSearchState;
   showAnnotations: boolean;
@@ -181,55 +182,77 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         currentPage={props.currentPage}
         estimatedMinutesRemaining={props.estimatedMinutesRemaining}
         onNextPage={props.onNextPage}
-        onPageChange={props.onPageChange}
         onPrevPage={props.onPrevPage}
+        onSeekFraction={props.onSeekFraction}
+        progressFraction={props.progressFraction}
         showUI={props.showUI}
         totalPages={props.totalPages}
       />
 
       {isAnyPanelOpen && (
-        <div className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-2xl shadow-2xl border-l border-black/5 dark:border-white/5 pointer-events-auto flex flex-col z-[100] animate-slideInRight">
-          {props.showControls && (
-            <ReaderControls
-              toc={mappedToc}
-              bookmarks={props.bookmarks}
-              onNavigate={(href) => props.onNavigate(href)}
-              onJumpToTop={props.onJumpToTop}
-              onJumpToBottom={props.onJumpToBottom}
-              onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}
-            />
-          )}
-          {props.showSettings && (
-            <Suspense fallback={null}>
-              <ReaderSettings />
-            </Suspense>
-          )}
-          {props.showSearch && (
-            <ReaderSearchPanel
-              isOpen={props.showSearch}
-              onClose={props.onCloseSearch}
-              searchState={props.searchState}
-              onSearch={props.onSearch}
-              onClear={props.onClearSearch}
-              onNext={props.onNextSearchResult}
-              onPrev={props.onPrevSearchResult}
-              onGoToResult={props.onGoToSearchResult}
-            />
-          )}
-          {props.showAnnotations && (
-            <Suspense fallback={null}>
-              <ReaderAnnotationsPanel
-                annotations={props.annotations}
-                bookAuthor={props.book.author}
-                bookTitle={props.book.title}
-                onCreateQuoteCard={props.onCreateQuoteCard}
-                onDeleteAnnotation={props.onDeleteAnnotation}
-                onGoToAnnotation={props.onNavigate}
-                onUpdateAnnotation={props.onUpdateAnnotation}
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[90] pointer-events-auto transition-opacity backdrop-blur-[1px] cursor-default border-none"
+            onClick={() => {
+              if (props.showControls) props.onCloseControls();
+              if (props.showSettings) props.onCloseSettings();
+              if (props.showSearch) props.onCloseSearch();
+              if (props.showAnnotations) props.onCloseAnnotations();
+            }}
+            aria-label="Close drawer backdrop"
+            tabIndex={-1}
+          />
+          <div
+            className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-2xl shadow-2xl border-l border-light-border dark:border-dark-border pointer-events-auto flex flex-col z-[100] animate-slideInRight"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Reader drawer"
+          >
+            {props.showControls && (
+              <ReaderControls
+                toc={mappedToc}
+                bookmarks={props.bookmarks}
+                onNavigate={(href) => props.onNavigate(href)}
+                onJumpToTop={props.onJumpToTop}
+                onJumpToBottom={props.onJumpToBottom}
+                onRemoveBookmark={(bookmarkId) => props.onRemoveBookmark(props.book.id, bookmarkId)}
+                onClose={props.onCloseControls}
               />
-            </Suspense>
-          )}
-        </div>
+            )}
+            {props.showSettings && (
+              <Suspense fallback={null}>
+                <ReaderSettings onClose={props.onCloseSettings} />
+              </Suspense>
+            )}
+            {props.showSearch && (
+              <ReaderSearchPanel
+                isOpen={props.showSearch}
+                onClose={props.onCloseSearch}
+                searchState={props.searchState}
+                onSearch={props.onSearch}
+                onClear={props.onClearSearch}
+                onNext={props.onNextSearchResult}
+                onPrev={props.onPrevSearchResult}
+                onGoToResult={props.onGoToSearchResult}
+              />
+            )}
+            {props.showAnnotations && (
+              <Suspense fallback={null}>
+                <ReaderAnnotationsPanel
+                  annotations={props.annotations}
+                  bookAuthor={props.book.author}
+                  bookTitle={props.book.title}
+                  onCreateQuoteCard={props.onCreateQuoteCard}
+                  onDeleteAnnotation={props.onDeleteAnnotation}
+                  onGoToAnnotation={props.onNavigate}
+                  onUpdateAnnotation={props.onUpdateAnnotation}
+                  onClose={props.onCloseAnnotations}
+                />
+              </Suspense>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

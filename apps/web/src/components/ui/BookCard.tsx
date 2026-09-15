@@ -49,9 +49,9 @@ const BookCover = ({
   const isFeatured = variant === "featured";
 
   const containerClass = isCompact
-    ? "w-14 h-20 rounded-lg overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 flex-shrink-0 relative"
+    ? "w-14 h-20 rounded-lg overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-light-border/40 dark:border-dark-border/40 flex-shrink-0 relative"
     : isFeatured
-      ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/5 shadow-lg flex-shrink-0 relative"
+      ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-light-border/40 dark:border-dark-border/40 shadow-lg flex-shrink-0 relative"
       : "w-full aspect-[2/3] rounded-t-2xl overflow-hidden bg-light-secondary dark:bg-dark-secondary relative";
 
   return (
@@ -159,7 +159,7 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
           <span className="text-light-text-muted dark:text-dark-text-muted">Progress</span>
           <span className="font-semibold text-light-accent dark:text-dark-accent">{progress}%</span>
         </div>
-        <div className="h-2 bg-black/[0.06] dark:bg-white/[0.06] rounded-full overflow-hidden">
+        <div className="h-2 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -170,7 +170,7 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
   }
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+    <div className="absolute bottom-0 left-0 right-0 h-1 bg-light-border/60 dark:bg-dark-border/60">
       <div
         className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
         style={{ width: `${progress}%` }}
@@ -261,7 +261,7 @@ function BookCard({
       role="button"
       tabIndex={0}
       className={cx(
-        "group border border-black/[0.08] dark:border-white/[0.08] bg-light-surface dark:bg-dark-surface transition-colors cursor-pointer",
+        "group border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface transition-colors cursor-pointer",
         isCompact && "flex items-center gap-4 p-4 rounded-xl hover:border-light-accent/40 dark:hover:border-dark-accent/40",
         isFeatured && "relative overflow-hidden rounded-3xl hover:border-light-accent/40 dark:hover:border-dark-accent/40 p-6 sm:p-7 bg-gradient-to-br from-light-accent/[0.06] to-transparent dark:from-dark-accent/[0.08] shadow-sm",
         !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/35 dark:hover:border-dark-accent/35"
@@ -300,9 +300,9 @@ function BookCard({
             </div>
             <div className="space-y-4 max-w-md">
               <ProgressBar progress={progressPercentage} variant="featured" />
-              <div className="flex items-center gap-2 text-sm font-medium text-light-accent dark:text-dark-accent">
-                <span>{isCompleted ? "Read again" : "Resume reading"}</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+              <div className="inline-flex items-center gap-2 text-sm font-medium text-light-accent dark:text-dark-accent">
+                <span className="whitespace-nowrap">{isCompleted ? "Read again" : "Resume reading"}</span>
+                <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
               </div>
             </div>
           </div>
@@ -316,10 +316,10 @@ function BookCard({
             <ProgressBar progress={progressPercentage} variant="default" />
             <div className="absolute top-3 left-3 flex flex-col gap-2">
               {isRecent && (
-                <div className="px-2 py-1 bg-light-accent dark:bg-dark-accent text-white text-xs font-semibold rounded-lg ">Recent</div>
+                <div className="px-2 py-1 bg-light-accent dark:bg-dark-accent text-white dark:text-black text-xs font-bold rounded-lg shadow-xs">Recent</div>
               )}
               {isCompleted && (
-                <div className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-lg ">Complete</div>
+                <div className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-xs">Complete</div>
               )}
               {book.contentStatus && book.contentStatus !== "available" && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg" title="The local EPUB needs to be re-imported">

@@ -28,7 +28,7 @@ const STATUS_CONFIG: Record<StreakStatus, { badge: string; color: string; label:
     label: 'Active Today',
   },
   broken: {
-    badge: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20',
+    badge: 'bg-ink-500/10 text-ink-600 dark:text-ink-400 border-ink-500/20',
     color: '#71717a',
     label: 'Streak Lapsed',
   },
@@ -124,9 +124,9 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
   }, [nextMilestone, smartStreak.currentStreak]);
 
   return (
-    <div className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex flex-col gap-5">
+    <div className="p-6 rounded-3xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border flex flex-col gap-5">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-black/[0.04] dark:border-white/[0.04]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-light-border/60 dark:border-dark-border/60">
         <div className="flex items-center gap-3">
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm"
@@ -154,7 +154,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
         <button
           onClick={() => setShowExplanation(!showExplanation)}
           type="button"
-          className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-black/[0.03] dark:bg-white/[0.03] hover:bg-black/[0.06] dark:hover:bg-white/[0.06] transition-colors"
+          className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-light-surface dark:bg-dark-surface hover:bg-light-surface/80 dark:hover:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 transition-colors"
           title="Learn how grace shields protect your reading habits"
         >
           <Info className="w-3.5 h-3.5" />
@@ -163,7 +163,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
       </div>
 
       {/* Motivational message banner */}
-      <div className="text-xs font-medium text-light-text/90 dark:text-dark-text/90 bg-black/[0.02] dark:bg-white/[0.02] px-3.5 py-2.5 rounded-xl border border-black/[0.04] dark:border-white/[0.04] flex items-center gap-2">
+      <div className="text-xs font-medium text-light-text/90 dark:text-dark-text/90 bg-light-surface/60 dark:bg-dark-surface/60 px-3.5 py-2.5 rounded-xl border border-light-border dark:border-dark-border flex items-center gap-2">
         <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
         <span>{smartStreak.statusMessage}</span>
       </div>
@@ -191,7 +191,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
       {/* Main Grid: Grace Shields & Flame Milestone */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Grace Shields Reserve Card */}
-        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
@@ -211,7 +211,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
                     className={`flex-1 py-3 px-3 rounded-xl flex items-center justify-center gap-2 border transition-all ${
                       isAvailable
                         ? 'bg-sky-500/10 border-sky-500/30 text-sky-600 dark:text-sky-400'
-                        : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.06] dark:border-white/[0.06] text-light-text-muted/40 dark:text-dark-text-muted/40'
+                        : 'bg-light-surface/30 dark:bg-dark-surface/30 border-light-border/60 dark:border-dark-border/60 text-light-text-muted/40 dark:text-dark-text-muted/40'
                     }`}
                   >
                     {isAvailable ? (
@@ -240,7 +240,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
         </div>
 
         {/* Flame Milestone Tier Card */}
-        <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] flex flex-col justify-between">
+        <div className="p-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
@@ -262,7 +262,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
                     {nextMilestone.daysRemaining} {nextMilestone.daysRemaining === 1 ? 'day' : 'days'} left
                   </span>
                 </div>
-                <div className="h-2.5 w-full bg-black/[0.05] dark:bg-white/[0.05] rounded-full overflow-hidden p-0.5">
+                <div className="h-2.5 w-full bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden p-0.5">
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
@@ -320,7 +320,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
           </p>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 bg-black/[0.08] dark:bg-white/[0.08] rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
                   challenge.completed ? 'bg-emerald-500' : 'bg-purple-500'

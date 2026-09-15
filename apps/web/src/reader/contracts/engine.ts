@@ -56,6 +56,7 @@ export interface IReaderSession {
   prev(): Promise<void>;
   prevTTS?(): void;
   resumeTTS?(): void;
+  scrollBy?(delta: number): number;
   setFlow(next: ReaderFlowOptions): Promise<void>;
   setTTSRate?(rate: number): void;
   startTTS?(fromCurrentLocation?: boolean): Promise<void>;

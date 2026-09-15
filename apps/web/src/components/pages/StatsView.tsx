@@ -62,7 +62,7 @@ function GoalProgress({
         <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">{label}</span>
         <span className="text-xs font-bold text-light-text dark:text-dark-text">{totalMinutes} / {targetMinutes}m</span>
       </div>
-      <div className="h-2 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
+      <div className="h-2 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${colorClassName}`}
           style={{ width: `${progress}%` }}
@@ -161,7 +161,7 @@ function StatsView() {
         <p className="text-light-text-muted dark:text-dark-text-muted text-sm font-sans">Your reading journey and milestones</p>
       </div>
 
-      <div className="flex gap-1 p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl">
+      <div className="flex gap-1 p-1 bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border rounded-xl">
         {TABS.map((tab) => (
           <Button
             key={tab.id}
@@ -174,7 +174,7 @@ function StatsView() {
             }`}
           >
             {activeTab === tab.id && (
-              <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
+              <div className="absolute inset-0 bg-light-surface dark:bg-dark-surface rounded-lg shadow-sm" />
             )}
             <tab.icon className="w-3.5 h-3.5 relative" strokeWidth={1.75} />
             <span className="hidden sm:inline relative">{tab.label}</span>
@@ -233,13 +233,13 @@ function StatsView() {
               </div>
             )}
             {goals && goalsStale && (
-              <span className="absolute top-4 right-4 text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 font-medium">Offline</span>
+              <span className="absolute top-4 right-4 text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-light-border/60 dark:bg-dark-border/60 border border-light-border dark:border-dark-border font-medium">Offline</span>
             )}
           </div>
 
           {/* Quiet detail: supporting numbers, no card chrome */}
           <div>
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-black/[0.06] dark:divide-white/[0.06]">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-light-border dark:divide-dark-border">
               <div className="text-center px-2">
                 <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.totalBooksRead}</p>
                 <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">Books read</p>
@@ -260,8 +260,8 @@ function StatsView() {
           </div>
 
           {/* Annual Reading Challenge Card */}
-          <div className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-black/[0.04] dark:border-white/[0.04]">
+          <div className="p-6 rounded-3xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-light-border/60 dark:border-dark-border/60">
               <div>
                 <span className="text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted uppercase [letter-spacing:0.05em]">
                   Annual Challenge · {activeAnnualChallenge.year}
@@ -284,7 +284,7 @@ function StatsView() {
                     {preset} books
                   </Button>
                 ))}
-                <div className="flex items-center gap-1 ml-1 pl-2 border-l border-black/10 dark:border-white/10">
+                <div className="flex items-center gap-1 ml-1 pl-2 border-l border-light-border dark:border-dark-border">
                   <Button
                     onClick={() => setAnnualBookGoal(Math.max(1, annualBookGoal - 1))}
                     variant="secondary"
@@ -342,7 +342,7 @@ function StatsView() {
                     </span>
                   )}
                   {activeAnnualChallenge.paceStatus === "on-pace" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-ink-500/10 text-ink-600 dark:text-ink-400 border border-ink-500/20">
                       <Target className="w-3.5 h-3.5" />
                       On schedule for {activeAnnualChallenge.year}
                     </span>
@@ -358,7 +358,7 @@ function StatsView() {
           {/* Smart Reading Streak & Habit Protection Showcase */}
           <Suspense
             fallback={
-              <div className="p-6 rounded-3xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-center min-h-[220px]">
+              <div className="p-6 rounded-3xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border flex items-center justify-center min-h-[220px]">
                 <LoadingSpinner className="w-5 h-5 text-light-text-muted dark:text-dark-text-muted" />
               </div>
             }
@@ -374,6 +374,7 @@ function StatsView() {
             <BarChart
               data={stats.weeklyData.map((d) => ({ label: d.day, value: d.minutes }))}
               maxValue={Math.max(...stats.weeklyData.map((d) => d.minutes), 1)}
+              unit="min"
             />
             <div className="mt-4 flex items-center justify-between gap-3">
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
@@ -424,11 +425,12 @@ function StatsView() {
             />
           </Suspense>
 
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04]">
+          <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
             <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
             <BarChart
               data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
               maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
+              unit="hours"
             />
           </div>
 
@@ -479,7 +481,7 @@ function StatsView() {
       {activeTab === "badges" && (
         <div className="space-y-6">
           {/* Showcase Mastery Banner */}
-          <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <h3 className="text-base font-bold text-light-text dark:text-dark-text flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-500" />
@@ -490,7 +492,7 @@ function StatsView() {
               </p>
             </div>
             <div className="w-full sm:w-48 space-y-1.5">
-              <div className="h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+              <div className="h-2 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
                   style={{ width: `${badgeSummary.percent}%` }}
@@ -509,8 +511,8 @@ function StatsView() {
               <button
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
                   badgeFilter === status
-                    ? "bg-light-accent dark:bg-dark-accent text-white shadow-sm"
-                    : "bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] text-light-text-muted dark:text-dark-text-muted"
+                    ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold shadow-sm"
+                    : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border/60 dark:border-dark-border/60 hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted"
                 }`}
                 key={status}
                 onClick={() => setBadgeFilter(status)}
@@ -543,7 +545,7 @@ function StatsView() {
             <div className="space-y-3">
               {insights.map((item) => (
                 <div key={item.title} className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
+                  <div className="p-2 rounded-lg bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 flex-shrink-0">
                     <item.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -561,7 +563,7 @@ function StatsView() {
             <div className="space-y-3">
               {milestones.map((m) => (
                   <div key={m.title} className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex-shrink-0">
+                    <div className="p-2 rounded-lg bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 flex-shrink-0">
                       <m.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
                     </div>
                     <div className="flex-1">
@@ -571,7 +573,7 @@ function StatsView() {
                           {m.progress}/{m.target}
                         </span>
                       </div>
-                      <div className="h-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
+                      <div className="h-1 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all"
                           style={{ width: `${clampPercent((m.progress / m.target) * 100)}%` }}

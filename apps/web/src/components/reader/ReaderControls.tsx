@@ -25,6 +25,7 @@ interface TocItem {
 
 interface ReaderControlsProps {
     bookmarks: Bookmark[];
+    onClose?: () => void;
     onJumpToBottom: () => void;
     onJumpToTop: () => void;
     onNavigate: (href: string) => void;
@@ -35,6 +36,7 @@ interface ReaderControlsProps {
 function ReaderControls({
     toc,
     bookmarks,
+    onClose,
     onNavigate,
     onJumpToTop,
     onJumpToBottom,
@@ -75,7 +77,7 @@ function ReaderControls({
         return (
             <div className="select-none">
                 <div
-                    className="flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                    className="flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-light-surface/80 dark:hover:bg-dark-surface/80"
                     style={{ paddingLeft: `${8 + depth * 12}px` }}
                     onClick={() => onNavigate(item.href)}
                     onKeyDown={(e) => {
@@ -116,8 +118,17 @@ function ReaderControls({
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-4 border-b border-black/5 dark:border-white/5">
+            <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
                 <h2 className="font-semibold text-light-text dark:text-dark-text">Contents</h2>
+                {onClose && (
+                    <IconButton
+                        onClick={onClose}
+                        label="Close contents"
+                        icon={<X className="w-4 h-4" />}
+                        variant="ghost"
+                        size="sm"
+                    />
+                )}
             </div>
 
             <div className="flex-1 flex flex-col p-4 pb-4 overflow-hidden">
@@ -142,19 +153,19 @@ function ReaderControls({
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 bg-black/[0.04] dark:bg-white/[0.04] rounded-xl mb-4" role="tablist">
+            <div className="flex p-1 bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border rounded-xl mb-4" role="tablist">
                 <Button
                     onClick={() => setActiveTab("chapters")}
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     variant="nav"
                     className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "chapters"
-                        ? "text-light-accent dark:text-dark-accent font-medium"
+                        ? "text-light-accent dark:text-dark-accent font-semibold"
                         : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                         }`}
                 >
                     {activeTab === "chapters" && (
-                        <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
+                        <div className="absolute inset-0 bg-light-primary dark:bg-dark-primary rounded-lg shadow-xs border border-light-border dark:border-dark-border" />
                     )}
                     <List className="w-4 h-4 relative" />
                     <span className="relative">Chapters</span>
@@ -165,12 +176,12 @@ function ReaderControls({
                     aria-selected={activeTab === "bookmarks"}
                     variant="nav"
                     className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "bookmarks"
-                        ? "text-light-accent dark:text-dark-accent font-medium"
+                        ? "text-light-accent dark:text-dark-accent font-semibold"
                         : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
                         }`}
                 >
                     {activeTab === "bookmarks" && (
-                        <div className="absolute inset-0 bg-light-surface dark:bg-white/10 rounded-lg shadow-sm" />
+                        <div className="absolute inset-0 bg-light-primary dark:bg-dark-primary rounded-lg shadow-xs border border-light-border dark:border-dark-border" />
                     )}
                     <BookmarkIcon className="w-4 h-4 relative" />
                     <span className="relative">Bookmarks</span>
@@ -178,7 +189,11 @@ function ReaderControls({
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2">
+            <div
+                className="flex-1 overflow-y-auto min-h-0 -mx-2 px-2"
+                role="tabpanel"
+                aria-label={activeTab === "chapters" ? "Chapters" : "Bookmarks"}
+            >
                 {activeTab === "chapters" ? (
                     <>
                         <div className="mb-4">
@@ -203,7 +218,7 @@ function ReaderControls({
                     <div className="space-y-2">
                         {bookmarks.length > 0 ? (
                             bookmarks.map(bm => (
-                                <div key={bm.id} className="group flex flex-wrap items-center gap-3 p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <div key={bm.id} className="group flex flex-wrap items-center gap-3 p-3 rounded-xl border border-light-border/40 dark:border-dark-border/40 hover:bg-light-surface/80 dark:hover:bg-dark-surface/80 transition-colors">
                                     <Button
                                         onClick={() => onNavigate(bm.cfi)}
                                         variant="ghost"
@@ -211,12 +226,12 @@ function ReaderControls({
                                     >
                                         <span className="flex flex-col items-start gap-0.5">
                                             <span className="text-sm font-medium text-light-text dark:text-dark-text">{bm.title}</span>
-                                            <span className="text-xs opacity-60">{new Date(bm.createdAt).toLocaleDateString()}</span>
+                                            <span className="text-xs text-light-text-muted dark:text-dark-text-muted">{new Date(bm.createdAt).toLocaleDateString()}</span>
                                         </span>
                                     </Button>
                                     <IconButton
                                         onClick={() => onRemoveBookmark(bm.id)}
-                                        className="opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 transition-all"
+                                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-all"
                                         label="Remove bookmark"
                                         icon={<X className="w-4 h-4" />}
                                         variant="ghost"
@@ -225,8 +240,10 @@ function ReaderControls({
                                 </div>
                             ))
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
-                                <BookmarkIcon className="w-6 h-6 mb-3 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                            <div className="flex flex-col items-center justify-center py-10 px-6 text-center animate-fadeIn">
+                                <div className="w-14 h-14 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
+                                    <BookmarkIcon className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                                </div>
                                 <p className="text-light-text dark:text-dark-text font-medium">No bookmarks yet</p>
                                 <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Bookmark pages while reading to find them quickly.</p>
                             </div>

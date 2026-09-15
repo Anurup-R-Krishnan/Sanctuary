@@ -102,12 +102,12 @@ function ReaderAmbientSoundPopoverComponent({
     <div
       aria-label="Ambient soundscapes panel"
       aria-modal="true"
-      className="pointer-events-auto fixed right-4 top-16 sm:right-6 sm:top-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-black/10 dark:border-white/10 bg-light-surface/95 dark:bg-dark-surface/95 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl transition-all duration-instant animate-fadeIn"
+      className="pointer-events-auto fixed right-4 top-16 sm:right-6 sm:top-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-light-border dark:border-dark-border bg-light-surface/95 dark:bg-dark-surface/95 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl transition-all duration-instant animate-fadeIn"
       ref={popoverRef}
       role="dialog"
     >
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/5">
+      <div className="flex items-center justify-between pb-3 border-b border-light-border dark:border-dark-border">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent">
             <Waves className="w-4 h-4" />
@@ -157,7 +157,7 @@ function ReaderAmbientSoundPopoverComponent({
                 "group relative flex flex-col items-start gap-1 p-2.5 rounded-xl border text-left transition-all duration-instant",
                 isSelected
                   ? "border-light-accent dark:border-dark-accent bg-light-accent/10 dark:bg-dark-accent/10"
-                  : "border-black/10 dark:border-white/10 hover:border-light-accent/30 dark:hover:border-dark-accent/30 bg-black/[0.02] dark:bg-white/[0.02]"
+                  : "border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40 bg-light-surface/40 dark:bg-dark-surface/40"
               )}
               key={soundscape.id}
               onClick={() => {
@@ -205,7 +205,7 @@ function ReaderAmbientSoundPopoverComponent({
       </div>
 
       {/* Volume Slider */}
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-black/5 dark:border-white/5">
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-light-border/60 dark:border-dark-border/60">
         <div className="flex items-center justify-between text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
           <span className="flex items-center gap-1.5">
             {volume === 0 ? (
@@ -219,7 +219,7 @@ function ReaderAmbientSoundPopoverComponent({
         </div>
         <input
           aria-label="Soundscape volume"
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-black/10 dark:bg-white/10 accent-light-accent dark:accent-dark-accent outline-none"
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-light-border/60 dark:bg-dark-border/60 accent-light-accent dark:accent-dark-accent outline-none"
           max={100}
           min={0}
           onChange={(e) => setVolume(parseInt(e.target.value, 10))}
@@ -230,7 +230,7 @@ function ReaderAmbientSoundPopoverComponent({
       </div>
 
       {/* Sleep Timer */}
-      <div className="flex flex-col gap-1.5 pt-3 mt-2 border-t border-black/5 dark:border-white/5">
+      <div className="flex flex-col gap-1.5 pt-3 mt-2 border-t border-light-border/60 dark:border-dark-border/60">
         <div className="flex items-center justify-between text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
           <span className="flex items-center gap-1.5">
             <Timer className="w-3.5 h-3.5" />
@@ -251,7 +251,7 @@ function ReaderAmbientSoundPopoverComponent({
                   "flex-1 py-1 rounded-lg text-[11px] font-medium border transition-all duration-instant",
                   isSelected
                     ? "border-light-accent dark:border-dark-accent bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent"
-                    : "border-black/5 dark:border-white/5 hover:border-black/15 dark:hover:border-white/15 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-black/[0.02] dark:bg-white/[0.02]"
+                    : "border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-light-surface/40 dark:bg-dark-surface/40"
                 )}
                 key={opt.label}
                 onClick={() => setSleepTimer(opt.minutes)}

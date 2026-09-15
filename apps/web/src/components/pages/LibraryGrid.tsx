@@ -1,3 +1,5 @@
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
 import { CheckSquare, ChevronRight, Clock, Search, Square, Star } from "lucide-react";
 import React, { Suspense, lazy, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -31,6 +33,7 @@ const SeriesShelfModal = lazy(() =>
 
 interface LibraryGridProps {
   addBook: (file: File) => Promise<void>;
+  api: SanctuaryApiClient;
   deleteBook: (id: string) => void;
   onBatchDelete: (ids: string[]) => void;
   onSelectBook: (book: Book) => void;
@@ -40,6 +43,7 @@ interface LibraryGridProps {
 
 function LibraryGrid({
   addBook,
+  api,
   deleteBook: onDeleteBook,
   onBatchDelete,
   onSelectBook,
@@ -92,7 +96,8 @@ function LibraryGrid({
   const [isDailyDigestOpen, setIsDailyDigestOpen] = useState(false);
   const [isSeriesShelfOpen, setIsSeriesShelfOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
-  const isSelecting = selectedBookIds.size > 0;
+  const [selectionMode, setSelectionMode] = useState(false);
+  const isSelecting = selectionMode || selectedBookIds.size > 0;
 
   const SORT_LABELS: Record<SortOption, string> = {
     added: "Date Added",
@@ -173,8 +178,8 @@ function LibraryGrid({
       <div className="page-stack animate-fadeIn">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <div className="h-8 w-40 rounded-lg bg-black/[0.05] dark:bg-white/[0.08] animate-pulse-soft" />
-            <div className="h-4 w-28 rounded bg-black/[0.04] dark:bg-white/[0.06] animate-pulse-soft" />
+            <div className="h-8 w-40 rounded-lg bg-light-border/60 dark:bg-dark-border/60 animate-pulse-soft" />
+            <div className="h-4 w-28 rounded bg-light-border/40 dark:bg-dark-border/40 animate-pulse-soft" />
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -192,6 +197,7 @@ function LibraryGrid({
         <LibraryEmptyState onAddBook={addBook} onOpenCatalog={() => setIsCatalogOpen(true)} />
         <Suspense fallback={null}>
           <CatalogBrowser
+            api={api}
             isOpen={isCatalogOpen}
             onClose={() => setIsCatalogOpen(false)}
             onImport={addBook}
@@ -229,9 +235,16 @@ function LibraryGrid({
           className={`shrink-0 rounded-xl p-2 transition-colors ${
             isSelecting
               ? "bg-light-text dark:bg-dark-text text-white dark:text-black"
-              : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+              : "text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
           }`}
-          onClick={() => isSelecting ? clearSelection() : undefined}
+          onClick={() => {
+            if (isSelecting) {
+              clearSelection();
+              setSelectionMode(false);
+            } else {
+              setSelectionMode(true);
+            }
+          }}
           title={isSelecting ? "Exit selection" : "Select books"}
         >
           {isSelecting ? (
@@ -248,8 +261,8 @@ function LibraryGrid({
           <button
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filterBy !== "collection"
-                ? "bg-black/[0.07] dark:bg-white/[0.09] text-light-text dark:text-dark-text"
-                : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+                ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent font-semibold border border-light-accent/30 dark:border-dark-accent/30"
+                : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
             }`}
             onClick={() => setFilterBy("all")}
           >
@@ -260,8 +273,8 @@ function LibraryGrid({
               key={col}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 filterBy === "collection" && activeCollection === col
-                  ? "bg-black/[0.07] dark:bg-white/[0.09] text-light-text dark:text-dark-text"
-                  : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
+                  ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent font-semibold border border-light-accent/30 dark:border-dark-accent/30"
+                  : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
               }`}
               onClick={() => {
                 setActiveCollection(col);
@@ -334,7 +347,7 @@ function LibraryGrid({
         </section>
       )}
 
-      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm && !isSelecting ? "pt-6 border-t border-black/[0.06] dark:border-white/[0.06]" : ""}>
+      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm && !isSelecting ? "pt-6 border-t border-light-border dark:border-dark-border" : ""}>
         <SectionHeader
           title={searchTerm ? "Results" : "All Books"}
           count={displayBooks.length}
@@ -347,7 +360,7 @@ function LibraryGrid({
         )}
         {displayBooks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
-            <div className="w-16 h-16 mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] flex items-center justify-center border border-black/[0.06] dark:border-white/[0.06]">
+            <div className="w-16 h-16 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
               <Search className="w-7 h-7 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
             </div>
             <p className="text-light-text dark:text-dark-text font-medium">No books found</p>
@@ -368,15 +381,21 @@ function LibraryGrid({
                   onClick={() => toggleBookSelection(book.id)}
                   onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") toggleBookSelection(book.id); }}
                 >
-                  <div className={`absolute top-2 left-2 z-10 w-5 h-5 rounded-full border-2 transition-colors ${
+                  <div className={`absolute top-2.5 right-2.5 z-10 w-5 h-5 rounded-full border-2 shadow-sm flex items-center justify-center transition-colors ${
                     selectedBookIds.has(book.id)
-                      ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text"
-                      : "bg-white/80 dark:bg-black/50 border-black/30 dark:border-white/30"
-                  }`} />
-                  <BookCard
-                    book={book}
-                    onSelect={() => toggleBookSelection(book.id)}
-                  />
+                      ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text text-white dark:text-black"
+                      : "bg-light-surface/90 dark:bg-dark-surface/90 border-light-border dark:border-dark-border"
+                  }`}>
+                    {selectedBookIds.has(book.id) && (
+                      <div className="w-2 h-2 rounded-full bg-white dark:bg-black" />
+                    )}
+                  </div>
+                  <div className="pointer-events-none">
+                    <BookCard
+                      book={book}
+                      onSelect={() => {}}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div key={book.id} className="relative group/card">
@@ -388,7 +407,7 @@ function LibraryGrid({
                   />
                   <button
                     aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/40 text-white transition-opacity"
+                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-light-accent outline-none rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-light-accent dark:hover:bg-dark-accent dark:hover:text-black transition-all"
                     onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
                   >
                     <span className="sr-only">Edit</span>
@@ -416,13 +435,15 @@ function LibraryGrid({
                   <div className={`absolute top-1/2 left-3 z-10 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-colors ${
                     selectedBookIds.has(book.id)
                       ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text"
-                      : "bg-white/80 dark:bg-black/50 border-black/30 dark:border-white/30"
+                      : "bg-light-surface/90 dark:bg-dark-surface/90 border-light-border dark:border-dark-border"
                   }`} />
-                  <BookCard
-                    book={book}
-                    onSelect={() => toggleBookSelection(book.id)}
-                    variant="compact"
-                  />
+                  <div className="pointer-events-none">
+                    <BookCard
+                      book={book}
+                      onSelect={() => {}}
+                      variant="compact"
+                    />
+                  </div>
                 </div>
               ) : (
                 <div key={book.id} className="relative group/card">
@@ -435,7 +456,7 @@ function LibraryGrid({
                   />
                   <button
                     aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-1/2 right-3 z-10 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/40 text-white transition-opacity"
+                    className="absolute top-1/2 right-3 z-10 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-light-accent dark:hover:bg-dark-accent dark:hover:text-black transition-all"
                     onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
                   >
                     <span className="sr-only">Edit</span>
@@ -452,6 +473,7 @@ function LibraryGrid({
 
       <Suspense fallback={null}>
         <CatalogBrowser
+          api={api}
           isOpen={isCatalogOpen}
           onClose={() => setIsCatalogOpen(false)}
           onImport={addBook}
@@ -484,7 +506,10 @@ function LibraryGrid({
 
       <BatchActionBar
         onAssignCollection={handleAssignCollection}
-        onClearSelection={clearSelection}
+        onClearSelection={() => {
+          clearSelection();
+          setSelectionMode(false);
+        }}
         onDelete={handleBatchDelete}
         onExportAnnotations={handleBatchExportAnnotations}
         onMarkFinished={handleBatchMarkFinished}

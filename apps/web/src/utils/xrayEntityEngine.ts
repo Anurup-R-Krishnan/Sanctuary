@@ -75,7 +75,9 @@ const SENTENCE_STOPWORDS = new Set([
   'By',
   'Can',
   'Cannot',
+  'Chapter',
   'Come',
+  'Contents',
   'Could',
   'Did',
   'Do',
@@ -84,6 +86,7 @@ const SENTENCE_STOPWORDS = new Set([
   'Each',
   'Early',
   'Either',
+  'Epilogue',
   'Even',
   'Every',
   'Few',
@@ -111,8 +114,10 @@ const SENTENCE_STOPWORDS = new Set([
   'If',
   'In',
   'Indeed',
+  'Index',
   'Instead',
   'Into',
+  'Introduction',
   'Is',
   'It',
   'Its',
@@ -141,6 +146,8 @@ const SENTENCE_STOPWORDS = new Set([
   'None',
   'Nor',
   'Not',
+  'Note',
+  'Notes',
   'Now',
   'Of',
   'Off',
@@ -155,13 +162,19 @@ const SENTENCE_STOPWORDS = new Set([
   'Our',
   'Out',
   'Over',
+  'Page',
+  'Pages',
+  'Part',
   'Perhaps',
+  'Preface',
+  'Prologue',
   'Quite',
   'Rather',
   'Really',
   'Said',
   'Same',
   'Say',
+  'Section',
   'See',
   'Several',
   'She',
@@ -201,6 +214,7 @@ const SENTENCE_STOPWORDS = new Set([
   'Upon',
   'Us',
   'Very',
+  'Volume',
   'Was',
   'We',
   'Well',
@@ -225,6 +239,10 @@ const SENTENCE_STOPWORDS = new Set([
   'Your',
   'Yours',
 ]);
+
+const SENTENCE_STOPWORDS_LOWER = new Set(
+  Array.from(SENTENCE_STOPWORDS).map((s) => s.toLowerCase())
+);
 
 // Personal honorific titles that strongly identify a human character
 const HONORIFIC_TITLES = new Set([
@@ -518,7 +536,7 @@ export function scanRawEntities(text: string): RawEntityMatch[] {
 
     let startIdx = 0;
     const firstClean = group[0].clean.replace(/\./g, '');
-    if (SENTENCE_STOPWORDS.has(firstClean) && !HONORIFIC_TITLES.has(firstClean)) {
+    if (SENTENCE_STOPWORDS_LOWER.has(firstClean.toLowerCase()) && !HONORIFIC_TITLES.has(firstClean)) {
       startIdx = 1;
     }
 
@@ -527,7 +545,7 @@ export function scanRawEntities(text: string): RawEntityMatch[] {
 
     if (valid.length === 1) {
       const singleClean = valid[0].clean.replace(/\./g, '');
-      if (SENTENCE_STOPWORDS.has(singleClean) || singleClean.length <= 1) {
+      if (SENTENCE_STOPWORDS_LOWER.has(singleClean.toLowerCase()) || singleClean.length <= 1) {
         return;
       }
     }
@@ -628,19 +646,38 @@ function clusterEntities(
     }
 
     if (totalMentions >= minMentions) {
-      const category = classifyEntity(name);
-      canonicalMap.set(name, {
-        aliases,
-        category,
-        color: getDeterministicEntityColor(name),
-        description: `Mentioned ${totalMentions} ${totalMentions === 1 ? 'time' : 'times'}`,
-        firstChapterIndex: chapterIndex,
-        firstChapterTitle: chapterTitle,
-        id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        mentionsCount: totalMentions,
-        name,
-        occurrences: allOccurrences,
-      });
+      const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const existing = canonicalMap.get(id);
+      if (existing) {
+        existing.mentionsCount += totalMentions;
+        if (!existing.aliases.includes(name) && existing.name !== name) {
+          existing.aliases.push(name);
+        }
+        for (const a of aliases) {
+          if (!existing.aliases.includes(a) && existing.name !== a) {
+            existing.aliases.push(a);
+          }
+        }
+        for (const occ of allOccurrences) {
+          if (existing.occurrences.length < 15) {
+            existing.occurrences.push(occ);
+          }
+        }
+      } else {
+        const category = classifyEntity(name);
+        canonicalMap.set(id, {
+          aliases,
+          category,
+          color: getDeterministicEntityColor(name),
+          description: `Mentioned ${totalMentions} ${totalMentions === 1 ? 'time' : 'times'}`,
+          firstChapterIndex: chapterIndex,
+          firstChapterTitle: chapterTitle,
+          id,
+          mentionsCount: totalMentions,
+          name,
+          occurrences: allOccurrences,
+        });
+      }
     }
     mergedNames.add(name);
   }
@@ -730,7 +767,7 @@ export function buildXRayBookIndex(
   // Multi-word alias clustering across the full book
   const sortedNames = Array.from(globalNameMap.keys()).sort((a, b) => b.length - a.length);
   const mergedNames = new Set<string>();
-  const entities: XRayEntity[] = [];
+  const entityMap = new Map<string, XRayEntity>();
 
   for (const name of sortedNames) {
     if (mergedNames.has(name)) continue;
@@ -763,22 +800,43 @@ export function buildXRayBookIndex(
     }
 
     if (totalMentions >= minMentions) {
-      const category = classifyEntity(name);
-      entities.push({
-        aliases,
-        category,
-        color: getDeterministicEntityColor(name),
-        description: `Mentioned ${totalMentions} ${totalMentions === 1 ? 'time' : 'times'} across book`,
-        firstChapterIndex: data.firstChapterIndex,
-        firstChapterTitle: data.firstChapterTitle,
-        id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        mentionsCount: totalMentions,
-        name,
-        occurrences: allOccurrences,
-      });
+      const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const existing = entityMap.get(id);
+      if (existing) {
+        existing.mentionsCount += totalMentions;
+        if (!existing.aliases.includes(name) && existing.name !== name) {
+          existing.aliases.push(name);
+        }
+        for (const a of aliases) {
+          if (!existing.aliases.includes(a) && existing.name !== a) {
+            existing.aliases.push(a);
+          }
+        }
+        for (const occ of allOccurrences) {
+          if (existing.occurrences.length < 15) {
+            existing.occurrences.push(occ);
+          }
+        }
+      } else {
+        const category = classifyEntity(name);
+        entityMap.set(id, {
+          aliases,
+          category,
+          color: getDeterministicEntityColor(name),
+          description: `Mentioned ${totalMentions} ${totalMentions === 1 ? 'time' : 'times'} across book`,
+          firstChapterIndex: data.firstChapterIndex,
+          firstChapterTitle: data.firstChapterTitle,
+          id,
+          mentionsCount: totalMentions,
+          name,
+          occurrences: allOccurrences,
+        });
+      }
     }
     mergedNames.add(name);
   }
+
+  const entities = Array.from(entityMap.values()).sort((a, b) => b.mentionsCount - a.mentionsCount);
 
   let charactersCount = 0;
   let locationsCount = 0;

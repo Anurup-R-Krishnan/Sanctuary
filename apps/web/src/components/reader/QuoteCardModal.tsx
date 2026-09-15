@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import { IconButton } from "@/components/ui/IconButton";
 import {
+  type QuoteCardFontSize,
   type QuoteCardOptions,
   type QuoteCardRatio,
   type QuoteCardTheme,
@@ -33,6 +34,12 @@ const RATIO_OPTIONS: Array<{ label: string; value: QuoteCardRatio }> = [
   { label: "9:16 Story", value: "story" },
 ];
 
+const FONT_SIZE_OPTIONS: Array<{ label: string; value: QuoteCardFontSize }> = [
+  { label: "Regular", value: "regular" },
+  { label: "Large", value: "large" },
+  { label: "Extra Large", value: "xlarge" },
+];
+
 export function QuoteCardModal({
   bookAuthor,
   bookTitle,
@@ -43,6 +50,7 @@ export function QuoteCardModal({
 }: QuoteCardModalProps) {
   const [theme, setTheme] = useState<QuoteCardTheme>("editorial");
   const [aspectRatio, setAspectRatio] = useState<QuoteCardRatio>("portrait");
+  const [fontSizePreference, setFontSizePreference] = useState<QuoteCardFontSize>("regular");
   const [copied, setCopied] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -57,12 +65,13 @@ export function QuoteCardModal({
       bookAuthor,
       bookTitle,
       chapterLabel,
+      fontSizePreference,
       quote,
       theme,
     };
 
     renderQuoteCardToCanvas(options, canvasRef.current);
-  }, [isOpen, quote, bookTitle, bookAuthor, chapterLabel, theme, aspectRatio]);
+  }, [isOpen, quote, bookTitle, bookAuthor, chapterLabel, theme, aspectRatio, fontSizePreference]);
 
   if (!isOpen || !quote) return null;
 
@@ -71,6 +80,7 @@ export function QuoteCardModal({
     bookAuthor,
     bookTitle,
     chapterLabel,
+    fontSizePreference,
     quote,
     theme,
   };
@@ -106,9 +116,9 @@ export function QuoteCardModal({
       aria-label="Quote Card Generator"
       tabIndex={-1}
     >
-      <div className="w-full max-w-xl bg-light-surface dark:bg-dark-surface rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-xl bg-light-surface dark:bg-dark-surface rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-black/5 dark:border-white/5">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-light-border dark:border-dark-border">
           <div className="flex items-center gap-2">
             <h2 className="font-semibold text-base text-light-text dark:text-dark-text">
               Share Quote Card
@@ -127,10 +137,10 @@ export function QuoteCardModal({
         </div>
 
         {/* Canvas Preview Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center justify-center bg-black/[0.03] dark:bg-black/20 min-h-[260px]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col items-center justify-center bg-light-surface/40 dark:bg-dark-surface/40 min-h-[280px]">
           <canvas
             ref={canvasRef}
-            className="max-h-[46vh] w-auto max-w-full rounded-xl shadow-xl border border-black/10 dark:border-white/10 transition-all object-contain"
+            className="max-h-[50vh] w-auto max-w-full rounded-xl shadow-xl border border-light-border dark:border-dark-border transition-all object-contain"
             style={{
               aspectRatio:
                 aspectRatio === "story"
@@ -143,7 +153,7 @@ export function QuoteCardModal({
         </div>
 
         {/* Customization Controls */}
-        <div className="p-4 sm:p-5 border-t border-black/5 dark:border-white/5 space-y-4 bg-light-surface dark:bg-dark-surface">
+        <div className="p-4 sm:p-5 border-t border-light-border/60 dark:border-dark-border/60 space-y-4 bg-light-surface dark:bg-dark-surface">
           {/* Theme selection */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
@@ -172,7 +182,7 @@ export function QuoteCardModal({
             <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
               Aspect Ratio
             </span>
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06]">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border">
               {RATIO_OPTIONS.map((r) => (
                 <button
                   key={r.value}
@@ -190,13 +200,36 @@ export function QuoteCardModal({
             </div>
           </div>
 
+          {/* Font scale toggle */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
+              Quote Scale
+            </span>
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border">
+              {FONT_SIZE_OPTIONS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setFontSizePreference(f.value)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+                    fontSizePreference === f.value
+                      ? "bg-light-surface dark:bg-dark-surface shadow-sm text-light-text dark:text-dark-text"
+                      : "text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Action buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={handleCopy}
               disabled={isExporting}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-light-text dark:text-dark-text transition-all active:scale-[0.98] disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl border border-light-border dark:border-dark-border hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text dark:text-dark-text transition-all active:scale-[0.98] disabled:opacity-50"
             >
               {copied ? (
                 <>
@@ -215,7 +248,7 @@ export function QuoteCardModal({
               type="button"
               onClick={handleShareOrDownload}
               disabled={isExporting}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl bg-light-accent dark:bg-dark-accent text-white hover:opacity-90 shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-xl bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold hover:opacity-90 shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
             >
               {typeof navigator !== "undefined" && "canShare" in navigator ? (
                 <>

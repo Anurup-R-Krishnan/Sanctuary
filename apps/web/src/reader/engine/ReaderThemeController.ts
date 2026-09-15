@@ -3,6 +3,7 @@ export interface ReaderThemeConfig {
     continuous: boolean;
     fontPairing: string;
     fontSize: number;
+    fontWeight?: number;
     hyphenation: boolean;
     letterSpacing?: number;
     lineHeight: number;
@@ -31,6 +32,7 @@ export class ReaderThemeController {
     public buildStyles(config: ReaderThemeConfig): Record<string, Record<string, string>> {
         const {
             fontSize,
+            fontWeight,
             lineHeight,
             letterSpacing,
             fontPairing,
@@ -44,7 +46,8 @@ export class ReaderThemeController {
             maxTextWidth,
         } = config;
 
-        const fontFamily = FONT_FAMILIES[fontPairing] ?? "'Merriweather', Georgia, serif";
+        const resolvedWeight = fontWeight ?? 400;
+        const fontFamily = FONT_FAMILIES[fontPairing] ?? `'${fontPairing}', Georgia, serif`;
         const horizontalPadding = continuous ? pageMargin : Math.max(8, pageMargin);
 
         return {
@@ -55,6 +58,7 @@ export class ReaderThemeController {
             "body": {
                 "font-family": fontFamily,
                 "font-size": `${fontSize}px`,
+                "font-weight": `${resolvedWeight}`,
                 "line-height": `${lineHeight}`,
                 "letter-spacing": letterSpacing ? `${letterSpacing}px` : "normal",
                 "color": `${readerForeground} !important`,

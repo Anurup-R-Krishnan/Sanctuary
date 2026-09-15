@@ -1,5 +1,6 @@
 import { BookOpen, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
@@ -34,6 +35,25 @@ export function MigrationDialog() {
     }
   }, [isLoaded, isSignedIn, mode, setSession]);
 
+  const handleDiscard = useCallback(() => {
+    setShow(false);
+    setSession("authenticated", "auto");
+  }, [setSession]);
+
+  useEffect(() => {
+    if (!show || isMigrating) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handleDiscard();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [show, isMigrating, handleDiscard]);
+
   const handleMigrate = async () => {
     setIsMigrating(true);
     try {
@@ -59,44 +79,49 @@ export function MigrationDialog() {
     }
   };
 
-  const handleDiscard = () => {
-    setShow(false);
-    setSession("authenticated", "auto");
-  };
-
   if (!show) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-light-secondary dark:bg-dark-secondary rounded-2xl p-6 w-full max-w-md shadow-2xl border border-light-border dark:border-dark-border">
+  const dialog = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="migration-dialog-title"
+      aria-describedby="migration-dialog-desc"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn p-4"
+    >
+      <div className="bg-light-primary dark:bg-dark-primary rounded-2xl p-6 w-full max-w-md shadow-2xl border border-light-border dark:border-dark-border">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent flex items-center justify-center shrink-0">
+            <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-light-text dark:text-dark-text">Sync Library</h3>
-            <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
+            <h3 id="migration-dialog-title" className="text-xl font-bold text-light-text dark:text-dark-text">
+              Sync Library
+            </h3>
+            <p id="migration-dialog-desc" className="text-sm text-light-text-muted dark:text-dark-text-muted">
               You have {pendingBooksCount} {pendingBooksCount === 1 ? "book" : "books"} from offline mode.
             </p>
           </div>
         </div>
         
-        <p className="text-sm text-light-text dark:text-dark-text mb-6">
+        <p className="text-sm text-light-text dark:text-dark-text mb-6 leading-relaxed">
           Would you like to sync your offline books to your account so they are available across all your devices?
         </p>
         
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-end items-center">
           <button
             onClick={handleDiscard}
             disabled={isMigrating}
-            className="px-4 py-2 text-sm font-medium text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text disabled:opacity-50"
+            type="button"
+            className="px-4 py-2 text-sm font-medium text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text rounded-xl hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent disabled:opacity-50"
           >
             Discard
           </button>
           <button
             onClick={handleMigrate}
             disabled={isMigrating}
-            className="flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-md transition-colors disabled:opacity-75"
+            type="button"
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white dark:text-black bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent disabled:opacity-60"
           >
             {isMigrating ? (
               <>
@@ -111,4 +136,9 @@ export function MigrationDialog() {
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") {
+    return dialog;
+  }
+  return createPortal(dialog, document.body);
 }

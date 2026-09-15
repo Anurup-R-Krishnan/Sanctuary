@@ -21,7 +21,7 @@ function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps)
 
   return (
     <nav aria-label="Primary navigation" className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50">
-      <div className="flex items-center gap-1 p-1.5 rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md shadow-lg">
+      <div className="flex items-center gap-1 p-1.5 rounded-2xl border border-light-border dark:border-dark-border bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-md shadow-lg">
         {navItems.map((item) => {
           const isActive = activeView === item.view;
           const Icon = item.icon;
@@ -33,16 +33,16 @@ function Navigation({ activeView, onNavigate, isReaderActive }: NavigationProps)
               onClick={() => !item.disabled && onNavigate(item.view)}
               disabled={item.disabled}
               className={`relative h-11 px-3 !rounded-xl gap-2 transition-all duration-instant ${isActive
-                ? "text-light-accent dark:text-dark-accent"
+                ? "text-light-accent dark:text-dark-accent font-medium"
                 : item.disabled
                   ? "text-light-text-muted/40 dark:text-dark-text-muted/40"
-                  : "text-light-text-muted dark:text-dark-text-muted hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  : "text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
                 }`}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
             >
               {isActive && (
-                <div className="absolute inset-0 bg-light-accent/10 dark:bg-white/10 rounded-xl shadow-sm" />
+                <div className="absolute inset-0 bg-light-accent/10 dark:bg-dark-accent/15 rounded-xl shadow-xs" />
               )}
               <Icon className="w-5 h-5 relative" />
               <span className="hidden sm:inline relative">{item.label}</span>

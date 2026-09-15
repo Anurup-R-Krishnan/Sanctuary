@@ -20,8 +20,6 @@ export class FoliateReaderSession implements IReaderSession {
   private callbacks: FoliateReaderSessionCallbacks;
   private container: HTMLDivElement;
   private flowOptions: ReaderFlowOptions;
-  private lastPositionUpdate = 0;
-  private positionUpdateTimer: number | null = null;
   private readerBackground: string;
   private renditionInstance: FoliateRendition | null = null;
 
@@ -188,25 +186,12 @@ export class FoliateReaderSession implements IReaderSession {
     this.renditionInstance.on("relocated", (pos: ReaderPosition) => {
       if (this.aborted) return;
 
-      const now = Date.now();
-      const timeSince = now - this.lastPositionUpdate;
       const updatedPos: ReaderPosition = {
         ...pos,
         totalLocations: this.totalLocations,
       };
 
-      if (timeSince > 250) {
-        this.lastPositionUpdate = now;
-        this.callbacks.onPositionChange(updatedPos);
-      } else {
-        if (this.positionUpdateTimer !== null) {
-          window.clearTimeout(this.positionUpdateTimer);
-        }
-        this.positionUpdateTimer = window.setTimeout(() => {
-          this.lastPositionUpdate = Date.now();
-          this.callbacks.onPositionChange(updatedPos);
-        }, 250);
-      }
+      this.callbacks.onPositionChange(updatedPos);
     });
 
     this.renditionInstance.on("selected", (sel: ReaderSelection | null) => {
@@ -254,9 +239,9 @@ export class FoliateReaderSession implements IReaderSession {
     await this.renditionInstance.prev();
   }
 
-  public async goToPage(page: number): Promise<void> {
-    if (this.aborted || !this.renditionInstance) return;
-    await this.renditionInstance.goToLocation(page);
+  public scrollBy(delta: number): number {
+    if (this.aborted || !this.renditionInstance) return 0;
+    return this.renditionInstance.scrollBy(delta);
   }
 
   public async setFlow(next: ReaderFlowOptions): Promise<void> {
@@ -320,10 +305,6 @@ export class FoliateReaderSession implements IReaderSession {
 
   public destroy(): void {
     this.aborted = true;
-    if (this.positionUpdateTimer !== null) {
-      window.clearTimeout(this.positionUpdateTimer);
-      this.positionUpdateTimer = null;
-    }
     this.renditionInstance?.destroy();
     this.renditionInstance = null;
     this.adapter?.destroy();

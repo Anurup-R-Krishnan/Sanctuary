@@ -9,6 +9,7 @@ import { bookService } from "@/services/bookService";
 import { logErrorOnce, HttpError } from "@/services/http";
 import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
+import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { calculateEpubHash } from "@/utils/crypto";
 import { deleteBook as deleteBookFromDb, deleteBookContent, getAllBooks, putBook as putBookInDb } from "@/utils/db";
 import { extractCoverBlobFromEpubSource } from "@/utils/epub";
@@ -310,6 +311,9 @@ export const libraryService = {
               console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
             });
             revokeTrackedCoverUrl(localBook.id);
+            if (useReaderProgressStore.getState().active?.bookId === localBook.id) {
+              useReaderProgressStore.getState().clearActiveBook();
+            }
           }
         }
       }
@@ -556,6 +560,14 @@ export const libraryService = {
         // 2. Remove remote if persistent
         if (isPersistent) {
           await syncQueue.enqueue("DELETE_LIBRARY", { id });
+        }
+
+        // A deleted book can still be the reader's "active" session (e.g. it
+        // was deleted from the library after being left open, not closed),
+        // which would otherwise leave the Reader tab pointing at a book that
+        // no longer exists.
+        if (useReaderProgressStore.getState().active?.bookId === id) {
+          useReaderProgressStore.getState().clearActiveBook();
         }
       } catch (error) {
         // Rollback UI

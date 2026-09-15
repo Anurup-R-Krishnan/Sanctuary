@@ -1,8 +1,16 @@
+export interface OpdsPagination {
+  first?: string;
+  last?: string;
+  next?: string;
+  previous?: string;
+}
+
 export interface OpdsFeed {
   entries: OpdsEntry[];
   icon?: string;
   id?: string;
   navigationLinks: OpdsLink[];
+  pagination?: OpdsPagination;
   searchLink?: string;
   title: string;
   updated?: string;

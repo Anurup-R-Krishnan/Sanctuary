@@ -146,7 +146,7 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
             ? `${formatClock(progress.remainingSeconds)} remaining`
             : `${formatClock(progress.elapsedSeconds)} read`
         }`}
-        className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-instant hover:scale-105 active:scale-95 border border-black/5 dark:border-white/5 ${className}`}
+        className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-instant hover:scale-105 active:scale-95 border border-light-border dark:border-dark-border ${className}`}
         onClick={() => setIsModalOpen(true)}
         style={{ color: readerForeground }}
         title="Open Reading Session Timer"

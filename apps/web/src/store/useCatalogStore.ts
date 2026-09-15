@@ -16,7 +16,14 @@ function loadStoredCatalogs(): CatalogSource[] {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
       const defaultIds = new Set(DEFAULT_CATALOGS.map((c) => c.id));
-      const userCatalogs = parsed.filter((c: CatalogSource) => !defaultIds.has(c.id));
+      // Drop stale defaults: a catalog persisted from an earlier version of
+      // the app as isDefault (e.g. Standard Ebooks, removed after it gated
+      // its feed behind paid membership) but no longer present in
+      // DEFAULT_CATALOGS shouldn't survive as an unremovable ghost entry —
+      // only genuinely user-added catalogs (always isDefault: false) do.
+      const userCatalogs = parsed.filter(
+        (c: CatalogSource) => !defaultIds.has(c.id) && !c.isDefault
+      );
       return [...DEFAULT_CATALOGS, ...userCatalogs];
     }
   } catch (err) {
@@ -54,7 +61,7 @@ interface CatalogStoreState {
 export const useCatalogStore = create<CatalogStoreState>((set) => {
   const initial = loadStoredCatalogs();
   return {
-    activeCatalogId: initial[0]?.id || "standard-ebooks",
+    activeCatalogId: initial[0]?.id || "project-gutenberg",
     addCatalog: (name: string, url: string, auth) =>
       set((state) => {
         const newCatalog: CatalogSource = {
@@ -78,7 +85,7 @@ export const useCatalogStore = create<CatalogStoreState>((set) => {
         persistCatalogs(updated);
         const nextActive =
           state.activeCatalogId === id
-            ? updated[0]?.id || "standard-ebooks"
+            ? updated[0]?.id || "project-gutenberg"
             : state.activeCatalogId;
         return { activeCatalogId: nextActive, catalogs: updated };
       }),

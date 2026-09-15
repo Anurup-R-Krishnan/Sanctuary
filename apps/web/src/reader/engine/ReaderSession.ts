@@ -53,12 +53,8 @@ export class ReaderSession implements IReaderSession {
     return this.session.prev();
   }
 
-  public async goToPage(page: number): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (this.session as any).goToPage === "function") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.session as any).goToPage(page);
-    }
+  public scrollBy(delta: number): number {
+    return this.session.scrollBy?.(delta) ?? 0;
   }
 
   public async setFlow(next: ReaderFlowOptions): Promise<void> {

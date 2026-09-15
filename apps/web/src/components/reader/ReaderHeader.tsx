@@ -100,7 +100,7 @@ function ReaderHeader({
             onClick={(e) => { e.stopPropagation(); onClick(); }}
             className={`transition-all duration-instant ${active
                     ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent"
-                    : "hover:bg-black/5 dark:hover:bg-white/5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                    : "hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
                 }`}
             label={label}
             icon={<Icon className="w-5 h-5" strokeWidth={1.5} />}
@@ -108,64 +108,78 @@ function ReaderHeader({
         />
     );
 
+    const getTranslucentBg = (bg: string, alphaHex: string = "E6"): string => {
+        if (bg.startsWith("#")) {
+            if (bg.length === 4) {
+                return `#${bg[1]}${bg[1]}${bg[2]}${bg[2]}${bg[3]}${bg[3]}${alphaHex}`;
+            }
+            if (bg.length === 7) {
+                return `${bg}${alphaHex}`;
+            }
+        }
+        return bg;
+    };
+
     return (
         <header
             className={`fixed top-0 left-0 right-0 z-50 pointer-events-none transition-opacity duration-300 ${showUI ? "opacity-100" : "opacity-0"}`}
         >
-            <div className="relative flex items-start justify-between p-3.5 sm:p-5 md:p-6">
-                <IconButton
-                    onClick={(e) => { e.stopPropagation(); onClose(); }}
-                    className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hover:scale-105 transition-all duration-instant group shrink-0"
-                    style={{ backgroundColor: `${readerBackground}E6` }}
-                    label="Close reader"
-                    icon={<ArrowLeft className="w-5 h-5 transition-colors" style={{ color: readerForeground }} strokeWidth={2} />}
-                    variant="ghost"
-                />
+            <div className="flex items-start justify-between p-3.5 sm:p-5 md:p-6">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <IconButton
+                        onClick={(e) => { e.stopPropagation(); onClose(); }}
+                        className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-light-border dark:border-dark-border hover:scale-105 transition-all duration-instant group shrink-0"
+                        style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
+                        label="Close reader"
+                        icon={<ArrowLeft className="w-5 h-5 transition-colors" style={{ color: readerForeground }} strokeWidth={2} />}
+                        variant="ghost"
+                    />
 
-                {/* Center: Title, Chapter Progress & Session Timer (Floating Capsule) */}
-                {showFloatingCapsule && (
-                    <div 
-                        className="absolute left-1/2 -translate-x-1/2 top-3.5 sm:top-5 md:top-6 pointer-events-auto max-w-lg px-4 py-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 hidden lg:flex items-center gap-2.5 transition-all duration-instant"
-                        style={{ backgroundColor: `${readerBackground}E6` }}
-                    >
-                        <Suspense fallback={null}>
-                            <ReaderSessionTimer />
-                        </Suspense>
-                        <div className="w-px h-5 bg-black/10 dark:bg-white/10" />
-                        <div className="flex flex-col items-center justify-center min-w-0">
-                            <h1 
-                                className="font-medium text-xs sm:text-sm truncate max-w-[240px] text-center"
-                                style={{ color: readerForeground }}
-                            >
-                                {chapterLabel || book.title}
-                            </h1>
-                            {(chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null) ? (
-                                <span 
-                                    className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[240px] text-center"
+                    {/* Title, Chapter Progress & Session Timer (Floating Capsule) */}
+                    {showFloatingCapsule && (
+                        <div
+                            className="pointer-events-auto min-w-0 max-w-sm px-4 py-1.5 rounded-full backdrop-blur-xl shadow-lg border border-light-border dark:border-dark-border hidden lg:flex items-center gap-2.5 transition-all duration-instant"
+                            style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
+                        >
+                            <Suspense fallback={null}>
+                                <ReaderSessionTimer />
+                            </Suspense>
+                            <div className="w-px h-5 bg-light-border dark:bg-dark-border" />
+                            <div className="flex flex-col items-start justify-center min-w-0">
+                                <h1
+                                    className="font-medium text-xs sm:text-sm truncate max-w-[240px]"
                                     style={{ color: readerForeground }}
                                 >
-                                    {chapterEstimatedMinutesRemaining < 1
-                                        ? "< 1 min in chapter"
-                                        : `${Math.round(chapterEstimatedMinutesRemaining)} min in chapter`}
-                                    {readingSpeedWpm ? ` · ${readingSpeedWpm} wpm` : ""}
-                                    {currentStreak > 0 ? ` · 🔥 ${currentStreak}d` : ""}
-                                </span>
-                            ) : currentStreak > 0 ? (
-                                <span 
-                                    className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[240px] text-center"
-                                    style={{ color: readerForeground }}
-                                >
-                                    🔥 {currentStreak} day streak
-                                </span>
-                            ) : null}
+                                    {chapterLabel || book.title}
+                                </h1>
+                                {(chapterEstimatedMinutesRemaining !== undefined && chapterEstimatedMinutesRemaining !== null) ? (
+                                    <span
+                                        className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[240px]"
+                                        style={{ color: readerForeground }}
+                                    >
+                                        {chapterEstimatedMinutesRemaining < 1
+                                            ? "< 1 min in chapter"
+                                            : `${Math.round(chapterEstimatedMinutesRemaining)} min in chapter`}
+                                        {readingSpeedWpm ? ` · ${readingSpeedWpm} wpm` : ""}
+                                        {currentStreak > 0 ? ` · 🔥 ${currentStreak}d` : ""}
+                                    </span>
+                                ) : currentStreak > 0 ? (
+                                    <span
+                                        className="text-[10px] tracking-wide opacity-60 font-medium truncate max-w-[240px]"
+                                        style={{ color: readerForeground }}
+                                    >
+                                        🔥 {currentStreak} day streak
+                                    </span>
+                                ) : null}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {/* Right: Actions (Floating Group) */}
                 <div 
-                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-black/5 dark:border-white/5 transition-all duration-instant shrink-0"
-                    style={{ backgroundColor: `${readerBackground}E6` }}
+                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-light-border dark:border-dark-border transition-all duration-instant shrink-0 max-w-[calc(100vw-5.5rem)] overflow-x-auto scrollbar-none"
+                    style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
                 >
                     <ActionBtn 
                         icon={isBookmarked ? BookmarkCheck : Bookmark} 
@@ -173,7 +187,7 @@ function ReaderHeader({
                         onClick={onToggleBookmark} 
                         active={isBookmarked} 
                     />
-                    <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+                    <div className="w-px h-4 bg-light-border dark:bg-dark-border mx-1" />
                     <ActionBtn icon={List} label="Contents" onClick={onToggleTOC} />
                     <ActionBtn icon={Search} label="Search" onClick={onToggleSearch} />
                     {onToggleTTS && (
@@ -234,7 +248,7 @@ function ReaderHeader({
                     <ActionBtn icon={Highlighter} label="Annotations" onClick={onToggleAnnotations} />
                     <ActionBtn icon={Settings} label="Appearance" onClick={onToggleSettings} />
 
-                    <div className="hidden sm:block w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+                    <div className="hidden sm:block w-px h-4 bg-light-border dark:bg-dark-border mx-1" />
                     <div className="hidden sm:block">
                         <ActionBtn 
                             icon={isFullscreen ? Minimize2 : Maximize2} 

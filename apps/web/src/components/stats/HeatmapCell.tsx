@@ -6,7 +6,7 @@ interface HeatmapCellProps {
 
 export const HeatmapCell = ({ level }: HeatmapCellProps) => {
   const colors = [
-    "bg-black/[0.03] dark:bg-white/[0.03]",
+    "bg-light-border/40 dark:bg-dark-border/40",
     "bg-light-accent/20 dark:bg-dark-accent/20",
     "bg-light-accent/45 dark:bg-dark-accent/45",
     "bg-light-accent dark:bg-dark-accent",

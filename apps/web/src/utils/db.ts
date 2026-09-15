@@ -295,3 +295,28 @@ export async function getAllSearchIndexes(): Promise<IndexedBookRecord[]> {
 export async function deleteSearchIndex(bookId: string): Promise<void> {
   return dbDelete(SEARCH_INDEX_STORE, bookId);
 }
+
+// Custom fonts cache helpers
+export interface CustomFontRecord {
+  createdAt: number;
+  data: ArrayBuffer;
+  family: string;
+  format: "opentype" | "truetype" | "woff" | "woff2";
+  id: string;
+}
+
+export async function putCustomFont(font: CustomFontRecord): Promise<void> {
+  return dbPut(READER_CACHE_STORE, font);
+}
+
+export async function getCustomFont(id: string): Promise<CustomFontRecord | undefined> {
+  return dbGet<CustomFontRecord>(READER_CACHE_STORE, id);
+}
+
+export async function getAllCustomFonts(): Promise<CustomFontRecord[]> {
+  return dbGetAll<CustomFontRecord>(READER_CACHE_STORE);
+}
+
+export async function deleteCustomFont(id: string): Promise<void> {
+  return dbDelete(READER_CACHE_STORE, id);
+}

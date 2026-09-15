@@ -47,7 +47,7 @@ export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
 
       <button
         onClick={onContinueAsGuest}
-        className="mt-8 px-5 py-2.5 rounded-xl text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] border border-black/5 dark:border-white/5 transition-all duration-instant"
+        className="mt-8 px-5 py-2.5 rounded-xl text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-light-surface/40 dark:bg-dark-surface/40 hover:bg-light-surface/70 dark:hover:bg-dark-surface/70 border border-light-border dark:border-dark-border transition-all duration-instant shadow-xs"
       >
         Continue as Guest (Offline only)
       </button>

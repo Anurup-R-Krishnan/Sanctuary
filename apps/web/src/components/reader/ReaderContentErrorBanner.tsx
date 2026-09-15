@@ -1,3 +1,6 @@
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+
 interface ReaderContentErrorBannerProps {
   contentError: string;
   onClose: () => void;
@@ -9,9 +12,28 @@ export function ReaderContentErrorBanner({
   onClose,
   onRetry,
 }: ReaderContentErrorBannerProps) {
-  return (
-    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-sm p-6 animate-fadeIn">
-      <div className="max-w-sm w-full rounded-2xl bg-light-surface dark:bg-dark-surface border border-red-200/50 dark:border-red-800/30 p-8 text-center shadow-2xl">
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [onClose]);
+
+  const banner = (
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="reader-content-error-title"
+      aria-describedby="reader-content-error-desc"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6 animate-fadeIn"
+    >
+      <div className="max-w-sm w-full rounded-2xl bg-light-primary dark:bg-dark-primary border border-red-200/60 dark:border-red-800/40 p-8 text-center shadow-2xl">
         <div className="mx-auto mb-5 flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/40">
           <svg
             className="w-7 h-7 text-red-500 dark:text-red-400"
@@ -19,6 +41,7 @@ export function ReaderContentErrorBanner({
             viewBox="0 0 24 24"
             stroke="currentColor"
             strokeWidth={1.5}
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -27,22 +50,30 @@ export function ReaderContentErrorBanner({
             />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-light-text dark:text-dark-text mb-2">
+        <h3
+          id="reader-content-error-title"
+          className="text-lg font-semibold text-light-text dark:text-dark-text mb-2"
+        >
           Unable to Load Book
         </h3>
-        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6 leading-relaxed">
+        <p
+          id="reader-content-error-desc"
+          className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6 leading-relaxed"
+        >
           {contentError}
         </p>
         <div className="flex gap-3 justify-center">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-black/[0.04] dark:bg-white/[0.06] text-light-text dark:text-dark-text hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-colors"
+            type="button"
+            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
           >
             Back to Library
           </button>
           <button
             onClick={onRetry}
-            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-light-accent dark:bg-dark-accent text-white hover:opacity-90 transition-opacity shadow-sm"
+            type="button"
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white dark:text-black transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
           >
             Try Again
           </button>
@@ -50,4 +81,9 @@ export function ReaderContentErrorBanner({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return banner;
+  }
+  return createPortal(banner, document.body);
 }

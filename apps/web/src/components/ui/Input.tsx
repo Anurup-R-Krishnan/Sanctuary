@@ -20,10 +20,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cx(
-            "w-full h-11 rounded-xl border border-black/[0.08] dark:border-white/[0.08]",
+            "w-full h-11 rounded-xl border border-light-border dark:border-dark-border",
             "bg-light-surface dark:bg-dark-surface text-sm text-light-text dark:text-dark-text",
             "placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted",
-            "focus:outline-none focus:ring-2 focus:ring-light-accent/30 dark:focus:ring-dark-accent/30",
+            "focus:outline-none focus:border-light-accent dark:focus:border-dark-accent focus:ring-2 focus:ring-light-accent/30 dark:focus:ring-dark-accent/30",
             "transition-shadow duration-instant",
             icon ? "pl-10" : "pl-4",
             rightIcon ? "pr-10" : "pr-4",

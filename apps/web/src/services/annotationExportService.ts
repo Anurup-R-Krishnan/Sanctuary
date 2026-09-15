@@ -5,12 +5,16 @@
  */
 
 import type { Book } from "@/types";
+import type { ReaderAnnotation } from "@/types/reader";
+
+export type ExportPreset = "notion" | "obsidian" | "standard";
 
 export interface ExportOptions {
   includeBookmarks?: boolean;
   includeCfi?: boolean;
   includeDate?: boolean;
   obsidianCallouts?: boolean;
+  preset?: ExportPreset;
 }
 
 const DEFAULT_OPTIONS: Required<ExportOptions> = {
@@ -18,6 +22,7 @@ const DEFAULT_OPTIONS: Required<ExportOptions> = {
   includeCfi: true,
   includeDate: true,
   obsidianCallouts: true,
+  preset: "obsidian",
 };
 
 function sanitizeFilename(name: string): string {
@@ -38,6 +43,11 @@ export function formatBookAnnotationsAsMarkdown(
   options: ExportOptions = {}
 ): string {
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const resolvedPreset: ExportPreset = options.preset
+    ? options.preset
+    : options.obsidianCallouts === false
+    ? "standard"
+    : "obsidian";
   const highlights = book.highlights ?? [];
   const bookmarks = book.bookmarks ?? [];
   const exportDate = new Date().toISOString();
@@ -76,7 +86,19 @@ export function formatBookAnnotationsAsMarkdown(
       const dateStr = opts.includeDate && h.createdAt ? new Date(h.createdAt).toLocaleDateString() : "";
       const metaParts = [colorLabel, dateStr].filter(Boolean);
 
-      if (opts.obsidianCallouts) {
+      if (resolvedPreset === "notion") {
+        lines.push(`- 💬 **${metaParts.join(" • ")}**`);
+        for (const line of h.text.split("\n")) {
+          lines.push(`  > ${line}`);
+        }
+        if (h.note?.trim()) {
+          lines.push(`  - 📝 **Note**: ${h.note.trim()}`);
+        }
+        if (opts.includeCfi && h.cfi) {
+          lines.push(`  - 📍 \`${h.cfi}\``);
+        }
+        lines.push("");
+      } else if (resolvedPreset === "obsidian") {
         lines.push(`> [!quote] ${metaParts.join(" • ")}`);
         for (const line of h.text.split("\n")) {
           lines.push(`> ${line}`);
@@ -236,4 +258,100 @@ export function triggerFileDownload(content: string, filename: string, mimeType:
   } catch (err) {
     console.error("Failed to trigger file download:", err);
   }
+}
+
+/**
+ * Formats in-reader annotations (ReaderAnnotation[]) into Markdown using Obsidian, Notion, or Standard presets.
+ */
+export function formatReaderAnnotationsAsMarkdown(
+  bookTitle: string,
+  bookAuthor: string,
+  annotations: ReaderAnnotation[],
+  options: ExportOptions = {}
+): string {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+  const resolvedPreset: ExportPreset = options.preset
+    ? options.preset
+    : options.obsidianCallouts === false
+    ? "standard"
+    : "obsidian";
+  const exportDate = new Date().toISOString();
+  const dateStr = new Date().toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const lines: string[] = [
+    "---",
+    `title: "${(bookTitle || "Untitled").replace(/"/g, '\\"')}"`,
+    `author: "${(bookAuthor || "Unknown Author").replace(/"/g, '\\"')}"`,
+    `exportedAt: "${exportDate}"`,
+    `totalAnnotations: ${annotations.length}`,
+    "source: Sanctuary Book Reader",
+    "---",
+    "",
+    `# ${bookTitle || "Untitled"}`,
+    `*By ${bookAuthor || "Unknown Author"}*`,
+    `*Exported from Sanctuary on ${dateStr}*`,
+    "",
+  ];
+
+  if (annotations.length === 0) {
+    lines.push("*No highlights or notes recorded for this book.*");
+    return lines.join("\n");
+  }
+
+  // Sort chronologically (oldest first for reading order)
+  const sorted = [...annotations].sort((a, b) => a.createdAt - b.createdAt);
+
+  let currentChapter = "";
+  for (const item of sorted) {
+    const chapter = item.chapterLabel || "General Highlights";
+    if (chapter !== currentChapter) {
+      currentChapter = chapter;
+      lines.push(`## ${currentChapter}`, "");
+    }
+
+    const formattedDate = opts.includeDate && item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "";
+    const typeLabel = item.type === "underline" ? "Underline" : "Highlight";
+    const metaParts = [typeLabel, formattedDate].filter(Boolean);
+
+    if (resolvedPreset === "notion") {
+      lines.push(`- 💬 **${metaParts.join(" • ")}**`);
+      for (const line of item.text.split("\n")) {
+        lines.push(`  > ${line}`);
+      }
+      if (item.note?.trim()) {
+        lines.push(`  - 📝 **Note**: ${item.note.trim()}`);
+      }
+      if (opts.includeCfi && item.cfiRange) {
+        lines.push(`  - 📍 \`${item.cfiRange}\``);
+      }
+      lines.push("");
+    } else if (resolvedPreset === "obsidian") {
+      lines.push(`> [!quote] ${metaParts.join(" • ")}`);
+      for (const line of item.text.split("\n")) {
+        lines.push(`> ${line}`);
+      }
+      if (item.note?.trim()) {
+        lines.push(">");
+        lines.push(`> **Note**: ${item.note.trim()}`);
+      }
+      if (opts.includeCfi && item.cfiRange) {
+        lines.push(`> <!-- cfi: ${item.cfiRange} -->`);
+      }
+      lines.push("");
+    } else {
+      for (const line of item.text.split("\n")) {
+        lines.push(`> ${line}`);
+      }
+      if (item.note?.trim()) {
+        lines.push(`- **Note**: ${item.note.trim()}`);
+      }
+      lines.push(`*(${metaParts.join(" • ")})*`, "");
+    }
+  }
+
+  return lines.join("\n");
 }

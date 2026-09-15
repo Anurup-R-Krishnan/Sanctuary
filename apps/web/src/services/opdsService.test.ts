@@ -1,3 +1,5 @@
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
 import { beforeAll, describe, expect, it } from "bun:test";
 
 import { ensureTestDom } from "../reader/foliate/testEnv";
@@ -6,17 +8,24 @@ import {
   DEFAULT_CATALOGS,
   downloadCatalogBook,
   fetchCatalogFeed,
-  getSavedCustomCatalogs,
+  getOfflineSampleFeed,
   parseOpdsFeed,
   parseOpdsJson,
   parseOpdsXml,
-  removeCustomCatalog,
-  saveCustomCatalog,
+  resolveSearchUrl,
 } from "./opdsService";
 
 beforeAll(() => {
   ensureTestDom();
 });
+
+// A minimal stand-in for SanctuaryApiClient — fetchCatalogFeed/downloadCatalogBook
+// only ever call fetchOpdsProxy, so that's the only method under test here.
+function makeFakeApi(
+  fetchOpdsProxy: (targetUrl: string, targetAuth?: string, targetAccept?: string) => Promise<Response>
+): SanctuaryApiClient {
+  return { fetchOpdsProxy } as unknown as SanctuaryApiClient;
+}
 
 describe("OPDS 1.2 Atom XML Feed Parser", () => {
   const sampleAtomXml = `<?xml version="1.0" encoding="utf-8"?>
@@ -186,70 +195,50 @@ describe("OPDS 2.0 JSON Feed Parser", () => {
 
 describe("downloadCatalogBook helper", () => {
   it("downloads book blob and constructs File with Content-Disposition filename", async () => {
-    const originalFetch = globalThis.fetch;
     const fakeEpubBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+    const api = makeFakeApi(async () =>
+      new Response(fakeEpubBytes, {
+        status: 200,
+        headers: {
+          "Content-Disposition": 'attachment; filename="custom_book_name.epub"',
+          "Content-Type": "application/epub+zip",
+        },
+      })
+    );
 
-    globalThis.fetch = (async (url: string | URL | Request) => {
-      const u = String(url);
-      if (u.includes("download-test")) {
-        return new Response(fakeEpubBytes, {
-          status: 200,
-          headers: {
-            "Content-Disposition": 'attachment; filename="custom_book_name.epub"',
-            "Content-Type": "application/epub+zip",
-          },
-        });
-      }
-      return originalFetch(url);
-    }) as typeof fetch;
-
-    try {
-      const file = await downloadCatalogBook("https://example.com/download-test", "Fallback Title");
-      expect(file).toBeInstanceOf(File);
-      expect(file.name).toBe("custom_book_name.epub");
-      expect(file.type).toBe("application/epub+zip");
-      expect(file.size).toBe(4);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
+    const file = await downloadCatalogBook(api, "https://example.com/download-test", "Fallback Title");
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe("custom_book_name.epub");
+    expect(file.type).toBe("application/epub+zip");
+    expect(file.size).toBe(4);
   });
 
   it("derives fallback slug filename when Content-Disposition is absent", async () => {
-    const originalFetch = globalThis.fetch;
     const fakeEpubBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+    const api = makeFakeApi(async () =>
+      new Response(fakeEpubBytes, {
+        status: 200,
+        headers: { "Content-Type": "application/epub+zip" },
+      })
+    );
 
-    globalThis.fetch = (async (url: string | URL | Request) => {
-      const u = String(url);
-      if (u.includes("fallback-test")) {
-        return new Response(fakeEpubBytes, {
-          status: 200,
-          headers: {
-            "Content-Type": "application/epub+zip",
-          },
-        });
-      }
-      return originalFetch(url);
-    }) as typeof fetch;
-
-    try {
-      const file = await downloadCatalogBook(
-        "https://example.com/fallback-test",
-        "Moby Dick, or The Whale!"
-      );
-      expect(file.name).toBe("Moby_Dick_or_The_Whale.epub");
-      expect(file.size).toBe(4);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
+    const file = await downloadCatalogBook(
+      api,
+      "https://example.com/fallback-test",
+      "Moby Dick, or The Whale!"
+    );
+    expect(file.name).toBe("Moby_Dick_or_The_Whale.epub");
+    expect(file.size).toBe(4);
   });
 });
 
 describe("DEFAULT_CATALOGS constant", () => {
-  it("includes Standard Ebooks and Project Gutenberg as default sources", () => {
-    expect(DEFAULT_CATALOGS.length).toBeGreaterThanOrEqual(2);
+  it("includes Project Gutenberg as a default source", () => {
+    // Standard Ebooks is deliberately excluded — its full OPDS feed now
+    // requires paid Patrons Circle membership, so it 401s for everyone else.
+    expect(DEFAULT_CATALOGS.length).toBeGreaterThanOrEqual(1);
     const standardEbooks = DEFAULT_CATALOGS.find((c) => c.id === "standard-ebooks");
-    expect(standardEbooks).toBeDefined();
-    expect(standardEbooks?.url).toContain("standardebooks.org");
+    expect(standardEbooks).toBeUndefined();
 
     const gutenberg = DEFAULT_CATALOGS.find((c) => c.id === "project-gutenberg");
     expect(gutenberg).toBeDefined();
@@ -288,42 +277,36 @@ describe("Authenticated OPDS Feeds & Credential Handling", () => {
     expect(bearerAuth).toBe("Bearer my-jwt-token-123");
   });
 
-  it("fetchCatalogFeed attaches Authorization header for authenticated sources", async () => {
-    const originalFetch = globalThis.fetch;
-    let interceptedAuth: string | null = null;
+  it("fetchCatalogFeed passes the target's Authorization through the proxy for authenticated sources", async () => {
+    let interceptedAuth: string | undefined;
 
-    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
-      interceptedAuth = (init?.headers as Record<string, string>)?.Authorization || null;
+    const api = makeFakeApi(async (_targetUrl, targetAuth) => {
+      interceptedAuth = targetAuth;
       return new Response(
         `<feed xmlns="http://www.w3.org/2005/Atom"><title>Secure Calibre</title></feed>`,
         { headers: { "Content-Type": "application/atom+xml" }, status: 200 }
       );
-    }) as typeof fetch;
+    });
 
-    try {
-      const feed = await fetchCatalogFeed("https://calibre.home/opds", {
-        authType: "basic",
-        id: "calibre-1",
-        name: "Calibre 1",
-        password: "pw",
-        url: "https://calibre.home/opds",
-        username: "user",
-      });
+    const feed = await fetchCatalogFeed(api, "https://calibre.home/opds", {
+      authType: "basic",
+      id: "calibre-1",
+      name: "Calibre 1",
+      password: "pw",
+      url: "https://calibre.home/opds",
+      username: "user",
+    });
 
-      expect(feed.title).toBe("Secure Calibre");
-      expect(interceptedAuth).toBe("Basic dXNlcjpwdw==");
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
+    expect(feed.title).toBe("Secure Calibre");
+    expect(interceptedAuth).toBe("Basic dXNlcjpwdw==");
   });
 
-  it("downloadCatalogBook transmits Authorization header to acquisition endpoints", async () => {
-    const originalFetch = globalThis.fetch;
-    let interceptedAuth: string | null = null;
+  it("downloadCatalogBook passes the target's Authorization through the proxy to acquisition endpoints", async () => {
+    let interceptedAuth: string | undefined;
     const fakeEpub = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
 
-    globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
-      interceptedAuth = (init?.headers as Record<string, string>)?.Authorization || null;
+    const api = makeFakeApi(async (_targetUrl, targetAuth) => {
+      interceptedAuth = targetAuth;
       return new Response(fakeEpub, {
         headers: {
           "Content-Disposition": 'attachment; filename="secure_book.epub"',
@@ -331,44 +314,116 @@ describe("Authenticated OPDS Feeds & Credential Handling", () => {
         },
         status: 200,
       });
-    }) as typeof fetch;
+    });
 
-    try {
-      const file = await downloadCatalogBook(
-        "https://kavita.home/download/123",
-        "Secure Book",
-        {
-          authType: "bearer",
-          bearerToken: "token-abc-xyz",
-          id: "kavita-1",
-          name: "Kavita",
-          url: "https://kavita.home/opds",
-        }
-      );
+    const file = await downloadCatalogBook(
+      api,
+      "https://kavita.home/download/123",
+      "Secure Book",
+      {
+        authType: "bearer",
+        bearerToken: "token-abc-xyz",
+        id: "kavita-1",
+        name: "Kavita",
+        url: "https://kavita.home/opds",
+      }
+    );
 
-      expect(file.name).toBe("secure_book.epub");
-      expect(interceptedAuth).toBe("Bearer token-abc-xyz");
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-
-  it("persists and removes custom catalogs in localStorage", () => {
-    const testCatalog = {
-      authType: "basic" as const,
-      id: "test-calibre-custom",
-      name: "Home Calibre",
-      password: "pass",
-      url: "https://calibre.home/opds",
-      username: "admin",
-    };
-
-    saveCustomCatalog(testCatalog);
-    let list = getSavedCustomCatalogs();
-    expect(list.some((c) => c.id === "test-calibre-custom")).toBe(true);
-
-    removeCustomCatalog("test-calibre-custom");
-    list = getSavedCustomCatalogs();
-    expect(list.some((c) => c.id === "test-calibre-custom")).toBe(false);
+    expect(file.name).toBe("secure_book.epub");
+    expect(interceptedAuth).toBe("Bearer token-abc-xyz");
   });
 });
+
+describe("OPDS Pagination Link Parsing", () => {
+  it("extracts next and previous links from OPDS 1.2 XML feeds", () => {
+    const xmlWithPagination = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <id>https://standardebooks.org/opds/all?page=2</id>
+  <title>Standard Ebooks - Page 2</title>
+  <link rel="first" href="/opds/all?page=1" type="application/atom+xml" />
+  <link rel="previous" href="/opds/all?page=1" type="application/atom+xml" />
+  <link rel="next" href="/opds/all?page=3" type="application/atom+xml" />
+  <link rel="last" href="/opds/all?page=50" type="application/atom+xml" />
+  <link rel="subsection" href="/opds/subjects" title="Browse Subjects" />
+  <entry>
+    <id>book-1</id>
+    <title>Sample Book</title>
+  </entry>
+</feed>`;
+
+    const feed = parseOpdsXml(xmlWithPagination, "https://standardebooks.org/opds/all?page=2");
+    expect(feed.pagination).toBeDefined();
+    expect(feed.pagination?.first).toBe("https://standardebooks.org/opds/all?page=1");
+    expect(feed.pagination?.previous).toBe("https://standardebooks.org/opds/all?page=1");
+    expect(feed.pagination?.next).toBe("https://standardebooks.org/opds/all?page=3");
+    expect(feed.pagination?.last).toBe("https://standardebooks.org/opds/all?page=50");
+
+    // Ensure pagination links are excluded from navigation links
+    expect(feed.navigationLinks.length).toBe(1);
+    expect(feed.navigationLinks[0].title).toBe("Browse Subjects");
+  });
+
+  it("extracts next and previous links from OPDS 2.0 JSON feeds", () => {
+    const jsonWithPagination = JSON.stringify({
+      links: [
+        { href: "/opds2/catalog.json?page=1", rel: "first" },
+        { href: "/opds2/catalog.json?page=2", rel: "previous" },
+        { href: "/opds2/catalog.json?page=4", rel: "next" },
+        { href: "/opds2/categories", rel: "subsection", title: "Categories" },
+      ],
+      metadata: { title: "Paginated JSON Catalog" },
+      publications: [],
+    });
+
+    const feed = parseOpdsJson(jsonWithPagination, "https://catalog.example.com/opds2/catalog.json?page=3");
+    expect(feed.pagination).toBeDefined();
+    expect(feed.pagination?.first).toBe("https://catalog.example.com/opds2/catalog.json?page=1");
+    expect(feed.pagination?.previous).toBe("https://catalog.example.com/opds2/catalog.json?page=2");
+    expect(feed.pagination?.next).toBe("https://catalog.example.com/opds2/catalog.json?page=4");
+    expect(feed.navigationLinks.length).toBe(1);
+    expect(feed.navigationLinks[0].title).toBe("Categories");
+  });
+});
+
+describe("resolveSearchUrl helper", () => {
+  it("interpolates {?query} template parameters properly", () => {
+    const url = resolveSearchUrl("https://standardebooks.org/opds/search{?query}", "Sherlock Holmes");
+    expect(url).toBe("https://standardebooks.org/opds/search?query=Sherlock%20Holmes");
+  });
+
+  it("interpolates {query} and {searchTerms} templates properly", () => {
+    const url1 = resolveSearchUrl("https://example.com/search?q={query}", "Pride and Prejudice");
+    expect(url1).toBe("https://example.com/search?q=Pride%20and%20Prejudice");
+
+    const url2 = resolveSearchUrl("https://gutenberg.org/search?terms={searchTerms}", "Dracula");
+    expect(url2).toBe("https://gutenberg.org/search?terms=Dracula");
+  });
+
+  it("appends query parameter when no template parameter exists", () => {
+    const url = resolveSearchUrl("https://example.com/search", "Frankenstein");
+    expect(url).toBe("https://example.com/search?query=Frankenstein");
+  });
+});
+
+describe("Offline Sample Catalog Feed", () => {
+  it("provides rich curated public domain classics with valid metadata and links", () => {
+    const feed = getOfflineSampleFeed();
+    expect(feed.entries.length).toBeGreaterThanOrEqual(6);
+    expect(feed.title).toContain("Offline Classics");
+
+    const titles = feed.entries.map((e) => e.title);
+    expect(titles).toContain("Pride and Prejudice");
+    expect(titles).toContain("Frankenstein; or, The Modern Prometheus");
+    expect(titles).toContain("Dracula");
+
+    for (const entry of feed.entries) {
+      expect(entry.author).toBeDefined();
+      expect(entry.summary).toBeDefined();
+      expect(entry.acquisitionUrl).toContain(".epub");
+      expect(entry.format).toBe("application/epub+zip");
+    }
+
+    expect(feed.navigationLinks.length).toBeGreaterThanOrEqual(3);
+  });
+});
+

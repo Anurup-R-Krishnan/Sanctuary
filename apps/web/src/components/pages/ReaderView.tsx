@@ -61,6 +61,12 @@ const WordDefinitionModal = lazy(() =>
     default: m.WordDefinitionModal,
   }))
 );
+
+const ReaderShortcutsHelpModal = lazy(() =>
+  import("@/components/reader/ReaderShortcutsHelpModal").then((m) => ({
+    default: m.ReaderShortcutsHelpModal,
+  }))
+);
 import { useReaderAnnotations } from "@/hooks/useReaderAnnotations";
 import { useReaderBookHydration } from "@/hooks/useReaderBookHydration";
 import { useReaderBookmarks } from "@/hooks/useReaderBookmarks";
@@ -102,6 +108,7 @@ function ReaderView({
 }: ReaderViewProps) {
   const book = useBookStore((state) => state.getBookById(bookId));
   const books = useBookStore((state) => state.books);
+  const isBookStoreLoading = useBookStore((state) => state.isLoading);
   const rootRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<ReaderEngineRef>(null);
 
@@ -145,18 +152,17 @@ function ReaderView({
       href: "",
       chapterLabel: "",
       bookProgress: 0,
+      bookFraction: 0,
       chapterProgress: 0,
       location: 1,
       totalLocations: 1,
-      displayedPage: 1,
-      displayedPages: 1,
     },
     tocItems: [],
     selection: null,
   });
 
   const { status, error, position, tocItems, selection } = engineState;
-  const { cfi: currentCfi, totalLocations, location: currentPage } = position;
+  const { cfi: currentCfi, totalLocations, location: currentPage, bookFraction } = position;
   const isLoading =
     status === "loading-book" ||
     status === "loading-navigation" ||
@@ -342,6 +348,8 @@ function ReaderView({
     []
   );
 
+  const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useState(false);
+
   const [isAutoScrollActive, setIsAutoScrollActive] = useState(false);
   const [isAutoScrollPlaying, setIsAutoScrollPlaying] = useState(false);
   const [autoScrollVelocity, setAutoScrollVelocity] = useState(36);
@@ -392,7 +400,7 @@ function ReaderView({
         scrollRemainderRef.current = remainder;
 
         if (deltaInt > 0) {
-          engineRef.current?.scrollBy?.(deltaInt);
+          engineRef.current?.scrollBy(deltaInt);
         }
       }
 
@@ -519,16 +527,16 @@ function ReaderView({
     [setShowControls]
   );
 
-  const handlePageChange = useCallback((page: number) => {
-    engineRef.current?.goToPage(page);
+  const handleSeekFraction = useCallback((fraction: number) => {
+    engineRef.current?.display(`fraction:${fraction}`);
   }, []);
 
   const handleNextPage = useCallback(() => engineRef.current?.nextPage(), []);
   const handlePrevPage = useCallback(() => engineRef.current?.prevPage(), []);
   const handleJumpToTop = useCallback(() => engineRef.current?.display("0"), []);
   const handleJumpToBottom = useCallback(
-    () => engineRef.current?.goToPage(totalLocations),
-    [totalLocations]
+    () => engineRef.current?.display("fraction:1"),
+    []
   );
 
   // Keyboard Shortcuts
@@ -541,6 +549,7 @@ function ReaderView({
     onClose,
     onToggleAutoScroll: handleToggleAutoScroll,
     onToggleReadability: handleOpenReadabilityFromChapter,
+    onToggleShortcutsHelp: () => setIsShortcutsHelpOpen((prev) => !prev),
     onToggleXRay: () => (xrayTarget ? setXrayTarget(null) : handleOpenXRayFromChapter()),
     onToggleZenMode: handleToggleZenMode,
     toggleBookmark: handleToggleBookmark,
@@ -549,9 +558,13 @@ function ReaderView({
     showSettings,
     showControls,
     showSearch,
+    showAnnotations,
     setShowSettings,
     setShowControls,
     setShowSearch,
+    setShowAnnotations: (open) => {
+      if (!open) handleCloseAnnotations();
+    },
     clearSelection: () => engineRef.current?.clearSelection(),
     hasSelection: !!selection,
     isEnabled: true,
@@ -559,6 +572,18 @@ function ReaderView({
 
   const isAtEndOfBook =
     (book?.progress ?? 0) >= 95 || (totalLocations > 1 && currentPage >= totalLocations);
+
+  // A book can go missing out from under an open/pending reader session — it
+  // was deleted from the library while this session was still "active" in
+  // the background, or a sync removed it. Once the library has finished its
+  // initial load, a missing book is never going to appear, so bail out
+  // instead of leaving the loading spinner (with no header/nav to escape
+  // through) spinning forever.
+  useEffect(() => {
+    if (!book && !isBookStoreLoading) {
+      onClose();
+    }
+  }, [book, isBookStoreLoading, onClose]);
 
   if (!book) {
     return (
@@ -643,7 +668,8 @@ function ReaderView({
         onNavigate={handleNavigate}
         onJumpToTop={handleJumpToTop}
         onJumpToBottom={handleJumpToBottom}
-        onPageChange={handlePageChange}
+        onSeekFraction={handleSeekFraction}
+        progressFraction={bookFraction}
         onRemoveBookmark={onRemoveBookmark}
         onCloseSettings={handleCloseSettings}
         onCloseControls={handleCloseControls}
@@ -806,6 +832,15 @@ function ReaderView({
             onTogglePacer={() => setIsPacerEnabled((prev) => !prev)}
             onTogglePlay={handleToggleAutoScrollPlay}
             velocityPxPerSec={autoScrollVelocity}
+          />
+        </Suspense>
+      )}
+
+      {isShortcutsHelpOpen && (
+        <Suspense fallback={null}>
+          <ReaderShortcutsHelpModal
+            isOpen={isShortcutsHelpOpen}
+            onClose={() => setIsShortcutsHelpOpen(false)}
           />
         </Suspense>
       )}

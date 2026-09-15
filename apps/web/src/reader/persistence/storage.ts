@@ -6,6 +6,8 @@ const safeStorageSet = (key: string, value: string): void => {
     try { window.localStorage.setItem(key, value); } catch { /* Storage can fail in private mode. */ }
 };
 
+const safeStorageRemove = (key: string): void => {
+    try { window.localStorage.removeItem(key); } catch { /* Storage can fail in private mode. */ }
+};
 
-
-export { safeStorageGet, safeStorageSet };
+export { safeStorageGet, safeStorageRemove, safeStorageSet };

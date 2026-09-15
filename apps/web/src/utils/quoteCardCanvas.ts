@@ -1,5 +1,6 @@
 export type QuoteCardRatio = "portrait" | "square" | "story";
 export type QuoteCardTheme = "editorial" | "obsidian" | "parchment" | "swiss";
+export type QuoteCardFontSize = "regular" | "large" | "xlarge";
 
 export interface QuoteCardDimensions {
   height: number;
@@ -11,6 +12,7 @@ export interface QuoteCardOptions {
   bookAuthor?: string;
   bookTitle: string;
   chapterLabel?: string;
+  fontSizePreference?: QuoteCardFontSize;
   quote: string;
   theme: QuoteCardTheme;
 }
@@ -76,15 +78,29 @@ export const THEME_CONFIGS: Record<QuoteCardTheme, ThemeColors> = {
 };
 
 /**
- * Calculates optimal font size based on quote length and target width.
+ * Calculates optimal font size based on quote length, target width, and size preference.
  */
-export function calculateQuoteFontSize(quoteLength: number, cardWidth: number): number {
+export function calculateQuoteFontSize(
+  quoteLength: number,
+  cardWidth: number,
+  fontSizePreference: QuoteCardFontSize = "regular"
+): number {
   const scale = cardWidth / 1200;
-  if (quoteLength < 80) return Math.round(52 * scale);
-  if (quoteLength < 160) return Math.round(44 * scale);
-  if (quoteLength < 300) return Math.round(36 * scale);
-  if (quoteLength < 500) return Math.round(30 * scale);
-  return Math.max(18, Math.round(24 * scale));
+  let base: number;
+  if (quoteLength < 80) base = 52;
+  else if (quoteLength < 160) base = 44;
+  else if (quoteLength < 300) base = 36;
+  else if (quoteLength < 500) base = 30;
+  else base = Math.max(18, 24);
+
+  const multiplier =
+    fontSizePreference === "xlarge"
+      ? 1.35
+      : fontSizePreference === "large"
+      ? 1.15
+      : 1.0;
+
+  return Math.round(base * scale * multiplier);
 }
 
 /**
@@ -165,7 +181,11 @@ export function renderQuoteCardToCanvas(
   // 4. Calculate typography and quote lines
   const cleanQuote = options.quote.trim().replace(/^["“](.*)["”]$/, "$1");
   const maxTextWidth = width - margin * 4;
-  const fontSize = calculateQuoteFontSize(cleanQuote.length, width);
+  const fontSize = calculateQuoteFontSize(
+    cleanQuote.length,
+    width,
+    options.fontSizePreference ?? "regular"
+  );
   const lineHeight = Math.round(fontSize * 1.5);
 
   ctx.font = `italic 400 ${fontSize}px ${theme.fontFamily}`;

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "bun:test";
 
 import type { Book, Bookmark, Highlight } from "@/types";
+import type { ReaderAnnotation } from "@/types/reader";
 
 import {
   exportAnnotationsAsCsv,
   formatBatchAnnotationsAsMarkdown,
   formatBookAnnotationsAsMarkdown,
+  formatReaderAnnotationsAsMarkdown,
   triggerFileDownload,
 } from "./annotationExportService";
 
@@ -146,6 +148,77 @@ describe("Annotation Knowledge Export & Markdown Sync Service", () => {
       expect(csv).toContain('"Moby Dick","Herman Melville","Highlight","yellow"');
       expect(csv).toContain('"Key thesis of the entire book."');
       expect(csv).toContain('"The Spouter-Inn"');
+    });
+  });
+
+  describe("presets and formatReaderAnnotationsAsMarkdown", () => {
+    it("formats highlights with Notion bulleted format when preset is notion", () => {
+      const md = formatBookAnnotationsAsMarkdown(mockBook, { preset: "notion" });
+
+      expect(md).toContain("- 💬 **Yellow");
+      expect(md).toContain("  > Call me Ishmael");
+      expect(md).toContain("  - 📝 **Note**: Key thesis of the entire book.");
+      expect(md).toContain("  - 📍 `epubcfi(/6/2[chapter1]!/4/2/10)`");
+    });
+
+    it("formats in-reader annotations into Obsidian callouts by default", () => {
+      const mockReaderAnnotations: ReaderAnnotation[] = [
+        {
+          bookId: "book-1",
+          cfiRange: "epubcfi(/6/2!/4/2/10)",
+          chapterLabel: "Chapter 1: Loomings",
+          color: "amber",
+          createdAt: 1714557600000,
+          href: "chapter1.xhtml",
+          id: "ra-1",
+          note: "Crucial opening metaphor",
+          text: "Whenever my hypos get such an upper hand of me...",
+          type: "highlight",
+          updatedAt: 1714557600000,
+        },
+      ];
+
+      const md = formatReaderAnnotationsAsMarkdown(
+        "Moby Dick",
+        "Herman Melville",
+        mockReaderAnnotations,
+        { preset: "obsidian" }
+      );
+
+      expect(md).toContain('title: "Moby Dick"');
+      expect(md).toContain("## Chapter 1: Loomings");
+      expect(md).toContain("> [!quote] Highlight");
+      expect(md).toContain("> Whenever my hypos get such an upper hand of me...");
+      expect(md).toContain("> **Note**: Crucial opening metaphor");
+    });
+
+    it("formats in-reader annotations into Notion bullet format", () => {
+      const mockReaderAnnotations: ReaderAnnotation[] = [
+        {
+          bookId: "book-1",
+          cfiRange: "epubcfi(/6/2!/4/2/10)",
+          chapterLabel: "Chapter 1",
+          color: "emerald",
+          createdAt: 1714557600000,
+          href: "chapter1.xhtml",
+          id: "ra-2",
+          note: "Important reflection",
+          text: "A damp, drizzly November in my soul.",
+          type: "highlight",
+          updatedAt: 1714557600000,
+        },
+      ];
+
+      const md = formatReaderAnnotationsAsMarkdown(
+        "Moby Dick",
+        "Herman Melville",
+        mockReaderAnnotations,
+        { preset: "notion" }
+      );
+
+      expect(md).toContain("- 💬 **Highlight");
+      expect(md).toContain("  > A damp, drizzly November in my soul.");
+      expect(md).toContain("  - 📝 **Note**: Important reflection");
     });
   });
 

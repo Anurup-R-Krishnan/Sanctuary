@@ -33,7 +33,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         },
         ref
     ) => {
-        const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-instant border outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[rgb(var(--accent))] dark:focus-visible:ring-[rgb(var(--accent-dark))] disabled:opacity-50 disabled:pointer-events-none";
+        const baseStyles = "inline-flex items-center justify-center gap-2 font-medium transition-all duration-instant border outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent disabled:opacity-50 disabled:pointer-events-none";
         
         return (
             <button
@@ -43,8 +43,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
                 {...props}
             >
-                {isLoading && <LoadingSpinner className="-ml-1 mr-2 h-4 w-4" />}
-                <span className={isLoading ? "opacity-0" : "opacity-100"}>{children}</span>
+                {isLoading && <LoadingSpinner className="-ml-1 mr-2 h-4 w-4 shrink-0" />}
+                <span className={`inline-flex items-center justify-center gap-[inherit] ${isLoading ? "opacity-0" : "opacity-100"}`}>
+                    {children}
+                </span>
             </button>
         );
     }

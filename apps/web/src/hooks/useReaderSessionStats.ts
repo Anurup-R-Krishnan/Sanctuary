@@ -22,8 +22,9 @@ export const useReaderSessionStats = (
 
     const activeSecondsRef = useRef(0);
     const unsavedSecondsRef = useRef(0);
-    const locationsReadRef = useRef(0);
+    const charsReadRef = useRef(0);
     const lastLocationRef = useRef<number | null>(null);
+    const lastTotalRemainingRef = useRef<number | null>(null);
     const positionRef = useRef<Partial<ReaderPosition> | null>(position ?? null);
 
     useEffect(() => {
@@ -61,16 +62,16 @@ export const useReaderSessionStats = (
     // Compute estimates from velocity and remaining weights
     const computeEstimates = useCallback((
         activeSec: number,
-        locsRead: number,
+        charsRead: number,
         loc: number | null,
         pos: Partial<ReaderPosition> | null
     ) => {
         let lpm: number | null = null;
         let wpm: number | null = null;
 
-        if (activeSec >= 20 && locsRead > 0) {
-            lpm = Math.round(((locsRead / activeSec) * 60) * 100) / 100;
-            wpm = Math.max(80, Math.min(800, Math.round(lpm * 250)));
+        if (activeSec >= 20 && charsRead > 0) {
+            wpm = Math.max(80, Math.min(800, Math.round((charsRead / 6) / (activeSec / 60))));
+            lpm = Math.round((wpm / 250) * 100) / 100;
         }
 
         const effectiveWpm = wpm ?? 230;
@@ -118,7 +119,7 @@ export const useReaderSessionStats = (
             if (activeSecondsRef.current % 5 === 0) {
                 const { bookEstimated, chapterEstimated, lpm, wpm } = computeEstimates(
                     activeSecondsRef.current,
-                    locationsReadRef.current,
+                    charsReadRef.current,
                     lastLocationRef.current,
                     positionRef.current
                 );
@@ -160,14 +161,18 @@ export const useReaderSessionStats = (
     ) => {
         const trackingEnabled = useSettingsStore.getState().trackingEnabled;
         if (!trackingEnabled) return;
-        
-        if (lastLocationRef.current !== null) {
-            const diff = currentLocation - lastLocationRef.current;
-            if (diff > 0 && diff < 100) {
-                locationsReadRef.current += diff;
-            }
-        }
+
         lastLocationRef.current = currentLocation;
+
+        if (typeof totalRemainingWeight === "number") {
+            if (lastTotalRemainingRef.current !== null) {
+                const charsDelta = lastTotalRemainingRef.current - totalRemainingWeight;
+                if (charsDelta > 0 && charsDelta < 20000) {
+                    charsReadRef.current += charsDelta;
+                }
+            }
+            lastTotalRemainingRef.current = totalRemainingWeight;
+        }
 
         if (chapterRemainingWeight !== undefined || totalRemainingWeight !== undefined) {
             positionRef.current = {
@@ -179,7 +184,7 @@ export const useReaderSessionStats = (
 
         const { bookEstimated, chapterEstimated, lpm, wpm } = computeEstimates(
             activeSecondsRef.current,
-            locationsReadRef.current,
+            charsReadRef.current,
             currentLocation,
             positionRef.current
         );
@@ -196,6 +201,5 @@ export const useReaderSessionStats = (
     return {
         recordLocationProgress,
         stats,
-        trackLocationProgress: recordLocationProgress,
     };
 };

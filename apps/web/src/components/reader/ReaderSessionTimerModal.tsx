@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   formatClock,
@@ -35,7 +36,7 @@ export interface ReaderSessionTimerModalProps {
   todayMinutesTotal: number;
 }
 
-const BUDGET_OPTIONS: readonly number[] = [15, 20, 30, 45, 60, 0];
+const PRESET_BUDGET_OPTIONS: readonly number[] = [15, 20, 25, 30, 45, 60, 90, 0];
 
 export function ReaderSessionTimerModal({
   dailyGoalMinutes,
@@ -55,6 +56,17 @@ export function ReaderSessionTimerModal({
   todayMinutesTotal,
 }: ReaderSessionTimerModalProps) {
   const [isPlayingChime, setIsPlayingChime] = useState(false);
+  const [customInput, setCustomInput] = useState('');
+
+  // Keyboard accessibility: Escape key dismisses modal
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -66,11 +78,24 @@ export function ReaderSessionTimerModal({
     }, 1600);
   };
 
-  return (
+  const parsedCustom = parseInt(customInput, 10);
+  const isValidCustom = !isNaN(parsedCustom) && parsedCustom >= 1 && parsedCustom <= 180;
+
+  const handleApplyCustom = () => {
+    if (isValidCustom) {
+      setSessionBudgetMinutes(parsedCustom);
+      setCustomInput('');
+    }
+  };
+
+  const isCustomActive =
+    sessionBudgetMinutes > 0 && !PRESET_BUDGET_OPTIONS.includes(sessionBudgetMinutes);
+
+  return createPortal(
     <div
       aria-labelledby="reading-timer-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto"
       role="dialog"
     >
       {/* Accessible Backdrop dismiss target */}
@@ -82,7 +107,7 @@ export function ReaderSessionTimerModal({
         type="button"
       />
 
-      <div className="relative z-10 w-full max-w-md p-6 rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl space-y-6 animate-scale-in">
+      <div className="relative z-10 w-full max-w-md p-6 rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl space-y-5 animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-light-border/60 dark:border-dark-border/60">
           <div className="flex items-center gap-2.5">
@@ -103,7 +128,7 @@ export function ReaderSessionTimerModal({
           </div>
           <button
             aria-label="Close session timer dialog"
-            className="p-1.5 rounded-lg text-light-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded-lg text-light-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
             onClick={onClose}
             type="button"
           >
@@ -149,7 +174,7 @@ export function ReaderSessionTimerModal({
 
           {/* Session Progress Bar */}
           {sessionBudgetMinutes > 0 && (
-            <div className="w-full h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-1.5">
+            <div className="w-full h-1.5 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden mt-1.5">
               <div
                 className={`h-full transition-all duration-300 rounded-full ${
                   isSessionGoalMet
@@ -169,35 +194,71 @@ export function ReaderSessionTimerModal({
           )}
         </div>
 
-        {/* Quick Session Budget Selector */}
+        {/* Quick Session Budget Presets & Custom Duration */}
         <div className="space-y-2.5">
-          <label className="text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
-            Session Target
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {BUDGET_OPTIONS.map((mins) => {
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
+              Session Target
+            </label>
+            {isCustomActive && (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent border border-light-accent/20">
+                Custom ({sessionBudgetMinutes}m)
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-4 gap-1.5">
+            {PRESET_BUDGET_OPTIONS.map((mins) => {
               const isSelected = sessionBudgetMinutes === mins;
               return (
                 <button
-                  className={`px-3 py-2.5 rounded-xl text-xs font-medium border transition-all duration-instant flex items-center justify-center gap-1.5 ${
+                  className={`px-2 py-2 rounded-xl text-xs font-medium border transition-all duration-instant flex items-center justify-center gap-1 ${
                     isSelected
-                      ? 'bg-light-accent dark:bg-dark-accent text-white border-transparent shadow-sm'
-                      : 'border-light-border dark:border-dark-border hover:bg-black/5 dark:hover:bg-white/5 text-light-text dark:text-dark-text'
+                      ? 'bg-light-accent dark:bg-dark-accent text-white border-transparent shadow-xs'
+                      : 'border-light-border dark:border-dark-border hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text dark:text-dark-text'
                   }`}
                   key={mins}
                   onClick={() => setSessionBudgetMinutes(mins)}
                   type="button"
                 >
-                  {isSelected && <Check className="w-3.5 h-3.5" />}
-                  <span>{mins === 0 ? 'Open' : `${mins} min`}</span>
+                  {isSelected && <Check className="w-3 h-3 shrink-0" />}
+                  <span>{mins === 0 ? 'Open' : `${mins}m`}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* Custom Duration Input */}
+          <div className="flex items-center gap-2 pt-0.5">
+            <input
+              aria-label="Custom session target minutes"
+              className="flex-1 px-3 py-1.5 rounded-xl text-xs bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted focus:outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent font-mono transition-all"
+              max={180}
+              min={1}
+              onChange={(e) => setCustomInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleApplyCustom();
+                }
+              }}
+              placeholder="Custom target (1–180 min)…"
+              type="number"
+              value={customInput}
+            />
+            <button
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-light-accent dark:bg-dark-accent text-white hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none transition-all duration-instant shadow-xs"
+              disabled={!isValidCustom}
+              onClick={handleApplyCustom}
+              type="button"
+            >
+              Set
+            </button>
+          </div>
         </div>
 
         {/* Daily Reading Goal Card */}
-        <div className="p-3.5 rounded-xl border border-light-border dark:border-dark-border bg-black/[0.02] dark:bg-white/[0.02] space-y-2">
+        <div className="p-3.5 rounded-xl border border-light-border dark:border-dark-border bg-light-surface/60 dark:bg-dark-surface/60 space-y-2">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-1.5 font-medium text-light-text dark:text-dark-text">
               <Flame className="w-4 h-4 text-orange-500" />
@@ -208,7 +269,7 @@ export function ReaderSessionTimerModal({
             </span>
           </div>
 
-          <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden">
             <div
               className={`h-full transition-all duration-300 rounded-full ${
                 isDailyGoalMet
@@ -235,7 +296,7 @@ export function ReaderSessionTimerModal({
 
         {/* Chime Settings */}
         <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               aria-label={
                 sessionChimeEnabled
@@ -257,9 +318,20 @@ export function ReaderSessionTimerModal({
               )}
             </button>
             <div className="text-left">
-              <p className="text-xs font-medium text-light-text dark:text-dark-text">
-                Completion Chime
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-medium text-light-text dark:text-dark-text">
+                  Completion Chime
+                </p>
+                <span
+                  className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                    sessionChimeEnabled
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted'
+                  }`}
+                >
+                  {sessionChimeEnabled ? 'On' : 'Off'}
+                </span>
+              </div>
               <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted">
                 Gentle 528 Hz solfeggio relaxation tone
               </p>
@@ -267,7 +339,7 @@ export function ReaderSessionTimerModal({
           </div>
 
           <button
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border border-light-border dark:border-dark-border hover:bg-black/5 dark:hover:bg-white/5 text-light-text dark:text-dark-text flex items-center gap-1.5 transition-opacity ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border border-light-border dark:border-dark-border hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text dark:text-dark-text flex items-center gap-1.5 transition-opacity ${
               isPlayingChime ? 'opacity-60 pointer-events-none' : ''
             }`}
             onClick={handlePreviewChime}
@@ -278,7 +350,8 @@ export function ReaderSessionTimerModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

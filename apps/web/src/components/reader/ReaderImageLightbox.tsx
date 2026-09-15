@@ -7,6 +7,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { LightboxImageTarget } from "@/reader/contracts/engine";
 
@@ -153,6 +154,8 @@ export function ReaderImageLightbox({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         onClose();
       } else if (e.key === "+" || e.key === "=") {
         e.preventDefault();
@@ -192,9 +195,9 @@ export function ReaderImageLightbox({
     handleToggleInvert,
   ]);
 
-  if (!image) return null;
+  if (!image || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       aria-label="Image Lightbox"
       aria-modal="true"
@@ -202,13 +205,13 @@ export function ReaderImageLightbox({
       role="dialog"
     >
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur border-b border-white/10 text-white z-10">
+      <div className="flex items-center justify-between px-4 py-3 bg-dark-primary/90 backdrop-blur border-b border-dark-border text-dark-text z-10">
         <div className="flex items-center gap-2.5 overflow-hidden mr-4">
           <span className="text-sm font-medium truncate max-w-[60vw]">
             {image.caption || image.title || image.alt || "Image View"}
           </span>
           {image.naturalWidth && image.naturalHeight && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/70 shrink-0 font-mono">
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-dark-border/60 text-dark-text-muted shrink-0 font-mono border border-dark-border">
               {image.naturalWidth} × {image.naturalHeight} px
             </span>
           )}
@@ -216,7 +219,7 @@ export function ReaderImageLightbox({
 
         <button
           aria-label="Close image lightbox"
-          className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+          className="p-1.5 rounded-lg text-dark-text-muted hover:text-dark-text hover:bg-dark-border/40 active:scale-95 transition-all"
           onClick={onClose}
           type="button"
         >
@@ -242,10 +245,10 @@ export function ReaderImageLightbox({
 
       {/* Bottom Floating Controls Bar */}
       <div className="flex items-center justify-center p-4 z-10">
-        <div className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 border border-white/15 text-white shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 rounded-full bg-dark-primary/95 border border-dark-border text-dark-text shadow-2xl backdrop-blur-xl">
           <button
             aria-label="Zoom out"
-            className="p-2 rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/80 hover:text-white"
+            className="p-2 rounded-full hover:bg-dark-border/40 active:scale-90 transition-all text-dark-text-muted hover:text-dark-text"
             onClick={handleZoomOut}
             title="Zoom out (-)"
             type="button"
@@ -255,7 +258,7 @@ export function ReaderImageLightbox({
 
           <button
             aria-label="Reset zoom to 100%"
-            className="px-2 py-1 text-xs font-mono font-medium rounded-md hover:bg-white/10 text-white/90 hover:text-white transition-colors"
+            className="px-2 py-1 text-xs font-mono font-medium rounded-md hover:bg-dark-border/40 text-dark-text hover:text-white transition-colors"
             onClick={handleReset}
             title="Reset zoom (0)"
             type="button"
@@ -265,7 +268,7 @@ export function ReaderImageLightbox({
 
           <button
             aria-label="Zoom in"
-            className="p-2 rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/80 hover:text-white"
+            className="p-2 rounded-full hover:bg-dark-border/40 active:scale-90 transition-all text-dark-text-muted hover:text-dark-text"
             onClick={handleZoomIn}
             title="Zoom in (+)"
             type="button"
@@ -273,11 +276,11 @@ export function ReaderImageLightbox({
             <ZoomIn className="w-4 h-4" />
           </button>
 
-          <div className="w-px h-5 bg-white/20 mx-0.5" />
+          <div className="w-px h-5 bg-dark-border mx-0.5" />
 
           <button
             aria-label="Reset position and fit"
-            className="p-2 rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/80 hover:text-white"
+            className="p-2 rounded-full hover:bg-dark-border/40 active:scale-90 transition-all text-dark-text-muted hover:text-dark-text"
             onClick={handleReset}
             title="Fit to screen"
             type="button"
@@ -289,8 +292,8 @@ export function ReaderImageLightbox({
             aria-label="Invert colors for dark diagrams"
             className={`p-2 rounded-full active:scale-90 transition-all ${
               isInverted
-                ? "bg-light-accent dark:bg-dark-accent text-white"
-                : "text-white/80 hover:text-white hover:bg-white/10"
+                ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold shadow-sm"
+                : "text-dark-text-muted hover:text-dark-text hover:bg-dark-border/40"
             }`}
             onClick={handleToggleInvert}
             title="Invert colors (I)"
@@ -301,7 +304,7 @@ export function ReaderImageLightbox({
 
           <button
             aria-label="Download image"
-            className="p-2 rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/80 hover:text-white"
+            className="p-2 rounded-full hover:bg-dark-border/40 active:scale-90 transition-all text-dark-text-muted hover:text-dark-text"
             onClick={handleDownload}
             title="Download image"
             type="button"
@@ -309,11 +312,11 @@ export function ReaderImageLightbox({
             <Download className="w-4 h-4" />
           </button>
 
-          <div className="w-px h-5 bg-white/20 mx-0.5" />
+          <div className="w-px h-5 bg-dark-border mx-0.5" />
 
           <button
-            aria-label="Close lightbox"
-            className="p-2 rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/80 hover:text-white"
+            aria-label="Close lightbox (Esc)"
+            className="p-2 rounded-full hover:bg-dark-border/40 active:scale-90 transition-all text-dark-text-muted hover:text-dark-text"
             onClick={onClose}
             title="Close (Esc)"
             type="button"
@@ -322,6 +325,7 @@ export function ReaderImageLightbox({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

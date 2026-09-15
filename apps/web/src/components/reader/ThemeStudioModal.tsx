@@ -8,7 +8,8 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import {
   COLOR_PRESETS,
@@ -30,15 +31,15 @@ export interface ThemeStudioModalProps {
 
 export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
   const {
-    addCustomPalette,
     customPalettes,
+    addCustomPalette,
     deleteCustomPalette,
-    readerAccent,
     readerBackground,
     readerForeground,
-    setReaderAccent,
+    readerAccent,
     setReaderBackground,
     setReaderForeground,
+    setReaderAccent,
   } = useSettingsShallow((state) => ({
     addCustomPalette: state.addCustomPalette,
     customPalettes: state.customPalettes,
@@ -66,6 +67,20 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
   const isOled = useMemo(() => {
     return isOledBlack(draftBg);
   }, [draftBg]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -115,11 +130,26 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
     setTimeout(() => setSavedSuccess(false), 2500);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-3xl max-h-[90vh] bg-light-primary dark:bg-dark-primary rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 flex flex-col overflow-hidden">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+      role="dialog"
+      tabIndex={-1}
+      aria-modal="true"
+      aria-label="Reader Theme & Contrast Studio"
+    >
+      <div className="relative w-full max-w-3xl max-h-[90vh] bg-light-primary dark:bg-dark-primary rounded-3xl shadow-2xl border border-light-border dark:border-dark-border flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-black/[0.06] dark:border-white/[0.06]">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-light-border dark:border-dark-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent flex items-center justify-center">
               <Palette className="w-5 h-5" />
@@ -137,7 +167,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
           <button
             onClick={onClose}
             type="button"
-            className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
+            className="p-2 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
             aria-label="Close theme studio"
           >
             <X className="w-5 h-5" />
@@ -164,7 +194,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     wcag.rating === 'AAA'
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                       : wcag.rating === 'AA'
-                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'
+                        ? 'bg-ink-500/10 text-ink-600 dark:text-ink-400 border-ink-500/20'
                         : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                   }`}
                 >
@@ -179,7 +209,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
             </div>
 
             <div
-              className="p-6 rounded-2xl border border-black/10 dark:border-white/10 shadow-inner transition-colors duration-200"
+              className="p-6 rounded-2xl border border-light-border dark:border-dark-border shadow-inner transition-colors duration-200"
               style={{ backgroundColor: draftBg }}
             >
               <h3
@@ -219,20 +249,25 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     className={`relative p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
                       isCurrent
                         ? 'border-light-accent dark:border-dark-accent ring-2 ring-light-accent/20 dark:ring-dark-accent/20'
-                        : 'border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20'
+                        : 'border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-light-text dark:text-dark-text">
+                    <div className="flex items-center justify-between gap-1.5 min-w-0">
+                      <span className="text-xs font-bold text-light-text dark:text-dark-text flex items-center gap-1 min-w-0 truncate">
                         {preset.label}
+                        {isCurrent && (
+                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-light-accent dark:bg-dark-accent text-white shrink-0">
+                            <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                          </span>
+                        )}
                       </span>
-                      <span className="text-[10px] font-mono text-light-text-muted dark:text-dark-text-muted">
+                      <span className="text-[10px] font-mono text-light-text-muted dark:text-dark-text-muted shrink-0">
                         {ratio}:1
                       </span>
                     </div>
 
                     <div
-                      className="w-full h-8 rounded-xl flex items-center justify-center border border-black/10 dark:border-white/10"
+                      className="w-full h-8 rounded-xl flex items-center justify-center border border-light-border dark:border-dark-border"
                       style={{ backgroundColor: preset.bg }}
                     >
                       <span
@@ -242,12 +277,6 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                         Aa
                       </span>
                     </div>
-
-                    {isCurrent && (
-                      <div className="absolute top-2 right-2 w-4 h-4 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center">
-                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                      </div>
-                    )}
                   </button>
                 );
               })}
@@ -255,7 +284,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
           </div>
 
           {/* Custom Palette Fine-Tuning */}
-          <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] space-y-4">
+          <div className="p-4 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
                 Custom Color Adjuster
@@ -278,7 +307,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 </label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-8 h-8 rounded-xl border border-black/10 dark:border-white/10 shrink-0 relative cursor-pointer overflow-hidden"
+                    className="w-8 h-8 rounded-xl border border-light-border dark:border-dark-border shrink-0 relative cursor-pointer overflow-hidden"
                     style={{ backgroundColor: draftBg }}
                   >
                     <input
@@ -292,7 +321,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     type="text"
                     value={draftBg}
                     onChange={(e) => setDraftBg(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 text-light-text dark:text-dark-text"
+                    className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
                   />
                 </div>
               </div>
@@ -304,7 +333,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 </label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-8 h-8 rounded-xl border border-black/10 dark:border-white/10 shrink-0 relative cursor-pointer overflow-hidden"
+                    className="w-8 h-8 rounded-xl border border-light-border dark:border-dark-border shrink-0 relative cursor-pointer overflow-hidden"
                     style={{ backgroundColor: draftFg }}
                   >
                     <input
@@ -318,7 +347,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     type="text"
                     value={draftFg}
                     onChange={(e) => setDraftFg(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 text-light-text dark:text-dark-text"
+                    className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
                   />
                 </div>
               </div>
@@ -330,7 +359,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 </label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-8 h-8 rounded-xl border border-black/10 dark:border-white/10 shrink-0 relative cursor-pointer overflow-hidden"
+                    className="w-8 h-8 rounded-xl border border-light-border dark:border-dark-border shrink-0 relative cursor-pointer overflow-hidden"
                     style={{ backgroundColor: draftAccent }}
                   >
                     <input
@@ -344,7 +373,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     type="text"
                     value={draftAccent}
                     onChange={(e) => setDraftAccent(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 text-light-text dark:text-dark-text"
+                    className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
                   />
                 </div>
               </div>
@@ -353,14 +382,14 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
             {/* Save Custom Palette Form */}
             <form
               onSubmit={handleSaveCustomPalette}
-              className="pt-2 border-t border-black/[0.04] dark:border-white/[0.04] flex flex-col sm:flex-row items-center gap-2"
+              className="pt-2 border-t border-light-border/60 dark:border-dark-border/60 flex flex-col sm:flex-row items-center gap-2"
             >
               <input
                 type="text"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="Name your recipe (e.g. Muted Espresso)..."
-                className="w-full sm:flex-1 px-3 py-1.5 rounded-xl text-xs bg-black/[0.03] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 focus:outline-none focus:ring-1 focus:ring-light-accent"
+                className="w-full sm:flex-1 px-3 py-1.5 rounded-xl text-xs bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 focus:outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
               />
               <button
                 type="submit"
@@ -382,7 +411,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 {customPalettes.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-2xl border border-black/10 dark:border-white/10 flex flex-col justify-between gap-2"
+                    className="p-3 rounded-2xl border border-light-border dark:border-dark-border flex flex-col justify-between gap-2"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-light-text dark:text-dark-text truncate">
@@ -401,7 +430,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     <button
                       type="button"
                       onClick={() => handleApplyCustom(item)}
-                      className="w-full h-8 rounded-xl flex items-center justify-center border border-black/10 dark:border-white/10 cursor-pointer transition-transform active:scale-[0.98]"
+                      className="w-full h-8 rounded-xl flex items-center justify-center border border-light-border dark:border-dark-border cursor-pointer transition-transform active:scale-[0.98]"
                       style={{ backgroundColor: item.bg }}
                     >
                       <span
@@ -419,7 +448,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 sm:p-5 border-t border-black/[0.06] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.01] flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-t border-light-border dark:border-dark-border bg-light-surface/40 dark:bg-dark-surface/40 flex items-center justify-between">
           <div className="text-xs text-light-text-muted dark:text-dark-text-muted">
             Live preview matches in-reader Foliate canvas.
           </div>
@@ -434,13 +463,14 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
             <button
               onClick={handleApplyDraft}
               type="button"
-              className="px-5 py-2 rounded-xl bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white text-xs font-bold shadow-md transition-all"
+              className="px-5 py-2 rounded-xl bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white dark:text-black text-xs font-bold shadow-md transition-all"
             >
               Apply Theme
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

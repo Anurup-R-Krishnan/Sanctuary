@@ -30,6 +30,18 @@ describe("quoteCardCanvas — Typographic Quote Card Generation", () => {
       const sizeMobile = calculateQuoteFontSize(50, 600);
       expect(sizeMobile).toBe(Math.round(sizeStandard / 2));
     });
+
+    it("applies font size preference multiplier when specified", () => {
+      const regular = calculateQuoteFontSize(50, 1200, "regular");
+      const large = calculateQuoteFontSize(50, 1200, "large");
+      const xlarge = calculateQuoteFontSize(50, 1200, "xlarge");
+
+      expect(regular).toBe(52);
+      expect(large).toBe(Math.round(52 * 1.15));
+      expect(xlarge).toBe(Math.round(52 * 1.35));
+      expect(large).toBeGreaterThan(regular);
+      expect(xlarge).toBeGreaterThan(large);
+    });
   });
 
   describe("wrapText", () => {

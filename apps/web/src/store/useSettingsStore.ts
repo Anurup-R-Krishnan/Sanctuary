@@ -29,6 +29,7 @@ type SettingsValues = {
   direction: "auto" | "ltr" | "rtl";
   fontPairing: string;
   fontSize: number;
+  fontWeight: number;
   grayscale: boolean;
   hyphenation: boolean;
   keybinds: Keybinds;
@@ -74,6 +75,7 @@ type SettingsActions = {
   setDirection: (v: "auto" | "ltr" | "rtl") => void;
   setFontPairing: (v: string) => void;
   setFontSize: (v: number) => void;
+  setFontWeight: (v: number) => void;
   setGrayscale: (v: boolean) => void;
   setHyphenation: (v: boolean) => void;
   setKeybinds: (v: Keybinds) => void;
@@ -108,6 +110,7 @@ type Settings = SettingsValues & SettingsActions;
 
 const DEFAULTS: SettingsValues = {
   fontSize: 19,
+  fontWeight: 400,
   letterSpacing: 0,
   lineHeight: 1.65,
   textAlignment: "justify",
@@ -187,6 +190,7 @@ export const pickValues = (state: Settings): SettingsValues => ({
   annualGoalYear: state.annualGoalYear,
   bionicReading: state.bionicReading,
   fontSize: state.fontSize,
+  fontWeight: state.fontWeight,
   letterSpacing: state.letterSpacing,
   lineHeight: state.lineHeight,
   textAlignment: state.textAlignment,
@@ -228,6 +232,7 @@ export const pickValues = (state: Settings): SettingsValues => ({
 export const toRemotePayload = (state: SettingsValues) => ({
   // Typography
   fontSize: state.fontSize,
+  fontWeight: state.fontWeight,
   letterSpacing: state.letterSpacing,
   lineHeight: state.lineHeight,
   fontPairing: state.fontPairing,
@@ -280,6 +285,7 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   const out: Partial<SettingsValues> = {};
 
   if (typeof raw.fontSize === "number") out.fontSize = raw.fontSize;
+  if (typeof raw.fontWeight === "number") out.fontWeight = raw.fontWeight;
   if (typeof raw.letterSpacing === "number") out.letterSpacing = raw.letterSpacing;
   if (typeof raw.bionicReading === "boolean") out.bionicReading = raw.bionicReading;
   if (typeof raw.lineHeight === "number") out.lineHeight = raw.lineHeight;
@@ -354,6 +360,7 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
 
   // ── Typography ────────────────────────────────────────────────────────────
   if (typeof remote.fontSize === "number") out.fontSize = remote.fontSize;
+  if (typeof remote.fontWeight === "number") out.fontWeight = remote.fontWeight;
   if (typeof remote.letterSpacing === "number") out.letterSpacing = remote.letterSpacing;
   if (typeof remote.bionicReading === "boolean") out.bionicReading = remote.bionicReading;
   if (typeof remote.lineHeight === "number") out.lineHeight = remote.lineHeight;
@@ -434,6 +441,7 @@ export const useSettingsStore = create<Settings>((set) => ({
   ...DEFAULTS,
   setBionicReading: createSetAction("bionicReading", set),
   setFontSize: createSetAction("fontSize", set),
+  setFontWeight: createSetAction("fontWeight", set),
   setLetterSpacing: createSetAction("letterSpacing", set),
   setLineHeight: createSetAction("lineHeight", set),
   setTextAlignment: createSetAction("textAlignment", set),

@@ -1,5 +1,6 @@
 import { BookOpen, ChevronRight, FileText, Search, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { Book, BookSearchResult } from "@/types";
 
@@ -60,6 +61,9 @@ export function GlobalSearchModal({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         onClose();
       }
     };
@@ -93,17 +97,25 @@ export function GlobalSearchModal({
 
   const totalMatches = results.reduce((sum, r) => sum + r.totalMatches, 0);
 
-  return (
+  return createPortal(
     <div
       aria-modal="true"
-      className="fixed inset-0 z-[80] flex items-start justify-center p-4 sm:p-6 md:p-20 bg-black/50 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      aria-label="Global full-text search"
+      className="fixed inset-0 z-[80] flex items-start justify-center p-4 sm:p-6 md:p-20 bg-black/60 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
       role="dialog"
+      tabIndex={-1}
     >
       <div
-        className="w-full max-w-2xl bg-light-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden flex flex-col my-auto"
+        className="w-full max-w-2xl bg-light-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden flex flex-col my-auto"
       >
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-black/5 dark:border-white/5 gap-3">
+        <div className="flex items-center px-4 py-3.5 border-b border-light-border dark:border-dark-border gap-3">
           <Search className="w-5 h-5 text-light-text-muted dark:text-dark-text-muted shrink-0" />
           <input
             aria-label="Search all books"
@@ -125,10 +137,11 @@ export function GlobalSearchModal({
           )}
           <button
             aria-label="Close search"
-            className="p-1.5 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-xs font-medium"
+            className="p-1.5 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text rounded-lg hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-xs font-medium"
             onClick={onClose}
-          >
-            ESC
+           type="button"
+
+           >            ESC
           </button>
         </div>
 
@@ -159,7 +172,7 @@ export function GlobalSearchModal({
                 Full-Text Library Search
               </p>
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted max-w-sm mx-auto">
-                Search passages, quotes, or themes across all your books. Press <kbd className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[10px] font-mono">Cmd+K</kbd> anytime to open.
+                Search passages, quotes, or themes across all your books. Press <kbd className="px-1.5 py-0.5 rounded bg-light-border/60 dark:bg-dark-border/60 border border-light-border dark:border-dark-border text-[10px] font-mono">Cmd+K</kbd> anytime to open.
               </p>
             </div>
           )}
@@ -177,77 +190,78 @@ export function GlobalSearchModal({
 
                   return (
                     <div
-                      className="p-3.5 rounded-xl border border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] space-y-2.5"
+                      className="p-3.5 rounded-xl border border-light-border dark:border-dark-border bg-light-surface/40 dark:bg-dark-surface/40 space-y-2.5"
                       key={item.bookId}
                     >
-                      <div className="flex items-center justify-between">
-                        <button
-                          className="flex items-center gap-2.5 text-left group"
-                          onClick={() => {
-                            onSelectBook(book);
-                            onClose();
-                          }}
-                        >
-                          {item.coverUrl ? (
-                            <img
-                              alt=""
-                              className="w-7 h-10 object-cover rounded shadow-sm shrink-0"
-                              src={item.coverUrl}
-                            />
-                          ) : (
-                            <div className="w-7 h-10 rounded overflow-hidden shadow-sm shrink-0">
-                              <GenerativeBookCover author={item.author} title={item.title} variant="compact" />
-                            </div>
-                          )}
-                          <div>
-                            <h4 className="text-sm font-semibold text-light-text dark:text-dark-text group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors line-clamp-1">
-                              {item.title}
-                            </h4>
-                            {item.author && (
-                              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                                {item.author}
-                              </p>
-                            )}
-                          </div>
-                        </button>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-light-text-muted dark:text-dark-text-muted font-medium">
-                          {item.totalMatches} {item.totalMatches === 1 ? "match" : "matches"}
-                        </span>
-                      </div>
-
-                      {/* Snippets list */}
-                      <div className="space-y-1.5 pt-1">
-                        {item.matches.map((match, mi) => (
+                        <div className="flex items-center justify-between">
                           <button
-                            className="w-full text-left p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-xs text-light-text-muted dark:text-dark-text-muted flex items-start gap-2 group transition-colors"
-                            key={mi}
+                            className="flex items-center gap-2.5 text-left group"
                             onClick={() => {
-                              onSelectBook(book, match.cfi);
+                              onSelectBook(book);
                               onClose();
                             }}
                           >
-                            <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-light-text-muted/60 dark:text-dark-text-muted/60 group-hover:text-light-accent dark:group-hover:text-dark-accent" />
-                            <div className="flex-1 min-w-0">
-                              {match.sectionTitle && (
-                                <span className="block text-[10px] font-semibold text-light-text/70 dark:text-dark-text/70 mb-0.5">
-                                  {match.sectionTitle}
-                                </span>
+                            {item.coverUrl ? (
+                              <img
+                                alt=""
+                                className="w-7 h-10 object-cover rounded shadow-sm shrink-0"
+                                src={item.coverUrl}
+                              />
+                            ) : (
+                              <div className="w-7 h-10 rounded overflow-hidden shadow-sm shrink-0">
+                                <GenerativeBookCover author={item.author} title={item.title} variant="compact" />
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="text-sm font-semibold text-light-text dark:text-dark-text group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors line-clamp-1">
+                                {item.title}
+                              </h4>
+                              {item.author && (
+                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                                  {item.author}
+                                </p>
                               )}
-                              <p className="leading-relaxed line-clamp-2 text-light-text dark:text-dark-text">
-                                <HighlightedSnippet query={query} text={match.snippet} />
-                              </p>
                             </div>
                           </button>
-                        ))}
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-light-surface dark:bg-dark-surface text-light-text-muted dark:text-dark-text-muted border border-light-border/60 dark:border-dark-border/60 font-medium">
+                            {item.totalMatches} {item.totalMatches === 1 ? "match" : "matches"}
+                          </span>
+                        </div>
+
+                        {/* Snippets list */}
+                        <div className="space-y-1.5 pt-1">
+                          {item.matches.map((match, mi) => (
+                            <button
+                              className="w-full text-left p-2 rounded-lg hover:bg-light-surface dark:hover:bg-dark-surface text-xs text-light-text-muted dark:text-dark-text-muted flex items-start gap-2 group transition-colors"
+                              key={mi}
+                              onClick={() => {
+                                onSelectBook(book, match.cfi);
+                                onClose();
+                              }}
+                            >
+                              <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-light-text-muted/60 dark:text-dark-text-muted/60 group-hover:text-light-accent dark:group-hover:text-dark-accent" />
+                              <div className="flex-1 min-w-0">
+                                {match.sectionTitle && (
+                                  <span className="block text-[10px] font-semibold text-light-text/70 dark:text-dark-text/70 mb-0.5">
+                                    {match.sectionTitle}
+                                  </span>
+                                )}
+                                <p className="leading-relaxed line-clamp-2 text-light-text dark:text-dark-text">
+                                  <HighlightedSnippet query={query} text={match.snippet} />
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      </div>,
+      document.body
+    );
+  }

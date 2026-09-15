@@ -27,8 +27,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const [status, setStatus] = useState<ReaderStatus>("idle");
     const [error, setError] = useState<ReaderError | null>(null);
     const [position, setPosition] = useState<ReaderPosition>({
-        cfi: "", href: "", chapterLabel: "", bookProgress: 0, chapterProgress: 0,
-        location: 1, totalLocations: 1, displayedPage: 1, displayedPages: 1
+        cfi: "", href: "", chapterLabel: "", bookProgress: 0, bookFraction: 0, chapterProgress: 0,
+        location: 1, totalLocations: 1
     });
     const [tocItems, setTocItems] = useState<TocItem[]>([]);
     const [selection, setSelection] = useState<ReaderSelection | null>(null);
@@ -50,6 +50,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         continuous: state.continuous,
         fontPairing: state.fontPairing,
         fontSize: state.fontSize,
+        fontWeight: state.fontWeight,
         hyphenation: state.hyphenation,
         letterSpacing: state.letterSpacing,
         lineHeight: state.lineHeight,
@@ -202,27 +203,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         sessionRef.current?.display(target);
     }, []);
 
-    const goToPage = useCallback((page: number) => {
-        if (!sessionRef.current) return;
-        if (typeof sessionRef.current.goToPage === "function") {
-            sessionRef.current.goToPage(page);
-            return;
-        }
-        if (!sessionRef.current.epubBook) return;
-        const total = sessionRef.current.totalLocations;
-        
-        // Prevent crashes if locations aren't generated yet or total is invalid
-        if (total <= 1 || !sessionRef.current.epubBook.locations.length()) {
-             return;
-        }
-
-        const percentage = (Math.max(1, Math.min(page, total)) - 1) / total;
-        try {
-            const cfi = sessionRef.current.epubBook.locations.cfiFromPercentage(percentage);
-            if (cfi) sessionRef.current.display(cfi);
-        } catch {
-            // Ignore cfi bounds errors
-        }
+    const scrollBy = useCallback((delta: number) => {
+        return sessionRef.current?.scrollBy(delta) ?? 0;
     }, []);
 
     const clearSelection = useCallback(() => {
@@ -257,9 +239,9 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         closeFootnote,
         closeLightboxImage,
         display,
-        goToPage,
         nextPage,
         prevPage,
+        scrollBy,
 
         // Internal Escape Hatch
         _rendition: renditionReady >= 0 ? (sessionRef.current?.rendition ?? null) : null,
