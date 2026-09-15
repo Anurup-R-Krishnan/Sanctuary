@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock the db module before importing service
 mock.module("@/utils/db", () => ({
@@ -12,6 +12,7 @@ import type { Book, IndexedBookRecord } from "@/types";
 
 import * as db from "@/utils/db";
 
+import { ensureTestDom } from "../reader/foliate/testEnv";
 import {
   extractSnippets,
   libraryIndexManager,
@@ -43,6 +44,10 @@ const mockBooks: Book[] = [
 ];
 
 describe("librarySearchIndex — full-text search across library books", () => {
+  beforeAll(() => {
+    ensureTestDom();
+  });
+
   beforeEach(() => {
     (db.getAllSearchIndexes as ReturnType<typeof mock>).mockResolvedValue([]);
     (db.getSearchIndex as ReturnType<typeof mock>).mockResolvedValue(null);
