@@ -27,6 +27,7 @@ dist-ssr
 
 # Cloudflare Wrangler
 .wrangler/
+.cf-env
 
 # V2 workspaces
 apps/mobile/.expo
