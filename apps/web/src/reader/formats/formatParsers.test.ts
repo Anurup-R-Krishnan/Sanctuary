@@ -163,6 +163,57 @@ The waters were calm.`;
       expect(rendered).toContain("<strong>bold</strong>");
       adapter.destroy();
     });
+
+    it("renders Obsidian-style callouts, heading links, and GFM reading blocks", async () => {
+      const book = await parseMarkdownToBook(`
+# Reader Notes
+
+> [!tip] Read actively
+> Capture one useful idea per chapter.
+
+Jump [[#Reader Notes|back to the heading]].
+
+Footnote reference[^1].
+
+| Feature | Ready |
+| --- | :---: |
+| Tables | ✓ |
+
+- [x] Keep this note
+
+[^1]: A reader footnote.
+`);
+      const document = await book.sections[0].createDocument();
+
+      expect(document.querySelector("aside.callout-tip .callout-title")?.textContent ?? "").toContain("Read actively");
+      expect(document.querySelector("a.wiki-link")?.getAttribute("href")).toBe("#heading-reader-notes");
+      expect(document.querySelector("table")).not.toBeNull();
+      expect(document.querySelector("input[type='checkbox']")?.getAttribute("checked")).not.toBeNull();
+      expect(document.querySelector(".footnotes")).not.toBeNull();
+      book.destroy?.();
+    });
+
+    it("renders sanitized HTML from notebook exports with typographic attribute quotes", async () => {
+      const book = await parseMarkdownToBook(`
+<div class=“cell markdown”>
+
+Train the GAN and Inspect Output
+
+</div>
+
+<div class=“cell code” data-execution_count=“9” data-collapsed=“false”>
+Code output
+</div>
+
+<script>alert("never run")</script>
+`);
+      const document = await book.sections[0].createDocument();
+
+      expect(document.querySelectorAll("div.cell")).toHaveLength(2);
+      expect(document.querySelector("div.cell.markdown")?.textContent).toContain("Train the GAN");
+      expect(document.querySelector("script")).toBeNull();
+      book.destroy?.();
+    });
   });
 
   describe("HtmlParser", () => {
