@@ -17,6 +17,8 @@ export interface ReaderEngineOptions {
   container: HTMLDivElement;
   continuous: boolean;
   direction?: "auto" | "ltr" | "rtl";
+  /** Persisted source format, used when a Blob no longer has its filename. */
+  formatHint?: string;
   initialCfi?: string;
   readerBackground?: string;
   spread: boolean;

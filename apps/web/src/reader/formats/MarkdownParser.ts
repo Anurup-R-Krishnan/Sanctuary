@@ -3,6 +3,8 @@
  * Converts Markdown documents into a paginated, structured BookDocument compatible with Foliate.
  */
 
+import MarkdownIt from "markdown-it";
+
 import type { RawFoliateBook, RawFoliateSection, RawFoliateTocItem } from "./TxtParser";
 
 function escapeHtml(text: string): string {
@@ -14,154 +16,55 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
-/**
- * Lightweight, robust Markdown to HTML renderer without external dependencies.
- */
-function markdownToHtml(md: string): { html: string; headings: { level: number; text: string; id: string }[] } {
-  const headings: { level: number; text: string; id: string }[] = [];
-  const lines = md.split(/\r?\n/);
-  const output: string[] = [];
-  let inCodeBlock = false;
-  let codeBuffer: string[] = [];
-  let inList = false;
-  let inOrderedList = false;
-  let inBlockquote = false;
+interface MarkdownHeading {
+  id: string;
+  level: number;
+  text: string;
+}
 
-  const closeList = () => {
-    if (inList) {
-      output.push("</ul>");
-      inList = false;
-    }
-    if (inOrderedList) {
-      output.push("</ol>");
-      inOrderedList = false;
-    }
-  };
+const markdown = new MarkdownIt({
+  // Books are imported from untrusted files. Keep embedded HTML as text rather
+  // than allowing it to execute inside the reader iframe.
+  html: false,
+  linkify: true,
+  typographer: true,
+  xhtmlOut: true,
+});
 
-  const closeBlockquote = () => {
-    if (inBlockquote) {
-      output.push("</blockquote>");
-      inBlockquote = false;
-    }
-  };
+function slugifyHeading(text: string, index: number): string {
+  const slug = text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  return `heading-${index}${slug ? `-${slug}` : ""}`;
+}
 
-  const formatInline = (text: string): string => {
-    return text
-      // Images: ![alt](url)
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;" />')
-      // Links: [text](url)
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-      // Bold & Italic: ***text*** or ___text___
-      .replace(/(\*\*\*|___)(.*?)\1/g, "<strong><em>$2</em></strong>")
-      // Bold: **text** or __text__
-      .replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>")
-      // Italic: *text* or _text_
-      .replace(/(\*|_)(.*?)\1/g, "<em>$2</em>")
-      // Strikethrough: ~~text~~
-      .replace(/~~(.*?)~~/g, "<del>$1</del>")
-      // Inline Code: `code`
-      .replace(/`([^`]+)`/g, "<code>$1</code>");
-  };
+function headingText(children: { content: string; type: string }[] | null): string {
+  return children
+    ?.filter((token) => ["text", "code_inline", "image"].includes(token.type))
+    .map((token) => token.content)
+    .join("")
+    .trim() || "Untitled section";
+}
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+/** Convert CommonMark/GFM-style Markdown into safe XHTML for foliate-view. */
+function markdownToHtml(source: string): { html: string; headings: MarkdownHeading[] } {
+  const tokens = markdown.parse(source, {});
+  const headings: MarkdownHeading[] = [];
 
-    // Fenced code blocks
-    if (line.trim().startsWith("```")) {
-      if (inCodeBlock) {
-        output.push(`<pre><code>${codeBuffer.map(escapeHtml).join("\n")}</code></pre>`);
-        codeBuffer = [];
-        inCodeBlock = false;
-      } else {
-        closeList();
-        closeBlockquote();
-        inCodeBlock = true;
-      }
-      continue;
-    }
-    if (inCodeBlock) {
-      codeBuffer.push(line);
-      continue;
-    }
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (token.type !== "heading_open") continue;
 
-    // Blank line
-    if (!line.trim()) {
-      closeList();
-      closeBlockquote();
-      continue;
-    }
-
-    // Horizontal rule: --- or *** or ___
-    if (/^(\*{3,}|-{3,}|_{3,})$/.test(line.trim())) {
-      closeList();
-      closeBlockquote();
-      output.push("<hr />");
-      continue;
-    }
-
-    // Headings: #, ##, ###, ####, #####, ######
-    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
-    if (headingMatch) {
-      closeList();
-      closeBlockquote();
-      const level = headingMatch[1].length;
-      const headingText = headingMatch[2].trim();
-      const id = `heading-${headings.length}-${headingText.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
-      headings.push({ level, text: headingText, id });
-      output.push(`<h${level} id="${id}">${formatInline(escapeHtml(headingText))}</h${level}>`);
-      continue;
-    }
-
-    // Blockquote: > text
-    if (line.trim().startsWith(">")) {
-      closeList();
-      if (!inBlockquote) {
-        output.push("<blockquote>");
-        inBlockquote = true;
-      }
-      const quoteText = line.trim().replace(/^>\s*/, "");
-      output.push(`<p>${formatInline(escapeHtml(quoteText))}</p>`);
-      continue;
-    }
-    closeBlockquote();
-
-    // Unordered list: - item or * item
-    const ulMatch = line.match(/^\s*[-*+]\s+(.*)$/);
-    if (ulMatch) {
-      if (inOrderedList) closeList();
-      if (!inList) {
-        output.push("<ul>");
-        inList = true;
-      }
-      output.push(`<li>${formatInline(escapeHtml(ulMatch[1]))}</li>`);
-      continue;
-    }
-
-    // Ordered list: 1. item
-    const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/);
-    if (olMatch) {
-      if (inList) closeList();
-      if (!inOrderedList) {
-        output.push("<ol>");
-        inOrderedList = true;
-      }
-      output.push(`<li>${formatInline(escapeHtml(olMatch[2]))}</li>`);
-      continue;
-    }
-
-    closeList();
-
-    // Paragraph
-    output.push(`<p>${formatInline(escapeHtml(line.trim()))}</p>`);
+    const text = headingText(tokens[index + 1]?.children ?? null);
+    const id = slugifyHeading(text, headings.length);
+    token.attrSet("id", id);
+    headings.push({ id, level: Number(token.tag.slice(1)), text });
   }
 
-  closeList();
-  closeBlockquote();
-  if (inCodeBlock) {
-    output.push(`<pre><code>${codeBuffer.map(escapeHtml).join("\n")}</code></pre>`);
-  }
-
-  return { html: output.join("\n"), headings };
+  return { html: markdown.renderer.render(tokens, markdown.options, {}), headings };
 }
 
 export async function parseMarkdownToBook(

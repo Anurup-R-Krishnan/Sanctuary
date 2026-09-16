@@ -46,7 +46,7 @@ export async function detectBookFormat(
   if (lowerName.endsWith(".azw")) return "azw";
   if (lowerName.endsWith(".azw3") || lowerName.endsWith(".kf8")) return "azw3";
   if (lowerName.endsWith(".txt") || lowerName.endsWith(".text")) return "txt";
-  if (lowerName.endsWith(".md") || lowerName.endsWith(".markdown")) return "markdown";
+  if (lowerName === "md" || lowerName === "markdown" || lowerName.endsWith(".md") || lowerName.endsWith(".markdown")) return "markdown";
   if (lowerName.endsWith(".xhtml")) return "xhtml";
   if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) return "html";
   if (lowerName.endsWith(".pdf")) return "pdf";

@@ -107,6 +107,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             container,
             continuous,
             direction,
+            formatHint: book.format,
             initialCfi: book.lastLocation,
             readerBackground: themeConfig.readerBackground,
             spread,

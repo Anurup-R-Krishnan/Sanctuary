@@ -59,7 +59,10 @@ export class FoliateReaderSession implements IReaderSession {
     }
 
     try {
-      this.adapter = await FoliateEpubAdapter.create(options.blob);
+      // IndexedDB stores a Blob without its original filename. Pass the saved
+      // format so Markdown files without a leading heading/frontmatter still
+      // open as Markdown instead of being downgraded to plain text.
+      this.adapter = await FoliateEpubAdapter.create(options.blob, options.formatHint);
       if (this.aborted) {
         this.adapter.destroy();
         return;

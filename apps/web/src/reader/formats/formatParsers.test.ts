@@ -146,6 +146,23 @@ The waters were calm.`;
 
       book.destroy?.();
     });
+
+    it("keeps Markdown formatting when the filename is unavailable after persistence", async () => {
+      const adapter = await FoliateDocumentAdapter.create(
+        new Blob(["A **bold** paragraph without a document heading."]),
+        "markdown"
+      );
+
+      expect(adapter.format).toBe("markdown");
+      const loadedSection = await adapter.sections[0].load();
+      const rendered = typeof loadedSection === "string"
+        ? loadedSection
+        : "documentElement" in loadedSection
+          ? loadedSection.documentElement.outerHTML
+          : loadedSection.outerHTML;
+      expect(rendered).toContain("<strong>bold</strong>");
+      adapter.destroy();
+    });
   });
 
   describe("HtmlParser", () => {
@@ -303,4 +320,3 @@ The waters were calm.`;
     });
   });
 });
-
