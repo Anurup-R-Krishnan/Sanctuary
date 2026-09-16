@@ -214,6 +214,42 @@ Code output
       expect(document.querySelector("script")).toBeNull();
       book.destroy?.();
     });
+
+    it("renders rich syntax highlighting and Jupyter notebook cell containers", async () => {
+      const book = await parseMarkdownToBook(`
+<div class="cell markdown">
+## Training GANs
+</div>
+
+<div class="cell code" data-execution_count="7">
+\`\`\`python
+def vae_loss(x: tf.Tensor):
+    # Calculate loss
+    return x * 0.5
+\`\`\`
+</div>
+`);
+      const document = await book.sections[0].createDocument();
+
+      // Heading normalized and parsed
+      expect(document.querySelector("h2")?.textContent).toContain("Training GANs");
+
+      // Cell container and execution count
+      const codeCell = document.querySelector("div.cell.code");
+      expect(codeCell).not.toBeNull();
+      expect(codeCell?.getAttribute("data-execution_count")).toBe("7");
+
+      // Code card language badge
+      const pre = document.querySelector("pre");
+      expect(pre?.getAttribute("data-language")).toBe("PYTHON");
+
+      // Multi-language syntax tokens
+      expect(document.querySelector("pre code .hljs-keyword")?.textContent).toBe("def");
+      expect(document.querySelector("pre code .hljs-title")?.textContent).toBe("vae_loss");
+      expect(document.querySelector("pre code .hljs-comment")?.textContent).toContain("Calculate loss");
+
+      book.destroy?.();
+    });
   });
 
   describe("HtmlParser", () => {

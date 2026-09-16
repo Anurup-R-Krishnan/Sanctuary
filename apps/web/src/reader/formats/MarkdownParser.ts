@@ -6,6 +6,7 @@
 import type { Element, Root, RootContent } from "hast";
 import type { VFile } from "vfile";
 
+import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
@@ -35,7 +36,16 @@ const markdownSanitizeSchema = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
-    "*": [...(defaultSchema.attributes?.["*"] || []), "className"],
+    "*": [
+      ...(defaultSchema.attributes?.["*"] || []),
+      "className",
+      "dataLanguage",
+      "data-language",
+      "dataExecution_count",
+      "data-execution_count",
+      "dataCollapsed",
+      "data-collapsed",
+    ],
   },
 };
 
@@ -72,8 +82,7 @@ function calloutTitle(type: string, title: string): Element {
 }
 
 /**
- * Apply reader-only enhancements after sanitization. Markdown HTML is not
- * parsed, so imported books cannot use this hook to inject executable markup.
+ * Apply reader-only enhancements after sanitization and syntax highlighting.
  */
 function rehypeObsidianReader() {
   return (tree: Root, file: VFile) => {
@@ -134,6 +143,36 @@ function rehypeObsidianReader() {
   };
 }
 
+/**
+ * Decorates code blocks with a floating language badge attribute.
+ */
+function rehypeCodeCardEnhancer() {
+  return (tree: Root) => {
+    visitElements(tree, (element) => {
+      if (element.tagName !== "pre") return;
+      const codeChild = element.children.find(
+        (c): c is Element => c.type === "element" && c.tagName === "code"
+      );
+      if (!codeChild) return;
+
+      const classes = Array.isArray(codeChild.properties?.className)
+        ? codeChild.properties.className
+        : [String(codeChild.properties?.className || "")];
+
+      const langClass = classes.find(
+        (cls): cls is string => typeof cls === "string" && cls.startsWith("language-")
+      );
+      if (langClass) {
+        const lang = langClass.replace("language-", "").trim();
+        if (lang) {
+          element.properties = element.properties || {};
+          element.properties.dataLanguage = lang.toUpperCase();
+        }
+      }
+    });
+  };
+}
+
 function protectCodeBlocks(source: string, transform: (text: string) => string): string {
   const parts = source.split(/(```[\s\S]*?```|`[^`\n]+`)/g);
   return parts
@@ -146,8 +185,6 @@ function normalizeObsidianLinks(source: string): string {
     text.replace(/\[\[([^\]|#]+)?(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_match, page, heading, alias) => {
       const label = String(alias || heading || page || "Untitled link").trim();
       if (heading) return `[${label}](#obsidian-heading-${slugifyHeading(String(heading))})`;
-      // A standalone Markdown file has no vault resolver. Keep page links visible
-      // as rich labels instead of exposing a broken file-system URL.
       return label;
     })
   );
@@ -155,22 +192,59 @@ function normalizeObsidianLinks(source: string): string {
 
 function normalizeEmbeddedHtmlQuotes(source: string): string {
   return protectCodeBlocks(source, (text) =>
-    // Notebook exports commonly use typographic quotes in otherwise valid HTML
-    // attributes (`class=“cell markdown”`). Normalize only tag syntax, never the
-    // document's prose.
     text.replace(/<[^>]*>/g, (tag) => tag.replace(/[“”]/g, '"').replace(/[‘’]/g, "'"))
   );
 }
 
+function normalizeNotebookCells(source: string): string {
+  return protectCodeBlocks(source, (text) =>
+    text
+      .replace(/(<div\b[^>]*>)(?!\n\n)/gi, "$1\n\n")
+      .replace(/(?<!\n\n)(<\/div>)/gi, "\n\n$1")
+  );
+}
+
+function splitMarkdownChapters(source: string): string[] {
+  const matches = [...source.matchAll(/(?:^|\n)(?:<div\b[^>]*>\s*|)#[ \t]+[^\n]+/g)];
+  if (matches.length <= 1) return [source];
+
+  const splits: string[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const startIndex = match.index! + (match[0].startsWith("\n") ? 1 : 0);
+    const endIndex = i + 1 < matches.length
+      ? matches[i + 1].index! + (matches[i + 1][0].startsWith("\n") ? 1 : 0)
+      : source.length;
+
+    if (i === 0 && startIndex > 0) {
+      const prologue = source.slice(0, startIndex).trim();
+      if (prologue.length > 0) {
+        splits.push(prologue);
+      }
+    }
+
+    const chunk = source.slice(startIndex, endIndex).trim();
+    if (chunk.length > 0) {
+      splits.push(chunk);
+    }
+  }
+  return splits.length > 0 ? splits : [source];
+}
+
 /** Convert GFM and Obsidian-style Markdown into safe XHTML for foliate-view. */
 async function markdownToHtml(source: string): Promise<{ html: string; headings: MarkdownHeading[] }> {
-  const normalizedSource = normalizeEmbeddedHtmlQuotes(normalizeObsidianLinks(source));
+  const normalizedSource = normalizeNotebookCells(
+    normalizeEmbeddedHtmlQuotes(normalizeObsidianLinks(source))
+  );
+
   const processed = await unified()
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize, markdownSanitizeSchema)
+    .use(rehypeHighlight)
+    .use(rehypeCodeCardEnhancer)
     .use(rehypeObsidianReader)
     .use(rehypeStringify, { closeSelfClosing: true })
     .process(normalizedSource);
@@ -229,10 +303,8 @@ export async function parseMarkdownToBook(
     }
   }
 
-  // Split into chapters by top-level `# ` headings if multiple exist
-  const h1Splits = md.split(/(?=^#\s+)/m).filter((s) => s.trim().length > 0);
-
-  const chunks = h1Splits.length > 1 ? h1Splits : [md];
+  // Split into chapters by top-level `# ` headings (preserving surrounding cell wrappers)
+  const chunks = splitMarkdownChapters(md);
   const objectUrls: string[] = [];
   const toc: RawFoliateTocItem[] = [];
   const idToSectionMap = new Map<string, number>();
@@ -273,92 +345,219 @@ export async function parseMarkdownToBook(
   <meta charset="utf-8"/>
   <title>${escapeHtml(sectionTitle)}</title>
   <style>
+  /* <![CDATA[ */
+    :root {
+      color-scheme: light dark;
+      --code-font: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: var(--body-font);
       margin: 0;
-      padding: 2em;
-      line-height: 1.6;
+      padding: 2.5em max(2em, calc(50vw - 420px));
+      line-height: 1.7;
+      word-wrap: break-word;
     }
+
+    /* Modern Technical Typography */
     h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
-      line-height: 1.25;
-    }
-    p {
-      margin: 0 0 1em 0;
-    }
-    blockquote {
-      margin: 1em 0;
-      padding: 0 1em;
-      color: #666;
-      border-left: 0.25em solid #ddd;
-    }
-    aside.callout {
-      --callout-color: #4f7cff;
-      background: color-mix(in srgb, var(--callout-color) 11%, transparent);
-      border: 1px solid color-mix(in srgb, var(--callout-color) 42%, transparent);
-      border-left: 0.3em solid var(--callout-color);
-      border-radius: 0.5em;
-      margin: 1.25em 0;
-      padding: 0.85em 1em;
-    }
-    .callout-title {
-      color: var(--callout-color);
-      font-size: 0.82em;
       font-weight: 700;
-      letter-spacing: 0.06em;
-      margin-bottom: 0.5em;
-      text-transform: uppercase;
+      line-height: 1.3;
+      margin-top: 1.8em;
+      margin-bottom: 0.6em;
+      letter-spacing: -0.015em;
     }
-    .callout-tip, .callout-success { --callout-color: #1f9d65; }
-    .callout-warning, .callout-caution { --callout-color: #be7b00; }
-    .callout-danger, .callout-error, .callout-failure { --callout-color: #c44040; }
-    .callout-question, .callout-help { --callout-color: #7a5af8; }
+    h1 {
+      font-size: 2em;
+      border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+      padding-bottom: 0.35em;
+    }
+    h2 {
+      font-size: 1.45em;
+      border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+      padding-bottom: 0.3em;
+    }
+    h3 { font-size: 1.2em; }
+    p { margin: 0 0 1.15em 0; }
+    a {
+      color: #3b82f6;
+      text-decoration: none;
+      text-underline-offset: 0.2em;
+      transition: text-decoration 0.15s ease;
+    }
+    a:hover { text-decoration: underline; }
+
+    /* Pill Inline Code */
+    code:not(pre code) {
+      font-family: var(--code-font);
+      font-size: 0.88em;
+      background: color-mix(in srgb, currentColor 8%, transparent);
+      border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+      border-radius: 5px;
+      padding: 0.18em 0.45em;
+      font-weight: 500;
+    }
+
+    /* 3D Keycaps */
+    kbd {
+      font-family: var(--code-font);
+      font-size: 0.8em;
+      background: color-mix(in srgb, currentColor 8%, transparent);
+      border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+      border-bottom: 2.5px solid color-mix(in srgb, currentColor 35%, transparent);
+      border-radius: 5px;
+      padding: 0.15em 0.45em;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Luxury Code Block Cards */
+    pre {
+      font-family: var(--code-font);
+      font-size: 0.88em;
+      line-height: 1.6;
+      background: color-mix(in srgb, currentColor 5%, #16181d);
+      border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+      border-radius: 10px;
+      padding: 1.35em 1.4em;
+      margin: 1.4em 0;
+      overflow-x: auto;
+      tab-size: 4;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      font-size: inherit;
+      color: inherit;
+    }
+    pre[data-language]::after {
+      content: attr(data-language);
+      position: absolute;
+      top: 0.65em;
+      right: 1.1em;
+      font-family: var(--code-font);
+      font-size: 0.68em;
+      font-weight: 700;
+      color: color-mix(in srgb, currentColor 40%, transparent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    /* Jupyter Notebook Cell and Terminal Architecture */
+    .cell { margin: 1.5em 0; }
+    .cell.code { position: relative; }
+    .cell.code[data-execution_count]::before {
+      content: "In [" attr(data-execution_count) "]:";
+      display: block;
+      font-family: var(--code-font);
+      font-size: 0.75em;
+      font-weight: 700;
+      color: #3b82f6;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.45em;
+      opacity: 0.9;
+    }
+    .cell.output, .output_text, pre.output {
+      background: color-mix(in srgb, currentColor 4%, #0f1013);
+      border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+      border-radius: 8px;
+      padding: 0.9em 1.2em;
+      font-family: var(--code-font);
+      font-size: 0.84em;
+      color: color-mix(in srgb, currentColor 80%, transparent);
+      margin-top: 0.6em;
+      margin-bottom: 1.4em;
+      overflow-x: auto;
+    }
+
+    /* Multi-Language Syntax Highlighting (Rich Palette) */
+    .hljs-keyword, .hljs-selector-tag, .hljs-subst { color: #f43f5e; font-weight: 600; }
+    .hljs-title, .hljs-title.function_, .hljs-section { color: #10b981; font-weight: 600; }
+    .hljs-title.class_, .hljs-type, .hljs-built_in { color: #f59e0b; font-weight: 500; }
+    .hljs-string, .hljs-symbol, .hljs-bullet { color: #38bdf8; }
+    .hljs-number, .hljs-literal { color: #a855f7; }
+    .hljs-params, .hljs-variable, .hljs-template-variable { color: #e2e8f0; }
+    .hljs-comment, .hljs-quote { color: #64748b; font-style: italic; }
+    .hljs-meta, .hljs-attr { color: #06b6d4; }
+    .hljs-emphasis { font-style: italic; }
+    .hljs-strong { font-weight: bold; }
+    .hljs-deletion { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+    .hljs-addition { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+    /* Tables and DataFrames */
     table {
       border-collapse: collapse;
       display: block;
-      margin: 1.25em 0;
+      margin: 1.5em 0;
       max-width: 100%;
       overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
     }
     th, td {
-      border: 1px solid rgba(127, 127, 127, 0.35);
-      padding: 0.5em 0.7em;
+      border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+      padding: 0.7em 1em;
       text-align: left;
     }
-    th { background: rgba(127, 127, 127, 0.13); }
+    th {
+      background: color-mix(in srgb, currentColor 8%, transparent);
+      font-weight: 600;
+      font-size: 0.9em;
+      letter-spacing: 0.02em;
+    }
+    tr:nth-child(even) td { background: color-mix(in srgb, currentColor 3%, transparent); }
+    tr:hover td { background: color-mix(in srgb, currentColor 6%, transparent); }
+
+    /* Deluxe Obsidian / GFM Callouts */
+    aside.callout {
+      --callout-color: #3b82f6;
+      background: color-mix(in srgb, var(--callout-color) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--callout-color) 35%, transparent);
+      border-left: 0.35em solid var(--callout-color);
+      border-radius: 8px;
+      margin: 1.4em 0;
+      padding: 1em 1.25em;
+    }
+    .callout-title {
+      color: var(--callout-color);
+      font-size: 0.85em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.6em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .callout-tip, .callout-success { --callout-color: #10b981; }
+    .callout-warning, .callout-caution { --callout-color: #f59e0b; }
+    .callout-danger, .callout-error, .callout-failure { --callout-color: #ef4444; }
+    .callout-question, .callout-help, .callout-faq { --callout-color: #8b5cf6; }
+    .callout-note, .callout-info { --callout-color: #3b82f6; }
+    .callout-quote, .callout-cite { --callout-color: #06b6d4; }
+    .callout-example { --callout-color: #6366f1; }
+
+    /* Task Lists and Wiki Links */
     .contains-task-list { list-style: none; padding-left: 0.4em; }
-    .task-list-item input { accent-color: currentColor; margin-right: 0.55em; }
+    .task-list-item input { accent-color: #3b82f6; margin-right: 0.55em; transform: scale(1.1); }
     .wiki-link {
-      color: inherit;
+      color: #3b82f6;
       font-weight: 600;
       text-decoration: underline;
-      text-decoration-color: rgba(91, 110, 225, 0.65);
-      text-underline-offset: 0.15em;
+      text-decoration-color: rgba(59, 130, 246, 0.45);
+      text-underline-offset: 0.2em;
     }
+    .wiki-link:hover { text-decoration-color: #3b82f6; }
     .footnotes {
-      border-top: 1px solid rgba(127, 127, 127, 0.35);
+      border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
       font-size: 0.9em;
       margin-top: 2.5em;
       padding-top: 1em;
+      opacity: 0.85;
     }
-    pre {
-      padding: 1em;
-      overflow: auto;
-      background-color: #f6f8fa;
-      border-radius: 6px;
-    }
-    code {
-      font-family: monospace;
-      font-size: 0.9em;
-      background-color: rgba(175, 184, 193, 0.2);
-      padding: 0.2em 0.4em;
-      border-radius: 4px;
-    }
-    pre code {
-      background-color: transparent;
-      padding: 0;
-    }
+  /* ]]> */
   </style>
 </head>
 <body>
