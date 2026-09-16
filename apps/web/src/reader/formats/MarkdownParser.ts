@@ -6,7 +6,7 @@
 import type { Element, Root, RootContent } from "hast";
 import type { VFile } from "vfile";
 
-import rehypeHighlight from "rehype-highlight";
+import rehypePrettyCode from "rehype-pretty-code";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeStringify from "rehype-stringify";
@@ -45,6 +45,7 @@ const markdownSanitizeSchema = {
       "data-execution_count",
       "dataCollapsed",
       "data-collapsed",
+      "style",
     ],
   },
 };
@@ -79,6 +80,21 @@ function calloutTitle(type: string, title: string): Element {
     properties: { className: ["callout-title"] },
     children: [{ type: "text", value: title || type }],
   };
+}
+
+/**
+ * Disables CommonMark 4-space indented code blocks so notebook cells,
+ * nested divs, and indented headings are never accidentally swallowed into code blocks.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function disableIndentedCode(this: any) {
+  const data = this.data();
+  const list = data.micromarkExtensions ? data.micromarkExtensions : (data.micromarkExtensions = []);
+  list.push({
+    disable: {
+      null: ["codeIndented"],
+    },
+  });
 }
 
 /**
@@ -150,6 +166,13 @@ function rehypeCodeCardEnhancer() {
   return (tree: Root) => {
     visitElements(tree, (element) => {
       if (element.tagName !== "pre") return;
+      const langAttr = element.properties?.dataLanguage || element.properties?.["data-language"];
+      if (typeof langAttr === "string" && langAttr.trim().length > 0) {
+        delete element.properties["data-language"];
+        element.properties.dataLanguage = langAttr.trim().toUpperCase();
+        return;
+      }
+
       const codeChild = element.children.find(
         (c): c is Element => c.type === "element" && c.tagName === "code"
       );
@@ -199,6 +222,8 @@ function normalizeEmbeddedHtmlQuotes(source: string): string {
 function normalizeNotebookCells(source: string): string {
   return protectCodeBlocks(source, (text) =>
     text
+      // Ensure blank lines around block-level cell containers so CommonMark reliably
+      // parses embedded headings, lists, and code blocks without the HTML block trap.
       .replace(/(<div\b[^>]*>)(?!\n\n)/gi, "$1\n\n")
       .replace(/(?<!\n\n)(<\/div>)/gi, "\n\n$1")
   );
@@ -239,11 +264,18 @@ async function markdownToHtml(source: string): Promise<{ html: string; headings:
 
   const processed = await unified()
     .use(remarkParse)
+    .use(disableIndentedCode)
     .use(remarkGfm)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize, markdownSanitizeSchema)
-    .use(rehypeHighlight)
+    .use(rehypePrettyCode, {
+      theme: {
+        dark: "one-dark-pro",
+        light: "github-light",
+      },
+      keepBackground: true,
+    })
     .use(rehypeCodeCardEnhancer)
     .use(rehypeObsidianReader)
     .use(rehypeStringify, { closeSelfClosing: true })
@@ -344,8 +376,8 @@ export async function parseMarkdownToBook(
 <head>
   <meta charset="utf-8"/>
   <title>${escapeHtml(sectionTitle)}</title>
+  <title>${escapeHtml(sectionTitle)}</title>
   <style>
-  /* <![CDATA[ */
     :root {
       color-scheme: light dark;
       --code-font: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
@@ -410,81 +442,117 @@ export async function parseMarkdownToBook(
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
 
-    /* Luxury Code Block Cards */
+    /* Luxury Code Block Cards (rehype-pretty-code and pre) */
+    figure[data-rehype-pretty-code-figure] {
+      margin: 1.2em 0;
+    }
+
+    /* Dual Theme Shiki Variables */
+    @media (prefers-color-scheme: dark) {
+      html {
+        --shiki-default: var(--shiki-dark);
+        --shiki-default-bg: var(--shiki-dark-bg);
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      html {
+        --shiki-default: var(--shiki-light);
+        --shiki-default-bg: var(--shiki-light-bg);
+      }
+    }
+    /* Fallback and explicit overrides from ReaderThemeController */
+    html {
+      --shiki-default: var(--shiki-light);
+      --shiki-default-bg: var(--shiki-light-bg);
+    }
+    html[style*="color-scheme: dark"] {
+      --shiki-default: var(--shiki-dark);
+      --shiki-default-bg: var(--shiki-dark-bg);
+    }
+
+    span[style*="--shiki-dark"] {
+      color: var(--shiki-default, inherit) !important;
+    }
+
     pre {
       font-family: var(--code-font);
       font-size: 0.88em;
       line-height: 1.6;
-      background: color-mix(in srgb, currentColor 5%, #16181d);
+      background: var(--shiki-default-bg, color-mix(in srgb, currentColor 5%, transparent)) !important;
       border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
       border-radius: 10px;
       padding: 1.35em 1.4em;
-      margin: 1.4em 0;
+      margin: 1.2em 0;
       overflow-x: auto;
       tab-size: 4;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
       position: relative;
     }
     pre code {
-      background: transparent;
+      background: transparent !important;
       padding: 0;
       font-size: inherit;
-      color: inherit;
     }
     pre[data-language]::after {
       content: attr(data-language);
       position: absolute;
-      top: 0.65em;
-      right: 1.1em;
+      top: 0.8em;
+      right: 0.8em;
       font-family: var(--code-font);
       font-size: 0.68em;
       font-weight: 700;
-      color: color-mix(in srgb, currentColor 40%, transparent);
+      color: color-mix(in srgb, currentColor 50%, transparent);
+      background: color-mix(in srgb, currentColor 8%, transparent);
+      border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      border-radius: 4px;
+      padding: 0.1em 0.45em;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       pointer-events: none;
     }
 
     /* Jupyter Notebook Cell and Terminal Architecture */
-    .cell { margin: 1.5em 0; }
-    .cell.code { position: relative; }
+    .cell { margin: 1.4em 0; }
+    .cell.code { 
+      position: relative;
+      background: color-mix(in srgb, currentColor 2%, transparent);
+      border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+      border-radius: 12px;
+      padding: 0;
+      overflow: hidden;
+    }
     .cell.code[data-execution_count]::before {
       content: "In [" attr(data-execution_count) "]:";
       display: block;
       font-family: var(--code-font);
-      font-size: 0.75em;
+      font-size: 0.74em;
       font-weight: 700;
-      color: #3b82f6;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.45em;
-      opacity: 0.9;
+      color: #2563eb;
+      background: color-mix(in srgb, #2563eb 10%, transparent);
+      padding: 0.4em 1em;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+    }
+    .cell.code figure,
+    .cell.code pre {
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent !important;
     }
     .cell.output, .output_text, pre.output {
-      background: color-mix(in srgb, currentColor 4%, #0f1013);
+      background: color-mix(in srgb, currentColor 4%, transparent) !important;
       border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
       border-radius: 8px;
       padding: 0.9em 1.2em;
       font-family: var(--code-font);
       font-size: 0.84em;
       color: color-mix(in srgb, currentColor 80%, transparent);
-      margin-top: 0.6em;
+      margin-top: 0.5em;
       margin-bottom: 1.4em;
       overflow-x: auto;
     }
-
-    /* Multi-Language Syntax Highlighting (Rich Palette) */
-    .hljs-keyword, .hljs-selector-tag, .hljs-subst { color: #f43f5e; font-weight: 600; }
-    .hljs-title, .hljs-title.function_, .hljs-section { color: #10b981; font-weight: 600; }
-    .hljs-title.class_, .hljs-type, .hljs-built_in { color: #f59e0b; font-weight: 500; }
-    .hljs-string, .hljs-symbol, .hljs-bullet { color: #38bdf8; }
-    .hljs-number, .hljs-literal { color: #a855f7; }
-    .hljs-params, .hljs-variable, .hljs-template-variable { color: #e2e8f0; }
-    .hljs-comment, .hljs-quote { color: #64748b; font-style: italic; }
-    .hljs-meta, .hljs-attr { color: #06b6d4; }
-    .hljs-emphasis { font-style: italic; }
-    .hljs-strong { font-weight: bold; }
-    .hljs-deletion { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
-    .hljs-addition { background: rgba(16, 185, 129, 0.2); color: #10b981; }
 
     /* Tables and DataFrames */
     table {
@@ -557,7 +625,6 @@ export async function parseMarkdownToBook(
       padding-top: 1em;
       opacity: 0.85;
     }
-  /* ]]> */
   </style>
 </head>
 <body>

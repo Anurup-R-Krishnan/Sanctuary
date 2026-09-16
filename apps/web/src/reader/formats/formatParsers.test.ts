@@ -243,10 +243,12 @@ def vae_loss(x: tf.Tensor):
       const pre = document.querySelector("pre");
       expect(pre?.getAttribute("data-language")).toBe("PYTHON");
 
-      // Multi-language syntax tokens
-      expect(document.querySelector("pre code .hljs-keyword")?.textContent).toBe("def");
-      expect(document.querySelector("pre code .hljs-title")?.textContent).toBe("vae_loss");
-      expect(document.querySelector("pre code .hljs-comment")?.textContent).toContain("Calculate loss");
+      // Multi-language syntax tokens (Shiki / rehype-pretty-code)
+      expect(document.querySelector("pre code span[style*='--shiki-dark']")).not.toBeNull();
+      
+      const codeText = document.querySelector("pre code")?.textContent || "";
+      expect(codeText).toContain("def vae_loss(x: tf.Tensor):");
+      expect(codeText).toContain("Calculate loss");
 
       book.destroy?.();
     });
