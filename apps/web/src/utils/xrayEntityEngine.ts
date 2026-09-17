@@ -507,12 +507,13 @@ export function classifyEntity(name: string): EntityType {
 
 interface RawEntityMatch {
   excerpt: string;
+  length: number;
   name: string;
   offset: number;
 }
 
 /**
- * Core heuristic NER scanner that identifies proper names and entities.
+ * Scans text to identify capitalized names and potential entities.
  */
 export function scanRawEntities(text: string): RawEntityMatch[] {
   if (!text || text.trim().length === 0) return [];
@@ -548,10 +549,12 @@ export function scanRawEntities(text: string): RawEntityMatch[] {
 
     const name = valid.map((t) => t.clean).join(' ');
     const offset = valid[0].offset;
-    const excerpt = extractContextualExcerpt(text, offset, name.length);
 
     matches.push({
-      excerpt,
+      get excerpt() {
+        return extractContextualExcerpt(text, offset, name.length);
+      },
+      length: name.length,
       name,
       offset,
     });

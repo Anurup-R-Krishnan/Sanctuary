@@ -69,6 +69,15 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
 
   // Compute entities based on selected scope
   const { allEntities, charactersCount, locationsCount, termsCount } = useMemo(() => {
+    if (!isOpen) {
+      return {
+        allEntities: [],
+        charactersCount: 0,
+        locationsCount: 0,
+        termsCount: 0,
+      };
+    }
+
     if (scope === 'book' && bookChapters && bookChapters.length > 0) {
       const bookIndex = buildXRayBookIndex(bookChapters, 1);
       return {
@@ -100,7 +109,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
       locationsCount: locs,
       termsCount: terms,
     };
-  }, [scope, bookChapters, activeChapterText, activeChapterIndex, activeChapterTitle]);
+  }, [isOpen, scope, bookChapters, activeChapterText, activeChapterIndex, activeChapterTitle]);
 
   // Filter and sort entities
   const displayedEntities = useMemo(() => {

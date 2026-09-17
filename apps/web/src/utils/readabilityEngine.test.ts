@@ -8,7 +8,7 @@ import {
   interpretFleschScore,
 } from "./readabilityEngine";
 
-describe("readabilityEngine — Chapter Readability & Cognitive Complexity", () => {
+describe("readabilityEngine", () => {
   describe("countSyllables", () => {
     it("handles empty or non-alphabetic inputs safely", () => {
       expect(countSyllables("")).toBe(0);

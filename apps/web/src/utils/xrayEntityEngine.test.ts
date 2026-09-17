@@ -11,7 +11,7 @@ import {
   sortXRayEntities,
 } from './xrayEntityEngine';
 
-describe('X-Ray Character & Entity Dossier Index Engine', () => {
+describe('xrayEntityEngine', () => {
   describe('getDeterministicEntityColor', () => {
     it('generates consistent color classes for the same entity name', () => {
       const color1 = getDeterministicEntityColor('Sherlock Holmes');

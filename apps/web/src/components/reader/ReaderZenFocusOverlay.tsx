@@ -15,14 +15,14 @@ import React, {
   useState,
 } from "react";
 
-import type { FocusSprintDuration } from "@/utils/focusSprintEngine";
-
+import { useSettingsShallow } from "@/store/useSettingsStore";
 import {
   calculateSprintProgress,
   estimateSprintWords,
   FOCUS_SPRINT_PRESETS,
+  type FocusSprintDuration,
   formatSprintTime,
-  playSingingBowlChime,
+  playCompletionChime,
 } from "@/utils/focusSprintEngine";
 
 export interface ReaderZenFocusOverlayProps {
@@ -38,6 +38,9 @@ export function ReaderZenFocusOverlay({
   onClose,
   readingSpeedWpm,
 }: ReaderZenFocusOverlayProps) {
+  const { sessionChimeEnabled } = useSettingsShallow((state) => ({
+    sessionChimeEnabled: state.sessionChimeEnabled,
+  }));
   const [selectedDuration, setSelectedDuration] =
     useState<FocusSprintDuration>(initialMinutes);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
@@ -45,15 +48,19 @@ export function ReaderZenFocusOverlay({
   const [showCompletionModal, setShowCompletionModal] = useState<boolean>(false);
   const [isHudVisible, setIsHudVisible] = useState<boolean>(true);
 
+  const startWallTimeRef = useRef<number>(Date.now());
+  const baseElapsedRef = useRef<number>(0);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Progress metrics
   const { isCompleted, progressPercent, remainingSeconds } =
     calculateSprintProgress(elapsedSeconds, selectedDuration);
 
-  // Reset sprint state when overlay is opened
+  // Reset sprint state when overlay is opened or duration changes
   useEffect(() => {
     if (isOpen) {
+      startWallTimeRef.current = Date.now();
+      baseElapsedRef.current = 0;
       setElapsedSeconds(0);
       setIsRunning(true);
       setShowCompletionModal(false);
@@ -61,15 +68,32 @@ export function ReaderZenFocusOverlay({
     }
   }, [isOpen, selectedDuration]);
 
-  // Sprint countdown timer
+  // Wall-clock sprint countdown timer (drift-free across tab backgrounding/throttling)
   useEffect(() => {
     if (!isOpen || !isRunning || isCompleted) return;
 
-    const interval = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
+    const tick = () => {
+      const currentSegment = Math.max(
+        0,
+        Math.floor((Date.now() - startWallTimeRef.current) / 1000)
+      );
+      setElapsedSeconds(baseElapsedRef.current + currentSegment);
+    };
 
-    return () => clearInterval(interval);
+    tick();
+    const interval = setInterval(tick, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [isOpen, isRunning, isCompleted]);
 
   // Handle sprint completion
@@ -77,9 +101,11 @@ export function ReaderZenFocusOverlay({
     if (isCompleted && !showCompletionModal && isOpen) {
       setIsRunning(false);
       setShowCompletionModal(true);
-      void playSingingBowlChime();
+      if (sessionChimeEnabled) {
+        void playCompletionChime();
+      }
     }
-  }, [isCompleted, showCompletionModal, isOpen]);
+  }, [isCompleted, showCompletionModal, isOpen, sessionChimeEnabled]);
 
   // Auto-hide HUD on idle
   const resetHideTimer = useCallback(() => {
@@ -127,7 +153,25 @@ export function ReaderZenFocusOverlay({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
+  const handleToggleRunning = useCallback(() => {
+    setIsRunning((prev) => {
+      const next = !prev;
+      if (next) {
+        startWallTimeRef.current = Date.now();
+      } else {
+        const currentSegment = Math.max(
+          0,
+          Math.floor((Date.now() - startWallTimeRef.current) / 1000)
+        );
+        baseElapsedRef.current += currentSegment;
+      }
+      return next;
+    });
+  }, []);
+
   const handleRestartSprint = useCallback(() => {
+    startWallTimeRef.current = Date.now();
+    baseElapsedRef.current = 0;
     setElapsedSeconds(0);
     setIsRunning(true);
     setShowCompletionModal(false);
@@ -135,6 +179,8 @@ export function ReaderZenFocusOverlay({
 
   const handleDurationSelect = useCallback((duration: FocusSprintDuration) => {
     setSelectedDuration(duration);
+    startWallTimeRef.current = Date.now();
+    baseElapsedRef.current = 0;
     setElapsedSeconds(0);
     setIsRunning(true);
     setShowCompletionModal(false);
@@ -190,7 +236,7 @@ export function ReaderZenFocusOverlay({
           <button
             aria-label={isRunning ? "Pause focus sprint" : "Resume focus sprint"}
             className="p-1.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
-            onClick={() => setIsRunning((prev) => !prev)}
+            onClick={handleToggleRunning}
             title={isRunning ? "Pause" : "Resume"}
             type="button"
           >

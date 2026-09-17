@@ -244,7 +244,7 @@ function ReaderHeader({
 
                 {/* Right: Actions (Floating Group) */}
                 <div 
-                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-light-border dark:border-dark-border transition-all duration-instant shrink-0 max-w-[calc(100vw-5.5rem)] overflow-x-auto scrollbar-none"
+                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-light-border dark:border-dark-border transition-all duration-instant shrink-0"
                     style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
                 >
                     <ActionBtn 

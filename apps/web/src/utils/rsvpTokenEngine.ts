@@ -79,9 +79,9 @@ export function splitRsvpToken(
     };
   }
 
-  // Extract leading non-word chars, core word chars (including accented letters), and trailing non-word chars
+  // Extract leading non-word chars, core word chars (including international alphabets), and trailing non-word chars
   const match = trimmed.match(
-    /^([^a-zA-Z0-9\u00C0-\u024F]*)([a-zA-Z0-9\u00C0-\u024F]+(?:[-'’][a-zA-Z0-9\u00C0-\u024F]+)*)(.*)$/u
+    /^([^\p{L}\p{N}]*)([\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*)(.*)$/u
   );
 
   let leading = "";

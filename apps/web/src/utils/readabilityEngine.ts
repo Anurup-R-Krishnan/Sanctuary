@@ -175,7 +175,7 @@ export function interpretFleschScore(score: number): ReadabilityInterpretation {
 }
 
 /**
- * Computes comprehensive readability and cognitive complexity metrics.
+ * Computes comprehensive readability metrics.
  */
 export function analyzeReadability(
   text: string,

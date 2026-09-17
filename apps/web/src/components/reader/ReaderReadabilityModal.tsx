@@ -70,10 +70,10 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
   rawText,
   readingSpeedWpm = 250,
 }) => {
-  const metrics = useMemo(
-    () => analyzeReadability(rawText, readingSpeedWpm),
-    [rawText, readingSpeedWpm]
-  );
+  const metrics = useMemo(() => {
+    if (!isOpen) return null;
+    return analyzeReadability(rawText || "", readingSpeedWpm);
+  }, [isOpen, rawText, readingSpeedWpm]);
 
   // Close on Escape key press
   useEffect(() => {
@@ -88,14 +88,14 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !metrics) return null;
   if (typeof document === "undefined") return null;
 
   const band = colorBandClasses[metrics.interpretation.colorBand];
 
   return createPortal(
     <div
-      aria-label="Readability & Cognitive Complexity"
+      aria-label="Readability Metrics"
       aria-modal="true"
       className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={(e) => {

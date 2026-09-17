@@ -126,7 +126,7 @@ export async function playSingingBowlChime(
     masterGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     masterGain.connect(ctx.destination);
 
-    // Harmonic frequencies modeling a singing bowl: fundamental (528 Hz), minor third (630 Hz), octave + fifth (1460 Hz)
+    // Harmonics: fundamental (528 Hz), third (630 Hz), overtone (1460 Hz)
     const harmonics = [
       { detune: 0, freq: 528, gain: 0.6 },
       { detune: 4, freq: 630, gain: 0.25 },
@@ -156,3 +156,5 @@ export async function playSingingBowlChime(
     return false;
   }
 }
+
+export const playCompletionChime = playSingingBowlChime;

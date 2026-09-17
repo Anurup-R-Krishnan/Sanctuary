@@ -13,7 +13,7 @@ import {
   stepVelocity,
 } from "./autoScrollEngine";
 
-describe("autoScrollEngine — Hands-Free Continuous Auto-Scroll & Calibrated Pacing", () => {
+describe("autoScrollEngine", () => {
   describe("clampVelocity", () => {
     it("clamps values below minimum and above maximum", () => {
       expect(clampVelocity(0)).toBe(MIN_AUTO_SCROLL_VELOCITY);

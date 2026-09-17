@@ -21,13 +21,11 @@ import {
 
 interface ReaderSelectionMenuProps {
   onAddNote: (color?: string) => void;
-  onAnalyzeReadability?: () => void;
   onCopy: () => void;
   onCreateQuoteCard?: () => void;
   onDefine?: () => void;
   onHighlight: (color?: string) => void;
   onSpeak: () => void;
-  onSpeedRead?: () => void;
   onUnderline: () => void;
   onXRay?: () => void;
   selection: ReaderSelection | null;

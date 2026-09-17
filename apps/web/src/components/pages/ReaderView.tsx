@@ -264,15 +264,6 @@ function ReaderView({
     });
   }, [position.chapterLabel, book?.title]);
 
-  const handleOpenSpeedReaderFromSelection = useCallback(() => {
-    if (!selection?.text) return;
-    setSpeedReaderTarget({
-      chapterLabel: position.chapterLabel || book?.title || "Selection",
-      text: selection.text.trim(),
-    });
-    engineRef.current?.clearSelection();
-  }, [selection, position.chapterLabel, book?.title]);
-
   const [readabilityTarget, setReadabilityTarget] = useState<{
     chapterLabel?: string;
     text: string;
@@ -291,15 +282,6 @@ function ReaderView({
       text,
     });
   }, [position.chapterLabel, book?.title]);
-
-  const handleOpenReadabilityFromSelection = useCallback(() => {
-    if (!selection?.text) return;
-    setReadabilityTarget({
-      chapterLabel: position.chapterLabel || book?.title || "Selection",
-      text: selection.text.trim(),
-    });
-    engineRef.current?.clearSelection();
-  }, [selection, position.chapterLabel, book?.title]);
 
   const [xrayTarget, setXrayTarget] = useState<{
     chapterIndex?: number;
@@ -708,13 +690,11 @@ function ReaderView({
 
       <ReaderSelectionMenu
         onAddNote={handleAddNote}
-        onAnalyzeReadability={handleOpenReadabilityFromSelection}
         onCopy={handleCopy}
         onCreateQuoteCard={() => handleOpenQuoteCard()}
         onDefine={handleDefine}
         onHighlight={handleHighlight}
         onSpeak={handleSpeak}
-        onSpeedRead={handleOpenSpeedReaderFromSelection}
         onUnderline={handleUnderline}
         onXRay={handleOpenXRayFromSelection}
         selection={selection}
