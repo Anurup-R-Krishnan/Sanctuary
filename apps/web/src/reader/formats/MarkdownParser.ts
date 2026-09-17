@@ -90,12 +90,41 @@ export const markdownSanitizeSchema = {
       "fill",
       "stroke",
       "strokeWidth",
+      "stroke-width",
       "strokeLinecap",
+      "stroke-linecap",
       "strokeLinejoin",
+      "stroke-linejoin",
+      "d",
+      "points",
+      "cx",
+      "cy",
+      "r",
+      "rx",
+      "ry",
+      "x",
+      "y",
+      "x1",
+      "y1",
+      "x2",
+      "y2",
+      "title",
+      "ariaLabel",
+      "aria-label",
+      "type",
+    ],
+    button: [
+      "className",
+      "type",
+      "title",
+      "ariaLabel",
+      "aria-label",
+      "disabled",
     ],
   },
   tagNames: [
     ...(defaultSchema.tagNames || []),
+    "button",
     "aside",
     "details",
     "summary",
@@ -275,37 +304,215 @@ function rehypeObsidianReader() {
 }
 
 /**
- * Decorates code blocks with floating language badge and title attributes.
+ * Creates the ChatGPT-style header with </> language indicator and clipboard Copy button.
+ */
+function createCodeHeaderElement(langDisplay: string, isMermaid: boolean): Element {
+  const iconPolyline = isMermaid
+    ? [
+        { type: "element" as const, tagName: "polygon", properties: { points: "12 2 2 7 12 12 22 7 12 2" }, children: [] },
+        { type: "element" as const, tagName: "polyline", properties: { points: "2 17 12 22 22 17" }, children: [] },
+        { type: "element" as const, tagName: "polyline", properties: { points: "2 12 12 17 22 12" }, children: [] },
+      ]
+    : [
+        { type: "element" as const, tagName: "polyline", properties: { points: "16 18 22 12 16 6" }, children: [] },
+        { type: "element" as const, tagName: "polyline", properties: { points: "8 6 2 12 8 18" }, children: [] },
+      ];
+
+  return {
+    type: "element",
+    tagName: "div",
+    properties: { className: ["code-header"] },
+    children: [
+      {
+        type: "element",
+        tagName: "div",
+        properties: { className: ["code-lang"] },
+        children: [
+          {
+            type: "element",
+            tagName: "svg",
+            properties: {
+              xmlns: "http://www.w3.org/2000/svg",
+              width: "13",
+              height: "13",
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "2",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              className: ["code-lang-icon"],
+            },
+            children: iconPolyline,
+          },
+          {
+            type: "element",
+            tagName: "span",
+            properties: {},
+            children: [{ type: "text", value: langDisplay }],
+          },
+        ],
+      },
+      {
+        type: "element",
+        tagName: "button",
+        properties: {
+          className: ["code-copy-btn"],
+          type: "button",
+          ariaLabel: isMermaid ? "Copy diagram code" : "Copy code",
+          title: isMermaid ? "Copy diagram code" : "Copy code",
+        },
+        children: [
+          {
+            type: "element",
+            tagName: "svg",
+            properties: {
+              xmlns: "http://www.w3.org/2000/svg",
+              width: "13",
+              height: "13",
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "2",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              className: ["copy-icon"],
+            },
+            children: [
+              {
+                type: "element",
+                tagName: "rect",
+                properties: { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2" },
+                children: [],
+              },
+              {
+                type: "element",
+                tagName: "path",
+                properties: { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" },
+                children: [],
+              },
+            ],
+          },
+          {
+            type: "element",
+            tagName: "svg",
+            properties: {
+              xmlns: "http://www.w3.org/2000/svg",
+              width: "13",
+              height: "13",
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "2",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+              className: ["check-icon"],
+            },
+            children: [
+              {
+                type: "element",
+                tagName: "polyline",
+                properties: { points: "20 6 9 17 4 12" },
+                children: [],
+              },
+            ],
+          },
+          {
+            type: "element",
+            tagName: "span",
+            properties: { className: ["copy-label"] },
+            children: [{ type: "text", value: "Copy" }],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Decorates code blocks with ChatGPT-style luxury cards, header badges, and copy buttons.
  */
 function rehypeCodeCardEnhancer() {
   return (tree: Root) => {
-    visitElements(tree, (element) => {
+    visit(tree, "element", (element: Element, index, parent) => {
       if (element.tagName !== "pre") return;
+
+      let lang = "";
       const langAttr = element.properties?.dataLanguage || element.properties?.["data-language"];
       if (typeof langAttr === "string" && langAttr.trim().length > 0) {
-        delete element.properties["data-language"];
-        element.properties.dataLanguage = langAttr.trim().toUpperCase();
-        return;
+        lang = langAttr.trim();
+      } else {
+        const codeChild = element.children.find(
+          (c): c is Element => c.type === "element" && c.tagName === "code"
+        );
+        if (codeChild) {
+          const classes = Array.isArray(codeChild.properties?.className)
+            ? codeChild.properties.className
+            : [String(codeChild.properties?.className || "")];
+
+          const langClass = classes.find(
+            (cls): cls is string => typeof cls === "string" && cls.startsWith("language-")
+          );
+          if (langClass) {
+            lang = langClass.slice("language-".length).trim();
+          }
+        }
       }
 
-      const codeChild = element.children.find(
-        (c): c is Element => c.type === "element" && c.tagName === "code"
-      );
-      if (!codeChild) return;
+      const isMermaid = lang.toLowerCase() === "mermaid";
+      const langDisplay = isMermaid ? "MERMAID" : (lang ? lang.toUpperCase() : "CODE");
+      element.properties = element.properties || {};
+      element.properties.dataLanguage = langDisplay;
+      delete element.properties["data-language"];
 
-      const classes = Array.isArray(codeChild.properties?.className)
-        ? codeChild.properties.className
-        : [String(codeChild.properties?.className || "")];
-
-      const langClass = classes.find(
-        (cls): cls is string => typeof cls === "string" && cls.startsWith("language-")
-      );
-      if (langClass) {
-        const lang = langClass.slice("language-".length).trim();
-        if (lang) {
-          element.properties = element.properties || {};
-          element.properties.dataLanguage = lang.toUpperCase();
+      if (isMermaid) {
+        const preClasses = Array.isArray(element.properties.className)
+          ? element.properties.className
+          : element.properties.className
+            ? [String(element.properties.className)]
+            : [];
+        if (!preClasses.includes("mermaid")) {
+          element.properties.className = [...preClasses, "mermaid"];
         }
+      }
+
+      const isParentCard =
+        parent &&
+        parent.type === "element" &&
+        (Array.isArray(parent.properties?.className)
+          ? parent.properties.className.includes("code-card")
+          : String(parent.properties?.className || "").includes("code-card"));
+      if (isParentCard) return;
+
+      const headerNode = createCodeHeaderElement(langDisplay, isMermaid);
+
+      if (
+        parent &&
+        parent.type === "element" &&
+        (parent.properties?.dataRehypePrettyCodeFigure !== undefined ||
+          parent.properties?.["data-rehype-pretty-code-figure"] !== undefined)
+      ) {
+        const existingClasses = Array.isArray(parent.properties.className)
+          ? parent.properties.className
+          : parent.properties.className
+            ? [String(parent.properties.className)]
+            : [];
+        parent.properties.className = [
+          ...existingClasses,
+          "code-card",
+          ...(isMermaid ? ["mermaid-card"] : []),
+        ];
+        parent.children.unshift(headerNode);
+      } else if (parent && typeof index === "number" && Array.isArray(parent.children)) {
+        const cardFigure: Element = {
+          type: "element",
+          tagName: "figure",
+          properties: {
+            className: ["code-card", ...(isMermaid ? ["mermaid-card"] : [])],
+          },
+          children: [headerNode, element],
+        };
+        parent.children[index] = cardFigure;
       }
     });
   };
@@ -544,29 +751,27 @@ function createMetadataBannerElement(meta: FrontmatterMetadata): Element | null 
 const DOCUMENT_STYLES = `
 :root {
   color-scheme: light dark;
-  --md-bg: #0d1117;
-  --md-fg: #e6edf3;
-  --md-muted: #8b949e;
-  --md-border: rgba(240, 246, 252, 0.1);
-  --md-card-bg: rgba(22, 27, 34, 0.7);
+  --md-bg: inherit;
+  --md-fg: currentColor;
+  --md-muted: color-mix(in srgb, currentColor 60%, transparent);
+  --md-border: color-mix(in srgb, currentColor 12%, transparent);
+  --md-card-bg: color-mix(in srgb, currentColor 4%, transparent);
+  --md-code-bg: color-mix(in srgb, currentColor 5%, transparent);
+  --md-code-header-bg: color-mix(in srgb, currentColor 9%, transparent);
+  --md-code-border: color-mix(in srgb, currentColor 14%, transparent);
   --md-accent: #58a6ff;
-  --md-accent-glow: rgba(56, 139, 253, 0.15);
-  --md-code-bg: #161b22;
+  --md-accent-glow: color-mix(in srgb, var(--md-accent) 15%, transparent);
+  --md-highlight: color-mix(in srgb, #ffd700 24%, transparent);
+}
+
+html[data-theme="dark"] {
+  --md-accent: #58a6ff;
   --md-highlight: rgba(255, 215, 0, 0.22);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --md-bg: #ffffff;
-    --md-fg: #1f2328;
-    --md-muted: #656d76;
-    --md-border: rgba(31, 35, 40, 0.12);
-    --md-card-bg: rgba(246, 248, 250, 0.85);
-    --md-accent: #0969da;
-    --md-accent-glow: rgba(9, 105, 218, 0.1);
-    --md-code-bg: #f6f8fa;
-    --md-highlight: rgba(255, 235, 59, 0.4);
-  }
+html[data-theme="light"] {
+  --md-accent: #0969da;
+  --md-highlight: rgba(255, 235, 59, 0.4);
 }
 
 /* Modern Technical Typography */
@@ -649,7 +854,7 @@ li + li {
   font-weight: 500;
   color: var(--md-accent);
   background: var(--md-accent-glow);
-  border: 1px solid rgba(56, 139, 253, 0.25);
+  border: 1px solid color-mix(in srgb, var(--md-accent) 25%, transparent);
   border-radius: 9999px;
   letter-spacing: 0.02em;
 }
@@ -662,10 +867,7 @@ li + li {
   background-color: var(--md-code-bg);
   border: 1px solid var(--md-border);
   border-radius: 6px;
-  color: #ff7b72;
-}
-@media (prefers-color-scheme: light) {
-  :not(pre) > code { color: #cf222e; }
+  color: color-mix(in srgb, currentColor 85%, #d73a49);
 }
 
 /* Obsidian Mark and Highlight */
@@ -690,11 +892,14 @@ kbd {
   white-space: nowrap;
 }
 
-/* Dual Theme Shiki Variables */
+/* Dual Theme Shiki Variables with Theme Card Transparency */
+.shiki,
+.shiki span {
+  background-color: transparent !important;
+}
 html[data-theme="dark"] .shiki,
 html[data-theme="dark"] .shiki span {
   color: var(--shiki-dark) !important;
-  background-color: var(--shiki-dark-bg) !important;
   font-style: var(--shiki-dark-font-style) !important;
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
@@ -704,7 +909,6 @@ html[data-theme="dark"] .shiki span {
   html:not([data-theme="light"]) .shiki,
   html:not([data-theme="light"]) .shiki span {
     color: var(--shiki-dark) !important;
-    background-color: var(--shiki-dark-bg) !important;
     font-style: var(--shiki-dark-font-style) !important;
     font-weight: var(--shiki-dark-font-weight) !important;
     text-decoration: var(--shiki-dark-text-decoration) !important;
@@ -714,31 +918,112 @@ html[data-theme="dark"] .shiki span {
 html[data-theme="light"] .shiki,
 html[data-theme="light"] .shiki span {
   color: var(--shiki-light) !important;
-  background-color: var(--shiki-light-bg) !important;
   font-style: var(--shiki-light-font-style) !important;
   font-weight: var(--shiki-light-font-weight) !important;
   text-decoration: var(--shiki-light-text-decoration) !important;
 }
 
-/* Luxury Code Cards */
-pre {
+/* ChatGPT-Style Luxury Code Block Cards */
+figure.code-card {
   position: relative;
+  margin: 1.6rem 0;
+  border: 1px solid var(--md-code-border);
+  border-radius: 10px;
+  background-color: var(--md-code-bg);
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.85rem;
+  background-color: var(--md-code-header-bg);
+  border-bottom: 1px solid var(--md-code-border);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.code-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--md-muted);
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.code-lang-icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.75;
+}
+
+.code-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--md-border);
+  border-radius: 5px;
+  color: var(--md-muted);
+  cursor: pointer;
+  padding: 0.2rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 550;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.code-copy-btn:hover {
+  background-color: color-mix(in srgb, currentColor 8%, transparent);
+  color: var(--md-fg);
+  border-color: color-mix(in srgb, currentColor 25%, transparent);
+}
+
+.code-copy-btn:active {
+  transform: scale(0.97);
+}
+
+.code-copy-btn.copied {
+  color: #3fb950 !important;
+  border-color: #3fb950 !important;
+  background-color: rgba(63, 185, 80, 0.12) !important;
+}
+
+.code-copy-btn .check-icon {
+  display: none;
+}
+
+.code-copy-btn.copied .check-icon {
+  display: inline-block;
+}
+
+.code-copy-btn.copied .copy-icon {
+  display: none;
+}
+
+figure.code-card pre {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 1.15rem 1.25rem;
+  background-color: transparent !important;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.88em;
   line-height: 1.55;
-  padding: 1.25rem 1.25rem 1.15rem;
-  background-color: var(--md-code-bg);
-  border: 1px solid var(--md-border);
-  border-radius: 10px;
   overflow-x: auto;
-  margin: 1.5rem 0;
-  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.12);
   white-space: pre !important;
   word-break: normal !important;
   overflow-wrap: normal !important;
 }
 
-pre > code {
+figure.code-card pre > code {
   font-family: inherit;
   font-size: inherit;
   background: transparent !important;
@@ -751,31 +1036,34 @@ pre > code {
   overflow-wrap: normal !important;
 }
 
-/* Floating Language Badge */
-pre[data-language]::before {
-  content: attr(data-language);
-  position: absolute;
-  top: 0;
-  right: 0.85rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--md-muted);
-  background: var(--md-card-bg);
-  border: 1px solid var(--md-border);
-  border-top: none;
-  padding: 0.15rem 0.55rem 0.25rem;
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
-  opacity: 0.85;
-  user-select: none;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
+/* Standalone pre blocks */
+pre:not(figure.code-card pre) {
+  position: relative;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.88em;
+  line-height: 1.55;
+  padding: 1.1rem 1.25rem;
+  background-color: var(--md-code-bg) !important;
+  border: 1px solid var(--md-code-border);
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.08);
+  white-space: pre !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
 }
-pre:hover[data-language]::before {
-  opacity: 1;
-  color: var(--md-accent);
+
+/* Mermaid Diagram Cards */
+figure.mermaid-card {
+  text-align: center;
+}
+figure.mermaid-card pre.mermaid {
+  text-align: left;
+}
+figure.mermaid-card .mermaid svg {
+  max-width: 100% !important;
+  height: auto !important;
 }
 
 /* Jupyter Notebook Cell and Terminal Architecture */
@@ -796,6 +1084,11 @@ pre:hover[data-language]::before {
   border-left: 4px solid #7ee787;
   padding: 0;
 }
+.cell.code > figure.code-card {
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
 .cell.code > pre {
   margin: 0;
   border: none;
@@ -813,9 +1106,6 @@ pre:hover[data-language]::before {
   color: var(--md-muted);
   user-select: none;
   z-index: 2;
-}
-.cell.code[data-execution_count] pre {
-  padding-top: 1.85rem;
 }
 
 /* Responsive Data Tables */
@@ -844,7 +1134,7 @@ tr:last-child td {
   border-bottom: none;
 }
 tr:nth-child(even) td {
-  background-color: rgba(125, 125, 125, 0.03);
+  background-color: color-mix(in srgb, currentColor 2.5%, transparent);
 }
 
 /* Deluxe Obsidian and GFM Callouts */
@@ -854,16 +1144,16 @@ tr:nth-child(even) td {
   border-radius: 10px;
   border: 1px solid var(--md-border);
   border-left: 4px solid #58a6ff;
-  background: rgba(56, 139, 253, 0.06);
+  background: color-mix(in srgb, #58a6ff 7%, transparent);
   font-size: 0.95rem;
   box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.05);
 }
-.callout-note { border-left-color: #58a6ff; background: rgba(56, 139, 253, 0.06); }
-.callout-tip { border-left-color: #3fb950; background: rgba(63, 185, 80, 0.06); }
-.callout-warning { border-left-color: #d29922; background: rgba(210, 153, 34, 0.06); }
-.callout-danger { border-left-color: #f85149; background: rgba(248, 81, 73, 0.06); }
-.callout-question { border-left-color: #a371f7; background: rgba(163, 113, 247, 0.06); }
-.callout-quote { border-left-color: #8b949e; background: rgba(139, 148, 158, 0.06); }
+.callout-note { border-left-color: #58a6ff; background: color-mix(in srgb, #58a6ff 7%, transparent); }
+.callout-tip { border-left-color: #3fb950; background: color-mix(in srgb, #3fb950 7%, transparent); }
+.callout-warning { border-left-color: #d29922; background: color-mix(in srgb, #d29922 7%, transparent); }
+.callout-danger { border-left-color: #f85149; background: color-mix(in srgb, #f85149 7%, transparent); }
+.callout-question { border-left-color: #a371f7; background: color-mix(in srgb, #a371f7 7%, transparent); }
+.callout-quote { border-left-color: color-mix(in srgb, currentColor 40%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); }
 
 .callout-title {
   display: flex;
@@ -887,11 +1177,11 @@ summary.callout-title {
   height: 16px;
 }
 
-/* Task Lists and Wiki Links */
+/* Interactive Task Lists and Wiki Links */
 .wiki-link {
   color: var(--md-accent);
   text-decoration: none;
-  border-bottom: 1px solid rgba(56, 139, 253, 0.35);
+  border-bottom: 1px solid color-mix(in srgb, var(--md-accent) 35%, transparent);
   font-weight: 500;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
@@ -899,10 +1189,17 @@ summary.callout-title {
   border-bottom-color: var(--md-accent);
   text-decoration: none;
 }
+ul:has(input[type="checkbox"]) {
+  list-style-type: none;
+  padding-left: 0.25rem;
+}
 input[type="checkbox"] {
   accent-color: var(--md-accent);
-  margin-right: 0.45rem;
-  transform: translateY(1px);
+  margin-right: 0.5rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  cursor: pointer;
+  vertical-align: middle;
 }
 
 /* Embedded KaTeX LaTeX Math */

@@ -26,6 +26,42 @@ import { ScrollContinuity } from "./ScrollContinuity";
 // foliate-view is registered dynamically via foliate-js/view.js
 type EventListenerCallback = (...args: unknown[]) => void;
 
+/**
+ * Calculates perceived relative luminance to distinguish dark backgrounds
+ * from light, ivory, cream, or warm sepia parchment.
+ */
+export function isColorDark(colorStr: string): boolean {
+  if (!colorStr) return false;
+  const str = colorStr.trim().toLowerCase();
+  if (str === "#000" || str === "#000000" || str === "black") return true;
+  if (str === "#fff" || str === "#ffffff" || str === "white") return false;
+
+  if (str.startsWith("#")) {
+    let hex = str.slice(1);
+    if (hex.length === 3) {
+      hex = hex.split("").map((c) => c + c).join("");
+    }
+    if (hex.length >= 6) {
+      const r = parseInt(hex.slice(0, 2), 16) / 255;
+      const g = parseInt(hex.slice(2, 4), 16) / 255;
+      const b = parseInt(hex.slice(4, 6), 16) / 255;
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      return lum < 0.5;
+    }
+  }
+
+  const rgbMatch = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10) / 255;
+    const g = parseInt(rgbMatch[2], 10) / 255;
+    const b = parseInt(rgbMatch[3], 10) / 255;
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return lum < 0.5;
+  }
+
+  return false;
+}
+
 export class FoliateRendition implements DocumentRendition {
   private container: HTMLDivElement;
   private documentAdapter: FoliateEpubAdapter;
@@ -200,6 +236,7 @@ export class FoliateRendition implements DocumentRendition {
         this.setupDocumentKeyboardForwarding(doc);
         this.setupDocumentSelection(doc, index);
         this.setupDocumentImageInteraction(doc);
+        this.setupDocumentInteractivity(doc);
         this.scrollContinuity.attachDocument(doc);
       }
     });
@@ -262,6 +299,8 @@ export class FoliateRendition implements DocumentRendition {
 
   private injectStylesToDocument(doc: Document): void {
     try {
+      const isDark = isColorDark(this.background);
+      doc.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
       doc.documentElement.style.backgroundColor = this.background;
       if (doc.body) {
         doc.body.style.backgroundColor = this.background;
@@ -446,6 +485,96 @@ export class FoliateRendition implements DocumentRendition {
     }
   }
 
+  private setupDocumentInteractivity(doc: Document): void {
+    try {
+      // 1. Interactive code copy buttons with animated checkmark feedback
+      doc.body?.addEventListener("click", async (e: MouseEvent) => {
+        const target = (e.target as Element)?.closest(".code-copy-btn") as HTMLButtonElement | null;
+        if (!target) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const card = target.closest("figure.code-card, .code-card");
+        const codeEl = card?.querySelector("pre code, pre.mermaid, pre");
+        if (!codeEl) return;
+
+        const codeText = codeEl.textContent || "";
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(codeText);
+          } else {
+            const textarea = doc.createElement("textarea");
+            textarea.value = codeText;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            doc.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            doc.execCommand("copy");
+            textarea.remove();
+          }
+
+          target.classList.add("copied");
+          const label = target.querySelector(".copy-label");
+          if (label) label.textContent = "Copied!";
+
+          setTimeout(() => {
+            target.classList.remove("copied");
+            if (label) label.textContent = "Copy";
+          }, 2000);
+        } catch (err) {
+          console.warn("Failed to copy code block text:", err);
+        }
+      });
+
+      // 2. Interactive task lists (- [ ] / - [x])
+      doc.body?.addEventListener("change", (e: Event) => {
+        const checkbox = e.target as HTMLInputElement;
+        if (checkbox && checkbox.type === "checkbox") {
+          if (checkbox.checked) {
+            checkbox.setAttribute("checked", "checked");
+          } else {
+            checkbox.removeAttribute("checked");
+          }
+        }
+      });
+
+      // 3. Native Mermaid diagram rendering
+      this.setupDocumentMermaid(doc);
+    } catch {
+      // Benign: handle detached or cross-origin documents
+    }
+  }
+
+  private async setupDocumentMermaid(doc: Document): Promise<void> {
+    try {
+      const mermaidElements = doc.querySelectorAll(".mermaid");
+      if (mermaidElements.length === 0) return;
+
+      const mermaidModule = await import("mermaid");
+      const mermaid = mermaidModule.default;
+      const isDark = isColorDark(this.background);
+
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "loose",
+        theme: isDark ? "dark" : "neutral",
+        fontFamily: "inherit",
+        themeVariables: {
+          background: "transparent",
+          darkMode: isDark,
+        },
+      });
+
+      await mermaid.run({
+        nodes: Array.from(mermaidElements) as HTMLElement[],
+      });
+    } catch (err) {
+      console.warn("Mermaid rendering fallback (displaying source):", err);
+    }
+  }
+
   private async applyFlowToRenderer(): Promise<void> {
     const renderer = this.view.renderer;
     if (!renderer) return;
@@ -614,6 +743,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public updateBackground(color: string): void {
     this.background = color;
+    const isDark = isColorDark(color);
     if (this.container) this.container.style.backgroundColor = color;
     if (this.view) this.view.style.backgroundColor = color;
     const renderer = this.view?.renderer;
@@ -623,6 +753,7 @@ export class FoliateRendition implements DocumentRendition {
         contents.forEach((c: { doc?: Document }) => {
           if (c.doc) {
             c.doc.documentElement.style.backgroundColor = color;
+            c.doc.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
             if (c.doc.body) c.doc.body.style.backgroundColor = color;
           }
         });

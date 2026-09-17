@@ -2,19 +2,71 @@ import React, { useEffect, useRef, useState } from "react";
 
 import type { ReaderPosition } from "@/types/reader";
 
+import { FoliateDocumentAdapter } from "@/reader/foliate/FoliateDocumentAdapter";
 import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
 import { FoliateRendition } from "@/reader/foliate/FoliateRendition";
+import { parseMarkdownToBook } from "@/reader/formats/MarkdownParser";
 
 const THEMES = {
-  dark: { bg: "#121212", fg: "#e0e0e0" },
   light: { bg: "#ffffff", fg: "#1a1a1a" },
-  sepia: { bg: "#f8f1e3", fg: "#433422" },
+  sepia: { bg: "#f4ecd8", fg: "#5c4b37" },
+  dark: { bg: "#1a1a1a", fg: "#e0e0e0" },
+  oled: { bg: "#000000", fg: "#e2e2e2" },
 };
+
+const SAMPLE_MARKDOWN = `---
+title: "The Architecture of Sanctuary"
+author: "Sanctuary Engineering"
+date: "2026-09-17"
+tags: [architecture, reader, python, mermaid]
+---
+
+# The Architecture of Sanctuary
+
+Welcome to Sanctuary's multi-format continuous reader engine.
+
+## Python Execution Core
+
+\`\`\`python
+import asyncio
+from typing import Dict, Any
+
+class ReaderPipeline:
+    """Core multi-format reader engine coordinator."""
+    def __init__(self, book_id: str):
+        self.book_id = book_id
+        self.cache: Dict[str, Any] = {}
+
+    async def fetch_manifest(self) -> Dict[str, Any]:
+        """Fetch, verify, and decrypt book sections."""
+        await asyncio.sleep(0.01)
+        return {"id": self.book_id, "sections": 12, "status": "active"}
+\`\`\`
+
+## System Architecture Diagram
+
+\`\`\`mermaid
+graph TD;
+    Client[Sanctuary Web UI] --> Worker[Cloudflare Worker API];
+    Worker --> D1[(D1 Database & Vectorize)];
+    Worker --> R2[(R2 Vault Storage)];
+    Client --> Foliate[Foliate Engine];
+    Foliate --> Parser[Multi-Format Parser Pipeline];
+\`\`\`
+
+## Interactive Checklist
+
+- [x] Deep ZIP signature sniffing (EPUB, CBZ, FBZ)
+- [x] PalmDOC vs AZW3/KF8 boundary disambiguation
+- [x] ChatGPT-style luxury code cards with clipboard copy
+- [x] Theme-adaptive color-mix variables (Sepia, Paper, OLED)
+- [ ] Offline SQLite vector indexing
+`;
 
 export const FoliateTestHarness: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<FoliateRendition | null>(null);
-  const adapterRef = useRef<FoliateEpubAdapter | null>(null);
+  const adapterRef = useRef<FoliateDocumentAdapter | FoliateEpubAdapter | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +74,11 @@ export const FoliateTestHarness: React.FC = () => {
   const [author, setAuthor] = useState("");
   const [toc, setToc] = useState<Array<{ href: string; id: string; label: string }>>([]);
   const [position, setPosition] = useState<ReaderPosition | null>(null);
-  const [continuous, setContinuous] = useState(false);
+  const [continuous, setContinuous] = useState(true);
   const [spread, setSpread] = useState(false);
   const [fontSize, setFontSize] = useState(18);
-  const [theme, setTheme] = useState<"dark" | "light" | "sepia">("light");
+  const [theme, setTheme] = useState<"light" | "sepia" | "dark" | "oled">("sepia");
+  const [sampleBook, setSampleBook] = useState<"markdown" | "epub">("markdown");
 
   useEffect(() => {
     let active = true;
@@ -35,12 +88,18 @@ export const FoliateTestHarness: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("/mobydick.epub");
-        if (!res.ok) throw new Error(`Failed to fetch mobydick.epub: ${res.statusText}`);
-        const blob = await res.blob();
-        if (!active) return;
+        let adapter: FoliateDocumentAdapter | FoliateEpubAdapter;
+        if (sampleBook === "markdown") {
+          const rawBook = await parseMarkdownToBook(SAMPLE_MARKDOWN, "The Architecture of Sanctuary");
+          adapter = new FoliateDocumentAdapter(rawBook, "markdown");
+        } else {
+          const res = await fetch("/mobydick.epub");
+          if (!res.ok) throw new Error(`Failed to fetch mobydick.epub: ${res.statusText}`);
+          const blob = await res.blob();
+          if (!active) return;
+          adapter = await FoliateEpubAdapter.create(blob);
+        }
 
-        const adapter = await FoliateEpubAdapter.create(blob);
         if (!active) {
           adapter.destroy();
           return;
@@ -56,7 +115,7 @@ export const FoliateTestHarness: React.FC = () => {
             containerRef.current,
             adapter,
             {
-              continuous,
+              continuous: sampleBook === "markdown" ? true : continuous,
               spread,
               direction: "auto",
               readerBackground: currentTheme.bg,
@@ -105,14 +164,14 @@ export const FoliateTestHarness: React.FC = () => {
       adapterRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sampleBook]);
 
   // Update layout / flow
   useEffect(() => {
     if (!renditionRef.current) return;
     const currentTheme = THEMES[theme];
     renditionRef.current.setFlow({
-      continuous,
+      continuous: sampleBook === "markdown" ? true : continuous,
       spread,
       direction: "auto",
       readerBackground: currentTheme.bg,
@@ -124,7 +183,7 @@ export const FoliateTestHarness: React.FC = () => {
         },
       },
     });
-  }, [continuous, spread, fontSize, theme]);
+  }, [continuous, spread, fontSize, theme, sampleBook]);
 
   const handleNext = () => renditionRef.current?.next();
   const handlePrev = () => renditionRef.current?.prev();
@@ -199,15 +258,37 @@ export const FoliateTestHarness: React.FC = () => {
             <span className="w-5 font-mono">{fontSize}</span>
           </div>
 
+          {/* Book Format Switcher */}
+          <div className="flex items-center gap-1 bg-neutral-700 p-0.5 rounded">
+            <button
+              type="button"
+              onClick={() => setSampleBook("markdown")}
+              className={`px-2 py-0.5 rounded font-medium ${
+                sampleBook === "markdown" ? "bg-amber-600 text-white" : "text-neutral-300 hover:text-white"
+              }`}
+            >
+              Markdown
+            </button>
+            <button
+              type="button"
+              onClick={() => setSampleBook("epub")}
+              className={`px-2 py-0.5 rounded font-medium ${
+                sampleBook === "epub" ? "bg-amber-600 text-white" : "text-neutral-300 hover:text-white"
+              }`}
+            >
+              EPUB
+            </button>
+          </div>
+
           {/* Theme Presets */}
           <div className="flex items-center gap-1 bg-neutral-700 p-0.5 rounded">
-            {(["light", "sepia", "dark"] as const).map((t) => (
+            {(["light", "sepia", "dark", "oled"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTheme(t)}
                 className={`px-2 py-0.5 rounded capitalize ${
-                  theme === t ? "bg-neutral-900 text-amber-400 font-bold" : "text-neutral-300"
+                  theme === t ? "bg-neutral-900 text-amber-400 font-bold" : "text-neutral-300 hover:text-white"
                 }`}
               >
                 {t}

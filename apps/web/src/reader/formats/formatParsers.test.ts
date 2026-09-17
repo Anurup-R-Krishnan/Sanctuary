@@ -3,7 +3,7 @@ import * as fs from "fs";
 import path from "path";
 
 import { FoliateDocumentAdapter } from "../foliate/FoliateDocumentAdapter";
-import { FoliateRendition } from "../foliate/FoliateRendition";
+import { FoliateRendition, isColorDark } from "../foliate/FoliateRendition";
 import { ensureTestDom } from "../foliate/testEnv";
 import { detectBookFormat, isSupportedExtension } from "./FormatDetector";
 import { parseHtmlToBook } from "./HtmlParser";
@@ -75,6 +75,46 @@ describe("Multi-Format Pipeline & Decoders", () => {
       // Markdown snippet
       const mdBytes = new TextEncoder().encode("# Title of the Book\n\nIntro paragraph");
       expect(await detectBookFormat(mdBytes)).toBe("markdown");
+    });
+
+    it("disambiguates ZIP archives into CBZ, FBZ, or EPUB by header inspection", async () => {
+      // CBZ archive with image entry in local header
+      const cbzHeader = new Uint8Array(80);
+      cbzHeader.set([0x50, 0x4b, 0x03, 0x04]);
+      cbzHeader[26] = 7;
+      cbzHeader.set(new TextEncoder().encode("001.jpg"), 30);
+      expect(await detectBookFormat(cbzHeader)).toBe("cbz");
+
+      // FBZ archive with fb2 entry
+      const fbzHeader = new Uint8Array(80);
+      fbzHeader.set([0x50, 0x4b, 0x03, 0x04]);
+      fbzHeader[26] = 8;
+      fbzHeader.set(new TextEncoder().encode("book.fb2"), 30);
+      expect(await detectBookFormat(fbzHeader)).toBe("fb2");
+
+      // EPUB archive with container.xml
+      const epubHeader = new Uint8Array(100);
+      epubHeader.set([0x50, 0x4b, 0x03, 0x04]);
+      epubHeader[26] = 22;
+      epubHeader.set(new TextEncoder().encode("META-INF/container.xml"), 30);
+      expect(await detectBookFormat(epubHeader)).toBe("epub");
+    });
+
+    it("distinguishes Kindle MOBI from modern AZW3/KF8 format", async () => {
+      const azw3Bytes = new Uint8Array(200);
+      const mobiMagic = "BOOKMOBI";
+      for (let i = 0; i < mobiMagic.length; i++) {
+        azw3Bytes[60 + i] = mobiMagic.charCodeAt(i);
+      }
+      azw3Bytes.set(new TextEncoder().encode("EXTHBOUNDARYKF8"), 100);
+      expect(await detectBookFormat(azw3Bytes)).toBe("azw3");
+    });
+
+    it("detects Markdown from callouts, CRLF frontmatter, and tasklists without extensions", async () => {
+      expect(await detectBookFormat(new TextEncoder().encode("---\r\ntitle: Doc\r\n---\r\nBody"))).toBe("markdown");
+      expect(await detectBookFormat(new TextEncoder().encode("> [!note] Important context\n> Detail"))).toBe("markdown");
+      expect(await detectBookFormat(new TextEncoder().encode("- [ ] Check this box\n- [x] Done"))).toBe("markdown");
+      expect(await detectBookFormat(new TextEncoder().encode("```python\ndef test(): pass\n```"))).toBe("markdown");
     });
   });
 
@@ -239,7 +279,22 @@ def vae_loss(x: tf.Tensor):
       expect(codeCell).not.toBeNull();
       expect(codeCell?.getAttribute("data-execution_count")).toBe("7");
 
-      // Code card language badge
+      // ChatGPT-style luxury Code Card container and header
+      const codeCard = document.querySelector("figure.code-card");
+      expect(codeCard).not.toBeNull();
+
+      const codeHeader = document.querySelector(".code-header");
+      expect(codeHeader).not.toBeNull();
+      expect(codeHeader?.querySelector(".code-lang")?.textContent).toContain("PYTHON");
+
+      // Interactive Copy button with clipboard and checkmark icons
+      const copyBtn = codeHeader?.querySelector("button.code-copy-btn");
+      expect(copyBtn).not.toBeNull();
+      expect(copyBtn?.querySelector(".copy-icon")).not.toBeNull();
+      expect(copyBtn?.querySelector(".check-icon")).not.toBeNull();
+      expect(copyBtn?.textContent).toContain("Copy");
+
+      // Code card language badge on pre
       const pre = document.querySelector("pre");
       expect(pre?.getAttribute("data-language")).toBe("PYTHON");
 
@@ -251,6 +306,50 @@ def vae_loss(x: tf.Tensor):
       expect(codeText).toContain("Calculate loss");
 
       book.destroy?.();
+    });
+
+    it("renders native Mermaid diagram cards with diagram language tag and copy button", async () => {
+      const book = await parseMarkdownToBook(`
+# System Architecture
+
+\`\`\`mermaid
+graph TD;
+    Client-->Gateway;
+    Gateway-->Auth;
+    Gateway-->Services;
+\`\`\`
+`);
+      const document = await book.sections[0].createDocument();
+      expect(document.querySelector("parsererror")).toBeNull();
+
+      // Mermaid card and header
+      const mermaidCard = document.querySelector("figure.code-card.mermaid-card");
+      expect(mermaidCard).not.toBeNull();
+
+      const header = mermaidCard?.querySelector(".code-header");
+      expect(header).not.toBeNull();
+      expect(header?.querySelector(".code-lang")?.textContent).toContain("MERMAID");
+
+      // Pre element has class mermaid and data-language MERMAID
+      const pre = mermaidCard?.querySelector("pre.mermaid");
+      expect(pre).not.toBeNull();
+      expect(pre?.getAttribute("data-language")).toBe("MERMAID");
+      expect(pre?.textContent).toContain("Client-->Gateway");
+
+      book.destroy?.();
+    });
+
+    it("isColorDark distinguishes light sepia/ivory/paper from OLED/dark mode", () => {
+      expect(isColorDark("#ffffff")).toBe(false); // Paper
+      expect(isColorDark("#F4ECD8")).toBe(false); // Sepia
+      expect(isColorDark("#EBF1E8")).toBe(false); // Sage
+      expect(isColorDark("#FBF8F3")).toBe(false); // Ivory / Cream
+      expect(isColorDark("#FDF6E3")).toBe(false); // Solarized Light
+
+      expect(isColorDark("#000000")).toBe(true);  // OLED Pitch Black
+      expect(isColorDark("#1a1a1a")).toBe(true);  // Dark / Ink
+      expect(isColorDark("#2E3440")).toBe(true);  // Nord
+      expect(isColorDark("#0d1117")).toBe(true);  // Midnight
     });
 
     it("renders LaTeX mathematics via KaTeX into MathML and HTML", async () => {

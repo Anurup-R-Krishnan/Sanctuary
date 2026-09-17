@@ -103,9 +103,11 @@ export class ReaderThemeController {
                 "border-collapse": "collapse",
             },
             "pre": {
-                "white-space": "pre-wrap",
-                "overflow-wrap": "anywhere",
+                "white-space": "pre",
+                "word-break": "normal",
+                "overflow-wrap": "normal",
                 "max-width": "100%",
+                "overflow-x": "auto",
             },
             "blockquote": {
                 "max-width": "100%",

@@ -32,6 +32,49 @@ export function isSupportedExtension(fileName: string): boolean {
   return SUPPORTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
 }
 
+const COMIC_IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"];
+
+function sniffZipFormat(bytes: Uint8Array): BookFormat {
+  let offset = 0;
+  const filenames: string[] = [];
+
+  while (offset + 30 <= bytes.length) {
+    if (
+      bytes[offset] === 0x50 &&
+      bytes[offset + 1] === 0x4b &&
+      bytes[offset + 2] === 0x03 &&
+      bytes[offset + 3] === 0x04
+    ) {
+      const nameLen = bytes[offset + 26] | (bytes[offset + 27] << 8);
+      const extraLen = bytes[offset + 28] | (bytes[offset + 29] << 8);
+      const start = offset + 30;
+      const end = start + nameLen;
+
+      if (end <= bytes.length) {
+        const name = new TextDecoder().decode(bytes.slice(start, end)).toLowerCase();
+        filenames.push(name);
+      }
+      offset = end + extraLen;
+    } else {
+      break;
+    }
+  }
+
+  for (const name of filenames) {
+    if (name.includes("comicinfo.xml") || COMIC_IMAGE_EXTS.some((ext) => name.endsWith(ext))) {
+      return "cbz";
+    }
+    if (name.endsWith(".fb2")) {
+      return "fb2";
+    }
+    if (name.includes("meta-inf/container.xml") || name.startsWith("mimetype")) {
+      return "epub";
+    }
+  }
+
+  return "epub";
+}
+
 export async function detectBookFormat(
   source: Blob | File | ArrayBuffer | Uint8Array,
   fileName?: string
@@ -53,14 +96,14 @@ export async function detectBookFormat(
   if (lowerName.endsWith(".cbz")) return "cbz";
   if (lowerName.endsWith(".cbr")) return "cbr";
 
-  // 2. Read first 1024 bytes for signature sniffing
+  // 2. Read first 4096 bytes for signature sniffing
   let bytes: Uint8Array;
   if (source instanceof Uint8Array) {
-    bytes = source.slice(0, 1024);
+    bytes = source.slice(0, 4096);
   } else if (source instanceof ArrayBuffer) {
-    bytes = new Uint8Array(source.slice(0, 1024));
+    bytes = new Uint8Array(source.slice(0, 4096));
   } else if (source instanceof Blob) {
-    const head = await source.slice(0, 1024).arrayBuffer();
+    const head = await source.slice(0, 4096).arrayBuffer();
     bytes = new Uint8Array(head);
   } else {
     return "txt";
@@ -98,13 +141,19 @@ export async function detectBookFormat(
     bytes[2] === 0x03 &&
     bytes[3] === 0x04
   ) {
-    return "epub";
+    return sniffZipFormat(bytes);
   }
 
-  // MOBI header: BOOKMOBI at offset 60
+  // MOBI / AZW3 header: BOOKMOBI at offset 60
   if (bytes.length >= 68) {
     const magic = String.fromCharCode(...bytes.slice(60, 68));
-    if (magic === "BOOKMOBI") return "mobi";
+    if (magic === "BOOKMOBI") {
+      const headText = new TextDecoder().decode(bytes);
+      if (headText.includes("KF8") || headText.includes("BOUNDARY")) {
+        return "azw3";
+      }
+      return "mobi";
+    }
   }
 
   // Text decoding for XML/HTML/Markdown sniffing
@@ -121,7 +170,17 @@ export async function detectBookFormat(
       return snippet.includes("xmlns=\"http://www.w3.org/1999/xhtml\"") ? "xhtml" : "html";
     }
 
-    if (snippet.startsWith("# ") || snippet.startsWith("---\n")) {
+    const isMarkdown =
+      snippet.startsWith("#") ||
+      snippet.startsWith("---\n") ||
+      snippet.startsWith("---\r\n") ||
+      snippet.startsWith("> [!") ||
+      snippet.startsWith("- [ ]") ||
+      snippet.startsWith("- [x]") ||
+      snippet.startsWith("```") ||
+      (snippet.includes("\n|") && (snippet.includes("|---") || snippet.includes("|:---")));
+
+    if (isMarkdown) {
       return "markdown";
     }
   } catch {
