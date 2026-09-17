@@ -134,12 +134,12 @@ The waters were calm.`;
       const book = await parseMarkdownToBook(sampleMd);
       expect(book.metadata.title).toBe("The Markdown Chronicle");
       expect(book.metadata.author).toBe("Jane Smith");
-      expect(book.sections.length).toBe(2);
-      expect(book.toc.length).toBe(2);
+      expect(book.sections.length).toBe(1);
+      expect(book.toc.length).toBe(1);
 
       // Verify subitems in TOC
-      expect(book.toc[1].subitems?.length).toBeGreaterThan(0);
-      expect(book.toc[1].subitems?.[0].label).toContain("Section 2.1");
+      expect(book.toc[0].subitems?.length).toBeGreaterThan(0);
+      expect(book.toc[0].subitems?.[0].label).toContain("Section 2.1");
 
       const nav = book.resolveHref("0");
       expect(nav?.index).toBe(0);
@@ -252,6 +252,97 @@ def vae_loss(x: tf.Tensor):
 
       book.destroy?.();
     });
+
+    it("renders LaTeX mathematics via KaTeX into MathML and HTML", async () => {
+      const book = await parseMarkdownToBook(`
+# Advanced Mathematics
+
+Here is Einstein's mass-energy equation: $E = mc^2$.
+
+And the summation formula:
+$$
+\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}
+$$
+`);
+      const document = await book.sections[0].createDocument();
+      expect(document.querySelector("parsererror")).toBeNull();
+
+      // Math elements compiled by KaTeX
+      const mathElements = document.querySelectorAll(".katex");
+      expect(mathElements.length).toBeGreaterThanOrEqual(2);
+
+      // Contains MathML semantics and annotations
+      const mathMl = document.querySelectorAll("math");
+      expect(mathMl.length).toBeGreaterThanOrEqual(2);
+      expect(document.querySelector("annotation[encoding='application/x-tex']")?.textContent).toContain("E = mc^2");
+
+      book.destroy?.();
+    });
+
+    it("renders Obsidian highlight marks, wikilinks, and collapsible callout details", async () => {
+      const book = await parseMarkdownToBook(`
+# Cognitive Study
+
+Remember this ==crucial hypothesis== during evaluation.
+
+> [!tip]+ Expandable Secret
+> Click to reveal this tip.
+
+> [!warning]- Hidden Caution
+> This warning starts collapsed.
+`);
+      const document = await book.sections[0].createDocument();
+      expect(document.querySelector("parsererror")).toBeNull();
+
+      // Obsidian mark syntax ==text==
+      const mark = document.querySelector("mark");
+      expect(mark).not.toBeNull();
+      expect(mark?.textContent).toBe("crucial hypothesis");
+
+      // Collapsible callout [+] -> details[open]
+      const openCallout = document.querySelector("details.callout-tip");
+      expect(openCallout).not.toBeNull();
+      expect(openCallout?.getAttribute("open")).not.toBeNull();
+      expect(openCallout?.querySelector("summary.callout-title svg.callout-icon")).not.toBeNull();
+
+      // Collapsible callout [-] -> details without open
+      const closedCallout = document.querySelector("details.callout-warning");
+      expect(closedCallout).not.toBeNull();
+      expect(closedCallout?.getAttribute("open")).toBeNull();
+
+      book.destroy?.();
+    });
+
+    it("extracts comprehensive YAML frontmatter metadata and renders document banner", async () => {
+      const book = await parseMarkdownToBook(`---
+title: Quantum Computing Principles
+author: Dr. Erwin Schrödinger
+date: 2026-09-17
+tags: [physics, quantum, algorithms]
+description: A gentle introduction to qubits and superposition
+---
+
+# Introduction to Qubits
+The quantum world behaves differently.
+`);
+      expect(book.metadata.title).toBe("Quantum Computing Principles");
+      expect(book.metadata.author).toBe("Dr. Erwin Schrödinger");
+      expect(book.rendition?.layout).toBe("scrolled");
+
+      const document = await book.sections[0].createDocument();
+      expect(document.querySelector("parsererror")).toBeNull();
+
+      const metadataHeader = document.querySelector("header.document-metadata");
+      expect(metadataHeader).not.toBeNull();
+      expect(metadataHeader?.textContent).toContain("Dr. Erwin Schrödinger");
+      expect(metadataHeader?.textContent).toContain("2026-09-17");
+
+      const tagPills = document.querySelectorAll(".tag-pill");
+      expect(tagPills.length).toBe(3);
+      expect(tagPills[0].textContent).toBe("#physics");
+
+      book.destroy?.();
+    });
   });
 
   describe("HtmlParser", () => {
@@ -339,7 +430,7 @@ def vae_loss(x: tf.Tensor):
 
       expect(adapter.format).toBe("markdown");
       expect(adapter.metadata.title).toBe("The Cosmic Engine");
-      expect(adapter.sections.length).toBe(2);
+      expect(adapter.sections.length).toBe(1);
 
       const container = document.getElementById("reader-container") as HTMLDivElement;
       const rendition = await FoliateRendition.create(

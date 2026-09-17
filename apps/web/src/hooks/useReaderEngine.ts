@@ -97,15 +97,17 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             return;
         }
 
+        const isMarkdownOrText = book.format === "markdown" || book.format === "md" || book.format === "txt";
+        const effectiveContinuous = isMarkdownOrText ? true : continuous;
+        builtFlowRef.current = { continuous: effectiveContinuous, direction, spread, writingMode };
         const styles = themeControllerRef.current.buildStyles(themeConfig);
-        builtFlowRef.current = { continuous, direction, spread, writingMode };
 
         sessionRef.current = new ReaderSession({
             bionicReading: themeConfig.bionicReading,
             blob: activeBlob,
             bookId: activeBookId,
             container,
-            continuous,
+            continuous: effectiveContinuous,
             direction,
             formatHint: book.format,
             initialCfi: book.lastLocation,
@@ -175,16 +177,18 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
                 return;
             }
             const styles = themeControllerRef.current.buildStyles(themeConfig);
+            const isMarkdownOrText = book.format === "markdown" || book.format === "md" || book.format === "txt";
+            const effectiveContinuous = isMarkdownOrText ? true : continuous;
             session.setFlow({
                 bionicReading: themeConfig.bionicReading,
-                continuous,
+                continuous: effectiveContinuous,
                 direction,
                 readerBackground: themeConfig.readerBackground,
                 spread,
                 themeStyles: styles,
                 writingMode,
             }).then(() => {
-                builtFlowRef.current = { continuous, direction, spread, writingMode };
+                builtFlowRef.current = { continuous: effectiveContinuous, direction, spread, writingMode };
             }).catch((err) => console.warn("Flow switch failed:", err));
         }, 150);
         return () => window.clearTimeout(timer);

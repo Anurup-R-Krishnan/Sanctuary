@@ -295,7 +295,7 @@ export class FoliateRendition implements DocumentRendition {
       // Convert theme styles
       const styles = this.flowOptions.themeStyles;
       const customFontsCss = generateCustomFontFaceCss(getLoadedCustomFonts());
-      let cssText = `${customFontsCss}html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; box-sizing: border-box !important; overflow-wrap: break-word !important; word-break: normal !important; }\nimg, svg image, picture img { cursor: zoom-in !important; max-width: 100% !important; height: auto !important; object-fit: contain !important; }\npre, code { white-space: pre-wrap !important; word-break: break-word !important; }\ntable { max-width: 100% !important; }\n`;
+      let cssText = `${customFontsCss}html, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; box-sizing: border-box !important; overflow-wrap: break-word !important; word-break: normal !important; }\nimg, svg image, picture img { cursor: zoom-in !important; max-width: 100% !important; height: auto !important; object-fit: contain !important; }\ncode:not(pre code) { white-space: normal !important; word-break: break-word !important; }\npre { white-space: pre !important; word-break: normal !important; overflow-x: auto !important; }\npre code { white-space: pre !important; word-break: normal !important; }\ntable { max-width: 100% !important; }\n`;
       if (styles) {
         for (const [selector, rules] of Object.entries(styles)) {
           cssText += `${selector} {`;
@@ -450,11 +450,15 @@ export class FoliateRendition implements DocumentRendition {
     const renderer = this.view.renderer;
     if (!renderer) return;
 
-    const flow = this.flowOptions.continuous ? "scrolled" : "paginated";
+    const isScrolledDoc =
+      this.documentAdapter.format === "markdown" ||
+      this.documentAdapter.rawBook.rendition?.layout === "scrolled";
+    const continuous = isScrolledDoc || Boolean(this.flowOptions.continuous);
+    const flow = continuous ? "scrolled" : "paginated";
     renderer.setAttribute("flow", flow);
-    this.scrollContinuity.setEnabled(Boolean(this.flowOptions.continuous));
+    this.scrollContinuity.setEnabled(continuous);
 
-    if (!this.flowOptions.continuous) {
+    if (!continuous) {
       const isWideDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
       const shouldUseTwoUp = Boolean(this.flowOptions.spread || (isWideDesktop && (this.container?.clientWidth ?? 0) >= 1200));
       renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");
@@ -628,7 +632,11 @@ export class FoliateRendition implements DocumentRendition {
 
   public resize(): void {
     const renderer = this.view?.renderer;
-    if (renderer && !this.flowOptions.continuous) {
+    const isScrolledDoc =
+      this.documentAdapter.format === "markdown" ||
+      this.documentAdapter.rawBook.rendition?.layout === "scrolled";
+    const continuous = isScrolledDoc || Boolean(this.flowOptions.continuous);
+    if (renderer && !continuous) {
       const isWideDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
       const shouldUseTwoUp = Boolean(this.flowOptions.spread || (isWideDesktop && (this.container?.clientWidth ?? 0) >= 1200));
       renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");

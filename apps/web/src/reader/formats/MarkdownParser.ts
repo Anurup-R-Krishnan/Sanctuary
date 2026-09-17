@@ -1,41 +1,60 @@
 /**
  * Markdown (MD) Document Parser for Sanctuary.
- * Converts Markdown documents into a paginated, structured BookDocument compatible with Foliate.
+ * Converts Markdown documents into a structured, continuous BookDocument compatible with Foliate.
+ * Built entirely on unified, remark, and rehype AST pipelines with zero regex hacks.
  */
 
-import type { Element, Root, RootContent } from "hast";
-import type { VFile } from "vfile";
+import type { Element, ElementContent, Root, RootContent } from "hast";
+import type { Root as MdastRoot } from "mdast";
 
+import remarkObsidian from "@quartz-community/remark-obsidian";
+import remarkCallout from "@r4ai/remark-callout";
+import Slugger from "github-slugger";
+import { toXast } from "hast-util-to-xast";
+import katexStyles from "katex/dist/katex.min.css?raw";
+import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import rehypeStringify from "rehype-stringify";
+import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
-import { unified } from "unified";
+import { type Plugin, unified } from "unified";
+import { visit } from "unist-util-visit";
+import { VFile } from "vfile";
+import { toXml } from "xast-util-to-xml";
+import YAML from "yaml";
 
 import type { RawFoliateBook, RawFoliateSection, RawFoliateTocItem } from "./TxtParser";
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-interface MarkdownHeading {
+export interface MarkdownHeading {
   id: string;
   level: number;
   text: string;
 }
 
-const markdownSanitizeSchema = {
+export interface FrontmatterMetadata {
+  author?: string;
+  category?: string;
+  date?: string;
+  description?: string;
+  tags?: string[];
+  title?: string;
+}
+
+export const markdownSanitizeSchema = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
+    a: [
+      ...(defaultSchema.attributes?.a || []).filter(
+        (attr) => !(Array.isArray(attr) && attr[0] === "className")
+      ),
+      "className",
+      "href",
+    ],
     "*": [
       ...(defaultSchema.attributes?.["*"] || []),
       "className",
@@ -45,19 +64,76 @@ const markdownSanitizeSchema = {
       "data-execution_count",
       "dataCollapsed",
       "data-collapsed",
+      "dataLineNumbers",
+      "data-line-numbers",
+      "dataFootnotes",
+      "data-footnotes",
+      "dataFootnoteRef",
+      "data-footnote-ref",
+      "dataFootnoteBackref",
+      "data-footnote-backref",
+      "dataCallout",
+      "data-callout",
+      "dataCalloutType",
+      "data-callout-type",
+      "dataCalloutTitle",
+      "data-callout-title",
+      "dataCalloutTitleInner",
+      "data-callout-title-inner",
+      "dataCalloutBody",
+      "data-callout-body",
+      "open",
       "style",
+      "width",
+      "height",
+      "viewBox",
+      "fill",
+      "stroke",
+      "strokeWidth",
+      "strokeLinecap",
+      "strokeLinejoin",
     ],
   },
+  tagNames: [
+    ...(defaultSchema.tagNames || []),
+    "aside",
+    "details",
+    "summary",
+    "mark",
+    "kbd",
+    "figure",
+    "figcaption",
+    "svg",
+    "path",
+    "circle",
+    "line",
+    "polyline",
+    "polygon",
+    "rect",
+    "g",
+    // MathML elements
+    "math",
+    "mrow",
+    "mi",
+    "mo",
+    "mn",
+    "ms",
+    "mspace",
+    "mtext",
+    "msup",
+    "msub",
+    "msubsup",
+    "mfrac",
+    "msqrt",
+    "mroot",
+    "mtable",
+    "mtr",
+    "mtd",
+    "semantics",
+    "annotation",
+    "annotation-xml",
+  ],
 };
-
-function slugifyHeading(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 function textContent(node: Element | RootContent): string {
   if (node.type === "text") return node.value;
@@ -73,86 +149,125 @@ function visitElements(node: Root | Element, visitor: (element: Element) => void
   }
 }
 
-function calloutTitle(type: string, title: string): Element {
-  return {
-    type: "element",
-    tagName: "div",
-    properties: { className: ["callout-title"] },
-    children: [{ type: "text", value: title || type }],
-  };
-}
-
 /**
  * Disables CommonMark 4-space indented code blocks so notebook cells,
  * nested divs, and indented headings are never accidentally swallowed into code blocks.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function disableIndentedCode(this: any) {
-  const data = this.data();
-  const list = data.micromarkExtensions ? data.micromarkExtensions : (data.micromarkExtensions = []);
+const disableIndentedCode: Plugin = function () {
+  const data = this.data() as Record<string, unknown>;
+  const list = (data.micromarkExtensions || (data.micromarkExtensions = [])) as Array<Record<string, unknown>>;
   list.push({
     disable: {
       null: ["codeIndented"],
     },
   });
+};
+
+/** Vector SVG markup for Obsidian / GFM callout badges */
+const CALLOUT_ICONS_SVG: Record<string, string> = {
+  note: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  tip: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>',
+  warning: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  danger: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  success: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  question: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  quote: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/></svg>',
+  example: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+  summary: '<svg class="callout-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+};
+
+function getCalloutIconSvg(type: string): string {
+  const normType =
+    type === "info" || type === "todo" ? "note" :
+    type === "hint" || type === "important" ? "tip" :
+    type === "caution" || type === "attention" ? "warning" :
+    type === "error" || type === "failure" || type === "fail" || type === "bug" ? "danger" :
+    type === "check" || type === "done" ? "success" :
+    type === "help" || type === "faq" ? "question" :
+    type === "cite" ? "quote" :
+    type === "abstract" || type === "tldr" ? "summary" :
+    type in CALLOUT_ICONS_SVG ? type : "note";
+
+  return CALLOUT_ICONS_SVG[normType] || CALLOUT_ICONS_SVG.note;
 }
 
 /**
- * Apply reader-only enhancements after sanitization and syntax highlighting.
+ * Normalizes typographic attribute quotes inside raw HTML nodes,
+ * leaving all book prose typography untouched.
+ */
+function normalizeHtmlQuotes() {
+  return (tree: MdastRoot) => {
+    visit(tree, "html", (node) => {
+      node.value = node.value
+        .replaceAll("“", '"')
+        .replaceAll("”", '"')
+        .replaceAll("‘", "'")
+        .replaceAll("’", "'");
+    });
+  };
+}
+
+const subMarkdownProcessor = unified().use(remarkParse).use(remarkGfm).use(remarkObsidian).use(remarkRehype);
+
+/**
+ * Transforms raw text children of notebook markdown cell divs into structured markdown HAST nodes.
+ */
+function rehypeMarkdownCells() {
+  return (tree: Root) => {
+    visitElements(tree, (element) => {
+      const classes = Array.isArray(element.properties?.className)
+        ? element.properties.className
+        : [element.properties?.className];
+      if (
+        element.tagName === "div" &&
+        (classes.includes("markdown") || classes.includes("cell") || classes.includes("code"))
+      ) {
+        const textNodes = element.children.filter((c) => c.type === "text");
+        if (textNodes.length > 0 && textNodes.length === element.children.length) {
+          const rawText = textNodes.map((t) => (t as { value: string }).value).join("");
+          if (rawText.trim()) {
+            const subMdast = subMarkdownProcessor.parse(rawText.trim());
+            const subHast = subMarkdownProcessor.runSync(subMdast);
+            element.children = subHast.children as ElementContent[];
+          }
+        }
+      }
+    });
+  };
+}
+
+/**
+ * Slugify headings and record TOC list.
  */
 function rehypeObsidianReader() {
   return (tree: Root, file: VFile) => {
     const headings: MarkdownHeading[] = [];
-    const headingIds = new Map<string, string>();
-    const headingCounts = new Map<string, number>();
+    const headingIds = new Set<string>();
+    const slugger = new Slugger();
 
     visitElements(tree, (element) => {
-      if (!/^h[1-6]$/.test(element.tagName)) return;
+      if (!["h1", "h2", "h3", "h4", "h5", "h6"].includes(element.tagName)) return;
       const text = textContent(element).trim() || "Untitled section";
-      const slug = slugifyHeading(text);
-      const count = headingCounts.get(slug) ?? 0;
-      headingCounts.set(slug, count + 1);
-      const id = `heading-${slug || "section"}${count ? `-${count + 1}` : ""}`;
+      const slug = slugger.slug(text);
+      const id = `heading-${slug}`;
+      element.properties = element.properties || {};
       element.properties.id = id;
-      headingIds.set(slug, id);
+      headingIds.add(id);
       headings.push({
         id,
-        level: Number(element.tagName.slice(1)),
+        level: Number(element.tagName[1]),
         text,
       });
     });
 
     visitElements(tree, (element) => {
-      if (element.tagName === "blockquote") {
-        const firstParagraph = element.children.find(
-          (child): child is Element => child.type === "element" && child.tagName === "p"
-        );
-        const marker = firstParagraph?.children[0];
-        if (marker?.type === "text") {
-          const match = marker.value.match(/^\[!([\w-]+)\][+-]?(?:\s+(.*))?\s*/);
-          if (match) {
-            const type = match[1].toLowerCase();
-            const title = match[2]?.trim() || type;
-            marker.value = marker.value.slice(match[0].length);
-            element.tagName = "aside";
-            element.properties = { className: ["callout", `callout-${type}`] };
-            element.children.unshift(calloutTitle(type, title));
-            if (firstParagraph.children.length === 1 && marker.value.length === 0) {
-              element.children = element.children.filter((child) => child !== firstParagraph);
-            }
-          }
-        }
-      }
-
       if (element.tagName !== "a") return;
       const href = element.properties.href;
-      if (typeof href !== "string" || !href.startsWith("#obsidian-heading-")) return;
-
-      const target = href.slice("#obsidian-heading-".length);
-      const id = headingIds.get(target);
-      element.properties.className = ["wiki-link"];
-      if (id) element.properties.href = `#${id}`;
-      else delete element.properties.href;
+      if (typeof href !== "string" || !href.startsWith("#heading-")) return;
+      const targetId = href.slice(1);
+      if (!headingIds.has(targetId)) {
+        delete element.properties.href;
+      }
     });
 
     file.data.headings = headings;
@@ -160,7 +275,7 @@ function rehypeObsidianReader() {
 }
 
 /**
- * Decorates code blocks with a floating language badge attribute.
+ * Decorates code blocks with floating language badge and title attributes.
  */
 function rehypeCodeCardEnhancer() {
   return (tree: Root) => {
@@ -186,7 +301,7 @@ function rehypeCodeCardEnhancer() {
         (cls): cls is string => typeof cls === "string" && cls.startsWith("language-")
       );
       if (langClass) {
-        const lang = langClass.replace("language-", "").trim();
+        const lang = langClass.slice("language-".length).trim();
         if (lang) {
           element.properties = element.properties || {};
           element.properties.dataLanguage = lang.toUpperCase();
@@ -196,100 +311,655 @@ function rehypeCodeCardEnhancer() {
   };
 }
 
-function protectCodeBlocks(source: string, transform: (text: string) => string): string {
-  const parts = source.split(/(```[\s\S]*?```|`[^`\n]+`)/g);
-  return parts
-    .map((part, i) => (i % 2 === 1 ? part : transform(part)))
-    .join("");
+export interface MarkdownProcessingResult {
+  frontmatter: FrontmatterMetadata;
+  hast: Root;
+  headings: MarkdownHeading[];
 }
 
-function normalizeObsidianLinks(source: string): string {
-  return protectCodeBlocks(source, (text) =>
-    text.replace(/\[\[([^\]|#]+)?(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_match, page, heading, alias) => {
-      const label = String(alias || heading || page || "Untitled link").trim();
-      if (heading) return `[${label}](#obsidian-heading-${slugifyHeading(String(heading))})`;
-      return label;
-    })
-  );
-}
+/** Convert Markdown source into safe HAST tree with LaTeX math, Shiki highlighting, and Obsidian extensions. */
+export async function processMarkdown(source: string): Promise<MarkdownProcessingResult> {
+  const frontmatter: FrontmatterMetadata = {};
+  const vfile = new VFile({ value: source });
+  const slugger = new Slugger();
 
-function normalizeEmbeddedHtmlQuotes(source: string): string {
-  return protectCodeBlocks(source, (text) =>
-    text.replace(/<[^>]*>/g, (tag) => tag.replace(/[“”]/g, '"').replace(/[‘’]/g, "'"))
-  );
-}
-
-function normalizeNotebookCells(source: string): string {
-  return protectCodeBlocks(source, (text) =>
-    text
-      // Ensure blank lines around block-level cell containers so CommonMark reliably
-      // parses embedded headings, lists, and code blocks without the HTML block trap.
-      .replace(/(<div\b[^>]*>)(?!\n\n)/gi, "$1\n\n")
-      .replace(/(?<!\n\n)(<\/div>)/gi, "\n\n$1")
-  );
-}
-
-function splitMarkdownChapters(source: string): string[] {
-  const matches = [...source.matchAll(/(?:^|\n)(?:<div\b[^>]*>\s*|)#[ \t]+[^\n]+/g)];
-  if (matches.length <= 1) return [source];
-
-  const splits: string[] = [];
-  for (let i = 0; i < matches.length; i++) {
-    const match = matches[i];
-    const startIndex = match.index! + (match[0].startsWith("\n") ? 1 : 0);
-    const endIndex = i + 1 < matches.length
-      ? matches[i + 1].index! + (matches[i + 1][0].startsWith("\n") ? 1 : 0)
-      : source.length;
-
-    if (i === 0 && startIndex > 0) {
-      const prologue = source.slice(0, startIndex).trim();
-      if (prologue.length > 0) {
-        splits.push(prologue);
-      }
-    }
-
-    const chunk = source.slice(startIndex, endIndex).trim();
-    if (chunk.length > 0) {
-      splits.push(chunk);
-    }
-  }
-  return splits.length > 0 ? splits : [source];
-}
-
-/** Convert GFM and Obsidian-style Markdown into safe XHTML for foliate-view. */
-async function markdownToHtml(source: string): Promise<{ html: string; headings: MarkdownHeading[] }> {
-  const normalizedSource = normalizeNotebookCells(
-    normalizeEmbeddedHtmlQuotes(normalizeObsidianLinks(source))
-  );
-
-  const processed = await unified()
+  const processor = unified()
     .use(remarkParse)
     .use(disableIndentedCode)
+    .use(remarkFrontmatter, ["yaml"])
+    .use(() => (tree: MdastRoot) => {
+      for (const node of tree.children) {
+        if (node.type === "yaml") {
+          try {
+            const parsed = YAML.parse(node.value);
+            if (parsed && typeof parsed === "object") {
+              if (parsed.title) frontmatter.title = String(parsed.title).trim();
+              if (parsed.author || parsed.creator) {
+                frontmatter.author = String(parsed.author || parsed.creator).trim();
+              }
+              if (parsed.date) frontmatter.date = String(parsed.date).trim();
+              if (parsed.description) frontmatter.description = String(parsed.description).trim();
+              if (Array.isArray(parsed.tags)) {
+                frontmatter.tags = parsed.tags.map((t: unknown) => String(t).trim()).filter(Boolean);
+              } else if (typeof parsed.tags === "string") {
+                frontmatter.tags = parsed.tags.split(",").map((t: string) => t.trim()).filter(Boolean);
+              }
+            }
+          } catch {
+            // benign
+          }
+        }
+      }
+    })
     .use(remarkGfm)
-    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(remarkMath)
+    .use(remarkObsidian)
+    .use(remarkCallout, {
+      root: (callout) => ({
+        tagName: callout.isFoldable ? "details" : "aside",
+        properties: {
+          className: ["callout", `callout-${callout.type.toLowerCase()}`],
+          ...(callout.isFoldable && (callout.defaultFolded === undefined ? true : !callout.defaultFolded)
+            ? { open: true }
+            : {}),
+        },
+      }),
+      title: (callout) => ({
+        tagName: callout.isFoldable ? "summary" : "div",
+        properties: { className: ["callout-title"] },
+      }),
+      icon: (callout) => getCalloutIconSvg(callout.type.toLowerCase()),
+    })
+    .use(normalizeHtmlQuotes)
+    .use(remarkRehype, {
+      handlers: {
+        wikilink(_state, rawNode) {
+          const node = rawNode as unknown as {
+            alias?: string;
+            embedded?: boolean;
+            heading?: string;
+            path?: string;
+          };
+          if (node.embedded) {
+            return {
+              type: "element",
+              tagName: "img",
+              properties: {
+                src: node.path,
+                alt: node.path,
+                ...(node.alias ? { width: node.alias } : {}),
+              },
+              children: [],
+            };
+          }
+          const label = node.alias || node.heading || node.path || "Untitled Link";
+          const target = (node.heading || node.path || "").trim();
+          return {
+            type: "element",
+            tagName: "a",
+            properties: {
+              className: ["wiki-link"],
+              href: `#heading-${slugger.slug(target)}`,
+            },
+            children: [{ type: "text", value: label }],
+          };
+        },
+        highlight(state, rawNode) {
+          return {
+            type: "element",
+            tagName: "mark",
+            properties: { className: ["flexible-marker", "flexible-marker-default"] },
+            children: state.all(rawNode as Parameters<typeof state.all>[0]),
+          };
+        },
+      },
+      allowDangerousHtml: true,
+    })
     .use(rehypeRaw)
+    .use(rehypeMarkdownCells)
     .use(rehypeSanitize, markdownSanitizeSchema)
+    .use(rehypeKatex, { output: "htmlAndMathml", strict: false })
     .use(rehypePrettyCode, {
       theme: {
         dark: "one-dark-pro",
         light: "github-light",
       },
       keepBackground: true,
+      defaultLang: "plaintext",
     })
     .use(rehypeCodeCardEnhancer)
-    .use(rehypeObsidianReader)
-    .use(rehypeStringify, { closeSelfClosing: true })
-    .process(normalizedSource);
+    .use(rehypeObsidianReader);
 
-  // rehype serializes these GFM boolean/data attributes without a value. The
-  // reader loads XHTML in an XML document, where every attribute needs one.
-  const html = processed.value.toString().replace(
-    /\s(checked|disabled|data-footnotes|data-footnote-ref)(?=(?:\s|\/?>))/g,
-    ' $1="$1"'
-  );
+  const mdast = processor.parse(vfile);
+  const hast = await processor.run(mdast, vfile);
 
-  const headings = (processed.data.headings as MarkdownHeading[]) ?? [];
-  return { html, headings };
+  const headings = (vfile.data?.headings as MarkdownHeading[]) ?? [];
+  return { frontmatter, hast: hast as Root, headings };
+}
+
+/** Construct Obsidian Document Properties metadata banner element */
+function createMetadataBannerElement(meta: FrontmatterMetadata): Element | null {
+  const chips: Element[] = [];
+
+  if (meta.author && meta.author !== "Unknown Author") {
+    chips.push({
+      type: "element",
+      tagName: "span",
+      properties: { className: ["metadata-chip"] },
+      children: [
+        {
+          type: "element",
+          tagName: "svg",
+          properties: {
+            xmlns: "http://www.w3.org/2000/svg",
+            width: "14",
+            height: "14",
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: "2",
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+          },
+          children: [
+            { type: "element", tagName: "path", properties: { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" }, children: [] },
+            { type: "element", tagName: "circle", properties: { cx: "12", cy: "7", r: "4" }, children: [] },
+          ],
+        },
+        { type: "text", value: ` ${meta.author}` },
+      ],
+    });
+  }
+
+  if (meta.date) {
+    chips.push({
+      type: "element",
+      tagName: "span",
+      properties: { className: ["metadata-chip"] },
+      children: [
+        {
+          type: "element",
+          tagName: "svg",
+          properties: {
+            xmlns: "http://www.w3.org/2000/svg",
+            width: "14",
+            height: "14",
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: "2",
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+          },
+          children: [
+            { type: "element", tagName: "rect", properties: { x: "3", y: "4", width: "18", height: "18", rx: "2", ry: "2" }, children: [] },
+            { type: "element", tagName: "line", properties: { x1: "16", y1: "2", x2: "16", y2: "6" }, children: [] },
+            { type: "element", tagName: "line", properties: { x1: "8", y1: "2", x2: "8", y2: "6" }, children: [] },
+            { type: "element", tagName: "line", properties: { x1: "3", y1: "10", x2: "21", y2: "10" }, children: [] },
+          ],
+        },
+        { type: "text", value: ` ${meta.date}` },
+      ],
+    });
+  }
+
+  const tagsContainer: Element | null =
+    meta.tags && meta.tags.length > 0
+      ? {
+          type: "element",
+          tagName: "div",
+          properties: { className: ["metadata-tags"] },
+          children: meta.tags.map((t) => ({
+            type: "element",
+            tagName: "span",
+            properties: { className: ["tag-pill"] },
+            children: [{ type: "text", value: `#${t}` }],
+          })),
+        }
+      : null;
+
+  if (chips.length === 0 && !tagsContainer) return null;
+
+  const headerChildren: Element[] = [];
+  if (chips.length > 0) {
+    headerChildren.push({
+      type: "element",
+      tagName: "div",
+      properties: { className: ["metadata-grid"] },
+      children: chips,
+    });
+  }
+  if (tagsContainer) {
+    headerChildren.push(tagsContainer);
+  }
+
+  return {
+    type: "element",
+    tagName: "header",
+    properties: { className: ["document-metadata"] },
+    children: headerChildren,
+  };
+}
+
+const DOCUMENT_STYLES = `
+:root {
+  color-scheme: light dark;
+  --md-bg: #0d1117;
+  --md-fg: #e6edf3;
+  --md-muted: #8b949e;
+  --md-border: rgba(240, 246, 252, 0.1);
+  --md-card-bg: rgba(22, 27, 34, 0.7);
+  --md-accent: #58a6ff;
+  --md-accent-glow: rgba(56, 139, 253, 0.15);
+  --md-code-bg: #161b22;
+  --md-highlight: rgba(255, 215, 0, 0.22);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --md-bg: #ffffff;
+    --md-fg: #1f2328;
+    --md-muted: #656d76;
+    --md-border: rgba(31, 35, 40, 0.12);
+    --md-card-bg: rgba(246, 248, 250, 0.85);
+    --md-accent: #0969da;
+    --md-accent-glow: rgba(9, 105, 218, 0.1);
+    --md-code-bg: #f6f8fa;
+    --md-highlight: rgba(255, 235, 59, 0.4);
+  }
+}
+
+/* Modern Technical Typography */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--md-fg);
+  background-color: transparent;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 6rem;
+  max-width: 54rem;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  word-wrap: break-word;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--md-fg);
+  font-weight: 600;
+  line-height: 1.28;
+  margin-top: 2rem;
+  margin-bottom: 0.85rem;
+  scroll-margin-top: 4.5rem;
+}
+h1 { font-size: 2.15rem; font-weight: 750; letter-spacing: -0.025em; border-bottom: 1px solid var(--md-border); padding-bottom: 0.4rem; margin-top: 1rem; }
+h2 { font-size: 1.55rem; font-weight: 650; letter-spacing: -0.018em; border-bottom: 1px solid var(--md-border); padding-bottom: 0.3rem; }
+h3 { font-size: 1.28rem; }
+h4 { font-size: 1.08rem; }
+
+p, ul, ol {
+  margin-top: 0;
+  margin-bottom: 1.15rem;
+}
+
+li + li {
+  margin-top: 0.35rem;
+}
+
+/* Obsidian Document Properties Header */
+.document-metadata {
+  margin-bottom: 2.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--md-card-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+}
+.metadata-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+}
+.metadata-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--md-muted);
+  font-weight: 500;
+}
+.metadata-chip svg {
+  opacity: 0.8;
+}
+.metadata-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--md-border);
+}
+.tag-pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--md-accent);
+  background: var(--md-accent-glow);
+  border: 1px solid rgba(56, 139, 253, 0.25);
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+/* Pill Inline Code */
+:not(pre) > code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.86em;
+  padding: 0.2em 0.42em;
+  background-color: var(--md-code-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 6px;
+  color: #ff7b72;
+}
+@media (prefers-color-scheme: light) {
+  :not(pre) > code { color: #cf222e; }
+}
+
+/* Obsidian Mark and Highlight */
+mark, .flexible-marker {
+  background: var(--md-highlight);
+  color: inherit;
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  border-bottom: 2px solid #e3b341;
+}
+
+/* 3D Keycaps */
+kbd {
+  font-family: ui-monospace, monospace;
+  font-size: 0.82em;
+  padding: 0.2em 0.45em;
+  background-color: var(--md-card-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 5px;
+  box-shadow: 0 2px 0 var(--md-border);
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Dual Theme Shiki Variables */
+html[data-theme="dark"] .shiki,
+html[data-theme="dark"] .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .shiki,
+  html:not([data-theme="light"]) .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+html[data-theme="light"] .shiki,
+html[data-theme="light"] .shiki span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg) !important;
+  font-style: var(--shiki-light-font-style) !important;
+  font-weight: var(--shiki-light-font-weight) !important;
+  text-decoration: var(--shiki-light-text-decoration) !important;
+}
+
+/* Luxury Code Cards */
+pre {
+  position: relative;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.88em;
+  line-height: 1.55;
+  padding: 1.25rem 1.25rem 1.15rem;
+  background-color: var(--md-code-bg);
+  border: 1px solid var(--md-border);
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.12);
+  white-space: pre !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+pre > code {
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent !important;
+  padding: 0 !important;
+  border: 0 !important;
+  display: block;
+  min-width: 100%;
+  white-space: pre !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+/* Floating Language Badge */
+pre[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0;
+  right: 0.85rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-muted);
+  background: var(--md-card-bg);
+  border: 1px solid var(--md-border);
+  border-top: none;
+  padding: 0.15rem 0.55rem 0.25rem;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  opacity: 0.85;
+  user-select: none;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+pre:hover[data-language]::before {
+  opacity: 1;
+  color: var(--md-accent);
+}
+
+/* Jupyter Notebook Cell and Terminal Architecture */
+.cell {
+  position: relative;
+  margin: 1.75rem 0;
+  border: 1px solid var(--md-border);
+  border-radius: 10px;
+  background: var(--md-card-bg);
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.cell.markdown {
+  padding: 1.25rem 1.5rem;
+  border-left: 4px solid var(--md-accent);
+}
+.cell.code {
+  border-left: 4px solid #7ee787;
+  padding: 0;
+}
+.cell.code > pre {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.cell[data-execution_count]::before {
+  content: "In [" attr(data-execution_count) "]:";
+  position: absolute;
+  top: 0.4rem;
+  left: 0.75rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--md-muted);
+  user-select: none;
+  z-index: 2;
+}
+.cell.code[data-execution_count] pre {
+  padding-top: 1.85rem;
+}
+
+/* Responsive Data Tables */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.75rem 0;
+  border: 1px solid var(--md-border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.92rem;
+}
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--md-border);
+}
+th {
+  background-color: var(--md-card-bg);
+  font-weight: 650;
+  color: var(--md-fg);
+  border-bottom: 2px solid var(--md-border);
+}
+tr:last-child td {
+  border-bottom: none;
+}
+tr:nth-child(even) td {
+  background-color: rgba(125, 125, 125, 0.03);
+}
+
+/* Deluxe Obsidian and GFM Callouts */
+.callout {
+  margin: 1.6rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--md-border);
+  border-left: 4px solid #58a6ff;
+  background: rgba(56, 139, 253, 0.06);
+  font-size: 0.95rem;
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.05);
+}
+.callout-note { border-left-color: #58a6ff; background: rgba(56, 139, 253, 0.06); }
+.callout-tip { border-left-color: #3fb950; background: rgba(63, 185, 80, 0.06); }
+.callout-warning { border-left-color: #d29922; background: rgba(210, 153, 34, 0.06); }
+.callout-danger { border-left-color: #f85149; background: rgba(248, 81, 73, 0.06); }
+.callout-question { border-left-color: #a371f7; background: rgba(163, 113, 247, 0.06); }
+.callout-quote { border-left-color: #8b949e; background: rgba(139, 148, 158, 0.06); }
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 650;
+  margin-bottom: 0.55rem;
+  color: var(--md-fg);
+}
+summary.callout-title {
+  cursor: pointer;
+  user-select: none;
+}
+.callout > p:last-child,
+.callout > div:last-child p:last-child {
+  margin-bottom: 0;
+}
+.callout-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* Task Lists and Wiki Links */
+.wiki-link {
+  color: var(--md-accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(56, 139, 253, 0.35);
+  font-weight: 500;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.wiki-link:hover {
+  border-bottom-color: var(--md-accent);
+  text-decoration: none;
+}
+input[type="checkbox"] {
+  accent-color: var(--md-accent);
+  margin-right: 0.45rem;
+  transform: translateY(1px);
+}
+
+/* Embedded KaTeX LaTeX Math */
+.katex-display {
+  margin: 1.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em 0;
+}
+` + katexStyles;
+
+/**
+ * Builds full XHTML document from HAST using xast-util-to-xml for 100% strict XML validity.
+ */
+function buildDocumentXhtml(
+  bodyHast: Root,
+  sectionTitle: string,
+  meta: FrontmatterMetadata
+): string {
+  const metadataBanner = createMetadataBannerElement(meta);
+
+  const documentHast: Root = {
+    type: "root",
+    children: [
+      {
+        type: "doctype",
+      },
+      {
+        type: "element",
+        tagName: "html",
+        properties: { xmlns: "http://www.w3.org/1999/xhtml" },
+        children: [
+          {
+            type: "element",
+            tagName: "head",
+            properties: {},
+            children: [
+              { type: "element", tagName: "meta", properties: { charset: "utf-8" }, children: [] },
+              { type: "element", tagName: "title", properties: {}, children: [{ type: "text", value: sectionTitle }] },
+              { type: "element", tagName: "style", properties: {}, children: [{ type: "text", value: DOCUMENT_STYLES }] },
+            ],
+          },
+          {
+            type: "element",
+            tagName: "body",
+            properties: {},
+            children: [
+              ...(metadataBanner ? [metadataBanner] : []),
+              ...(bodyHast.children as ElementContent[]),
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  return `<?xml version="1.0" encoding="utf-8"?>\n` + toXml(toXast(documentHast));
 }
 
 export async function parseMarkdownToBook(
@@ -309,346 +979,63 @@ export async function parseMarkdownToBook(
     md = md.slice(1);
   }
 
-  let title = fallbackTitle;
-  let author = "Unknown Author";
+  const { frontmatter, hast, headings } = await processMarkdown(md);
 
-  // Parse Frontmatter if present
-  if (md.startsWith("---")) {
-    const endMatch = md.slice(3).indexOf("---");
-    if (endMatch !== -1) {
-      const frontmatter = md.slice(3, endMatch + 3);
-      md = md.slice(endMatch + 6).trim();
+  const title = frontmatter.title || headings.find((h) => h.level === 1)?.text || fallbackTitle;
+  const author = frontmatter.author || "Unknown Author";
 
-      const titleMatch = frontmatter.match(/title:\s*["']?([^"'\n\r]+)["']?/i);
-      if (titleMatch) title = titleMatch[1].trim();
-
-      const authorMatch = frontmatter.match(/author:\s*["']?([^"'\n\r]+)["']?/i);
-      if (authorMatch) author = authorMatch[1].trim();
-    }
-  }
-
-  // Look for first # Heading for title if not set
-  if (title === fallbackTitle) {
-    const firstH1 = md.match(/^#\s+([^\n]+)/m);
-    if (firstH1) {
-      title = firstH1[1].trim();
-    }
-  }
-
-  // Split into chapters by top-level `# ` headings (preserving surrounding cell wrappers)
-  const chunks = splitMarkdownChapters(md);
   const objectUrls: string[] = [];
   const toc: RawFoliateTocItem[] = [];
   const idToSectionMap = new Map<string, number>();
 
-  const renderedChunks = await Promise.all(
-    chunks.map(async (chunk, idx) => {
-      const { html, headings } = await markdownToHtml(chunk);
-      return { chunk, idx, html, headings };
-    })
-  );
+  const sectionIndex = 0;
+  const sectionTitle = headings.find((h) => h.level === 1)?.text || title || "Document";
 
-  const sections: RawFoliateSection[] = renderedChunks.map(({ idx, html, headings }) => {
-    const sectionTitle = headings.find((h) => h.level === 1)?.text || `Section ${idx + 1}`;
+  for (const h of headings) {
+    idToSectionMap.set(h.id, sectionIndex);
+  }
 
-    for (const h of headings) {
-      idToSectionMap.set(h.id, idx);
-    }
-
-    // Add TOC hierarchy
-    const sectionToc: RawFoliateTocItem = {
-      id: `toc-${idx}`,
-      label: sectionTitle,
-      href: `${idx}`,
-      subitems: headings
-        .filter((h) => h.level > 1)
-        .map((h) => ({
-          id: h.id,
-          label: h.text,
-          href: `${idx}#${h.id}`,
-        })),
-    };
+  // Build TOC hierarchy
+  const sectionToc: RawFoliateTocItem = {
+    id: `toc-${sectionIndex}`,
+    href: sectionIndex.toString(),
+    label: sectionTitle,
+    subitems: headings
+      .filter((h) => h.level > 1 && h.level <= 3)
+      .map((h) => ({
+        id: h.id,
+        href: `${sectionIndex}#${h.id}`,
+        label: h.text,
+      })),
+  };
+  if (sectionToc.subitems && sectionToc.subitems.length > 0) {
     toc.push(sectionToc);
+  } else {
+    toc.push({
+      id: `toc-${sectionIndex}`,
+      href: sectionIndex.toString(),
+      label: sectionTitle,
+    });
+  }
 
-    const xhtml = `<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8"/>
-  <title>${escapeHtml(sectionTitle)}</title>
-  <title>${escapeHtml(sectionTitle)}</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      --code-font: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
-      --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    body {
-      font-family: var(--body-font);
-      margin: 0;
-      padding: 2.5em max(2em, calc(50vw - 420px));
-      line-height: 1.7;
-      word-wrap: break-word;
-    }
+  const xhtml = buildDocumentXhtml(hast, sectionTitle, frontmatter);
 
-    /* Modern Technical Typography */
-    h1, h2, h3, h4, h5, h6 {
-      font-weight: 700;
-      line-height: 1.3;
-      margin-top: 1.8em;
-      margin-bottom: 0.6em;
-      letter-spacing: -0.015em;
-    }
-    h1 {
-      font-size: 2em;
-      border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-      padding-bottom: 0.35em;
-    }
-    h2 {
-      font-size: 1.45em;
-      border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-      padding-bottom: 0.3em;
-    }
-    h3 { font-size: 1.2em; }
-    p { margin: 0 0 1.15em 0; }
-    a {
-      color: #3b82f6;
-      text-decoration: none;
-      text-underline-offset: 0.2em;
-      transition: text-decoration 0.15s ease;
-    }
-    a:hover { text-decoration: underline; }
+  const blob = new Blob([xhtml], { type: "application/xhtml+xml" });
+  const url = URL.createObjectURL(blob);
+  objectUrls.push(url);
 
-    /* Pill Inline Code */
-    code:not(pre code) {
-      font-family: var(--code-font);
-      font-size: 0.88em;
-      background: color-mix(in srgb, currentColor 8%, transparent);
-      border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-      border-radius: 5px;
-      padding: 0.18em 0.45em;
-      font-weight: 500;
-    }
-
-    /* 3D Keycaps */
-    kbd {
-      font-family: var(--code-font);
-      font-size: 0.8em;
-      background: color-mix(in srgb, currentColor 8%, transparent);
-      border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-      border-bottom: 2.5px solid color-mix(in srgb, currentColor 35%, transparent);
-      border-radius: 5px;
-      padding: 0.15em 0.45em;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-    }
-
-    /* Luxury Code Block Cards (rehype-pretty-code and pre) */
-    figure[data-rehype-pretty-code-figure] {
-      margin: 1.2em 0;
-    }
-
-    /* Dual Theme Shiki Variables */
-    @media (prefers-color-scheme: dark) {
-      html {
-        --shiki-default: var(--shiki-dark);
-        --shiki-default-bg: var(--shiki-dark-bg);
-      }
-    }
-    @media (prefers-color-scheme: light) {
-      html {
-        --shiki-default: var(--shiki-light);
-        --shiki-default-bg: var(--shiki-light-bg);
-      }
-    }
-    /* Fallback and explicit overrides from ReaderThemeController */
-    html {
-      --shiki-default: var(--shiki-light);
-      --shiki-default-bg: var(--shiki-light-bg);
-    }
-    html[style*="color-scheme: dark"] {
-      --shiki-default: var(--shiki-dark);
-      --shiki-default-bg: var(--shiki-dark-bg);
-    }
-
-    span[style*="--shiki-dark"] {
-      color: var(--shiki-default, inherit) !important;
-    }
-
-    pre {
-      font-family: var(--code-font);
-      font-size: 0.88em;
-      line-height: 1.6;
-      background: var(--shiki-default-bg, color-mix(in srgb, currentColor 5%, transparent)) !important;
-      border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-      border-radius: 10px;
-      padding: 1.35em 1.4em;
-      margin: 1.2em 0;
-      overflow-x: auto;
-      tab-size: 4;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      position: relative;
-    }
-    pre code {
-      background: transparent !important;
-      padding: 0;
-      font-size: inherit;
-    }
-    pre[data-language]::after {
-      content: attr(data-language);
-      position: absolute;
-      top: 0.8em;
-      right: 0.8em;
-      font-family: var(--code-font);
-      font-size: 0.68em;
-      font-weight: 700;
-      color: color-mix(in srgb, currentColor 50%, transparent);
-      background: color-mix(in srgb, currentColor 8%, transparent);
-      border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-      border-radius: 4px;
-      padding: 0.1em 0.45em;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      pointer-events: none;
-    }
-
-    /* Jupyter Notebook Cell and Terminal Architecture */
-    .cell { margin: 1.4em 0; }
-    .cell.code { 
-      position: relative;
-      background: color-mix(in srgb, currentColor 2%, transparent);
-      border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-      border-radius: 12px;
-      padding: 0;
-      overflow: hidden;
-    }
-    .cell.code[data-execution_count]::before {
-      content: "In [" attr(data-execution_count) "]:";
-      display: block;
-      font-family: var(--code-font);
-      font-size: 0.74em;
-      font-weight: 700;
-      color: #2563eb;
-      background: color-mix(in srgb, #2563eb 10%, transparent);
-      padding: 0.4em 1em;
-      letter-spacing: 0.03em;
-      border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
-    }
-    .cell.code figure,
-    .cell.code pre {
-      margin: 0;
-      border: none;
-      border-radius: 0;
-      box-shadow: none;
-      background: transparent !important;
-    }
-    .cell.output, .output_text, pre.output {
-      background: color-mix(in srgb, currentColor 4%, transparent) !important;
-      border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-      border-radius: 8px;
-      padding: 0.9em 1.2em;
-      font-family: var(--code-font);
-      font-size: 0.84em;
-      color: color-mix(in srgb, currentColor 80%, transparent);
-      margin-top: 0.5em;
-      margin-bottom: 1.4em;
-      overflow-x: auto;
-    }
-
-    /* Tables and DataFrames */
-    table {
-      border-collapse: collapse;
-      display: block;
-      margin: 1.5em 0;
-      max-width: 100%;
-      overflow-x: auto;
-      border-radius: 8px;
-      border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-    }
-    th, td {
-      border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
-      padding: 0.7em 1em;
-      text-align: left;
-    }
-    th {
-      background: color-mix(in srgb, currentColor 8%, transparent);
-      font-weight: 600;
-      font-size: 0.9em;
-      letter-spacing: 0.02em;
-    }
-    tr:nth-child(even) td { background: color-mix(in srgb, currentColor 3%, transparent); }
-    tr:hover td { background: color-mix(in srgb, currentColor 6%, transparent); }
-
-    /* Deluxe Obsidian / GFM Callouts */
-    aside.callout {
-      --callout-color: #3b82f6;
-      background: color-mix(in srgb, var(--callout-color) 10%, transparent);
-      border: 1px solid color-mix(in srgb, var(--callout-color) 35%, transparent);
-      border-left: 0.35em solid var(--callout-color);
-      border-radius: 8px;
-      margin: 1.4em 0;
-      padding: 1em 1.25em;
-    }
-    .callout-title {
-      color: var(--callout-color);
-      font-size: 0.85em;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      margin-bottom: 0.6em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-    }
-    .callout-tip, .callout-success { --callout-color: #10b981; }
-    .callout-warning, .callout-caution { --callout-color: #f59e0b; }
-    .callout-danger, .callout-error, .callout-failure { --callout-color: #ef4444; }
-    .callout-question, .callout-help, .callout-faq { --callout-color: #8b5cf6; }
-    .callout-note, .callout-info { --callout-color: #3b82f6; }
-    .callout-quote, .callout-cite { --callout-color: #06b6d4; }
-    .callout-example { --callout-color: #6366f1; }
-
-    /* Task Lists and Wiki Links */
-    .contains-task-list { list-style: none; padding-left: 0.4em; }
-    .task-list-item input { accent-color: #3b82f6; margin-right: 0.55em; transform: scale(1.1); }
-    .wiki-link {
-      color: #3b82f6;
-      font-weight: 600;
-      text-decoration: underline;
-      text-decoration-color: rgba(59, 130, 246, 0.45);
-      text-underline-offset: 0.2em;
-    }
-    .wiki-link:hover { text-decoration-color: #3b82f6; }
-    .footnotes {
-      border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-      font-size: 0.9em;
-      margin-top: 2.5em;
-      padding-top: 1em;
-      opacity: 0.85;
-    }
-  </style>
-</head>
-<body>
-  ${html}
-</body>
-</html>`;
-
-    const blob = new Blob([xhtml], { type: "application/xhtml+xml" });
-    const url = URL.createObjectURL(blob);
-    objectUrls.push(url);
-
-    return {
-      id: idx,
-      href: `sec-${idx}.xhtml`,
-      title: sectionTitle,
-      load: () => url,
-      createDocument: () => {
-        const parser = new DOMParser();
-        return parser.parseFromString(xhtml, "application/xhtml+xml");
-      },
-      size: blob.size,
-      linear: "yes",
-    };
-  });
+  const section: RawFoliateSection = {
+    id: sectionIndex,
+    href: `sec-${sectionIndex}.xhtml`,
+    title: sectionTitle,
+    load: () => url,
+    createDocument: () => {
+      const parser = new DOMParser();
+      return parser.parseFromString(xhtml, "application/xhtml+xml");
+    },
+    size: blob.size,
+    linear: "yes",
+  };
 
   return {
     metadata: {
@@ -659,7 +1046,10 @@ export async function parseMarkdownToBook(
       direction: "ltr",
     },
     dir: "ltr",
-    sections,
+    rendition: {
+      layout: "scrolled",
+    },
+    sections: [section],
     toc,
     resolveHref: (href: string) => {
       const [secStr, anchorId] = href.split("#");
@@ -682,8 +1072,8 @@ export async function parseMarkdownToBook(
     getTOCFragment: (doc: Document, id: string) => doc.getElementById(id) || doc.body,
     getCover: async () => null,
     destroy: () => {
-      for (const url of objectUrls) {
-        URL.revokeObjectURL(url);
+      for (const u of objectUrls) {
+        URL.revokeObjectURL(u);
       }
     },
   };
