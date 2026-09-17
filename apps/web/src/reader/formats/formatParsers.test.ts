@@ -101,13 +101,20 @@ describe("Multi-Format Pipeline & Decoders", () => {
     });
 
     it("distinguishes Kindle MOBI from modern AZW3/KF8 format", async () => {
-      const azw3Bytes = new Uint8Array(200);
       const mobiMagic = "BOOKMOBI";
-      for (let i = 0; i < mobiMagic.length; i++) {
-        azw3Bytes[60 + i] = mobiMagic.charCodeAt(i);
-      }
-      azw3Bytes.set(new TextEncoder().encode("EXTHBOUNDARYKF8"), 100);
+
+      // AZW3/KF8: BOOKMOBI at 60, bytes[32..35] = 0 so rec0Offset=0,
+      // MOBI version field at offset 36 = 8 (big-endian) → KF8
+      const azw3Bytes = new Uint8Array(200);
+      for (let i = 0; i < mobiMagic.length; i++) azw3Bytes[60 + i] = mobiMagic.charCodeAt(i);
+      azw3Bytes[36] = 0; azw3Bytes[37] = 0; azw3Bytes[38] = 0; azw3Bytes[39] = 8;
       expect(await detectBookFormat(azw3Bytes)).toBe("azw3");
+
+      // Legacy MOBI: same structure but version field = 6 → mobi
+      const mobiBytes2 = new Uint8Array(200);
+      for (let i = 0; i < mobiMagic.length; i++) mobiBytes2[60 + i] = mobiMagic.charCodeAt(i);
+      mobiBytes2[36] = 0; mobiBytes2[37] = 0; mobiBytes2[38] = 0; mobiBytes2[39] = 6;
+      expect(await detectBookFormat(mobiBytes2)).toBe("mobi");
     });
 
     it("detects Markdown from callouts, CRLF frontmatter, and tasklists without extensions", async () => {

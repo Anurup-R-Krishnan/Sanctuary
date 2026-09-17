@@ -631,7 +631,7 @@ export async function processMarkdown(source: string): Promise<MarkdownProcessin
         dark: "one-dark-pro",
         light: "github-light",
       },
-      keepBackground: true,
+      keepBackground: false,
       defaultLang: "plaintext",
     })
     .use(rehypeCodeCardEnhancer)
@@ -759,19 +759,28 @@ const DOCUMENT_STYLES = `
   --md-code-bg: color-mix(in srgb, currentColor 5%, transparent);
   --md-code-header-bg: color-mix(in srgb, currentColor 9%, transparent);
   --md-code-border: color-mix(in srgb, currentColor 14%, transparent);
-  --md-accent: #58a6ff;
+  /* Semantic palette — dark-mode defaults (sepia/parchment also reads as dark) */
+  --md-accent:        #58a6ff;
+  --md-success:       #3fb950;
+  --md-warning:       #d29922;
+  --md-danger:        #f85149;
+  --md-purple:        #a371f7;
+  --md-mark-border:   #d0a319;
+  --md-code-accent:   #cf222e;
   --md-accent-glow: color-mix(in srgb, var(--md-accent) 15%, transparent);
   --md-highlight: color-mix(in srgb, #ffd700 24%, transparent);
 }
 
-html[data-theme="dark"] {
-  --md-accent: #58a6ff;
-  --md-highlight: rgba(255, 215, 0, 0.22);
-}
-
+/* Light backgrounds (white, ivory, cream, sepia paper) */
 html[data-theme="light"] {
-  --md-accent: #0969da;
-  --md-highlight: rgba(255, 235, 59, 0.4);
+  --md-accent:        #0969da;
+  --md-success:       #1a7f37;
+  --md-warning:       #9a6700;
+  --md-danger:        #d1242f;
+  --md-purple:        #8250df;
+  --md-mark-border:   #b08800;
+  --md-code-accent:   #cf222e;
+  --md-highlight: color-mix(in srgb, #f5c30d 32%, transparent);
 }
 
 /* Modern Technical Typography */
@@ -867,7 +876,7 @@ li + li {
   background-color: var(--md-code-bg);
   border: 1px solid var(--md-border);
   border-radius: 6px;
-  color: color-mix(in srgb, currentColor 85%, #d73a49);
+  color: color-mix(in srgb, currentColor 85%, var(--md-code-accent));
 }
 
 /* Obsidian Mark and Highlight */
@@ -876,7 +885,7 @@ mark, .flexible-marker {
   color: inherit;
   padding: 0.15em 0.35em;
   border-radius: 4px;
-  border-bottom: 2px solid #e3b341;
+  border-bottom: 2px solid var(--md-mark-border);
 }
 
 /* 3D Keycaps */
@@ -990,9 +999,9 @@ figure.code-card {
 }
 
 .code-copy-btn.copied {
-  color: #3fb950 !important;
-  border-color: #3fb950 !important;
-  background-color: rgba(63, 185, 80, 0.12) !important;
+  color: var(--md-success) !important;
+  border-color: var(--md-success) !important;
+  background-color: color-mix(in srgb, var(--md-success) 12%, transparent) !important;
 }
 
 .code-copy-btn .check-icon {
@@ -1081,7 +1090,7 @@ figure.mermaid-card .mermaid svg {
   border-left: 4px solid var(--md-accent);
 }
 .cell.code {
-  border-left: 4px solid #7ee787;
+  border-left: 4px solid var(--md-success);
   padding: 0;
 }
 .cell.code > figure.code-card {
@@ -1143,17 +1152,20 @@ tr:nth-child(even) td {
   padding: 1rem 1.25rem;
   border-radius: 10px;
   border: 1px solid var(--md-border);
-  border-left: 4px solid #58a6ff;
-  background: color-mix(in srgb, #58a6ff 7%, transparent);
+  border-left: 4px solid var(--md-accent);
+  background: color-mix(in srgb, var(--md-accent) 7%, transparent);
   font-size: 0.95rem;
-  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 14px -3px color-mix(in srgb, currentColor 5%, transparent);
 }
-.callout-note { border-left-color: #58a6ff; background: color-mix(in srgb, #58a6ff 7%, transparent); }
-.callout-tip { border-left-color: #3fb950; background: color-mix(in srgb, #3fb950 7%, transparent); }
-.callout-warning { border-left-color: #d29922; background: color-mix(in srgb, #d29922 7%, transparent); }
-.callout-danger { border-left-color: #f85149; background: color-mix(in srgb, #f85149 7%, transparent); }
-.callout-question { border-left-color: #a371f7; background: color-mix(in srgb, #a371f7 7%, transparent); }
-.callout-quote { border-left-color: color-mix(in srgb, currentColor 40%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); }
+.callout-note    { border-left-color: var(--md-accent);   background: color-mix(in srgb, var(--md-accent)   7%, transparent); }
+.callout-tip     { border-left-color: var(--md-success);  background: color-mix(in srgb, var(--md-success)  7%, transparent); }
+.callout-warning { border-left-color: var(--md-warning);  background: color-mix(in srgb, var(--md-warning)  7%, transparent); }
+.callout-danger  { border-left-color: var(--md-danger);   background: color-mix(in srgb, var(--md-danger)   7%, transparent); }
+.callout-question{ border-left-color: var(--md-purple);   background: color-mix(in srgb, var(--md-purple)   7%, transparent); }
+.callout-success { border-left-color: var(--md-success);  background: color-mix(in srgb, var(--md-success)  7%, transparent); }
+.callout-example { border-left-color: var(--md-purple);   background: color-mix(in srgb, var(--md-purple)   7%, transparent); }
+.callout-summary { border-left-color: var(--md-accent);   background: color-mix(in srgb, var(--md-accent)   5%, transparent); }
+.callout-quote   { border-left-color: color-mix(in srgb, currentColor 40%, transparent); background: color-mix(in srgb, currentColor 5%, transparent); }
 
 .callout-title {
   display: flex;

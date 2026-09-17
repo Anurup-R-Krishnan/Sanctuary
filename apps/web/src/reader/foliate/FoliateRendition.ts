@@ -238,6 +238,9 @@ export class FoliateRendition implements DocumentRendition {
         this.setupDocumentImageInteraction(doc);
         this.setupDocumentInteractivity(doc);
         this.scrollContinuity.attachDocument(doc);
+        if (this.activeSearchCfi) {
+          this.highlightSearchResult(this.activeSearchCfi);
+        }
       }
     });
 
@@ -339,7 +342,8 @@ export class FoliateRendition implements DocumentRendition {
         for (const [selector, rules] of Object.entries(styles)) {
           cssText += `${selector} {`;
           for (const [prop, val] of Object.entries(rules)) {
-            cssText += `${prop}: ${val} !important; `;
+            const cleanVal = String(val).replace(/\s*!important\s*$/i, "").trim();
+            cssText += `${prop}: ${cleanVal} !important; `;
           }
           cssText += "} \n";
         }
@@ -367,6 +371,15 @@ export class FoliateRendition implements DocumentRendition {
   private setupDocumentKeyboardForwarding(doc: Document): void {
     try {
       const forwardKey = (e: KeyboardEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.isContentEditable)
+        ) {
+          return;
+        }
         window.dispatchEvent(
           new KeyboardEvent(e.type, {
             altKey: e.altKey,
@@ -392,7 +405,8 @@ export class FoliateRendition implements DocumentRendition {
       try {
         const sel = doc.getSelection();
         const text = sel?.toString().trim();
-        if (!text || !sel || sel.rangeCount === 0) {
+        if (!text || !sel || sel.rangeCount === 0 || sel.isCollapsed) {
+          this.emit("selected", null);
           return;
         }
         const range = sel.getRangeAt(0);
@@ -447,7 +461,11 @@ export class FoliateRendition implements DocumentRendition {
 
         if (!src) return;
 
-        // Skip tiny inline glyphs or icons (<= 28px)
+        // Skip tiny inline glyphs or icons (<= 28px), and math formulas or footnote refs
+        if (target.closest(".katex, .math, [aria-hidden='true'], a.footnote-ref, a[epub\\:type~='noteref']")) {
+          return;
+        }
+
         const htmlImg =
           target.tagName.toLowerCase() === "img"
             ? (target as HTMLImageElement)
@@ -501,9 +519,16 @@ export class FoliateRendition implements DocumentRendition {
 
         const codeText = codeEl.textContent || "";
         try {
+          let copied = false;
           if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-            await navigator.clipboard.writeText(codeText);
-          } else {
+            try {
+              await navigator.clipboard.writeText(codeText);
+              copied = true;
+            } catch {
+              // Iframe permissions policy might deny clipboard-write; fall back to execCommand below
+            }
+          }
+          if (!copied) {
             const textarea = doc.createElement("textarea");
             textarea.value = codeText;
             textarea.style.position = "fixed";
@@ -550,7 +575,10 @@ export class FoliateRendition implements DocumentRendition {
   private async setupDocumentMermaid(doc: Document): Promise<void> {
     try {
       const mermaidElements = doc.querySelectorAll(".mermaid");
-      if (mermaidElements.length === 0) return;
+      const unrendered = Array.from(mermaidElements).filter(
+        (el) => !el.getAttribute("data-processed") && !el.querySelector("svg")
+      ) as HTMLElement[];
+      if (unrendered.length === 0) return;
 
       const mermaidModule = await import("mermaid");
       const mermaid = mermaidModule.default;
@@ -568,7 +596,7 @@ export class FoliateRendition implements DocumentRendition {
       });
 
       await mermaid.run({
-        nodes: Array.from(mermaidElements) as HTMLElement[],
+        nodes: unrendered,
       });
     } catch (err) {
       console.warn("Mermaid rendering fallback (displaying source):", err);
@@ -588,8 +616,8 @@ export class FoliateRendition implements DocumentRendition {
     this.scrollContinuity.setEnabled(continuous);
 
     if (!continuous) {
-      const isWideDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
-      const shouldUseTwoUp = Boolean(this.flowOptions.spread || (isWideDesktop && (this.container?.clientWidth ?? 0) >= 1200));
+      const containerWidth = (this.container?.clientWidth ?? 0) || (typeof window !== "undefined" ? window.innerWidth : 0);
+      const shouldUseTwoUp = Boolean(this.flowOptions.spread && containerWidth >= 700);
       renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");
     }
 
@@ -605,20 +633,27 @@ export class FoliateRendition implements DocumentRendition {
   }
 
   private findChapterLabel(href: string): string {
-    const clean = href.split("#")[0].replace(/^\.?\//, "");
-    let match = "";
+    const rawClean = href.replace(/^\.?\//, "");
+    const fileClean = rawClean.split("#")[0];
+    let exactMatch = "";
+    let fileMatch = "";
+
     const search = (items: typeof this.documentAdapter.toc) => {
       for (const item of items) {
-        const itemClean = item.href.split("#")[0].replace(/^\.?\//, "");
-        if (itemClean === clean) {
-          match = item.label;
+        const itemRaw = item.href.replace(/^\.?\//, "");
+        const itemFile = itemRaw.split("#")[0];
+        if (itemRaw === rawClean) {
+          exactMatch = item.label;
           return;
+        }
+        if (!fileMatch && itemFile === fileClean) {
+          fileMatch = item.label;
         }
         if (item.subitems) search(item.subitems);
       }
     };
     search(this.documentAdapter.toc);
-    return match || "Chapter";
+    return exactMatch || fileMatch || "Chapter";
   }
 
   public async display(target?: string | DocumentLocator): Promise<boolean> {
@@ -699,6 +734,7 @@ export class FoliateRendition implements DocumentRendition {
     if (this.view && typeof this.view.deselect === "function") {
       this.view.deselect();
     }
+    this.emit("selected", null);
   }
 
   public getContents(): Array<{ doc: Document; window?: Window }> {
@@ -743,33 +779,36 @@ export class FoliateRendition implements DocumentRendition {
 
   public updateBackground(color: string): void {
     this.background = color;
-    const isDark = isColorDark(color);
+    const renderer = this.view?.renderer;
     if (this.container) this.container.style.backgroundColor = color;
     if (this.view) this.view.style.backgroundColor = color;
-    const renderer = this.view?.renderer;
+    // Re-inject full styles (not just background) so that data-theme, foreground
+    // color, and all color-mix tokens derived from currentColor stay in sync.
     if (renderer && typeof renderer.getContents === "function") {
       const contents = renderer.getContents();
       if (Array.isArray(contents)) {
         contents.forEach((c: { doc?: Document }) => {
-          if (c.doc) {
-            c.doc.documentElement.style.backgroundColor = color;
-            c.doc.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-            if (c.doc.body) c.doc.body.style.backgroundColor = color;
-          }
+          if (c.doc) this.injectStylesToDocument(c.doc);
         });
       }
     }
   }
 
-  public resize(): void {
+  public resize(width?: number, height?: number): void {
+    if (width !== undefined && this.container) {
+      this.container.style.width = typeof width === "number" ? `${width}px` : String(width);
+    }
+    if (height !== undefined && this.container) {
+      this.container.style.height = typeof height === "number" ? `${height}px` : String(height);
+    }
     const renderer = this.view?.renderer;
     const isScrolledDoc =
       this.documentAdapter.format === "markdown" ||
       this.documentAdapter.rawBook.rendition?.layout === "scrolled";
     const continuous = isScrolledDoc || Boolean(this.flowOptions.continuous);
     if (renderer && !continuous) {
-      const isWideDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
-      const shouldUseTwoUp = Boolean(this.flowOptions.spread || (isWideDesktop && (this.container?.clientWidth ?? 0) >= 1200));
+      const containerWidth = width ?? ((this.container?.clientWidth ?? 0) || (typeof window !== "undefined" ? window.innerWidth : 0));
+      const shouldUseTwoUp = Boolean(this.flowOptions.spread && containerWidth >= 700);
       renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");
     }
   }
@@ -791,7 +830,7 @@ export class FoliateRendition implements DocumentRendition {
               chapterLabel,
               excerpt,
               href: "",
-              id: `${item.cfi || i}-${i}`,
+              id: `${item.cfi || `${chapterLabel}-${i}`}-${results.length}`,
             });
           }
         }
@@ -840,7 +879,10 @@ export class FoliateRendition implements DocumentRendition {
                 node.setAttribute("fill", "rgba(59, 130, 246, 0.45)");
                 node.setAttribute("stroke", "#2563eb");
                 node.setAttribute("stroke-width", "2.5");
-                node.scrollIntoView?.({ behavior: "smooth", block: "center" });
+                const isScrolled = this.documentAdapter.format === "markdown" || Boolean(this.flowOptions.continuous);
+                if (isScrolled) {
+                  node.scrollIntoView?.({ behavior: "smooth", block: "center" });
+                }
               } else {
                 node.classList.remove("sanctuary-search-active");
                 node.setAttribute("fill", "rgba(245, 158, 11, 0.35)");
@@ -1021,9 +1063,13 @@ export class FoliateRendition implements DocumentRendition {
   public getTTSController(): FoliateTTSController {
     if (!this.ttsController) {
       this.ttsController = new FoliateTTSController({
+        bookMetadata: {
+          author: this.documentAdapter?.metadata?.author || "Sanctuary",
+          title: this.documentAdapter?.metadata?.title || "Book",
+        },
+        clearHighlight: () => this.clearTTSHighlight(),
         getDoc: () => this.getCurrentDocument(),
         highlightRange: (r) => this.highlightTTSRange(r),
-        clearHighlight: () => this.clearTTSHighlight(),
         onNextChapter: async () => {
           if (!this.view) return false;
           try {

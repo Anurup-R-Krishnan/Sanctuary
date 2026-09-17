@@ -168,21 +168,29 @@ export const FoliateTestHarness: React.FC = () => {
 
   // Update layout / flow
   useEffect(() => {
-    if (!renditionRef.current) return;
+    const rendition = renditionRef.current;
+    if (!rendition) return;
     const currentTheme = THEMES[theme];
-    renditionRef.current.setFlow({
+    const styles = {
+      html: { "background-color": currentTheme.bg },
+      body: {
+        "font-size": `${fontSize}px`,
+        "line-height": "1.6",
+        color: currentTheme.fg,
+        "background-color": currentTheme.bg,
+      },
+    };
+    rendition.setFlow({
       continuous: sampleBook === "markdown" ? true : continuous,
       spread,
       direction: "auto",
       readerBackground: currentTheme.bg,
-      themeStyles: {
-        body: {
-          "font-size": `${fontSize}px`,
-          "line-height": "1.6",
-          color: currentTheme.fg,
-        },
-      },
+      themeStyles: styles,
     });
+    // setFlow updates flowOptions but doesn't re-inject CSS into live documents —
+    // setStyles + updateBackground do that atomically.
+    rendition.setStyles(styles);
+    rendition.updateBackground(currentTheme.bg);
   }, [continuous, spread, fontSize, theme, sampleBook]);
 
   const handleNext = () => renditionRef.current?.next();

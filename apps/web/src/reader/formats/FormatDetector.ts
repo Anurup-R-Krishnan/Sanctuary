@@ -34,29 +34,42 @@ export function isSupportedExtension(fileName: string): boolean {
 
 const COMIC_IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"];
 
+const ZIP_DECODER = new TextDecoder();
+
 function sniffZipFormat(bytes: Uint8Array): BookFormat {
   let offset = 0;
   const filenames: string[] = [];
 
   while (offset + 30 <= bytes.length) {
+    // Local file header signature: PK\x03\x04
     if (
       bytes[offset] === 0x50 &&
       bytes[offset + 1] === 0x4b &&
       bytes[offset + 2] === 0x03 &&
       bytes[offset + 3] === 0x04
     ) {
+      const compressedSize =
+        bytes[offset + 18] |
+        (bytes[offset + 19] << 8) |
+        (bytes[offset + 20] << 16) |
+        (bytes[offset + 21] << 24);
       const nameLen = bytes[offset + 26] | (bytes[offset + 27] << 8);
       const extraLen = bytes[offset + 28] | (bytes[offset + 29] << 8);
-      const start = offset + 30;
-      const end = start + nameLen;
+      const nameStart = offset + 30;
+      const nameEnd = nameStart + nameLen;
 
-      if (end <= bytes.length) {
-        const name = new TextDecoder().decode(bytes.slice(start, end)).toLowerCase();
+      if (nameEnd <= bytes.length) {
+        const name = ZIP_DECODER.decode(bytes.slice(nameStart, nameEnd)).toLowerCase();
         filenames.push(name);
       }
-      offset = end + extraLen;
+      // Advance past this entry: fixed header (30) + nameLen + extraLen + compressedSize
+      offset = nameStart + nameLen + extraLen + Math.max(0, compressedSize);
     } else {
-      break;
+      // Not a local file header — advance one byte to keep scanning
+      // (handles data descriptors, alignment padding, central directory, etc.)
+      offset += 1;
+      // Once we're past a reasonable scan window, stop
+      if (offset > 65536) break;
     }
   }
 
@@ -67,7 +80,7 @@ function sniffZipFormat(bytes: Uint8Array): BookFormat {
     if (name.endsWith(".fb2")) {
       return "fb2";
     }
-    if (name.includes("meta-inf/container.xml") || name.startsWith("mimetype")) {
+    if (name.includes("meta-inf/container.xml") || name === "mimetype") {
       return "epub";
     }
   }
@@ -144,13 +157,27 @@ export async function detectBookFormat(
     return sniffZipFormat(bytes);
   }
 
-  // MOBI / AZW3 header: BOOKMOBI at offset 60
+  // MOBI / AZW3: PalmDOC with BOOKMOBI at offset 60
+  // Read the actual MOBI version field to distinguish legacy MOBI (v1-7) from KF8 (v8+)
   if (bytes.length >= 68) {
-    const magic = String.fromCharCode(...bytes.slice(60, 68));
+    const magic = String.fromCharCode(
+      bytes[60], bytes[61], bytes[62], bytes[63],
+      bytes[64], bytes[65], bytes[66], bytes[67]
+    );
     if (magic === "BOOKMOBI") {
-      const headText = new TextDecoder().decode(bytes);
-      if (headText.includes("KF8") || headText.includes("BOUNDARY")) {
-        return "azw3";
+      // PalmDOC header: record list starts at byte 32.
+      // Record 0 offset is stored as a big-endian uint32 at bytes[32..35].
+      const rec0Offset =
+        (bytes[32] << 24) | (bytes[33] << 16) | (bytes[34] << 8) | bytes[35];
+      // MOBI header type (version) field is at rec0Offset + 36, big-endian uint32
+      const versionOffset = rec0Offset + 36;
+      if (versionOffset + 4 <= bytes.length) {
+        const mobiVersion =
+          (bytes[versionOffset] << 24) |
+          (bytes[versionOffset + 1] << 16) |
+          (bytes[versionOffset + 2] << 8) |
+          bytes[versionOffset + 3];
+        if (mobiVersion >= 8) return "azw3";
       }
       return "mobi";
     }

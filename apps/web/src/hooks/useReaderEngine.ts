@@ -57,6 +57,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         maxTextWidth: state.maxTextWidth,
         pageMargin: state.pageMargin,
         paragraphSpacing: state.paragraphSpacing,
+        readerAccent: state.readerAccent,
         readerBackground: state.readerBackground,
         readerForeground: state.readerForeground,
         textAlignment: state.textAlignment,
@@ -73,16 +74,43 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         onUpdateProgressRef.current = onUpdateProgress;
     }, [onUpdateProgress]);
 
-    // Theme Application
+    // Theme Application — runs on themeConfig change and when rendition becomes ready
     useEffect(() => {
         if (!sessionRef.current?.rendition) return;
         const styles = themeControllerRef.current.buildStyles(themeConfig);
+        // setStyles re-injects the full CSS override (color, font, spacing) into
+        // every live iframe document.
         try {
-            sessionRef.current.rendition.themes.default(styles, themeConfig.bionicReading);
+            sessionRef.current.rendition.setStyles(styles, themeConfig.bionicReading);
         } catch { /* benign */ }
-        // Also update iframe/container background to prevent flash on next page turn
+        // Sync background color on the host container and every document frame
         sessionRef.current.updateReaderBackground(themeConfig.readerBackground);
-    }, [themeConfig]);
+    }, [themeConfig, renditionReady]);
+
+    // Auto-sync rendition dimensions when container or window resizes
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleResize = () => {
+            sessionRef.current?.rendition?.resize();
+        };
+
+        let observer: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== "undefined") {
+            observer = new ResizeObserver(() => {
+                handleResize();
+            });
+            observer.observe(container);
+        }
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            if (observer) observer.disconnect();
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [containerRef, renditionReady]);
 
     // Engine Initialization — only when the book itself (or its bytes) changes.
     // Layout-mode toggles (continuous/spread/direction/writingMode) go through

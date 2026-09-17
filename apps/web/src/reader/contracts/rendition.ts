@@ -65,6 +65,9 @@ export interface DocumentRendition {
   /** Change layout flow without destroying parsed book model */
   setFlow(options: ReaderFlowOptions): Promise<void>;
 
+  /** Re-inject CSS overrides (font, color, spacing) into all live document frames */
+  setStyles(styles: Record<string, Record<string, string>>, bionicReading?: boolean): void;
+
   /** Update background immediately across container and document */
   updateBackground(color: string): void;
 }

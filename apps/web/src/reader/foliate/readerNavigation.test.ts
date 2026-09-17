@@ -84,7 +84,44 @@ describe("Foliate Reader Navigation & TOC", () => {
       writingMode: "vertical-rl",
     });
 
+    // 4. Spread and column count verification
+    // When spread is false, resize must set max-column-count to 1 even if container is wide
+    rendition.resize(1600, 1000);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const renderer = (rendition as any).view?.renderer;
+    expect(renderer?.getAttribute("max-column-count")).toBe("1");
+
+    // When spread is true and container is wide (>= 700), it sets max-column-count to 2
+    await rendition.setFlow({
+      continuous: false,
+      spread: true,
+      themeStyles: { body: { "font-size": "18px" } },
+    });
+    rendition.resize(1200, 800);
+    expect(renderer?.getAttribute("max-column-count")).toBe("2");
+
+    // When spread is true but width is narrow (< 700), fallback to 1 column
+    rendition.resize(500, 800);
+    expect(renderer?.getAttribute("max-column-count")).toBe("1");
+
+    // 5. Deselect emits selected: null
+    let selectedEventValue: unknown = "not-called";
+    rendition.on("selected", (val) => {
+      selectedEventValue = val;
+    });
+    rendition.deselect();
+    expect(selectedEventValue).toBeNull();
+
+    // 6. setStyles strips accidental !important to prevent syntax errors
+    rendition.setStyles({
+      body: {
+        color: "#222222 !important",
+        "font-size": "20px",
+      },
+    });
+
     rendition.destroy();
     adapter.destroy();
   });
 });
+
