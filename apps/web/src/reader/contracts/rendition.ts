@@ -6,11 +6,14 @@ import type { ReaderPosition } from "@/types/reader";
 
 import type { DocumentLocator, DocumentSelection } from "./locator";
 
+export type ReadingMode = "paginated" | "scrolled" | "continuous";
+
 export interface ReaderFlowOptions {
   bionicReading?: boolean;
   continuous: boolean;
   direction?: "auto" | "ltr" | "rtl";
   readerBackground?: string;
+  readingMode?: ReadingMode;
   spread: boolean;
   themeStyles: Record<string, Record<string, string>>;
   writingMode?: "horizontal-tb" | "vertical-rl";

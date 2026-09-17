@@ -24,6 +24,7 @@ type SettingsValues = {
   bookVoiceOverrides: Record<string, string>;
   brightness: number;
   continuous: boolean;
+  readingMode: "paginated" | "scrolled" | "continuous";
   customPalettes: CustomPalette[];
   dailyGoal: number;
   direction: "auto" | "ltr" | "rtl";
@@ -71,6 +72,7 @@ type SettingsActions = {
   setBookVoiceOverride: (bookId: string, voiceURI: string) => void;
   setBrightness: (v: number) => void;
   setContinuous: (v: boolean) => void;
+  setReadingMode: (v: "paginated" | "scrolled" | "continuous") => void;
   setDailyGoal: (v: number) => void;
   setDirection: (v: "auto" | "ltr" | "rtl") => void;
   setFontPairing: (v: string) => void;
@@ -120,6 +122,7 @@ const DEFAULTS: SettingsValues = {
   pageMargin: 40,
   paragraphSpacing: 17,
   continuous: false,
+  readingMode: "paginated",
   customPalettes: [],
   direction: "auto",
   spread: false,
@@ -200,6 +203,7 @@ export const pickValues = (state: Settings): SettingsValues => ({
   pageMargin: state.pageMargin,
   paragraphSpacing: state.paragraphSpacing,
   continuous: state.continuous,
+  readingMode: state.readingMode,
   customPalettes: state.customPalettes,
   direction: state.direction,
   spread: state.spread,
@@ -252,6 +256,7 @@ export const toRemotePayload = (state: SettingsValues) => ({
   customPalettes: state.customPalettes,
   // Reader behavior
   continuous: state.continuous,
+  readingMode: state.readingMode,
   direction: state.direction,
   spread: state.spread,
   writingMode: state.writingMode,
@@ -295,7 +300,13 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.hyphenation === "boolean") out.hyphenation = raw.hyphenation;
   if (typeof raw.pageMargin === "number") out.pageMargin = raw.pageMargin;
   if (typeof raw.paragraphSpacing === "number") out.paragraphSpacing = raw.paragraphSpacing;
-  if (typeof raw.continuous === "boolean") out.continuous = raw.continuous;
+  if (raw.readingMode === "paginated" || raw.readingMode === "scrolled" || raw.readingMode === "continuous") {
+    out.readingMode = raw.readingMode;
+    out.continuous = raw.readingMode !== "paginated";
+  } else if (typeof raw.continuous === "boolean") {
+    out.continuous = raw.continuous;
+    out.readingMode = raw.continuous ? "continuous" : "paginated";
+  }
   if (typeof raw.spread === "boolean") out.spread = raw.spread;
   if (raw.direction === "auto" || raw.direction === "ltr" || raw.direction === "rtl") out.direction = raw.direction;
   if (raw.writingMode === "horizontal-tb" || raw.writingMode === "vertical-rl") out.writingMode = raw.writingMode;
@@ -399,7 +410,13 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   }
 
   // ── Reader behavior ───────────────────────────────────────────────────────
-  if (typeof remote.continuous === "boolean") out.continuous = remote.continuous;
+  if (remote.readingMode === "paginated" || remote.readingMode === "scrolled" || remote.readingMode === "continuous") {
+    out.readingMode = remote.readingMode;
+    out.continuous = remote.readingMode !== "paginated";
+  } else if (typeof remote.continuous === "boolean") {
+    out.continuous = remote.continuous;
+    out.readingMode = remote.continuous ? "continuous" : "paginated";
+  }
   if (typeof remote.spread === "boolean") out.spread = remote.spread;
   if (remote.direction === "auto" || remote.direction === "ltr" || remote.direction === "rtl") out.direction = remote.direction;
   if (remote.writingMode === "horizontal-tb" || remote.writingMode === "vertical-rl") out.writingMode = remote.writingMode;
@@ -450,7 +467,16 @@ export const useSettingsStore = create<Settings>((set) => ({
   setHyphenation: createSetAction("hyphenation", set),
   setPageMargin: createSetAction("pageMargin", set),
   setParagraphSpacing: createSetAction("paragraphSpacing", set),
-  setContinuous: createSetAction("continuous", set),
+  setContinuous: (continuous: boolean) =>
+    set({
+      continuous,
+      readingMode: continuous ? "continuous" : "paginated",
+    }),
+  setReadingMode: (readingMode: "paginated" | "scrolled" | "continuous") =>
+    set({
+      continuous: readingMode !== "paginated",
+      readingMode,
+    }),
   setDirection: createSetAction("direction", set),
   setSpread: createSetAction("spread", set),
   setWritingMode: createSetAction("writingMode", set),

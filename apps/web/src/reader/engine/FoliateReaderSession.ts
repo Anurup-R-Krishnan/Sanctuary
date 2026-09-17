@@ -42,6 +42,7 @@ export class FoliateReaderSession implements IReaderSession {
       continuous: options.continuous,
       direction: options.direction,
       readerBackground: options.readerBackground,
+      readingMode: options.readingMode,
       spread: options.spread,
       themeStyles: options.themeStyles,
       writingMode: options.writingMode,

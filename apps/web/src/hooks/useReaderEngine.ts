@@ -62,13 +62,14 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         readerForeground: state.readerForeground,
         textAlignment: state.textAlignment,
     }));
-    const { continuous, spread, direction, writingMode } = useSettingsShallow((state) => ({
+    const { readingMode, continuous, spread, direction, writingMode } = useSettingsShallow((state) => ({
         continuous: state.continuous,
         direction: state.direction,
+        readingMode: state.readingMode ?? (state.continuous ? "continuous" : "paginated"),
         spread: state.spread,
         writingMode: state.writingMode,
     }));
-    const builtFlowRef = useRef({ continuous, direction, spread, writingMode });
+    const builtFlowRef = useRef({ continuous, direction, readingMode, spread, writingMode });
 
     useEffect(() => {
         onUpdateProgressRef.current = onUpdateProgress;
@@ -126,8 +127,9 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         }
 
         const isMarkdownOrText = book.format === "markdown" || book.format === "md" || book.format === "txt";
-        const effectiveContinuous = isMarkdownOrText ? true : continuous;
-        builtFlowRef.current = { continuous: effectiveContinuous, direction, spread, writingMode };
+        const effectiveMode = isMarkdownOrText && readingMode === "paginated" ? "continuous" : readingMode;
+        const effectiveContinuous = effectiveMode !== "paginated";
+        builtFlowRef.current = { continuous: effectiveContinuous, direction, readingMode: effectiveMode, spread, writingMode };
         const styles = themeControllerRef.current.buildStyles(themeConfig);
 
         sessionRef.current = new ReaderSession({
@@ -140,6 +142,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             formatHint: book.format,
             initialCfi: book.lastLocation,
             readerBackground: themeConfig.readerBackground,
+            readingMode: effectiveMode,
             spread,
             themeStyles: styles,
             writingMode,
@@ -185,11 +188,10 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeBookId, activeBlob, containerRef]);
 
-    // Fast layout-mode switch: reuse the parsed book, only rebuild the view.
-    // Debounced so rapid toggling collapses into a single re-render.
     useEffect(() => {
         if (
             builtFlowRef.current.continuous === continuous &&
+            builtFlowRef.current.readingMode === readingMode &&
             builtFlowRef.current.spread === spread &&
             builtFlowRef.current.direction === direction &&
             builtFlowRef.current.writingMode === writingMode
@@ -199,29 +201,29 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         const timer = window.setTimeout(() => {
             const session = sessionRef.current;
             if (!session?.epubBook) {
-                // Book hasn't finished parsing yet; the creation effect
-                // already used the latest values, so just record them.
-                builtFlowRef.current = { continuous, direction, spread, writingMode };
+                builtFlowRef.current = { continuous, direction, readingMode, spread, writingMode };
                 return;
             }
             const styles = themeControllerRef.current.buildStyles(themeConfig);
             const isMarkdownOrText = book.format === "markdown" || book.format === "md" || book.format === "txt";
-            const effectiveContinuous = isMarkdownOrText ? true : continuous;
+            const effectiveMode = isMarkdownOrText && readingMode === "paginated" ? "continuous" : readingMode;
+            const effectiveContinuous = effectiveMode !== "paginated";
             session.setFlow({
                 bionicReading: themeConfig.bionicReading,
                 continuous: effectiveContinuous,
                 direction,
                 readerBackground: themeConfig.readerBackground,
+                readingMode: effectiveMode,
                 spread,
                 themeStyles: styles,
                 writingMode,
             }).then(() => {
-                builtFlowRef.current = { continuous: effectiveContinuous, direction, spread, writingMode };
+                builtFlowRef.current = { continuous: effectiveContinuous, direction, readingMode: effectiveMode, spread, writingMode };
             }).catch((err) => console.warn("Flow switch failed:", err));
         }, 150);
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [continuous, spread, direction, writingMode]);
+    }, [continuous, readingMode, spread, direction, writingMode]);
 
     // Actions
     const nextPage = useCallback(() => {

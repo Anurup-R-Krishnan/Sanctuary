@@ -120,6 +120,37 @@ describe("Foliate Reader Navigation & TOC", () => {
       },
     });
 
+    // 7. Verify readingMode options: paginated, scrolled, and continuous
+    await rendition.setFlow({
+      continuous: false,
+      readingMode: "paginated",
+      spread: false,
+      themeStyles: {},
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((rendition as any).scrollContinuity.getMode()).toBe("paginated");
+    expect(renderer?.getAttribute("flow")).toBe("paginated");
+
+    await rendition.setFlow({
+      continuous: true,
+      readingMode: "scrolled",
+      spread: false,
+      themeStyles: {},
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((rendition as any).scrollContinuity.getMode()).toBe("scrolled");
+    expect(renderer?.getAttribute("flow")).toBe("scrolled");
+
+    await rendition.setFlow({
+      continuous: true,
+      readingMode: "continuous",
+      spread: false,
+      themeStyles: {},
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((rendition as any).scrollContinuity.getMode()).toBe("continuous");
+    expect(renderer?.getAttribute("flow")).toBe("scrolled");
+
     rendition.destroy();
     adapter.destroy();
   });

@@ -610,12 +610,14 @@ export class FoliateRendition implements DocumentRendition {
     const isScrolledDoc =
       this.documentAdapter.format === "markdown" ||
       this.documentAdapter.rawBook.rendition?.layout === "scrolled";
-    const continuous = isScrolledDoc || Boolean(this.flowOptions.continuous);
-    const flow = continuous ? "scrolled" : "paginated";
-    renderer.setAttribute("flow", flow);
-    this.scrollContinuity.setEnabled(continuous);
+    const mode = this.flowOptions.readingMode ?? (this.flowOptions.continuous ? "continuous" : "paginated");
+    const effectiveMode = isScrolledDoc && mode === "paginated" ? "continuous" : mode;
+    const isScrolled = effectiveMode !== "paginated";
 
-    if (!continuous) {
+    renderer.setAttribute("flow", isScrolled ? "scrolled" : "paginated");
+    this.scrollContinuity.setMode(effectiveMode);
+
+    if (!isScrolled) {
       const containerWidth = (this.container?.clientWidth ?? 0) || (typeof window !== "undefined" ? window.innerWidth : 0);
       const shouldUseTwoUp = Boolean(this.flowOptions.spread && containerWidth >= 700);
       renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");
@@ -805,8 +807,10 @@ export class FoliateRendition implements DocumentRendition {
     const isScrolledDoc =
       this.documentAdapter.format === "markdown" ||
       this.documentAdapter.rawBook.rendition?.layout === "scrolled";
-    const continuous = isScrolledDoc || Boolean(this.flowOptions.continuous);
-    if (renderer && !continuous) {
+    const mode = this.flowOptions.readingMode ?? (this.flowOptions.continuous ? "continuous" : "paginated");
+    const effectiveMode = isScrolledDoc && mode === "paginated" ? "continuous" : mode;
+    const isScrolled = effectiveMode !== "paginated";
+    if (renderer && !isScrolled) {
       const containerWidth = width ?? ((this.container?.clientWidth ?? 0) || (typeof window !== "undefined" ? window.innerWidth : 0));
       const shouldUseTwoUp = Boolean(this.flowOptions.spread && containerWidth >= 700);
       renderer.setAttribute("max-column-count", shouldUseTwoUp ? "2" : "1");

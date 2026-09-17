@@ -1,4 +1,4 @@
-import { AlignCenter, AlignJustify, AlignLeft, BookOpen, Check, Columns2, Layers, Palette, Plus, Upload, X } from "lucide-react";
+import { AlignCenter, AlignJustify, AlignLeft, BookOpen, Check, Columns2, Infinity as InfinityIcon, Layers, Palette, Plus, Upload, X } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { CustomFontRecord } from "@/utils/db";
@@ -406,11 +406,12 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
           <div className="space-y-4">
             <ButtonGroup
               label="Reading Mode"
-              value={state.continuous ? "flow" : "paginated"}
-              onChange={(v) => state.setContinuous(v === "flow")}
+              value={state.readingMode ?? (state.continuous ? "continuous" : "paginated")}
+              onChange={(v) => state.setReadingMode(v as "paginated" | "scrolled" | "continuous")}
               options={[
                 { value: "paginated", label: "Pages", icon: <BookOpen className="w-4 h-4" /> },
-                { value: "flow", label: "Scroll", icon: <Layers className="w-4 h-4" /> },
+                { value: "scrolled", label: "Scroll", icon: <Layers className="w-4 h-4" /> },
+                { value: "continuous", label: "Infinite", icon: <InfinityIcon className="w-4 h-4" /> },
               ]}
             />
             {state.continuous && (

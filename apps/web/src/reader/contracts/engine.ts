@@ -21,6 +21,7 @@ export interface ReaderEngineOptions {
   formatHint?: string;
   initialCfi?: string;
   readerBackground?: string;
+  readingMode?: "paginated" | "scrolled" | "continuous";
   spread: boolean;
   themeStyles: Record<string, Record<string, string>>;
   writingMode?: "horizontal-tb" | "vertical-rl";
