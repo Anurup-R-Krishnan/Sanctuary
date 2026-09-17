@@ -95,20 +95,22 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
 
   return createPortal(
     <div
-      aria-label="Readability Metrics"
+      aria-labelledby="readability-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn pointer-events-auto"
       role="dialog"
-      tabIndex={-1}
     >
+      {/* Backdrop dismiss */}
+      <button
+        aria-label="Close readability modal"
+        className="fixed inset-0 bg-transparent cursor-default border-none"
+        onClick={onClose}
+        tabIndex={-1}
+        type="button"
+      />
+
       {/* Modal Container */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-light-primary dark:bg-dark-primary rounded-3xl shadow-2xl border border-light-border dark:border-dark-border flex flex-col z-10 custom-scrollbar text-light-text dark:text-dark-text">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-light-primary dark:bg-dark-primary rounded-3xl shadow-2xl border border-light-border dark:border-dark-border flex flex-col z-10 custom-scrollbar text-light-text dark:text-dark-text animate-scaleUp">
         {/* Header */}
         <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-md border-b border-light-border dark:border-dark-border">
           <div className="flex items-center gap-3">
