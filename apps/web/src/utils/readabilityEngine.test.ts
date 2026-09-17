@@ -182,7 +182,7 @@ describe("readabilityEngine", () => {
       );
     });
 
-    it("calculates lexical diversity, hapax legomena, and reading time", () => {
+    it("calculates vocabulary diversity, single-use words, and reading time", () => {
       const text = "A red fox saw another fox. One fox was red and quick.";
       const metrics = analyzeReadability(text, 100);
 

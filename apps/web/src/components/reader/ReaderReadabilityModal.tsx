@@ -91,7 +91,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
   if (!isOpen || !metrics) return null;
   if (typeof document === "undefined") return null;
 
-  const band = colorBandClasses[metrics.interpretation.colorBand];
+  const band = colorBandClasses[metrics.interpretation.colorBand] || colorBandClasses.sky;
 
   return createPortal(
     <div
@@ -219,13 +219,13 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
             <div className="p-3.5 rounded-xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border flex flex-col justify-between">
               <div className="flex items-center gap-1.5 text-light-text-muted dark:text-dark-text-muted text-xs">
                 <Hash className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
-                <span>Lexical Diversity</span>
+                <span>Vocabulary Variety</span>
               </div>
               <div className="mt-2">
                 <p className="text-xl font-bold text-light-text dark:text-dark-text">
                   {metrics.typeTokenRatio}%
                 </p>
-                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">Type-Token Ratio</p>
+                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">Unique word ratio</p>
               </div>
             </div>
 
@@ -282,7 +282,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
                 </span>
               </div>
               <div>
-                <span className="text-light-text-muted dark:text-dark-text-muted">Hapax Legomena (1×):</span>
+                <span className="text-light-text-muted dark:text-dark-text-muted">Words used once:</span>
                 <span className="ml-1.5 font-semibold text-light-text dark:text-dark-text">
                   {metrics.hapaxCount} ({metrics.hapaxPercentage}%)
                 </span>
@@ -295,10 +295,10 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
-                  Complex Vocabulary Preview
+                  Complex Words Preview
                 </h3>
                 <span className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
-                  Ranked by syllables & frequency
+                  Ranked by syllables and frequency
                 </span>
               </div>
 

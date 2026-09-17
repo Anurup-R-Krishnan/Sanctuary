@@ -315,7 +315,7 @@ export function ReaderZenFocusOverlay({
                   ~{estimatedWords}
                 </span>
                 <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted font-medium">
-                  Words Absorbed
+                  Words Read
                 </span>
               </div>
             </div>

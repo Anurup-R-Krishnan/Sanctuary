@@ -11,7 +11,7 @@ import {
   groupSessionsByDate,
 } from './readingActivityEngine';
 
-describe('Reading Activity Calendar Heatmap & Velocity Analytics Engine', () => {
+describe('readingActivityEngine', () => {
   describe('formatHourLabel', () => {
     it('formats 12-hour AM/PM representations correctly', () => {
       expect(formatHourLabel(0)).toBe('12 AM');

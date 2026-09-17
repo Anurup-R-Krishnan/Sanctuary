@@ -1,8 +1,5 @@
 /**
- * Reading Milestones & Achievement Badges Evaluation Engine
- *
- * Evaluates dynamic reading accomplishments across library books, reading sessions,
- * streaks, and circadian reading patterns.
+ * Reading milestones and achievement badge evaluation utilities.
  */
 
 import type { Badge, Book, SessionAggregates } from '@/types';
@@ -77,7 +74,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'books',
-    description: 'Complete 50 books in your sanctuary',
+    description: 'Complete 50 books',
     evaluate: (_, completed) => ({
       progress: Math.min(50, completed.length),
       unlocked: completed.length >= 50,
@@ -140,7 +137,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'streaks',
-    description: 'Reach a legendary 100-day reading streak',
+    description: 'Reach a 100-day reading streak',
     evaluate: (input) => {
       const best = Math.max(input.currentStreak, input.longestStreak);
       return {
@@ -155,7 +152,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
     target: 100,
   },
 
-  // ── Time (Immersion Hours) ────────────────────────────────────────────────
+  // ── Time (Hours Read) ─────────────────────────────────────────────────────
   {
     category: 'time',
     description: 'Read for 1 hour total',
@@ -174,7 +171,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'time',
-    description: 'Immerse for 10 hours total',
+    description: 'Read for 10 hours total',
     evaluate: (input) => {
       const mins = Math.round(input.aggregates.totalReadingTime);
       return {
@@ -206,7 +203,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'time',
-    description: 'Attain 100 hours of literary exploration',
+    description: 'Read for 100 hours total',
     evaluate: (input) => {
       const mins = Math.round(input.aggregates.totalReadingTime);
       return {
@@ -221,7 +218,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
     target: 6000,
   },
 
-  // ── Pages (Volume & Pages Turned) ─────────────────────────────────────────
+  // ── Pages (Pages Read) ────────────────────────────────────────────────────
   {
     category: 'pages',
     description: 'Read 100 pages',
@@ -240,7 +237,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'pages',
-    description: 'Turn 1,000 pages',
+    description: 'Read 1,000 pages',
     evaluate: (input) => {
       const pages = input.aggregates.totalPagesRead;
       return {
@@ -256,7 +253,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'pages',
-    description: 'Conquer 5,000 pages in your library',
+    description: 'Read 5,000 pages in your library',
     evaluate: (input) => {
       const pages = input.aggregates.totalPagesRead;
       return {
@@ -271,7 +268,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
     target: 5000,
   },
 
-  // ── Special Habits & Circadian Rhythm ──────────────────────────────────────
+  // ── Reading Habits ────────────────────────────────────────────────────────
   {
     category: 'habits',
     description: 'Read after midnight',

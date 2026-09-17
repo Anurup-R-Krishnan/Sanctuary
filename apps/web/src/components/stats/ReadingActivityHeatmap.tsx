@@ -315,15 +315,15 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
         </div>
       </div>
 
-      {/* Circadian Time-of-Day Rhythm Breakdown */}
+      {/* Time-of-Day Breakdown */}
       <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-xs font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
-              Circadian Reading Rhythm
+              Reading by Time of Day
             </h4>
             <p className="text-xs text-light-text dark:text-dark-text font-medium mt-0.5 capitalize">
-              Primary window: {circadian.peakPeriod}
+              Most active: {circadian.peakPeriod}
             </p>
           </div>
         </div>

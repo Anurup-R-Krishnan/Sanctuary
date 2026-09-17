@@ -197,7 +197,7 @@ export function DailyDigestModal({
                 Daily Highlight Digest
               </h2>
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                Spaced retrieval reflection for {todayStr}
+                Daily review for {todayStr}
               </p>
             </div>
           </div>
@@ -234,7 +234,7 @@ export function DailyDigestModal({
             <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
               <RotateCw className="w-6 h-6 animate-spin text-light-text-muted" />
               <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
-                Curating today&apos;s retrieval deck...
+                Loading today&apos;s highlights...
               </p>
             </div>
           ) : items.length === 0 ? (
@@ -247,8 +247,8 @@ export function DailyDigestModal({
                   No Highlights in Sanctuary Yet
                 </h3>
                 <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
-                  As you read books, select meaningful passages to highlight or take marginalia notes.
-                  Sanctuary will automatically schedule 5 quotes every day for cognitive spaced retrieval.
+                  As you read books, select meaningful passages to highlight or take notes.
+                  Sanctuary will schedule highlights for daily review.
                 </p>
               </div>
             </div>
@@ -259,11 +259,10 @@ export function DailyDigestModal({
               </div>
               <div>
                 <h3 className="text-base font-medium text-light-text dark:text-dark-text">
-                  Daily Retrieval Complete!
+                  Daily Review Complete!
                 </h3>
                 <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
-                  You reviewed all {summary.totalCount} highlights scheduled for today.
-                  Spaced intervals help encode knowledge into long-term recall.
+                  You reviewed all {summary.totalCount} highlights scheduled for today. Check back tomorrow for more.
                 </p>
               </div>
               <button
@@ -358,10 +357,10 @@ export function DailyDigestModal({
                       )}
                     </div>
 
-                    {/* Spaced Repetition Buttons */}
+                    {/* Review Rating Buttons */}
                     <div>
                       <p className="text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted mb-2 text-center">
-                        Rate retrieval ease:
+                        Rate recall:
                       </p>
                       <div className="grid grid-cols-3 gap-2">
                         <button

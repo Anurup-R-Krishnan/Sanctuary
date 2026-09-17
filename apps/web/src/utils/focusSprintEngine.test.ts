@@ -5,6 +5,7 @@ import {
   createInitialSprintState,
   estimateSprintWords,
   formatSprintTime,
+  playCompletionChime,
   playSingingBowlChime,
 } from "./focusSprintEngine";
 
@@ -82,10 +83,12 @@ describe("focusSprintEngine", () => {
     });
   });
 
-  describe("playSingingBowlChime", () => {
+  describe("playCompletionChime", () => {
     it("gracefully returns false when AudioContext is unavailable in test environment", async () => {
-      const result = await playSingingBowlChime(null);
+      const result = await playCompletionChime(null);
       expect(typeof result).toBe("boolean");
+      const aliasResult = await playSingingBowlChime(null);
+      expect(typeof aliasResult).toBe("boolean");
     });
 
     it("synthesizes harmonics when mock AudioContext is provided", async () => {
@@ -116,7 +119,7 @@ describe("focusSprintEngine", () => {
         state: "running",
       } as unknown as AudioContext;
 
-      const result = await playSingingBowlChime(mockContext);
+      const result = await playCompletionChime(mockContext);
       expect(result).toBe(true);
     });
   });

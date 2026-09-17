@@ -35,7 +35,7 @@ const mockLocalStorage = {
 // @ts-expect-error test polyfill
 globalThis.localStorage = mockLocalStorage;
 
-describe("digestEngine — Daily Highlight Digest & Spaced Retrieval", () => {
+describe("digestEngine", () => {
   beforeEach(() => {
     mockLocalStorage.clear();
   });

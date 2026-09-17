@@ -354,7 +354,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
                     ? `No characters, locations, or terms match "${searchQuery}".`
                     : selectedCategory !== 'all'
                     ? `No ${selectedCategory} entities detected in this passage.`
-                    : 'Start reading or expand scope to explore character dossiers across the book.'}
+                    : 'Start reading or expand scope to explore characters across the book.'}
                 </p>
               </div>
 
@@ -516,7 +516,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
         {/* Footer info */}
         <div className="p-3 border-t border-light-border dark:border-dark-border text-[11px] text-light-text-muted dark:text-dark-text-muted flex items-center justify-between shrink-0 bg-light-secondary/60 dark:bg-dark-secondary/60">
           <span>Press <kbd className="font-mono bg-light-border/60 dark:bg-dark-border/60 border border-light-border dark:border-dark-border px-1 py-0.5 rounded text-[10px] text-light-text dark:text-dark-text">X</kbd> to toggle</span>
-          <span>Heuristic NER • Zero external calls</span>
+          <span>Book Index</span>
         </div>
       </div>
     </div>,

@@ -103,9 +103,8 @@ function getAudioContext(customContext?: AudioContext | null): AudioContext | nu
 
 /**
  * Plays a peaceful completion chime using Web Audio API.
- * Asset-free with zero downloaded audio files.
  */
-export async function playSingingBowlChime(
+export async function playCompletionChime(
   customContext?: AudioContext | null
 ): Promise<boolean> {
   try {
@@ -157,4 +156,5 @@ export async function playSingingBowlChime(
   }
 }
 
-export const playCompletionChime = playSingingBowlChime;
+export const playSingingBowlChime = playCompletionChime;
+

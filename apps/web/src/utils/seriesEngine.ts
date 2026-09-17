@@ -1,8 +1,5 @@
 /**
- * Book Series Organization, Reading Order & Auto-Next Progression Engine
- *
- * Provides heuristic extraction of series metadata from titles and tags,
- * sequential collation, missing volume detection, and auto-next book resolution.
+ * Book series organization, reading order, and progression utilities.
  */
 
 import type { Book } from '@/types';

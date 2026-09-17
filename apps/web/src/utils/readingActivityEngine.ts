@@ -1,8 +1,7 @@
 /**
- * Reading Activity Calendar Heatmap & Velocity Analytics Engine
- *
- * Provides calendar grid generation, intensity calibration, time-of-day circadian
- * distribution analysis, and reading velocity metrics with zero external dependencies.
+ * Reading activity calendar and velocity analytics utilities.
+ * Provides calendar grid generation, intensity calibration, time-of-day
+ * distribution analysis, and reading velocity calculations.
  */
 
 import type { ReadingSession } from '@/types';

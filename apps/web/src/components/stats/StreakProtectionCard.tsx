@@ -172,7 +172,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
       {showExplanation && (
         <div className="text-xs space-y-2 text-light-text-muted dark:text-dark-text-muted bg-amber-500/5 dark:bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20">
           <p className="font-semibold text-light-text dark:text-dark-text">
-            🛡️ Habit Grace Shields: Never Lose a Streak to Life Circumstances
+            🛡️ Grace Shields: Reading Streak Protection
           </p>
           <ul className="list-disc list-inside space-y-1 pl-1">
             <li>
@@ -275,7 +275,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
             ) : (
               <div className="mt-3 py-2 px-3 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-semibold flex items-center gap-2">
                 <Trophy className="w-4 h-4" />
-                <span>Apex Diamond Status Achieved! Over 100 days of consistent reading.</span>
+                <span>Diamond Status Achieved! Over 100 days of consistent reading.</span>
               </div>
             )}
           </div>

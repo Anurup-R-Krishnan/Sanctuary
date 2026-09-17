@@ -159,7 +159,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 Reader Theme & Contrast Studio
               </h2>
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                WCAG 2.1 ocular ergonomics, atmospheric palettes & OLED power tuning
+                Custom palettes, contrast verification, and reading themes
               </p>
             </div>
           </div>
@@ -186,7 +186,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 {isOled && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                     <Zap className="w-3 h-3" />
-                    0W OLED
+                    True Black (OLED)
                   </span>
                 )}
                 <span
@@ -222,17 +222,17 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 className="text-sm font-serif leading-relaxed"
                 style={{ color: draftFg }}
               >
-                It was the best of times, it was the worst of times. Sanctuary balances typographic
-                beauty with biological eye comfort. Adjust paper tint and ink shade to find your
-                natural cadence across direct sunlight, warm bedside reading, or pitch-black night.
+                It was the best of times, it was the worst of times. Adjust background color and text
+                contrast to find a comfortable reading experience across daylight, warm lamp light, or
+                dark environments.
               </p>
             </div>
           </div>
 
-          {/* Curated Atmospheric Palettes */}
+          {/* Preset Palettes */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted mb-3">
-              Curated Reader Palettes
+              Theme Palettes
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
               {COLOR_PRESETS.map((preset) => {
@@ -295,7 +295,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 className="text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline flex items-center gap-1"
               >
                 <Contrast className="w-3.5 h-3.5" />
-                <span>Auto-Contrast Ink</span>
+                <span>Auto-Contrast Text</span>
               </button>
             </div>
 

@@ -1,8 +1,8 @@
 /**
- * WCAG 2.1 Relative Luminance & Ergonomic Contrast Engine
+ * WCAG 2.1 Relative Luminance & Contrast Utilities
  *
  * Implements W3C WCAG 2.1 relative luminance and contrast ratio algorithms
- * for visual ergonomics, OLED power optimization, and accessible e-reading themes.
+ * for accessible e-reading themes.
  */
 
 export interface WcagRating {

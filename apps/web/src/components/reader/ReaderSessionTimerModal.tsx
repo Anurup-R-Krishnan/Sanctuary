@@ -333,7 +333,7 @@ export function ReaderSessionTimerModal({
                 </span>
               </div>
               <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted">
-                Gentle 528 Hz solfeggio relaxation tone
+                Plays a chime when your reading session ends
               </p>
             </div>
           </div>
