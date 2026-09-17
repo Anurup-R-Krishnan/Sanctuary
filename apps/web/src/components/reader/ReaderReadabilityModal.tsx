@@ -4,7 +4,7 @@ import {
   CheckCircle2,
   Clock,
   GraduationCap,
-  Sparkles,
+  Hash,
   X,
 } from "lucide-react";
 import React, { useEffect, useMemo } from "react";
@@ -120,7 +120,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
                 className="text-base font-semibold text-light-text dark:text-dark-text leading-tight"
                 id="readability-modal-title"
               >
-                Readability & Cognitive Complexity
+                Readability Metrics
               </h2>
               <p className="text-xs text-light-text-muted dark:text-dark-text-muted truncate max-w-sm">
                 {chapterLabel}
@@ -216,7 +216,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
 
             <div className="p-3.5 rounded-xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border flex flex-col justify-between">
               <div className="flex items-center gap-1.5 text-light-text-muted dark:text-dark-text-muted text-xs">
-                <Sparkles className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
+                <Hash className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
                 <span>Lexical Diversity</span>
               </div>
               <div className="mt-2">

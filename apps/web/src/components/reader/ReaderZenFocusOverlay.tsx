@@ -1,10 +1,10 @@
 import {
   Check,
   Flame,
+  Moon,
   Pause,
   Play,
   RotateCcw,
-  Sparkles,
   Timer,
   X,
 } from "lucide-react";
@@ -174,7 +174,7 @@ export function ReaderZenFocusOverlay({
         <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-light-primary/90 dark:bg-dark-primary/90 backdrop-blur-xl border border-light-border dark:border-dark-border shadow-lg text-light-text dark:text-dark-text">
           {/* Zen Icon Pill */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-light-accent dark:text-dark-accent">
-            <Sparkles className="w-3.5 h-3.5" />
+            <Moon className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Zen Focus</span>
           </div>
 

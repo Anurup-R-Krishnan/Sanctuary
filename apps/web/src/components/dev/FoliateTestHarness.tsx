@@ -15,52 +15,46 @@ const THEMES = {
 };
 
 const SAMPLE_MARKDOWN = `---
-title: "The Architecture of Sanctuary"
-author: "Sanctuary Engineering"
+title: "Technical Notes: Distributed Systems"
+author: "Engineering Handbook"
 date: "2026-09-17"
-tags: [architecture, reader, python, mermaid]
+tags: [systems, architecture, notes]
 ---
 
-# The Architecture of Sanctuary
+# Technical Notes: Distributed Systems
 
-Welcome to Sanctuary's multi-format continuous reader engine.
+A primer on event ordering, storage boundaries, and replication.
 
-## Python Execution Core
+## Request Pipeline
 
 \`\`\`python
 import asyncio
 from typing import Dict, Any
 
-class ReaderPipeline:
-    """Core multi-format reader engine coordinator."""
-    def __init__(self, book_id: str):
-        self.book_id = book_id
+class Pipeline:
+    def __init__(self, node_id: str):
+        self.node_id = node_id
         self.cache: Dict[str, Any] = {}
 
-    async def fetch_manifest(self) -> Dict[str, Any]:
-        """Fetch, verify, and decrypt book sections."""
+    async def fetch_record(self, record_id: str) -> Dict[str, Any]:
         await asyncio.sleep(0.01)
-        return {"id": self.book_id, "sections": 12, "status": "active"}
+        return {"id": record_id, "status": "active"}
 \`\`\`
 
-## System Architecture Diagram
+## Data Flow
 
 \`\`\`mermaid
 graph TD;
-    Client[Sanctuary Web UI] --> Worker[Cloudflare Worker API];
-    Worker --> D1[(D1 Database & Vectorize)];
-    Worker --> R2[(R2 Vault Storage)];
-    Client --> Foliate[Foliate Engine];
-    Foliate --> Parser[Multi-Format Parser Pipeline];
+    Client[Web Client] --> Gateway[API Gateway];
+    Gateway --> Cache[(Primary Cache)];
+    Gateway --> Storage[(Persistent Store)];
 \`\`\`
 
-## Interactive Checklist
+## Verification Checklist
 
-- [x] Deep ZIP signature sniffing (EPUB, CBZ, FBZ)
-- [x] PalmDOC vs AZW3/KF8 boundary disambiguation
-- [x] ChatGPT-style luxury code cards with clipboard copy
-- [x] Theme-adaptive color-mix variables (Sepia, Paper, OLED)
-- [ ] Offline SQLite vector indexing
+- [x] Idempotent request retry policy
+- [x] Structured health check probes
+- [x] Graceful shutdown handling
 `;
 
 export const FoliateTestHarness: React.FC = () => {

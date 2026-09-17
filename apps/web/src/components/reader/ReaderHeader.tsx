@@ -9,14 +9,15 @@ import {
     List,
     Maximize2,
     Minimize2,
+    Moon,
     Search,
     Settings,
-    Sparkles,
+    SlidersHorizontal,
     Users,
     Waves,
     Zap,
 } from "lucide-react";
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 
 import type { Book } from "@/types";
 
@@ -90,6 +91,33 @@ function ReaderHeader({
     const showFloatingCapsule = useSettings((state) => state.showFloatingCapsule);
     const currentStreak = useStatsStore((state) => state.stats.currentStreak);
 
+    const [showToolsMenu, setShowToolsMenu] = useState(false);
+    const toolsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!showToolsMenu) return;
+        const handleOutsideClick = (e: MouseEvent) => {
+            if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
+                setShowToolsMenu(false);
+            }
+        };
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setShowToolsMenu(false);
+            }
+        };
+        document.addEventListener("mousedown", handleOutsideClick);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("mousedown", handleOutsideClick);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [showToolsMenu]);
+
+    const hasActiveTool = Boolean(
+        isTTSActive || isZenModeActive || isXRayActive || isAutoScrollActive || isReadabilityActive || isAmbientActive
+    );
+
     const ActionBtn = ({ icon: Icon, label, onClick, active }: {
         icon: React.ElementType;
         label: string;
@@ -106,6 +134,44 @@ function ReaderHeader({
             icon={<Icon className="w-5 h-5" strokeWidth={1.5} />}
             variant="ghost"
         />
+    );
+
+    const ToolItem = ({
+        active,
+        icon: Icon,
+        label,
+        onClick,
+        shortcut,
+    }: {
+        active?: boolean;
+        icon: React.ElementType;
+        label: string;
+        onClick: () => void;
+        shortcut?: string;
+    }) => (
+        <button
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                active
+                    ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent"
+                    : "text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+            }`}
+            onClick={(e) => {
+                e.stopPropagation();
+                setShowToolsMenu(false);
+                onClick();
+            }}
+            type="button"
+        >
+            <div className="flex items-center gap-2.5">
+                <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                <span>{label}</span>
+            </div>
+            {shortcut && (
+                <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted font-mono px-1.5 py-0.5 rounded bg-light-border/50 dark:bg-dark-border/50">
+                    {shortcut}
+                </span>
+            )}
+        </button>
     );
 
     const getTranslucentBg = (bg: string, alphaHex: string = "E6"): string => {
@@ -190,62 +256,88 @@ function ReaderHeader({
                     <div className="w-px h-4 bg-light-border dark:bg-dark-border mx-1" />
                     <ActionBtn icon={List} label="Contents" onClick={onToggleTOC} />
                     <ActionBtn icon={Search} label="Search" onClick={onToggleSearch} />
-                    {onToggleTTS && (
-                        <ActionBtn 
-                            icon={Headphones} 
-                            label="Read Aloud" 
-                            onClick={onToggleTTS} 
-                            active={isTTSActive} 
-                        />
-                    )}
-                    {onToggleSpeedReader && (
-                        <ActionBtn 
-                            icon={Zap} 
-                            label="Speed Read" 
-                            onClick={onToggleSpeedReader} 
-                        />
-                    )}
-                    {onToggleReadability && (
-                        <ActionBtn 
-                            active={isReadabilityActive}
-                            icon={BarChart2} 
-                            label="Readability & Complexity" 
-                            onClick={onToggleReadability} 
-                        />
-                    )}
-                    {onToggleZenMode && (
-                        <ActionBtn 
-                            active={isZenModeActive}
-                            icon={Sparkles} 
-                            label="Zen Focus (Z)" 
-                            onClick={onToggleZenMode} 
-                        />
-                    )}
-                    {onToggleXRay && (
-                        <ActionBtn 
-                            active={isXRayActive}
-                            icon={Users} 
-                            label="X-Ray Dossier (X)" 
-                            onClick={onToggleXRay} 
-                        />
-                    )}
-                    {onToggleAutoScroll && (
-                        <ActionBtn 
-                            active={isAutoScrollActive}
-                            icon={ChevronsDown} 
-                            label="Auto-Scroll (A)" 
-                            onClick={onToggleAutoScroll} 
-                        />
-                    )}
-                    {onToggleAmbient && (
-                        <ActionBtn 
-                            icon={Waves} 
-                            label="Ambient Soundscapes" 
-                            onClick={onToggleAmbient} 
-                            active={isAmbientActive} 
-                        />
-                    )}
                     <ActionBtn icon={Highlighter} label="Annotations" onClick={onToggleAnnotations} />
+
+                    {/* Reading Tools Dropdown */}
+                    <div className="relative" ref={toolsRef}>
+                        <ActionBtn 
+                            icon={SlidersHorizontal} 
+                            label="Reading Tools" 
+                            onClick={() => setShowToolsMenu((prev) => !prev)} 
+                            active={showToolsMenu || hasActiveTool} 
+                        />
+                        {hasActiveTool && !showToolsMenu && (
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-light-accent dark:bg-dark-accent ring-2 ring-light-primary dark:ring-dark-primary pointer-events-none" />
+                        )}
+
+                        {showToolsMenu && (
+                            <div
+                                className="absolute right-0 top-full mt-2 w-52 p-1.5 rounded-2xl backdrop-blur-2xl shadow-2xl border border-light-border dark:border-dark-border animate-slideDown flex flex-col gap-0.5 z-50"
+                                style={{ backgroundColor: getTranslucentBg(readerBackground, "F5") }}
+                            >
+                                {onToggleTTS && (
+                                    <ToolItem
+                                        active={isTTSActive}
+                                        icon={Headphones}
+                                        label="Read Aloud"
+                                        onClick={onToggleTTS}
+                                    />
+                                )}
+                                {onToggleAutoScroll && (
+                                    <ToolItem
+                                        active={isAutoScrollActive}
+                                        icon={ChevronsDown}
+                                        label="Auto-Scroll"
+                                        onClick={onToggleAutoScroll}
+                                        shortcut="A"
+                                    />
+                                )}
+                                {onToggleSpeedReader && (
+                                    <ToolItem
+                                        icon={Zap}
+                                        label="Speed Reader"
+                                        onClick={onToggleSpeedReader}
+                                    />
+                                )}
+                                {onToggleXRay && (
+                                    <ToolItem
+                                        active={isXRayActive}
+                                        icon={Users}
+                                        label="X-Ray"
+                                        onClick={onToggleXRay}
+                                        shortcut="X"
+                                    />
+                                )}
+                                {onToggleReadability && (
+                                    <ToolItem
+                                        active={isReadabilityActive}
+                                        icon={BarChart2}
+                                        label="Readability"
+                                        onClick={onToggleReadability}
+                                        shortcut="M"
+                                    />
+                                )}
+                                {onToggleZenMode && (
+                                    <ToolItem
+                                        active={isZenModeActive}
+                                        icon={Moon}
+                                        label="Zen Focus"
+                                        onClick={onToggleZenMode}
+                                        shortcut="Z"
+                                    />
+                                )}
+                                {onToggleAmbient && (
+                                    <ToolItem
+                                        active={isAmbientActive}
+                                        icon={Waves}
+                                        label="Ambient Sound"
+                                        onClick={onToggleAmbient}
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     <ActionBtn icon={Settings} label="Appearance" onClick={onToggleSettings} />
 
                     <div className="hidden sm:block w-px h-4 bg-light-border dark:bg-dark-border mx-1" />

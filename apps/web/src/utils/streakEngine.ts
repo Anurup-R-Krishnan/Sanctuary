@@ -1,8 +1,5 @@
 /**
- * Smart Reading Streaks, Grace Shields & Habit Protection Engine
- *
- * Provides timezone-aware streak tracking, automated grace shield protection,
- * progressive flame milestone tiers, and redemption streak repair challenges.
+ * Daily reading streak tracking and habit statistics.
  */
 
 /**

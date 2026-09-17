@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, Layers, Search, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, Layers, Search, X } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -152,7 +152,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
                       type="button"
                       className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white dark:text-black text-xs font-bold transition-all shadow-sm shrink-0"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <BookOpen className="w-3.5 h-3.5" />
                       <span>Continue Vol. {series.nextBookToRead.seriesIndex}</span>
                       <ChevronRight className="w-3 h-3" />
                     </button>

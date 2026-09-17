@@ -2,13 +2,14 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Calendar,
   Check,
   CheckCircle2,
   Copy,
   ExternalLink,
   MessageSquare,
+  Quote,
   RotateCw,
-  Sparkles,
   X,
 } from "lucide-react";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
@@ -189,7 +190,7 @@ export function DailyDigestModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-secondary/60 dark:bg-dark-secondary/60">
           <div className="flex items-center space-x-3">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-light-accent/10 text-light-accent dark:text-dark-accent">
-              <Sparkles className="w-4 h-4" />
+              <Calendar className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-light-text dark:text-dark-text">
@@ -434,7 +435,7 @@ export function DailyDigestModal({
                     title="Generate high-DPI quote card"
                     type="button"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
+                    <Quote className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
                     <span className="hidden sm:inline">Quote Card</span>
                   </button>
 

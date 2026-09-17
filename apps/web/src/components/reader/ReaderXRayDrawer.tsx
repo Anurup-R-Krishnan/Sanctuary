@@ -6,7 +6,6 @@ import {
   ExternalLink,
   MapPin,
   Search,
-  Sparkles,
   User,
   Users,
   X,
@@ -129,7 +128,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
       case 'location':
         return <MapPin className="w-3.5 h-3.5" />;
       case 'concept':
-        return <Sparkles className="w-3.5 h-3.5" />;
+        return <BookOpen className="w-3.5 h-3.5" />;
       default:
         return null;
     }
@@ -181,7 +180,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
             </div>
             <div>
               <h2 className="text-base font-semibold leading-tight flex items-center gap-2">
-                X-Ray Dossier
+                X-Ray
                 <span className="text-xs px-2 py-0.5 rounded-full bg-light-border/60 dark:bg-dark-border/60 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted font-normal font-mono">
                   {displayedEntities.length}
                 </span>
@@ -222,7 +221,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
             )}
 
             <button
-              aria-label="Close X-Ray Dossier"
+              aria-label="Close X-Ray"
               className="p-1.5 rounded-lg text-light-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
               onClick={onClose}
               type="button"
@@ -304,7 +303,7 @@ export const ReaderXRayDrawer: React.FC<ReaderXRayDrawerProps> = ({
                   onClick={() => setSelectedCategory('concept')}
                   type="button"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <BookOpen className="w-3 h-3" />
                   Terms ({termsCount})
                 </button>
               )}

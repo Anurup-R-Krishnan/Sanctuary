@@ -1,9 +1,5 @@
 /**
- * RSVP (Rapid Serial Visual Presentation) Token Engine
- *
- * Decomposes continuous reading text into sequential RSVP tokens, computes the
- * Optimal Recognition Point (ORP) fixation anchor to minimize ocular saccades,
- * and dynamically calculates punctuation micro-pauses for natural cadence.
+ * RSVP (Rapid Serial Visual Presentation) tokenization and timing helpers.
  */
 
 export interface RsvpToken {
@@ -18,15 +14,7 @@ export interface RsvpToken {
 }
 
 /**
- * Computes the 0-indexed Optimal Recognition Point (ORP) letter position
- * based on word character length.
- *
- * ORP anchors:
- * - 0 to 1 char: index 0
- * - 2 to 5 chars: index 1
- * - 6 to 9 chars: index 2
- * - 10 to 13 chars: index 3
- * - > 13 chars: index 4
+ * Computes the 0-indexed letter fixation position based on word length.
  */
 export function calculateOrpIndex(length: number): number {
   if (length <= 1) return 0;
@@ -37,8 +25,7 @@ export function calculateOrpIndex(length: number): number {
 }
 
 /**
- * Computes the cadence multiplier factoring in sentence endings, clause commas,
- * long words, and paragraph endings.
+ * Computes the cadence multiplier factoring in punctuation and word length.
  */
 export function calculateDurationMultiplier(
   raw: string,
@@ -56,7 +43,7 @@ export function calculateDurationMultiplier(
     multiplier += 0.5;
   }
 
-  // Long words (> 10 core characters): +25% cognitive processing pause
+  // Long words (> 10 characters): slight pause
   if (coreWord.length > 10) {
     multiplier += 0.25;
   }

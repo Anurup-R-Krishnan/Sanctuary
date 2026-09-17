@@ -286,7 +286,7 @@ def vae_loss(x: tf.Tensor):
       expect(codeCell).not.toBeNull();
       expect(codeCell?.getAttribute("data-execution_count")).toBe("7");
 
-      // ChatGPT-style luxury Code Card container and header
+      // Code card container and header
       const codeCard = document.querySelector("figure.code-card");
       expect(codeCard).not.toBeNull();
 

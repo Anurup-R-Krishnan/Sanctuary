@@ -2,8 +2,8 @@ import {
   AlertTriangle,
   Check,
   CheckCircle2,
+  Contrast,
   Palette,
-  Sparkles,
   Trash2,
   X,
   Zap,
@@ -294,7 +294,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 type="button"
                 className="text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline flex items-center gap-1"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Contrast className="w-3.5 h-3.5" />
                 <span>Auto-Contrast Ink</span>
               </button>
             </div>

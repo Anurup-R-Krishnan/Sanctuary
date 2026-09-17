@@ -1,5 +1,4 @@
 import {
-  BarChart2,
   BookOpen,
   Check,
   Copy,
@@ -9,7 +8,6 @@ import {
   Underline,
   Users,
   Volume2,
-  Zap,
 } from "lucide-react";
 import React, { memo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -37,13 +35,11 @@ interface ReaderSelectionMenuProps {
 
 function ReaderSelectionMenuImpl({
   onAddNote,
-  onAnalyzeReadability,
   onCopy,
   onCreateQuoteCard,
   onDefine,
   onHighlight,
   onSpeak,
-  onSpeedRead,
   onUnderline,
   onXRay,
   selection,
@@ -172,32 +168,15 @@ function ReaderSelectionMenuImpl({
             onClick={onCreateQuoteCard}
           />
         )}
-        <div className="w-px h-8 bg-light-border dark:bg-dark-border shrink-0" />
         <ActionBtn
           ariaLabel="Speak selection"
           icon={Volume2}
           label="Speak"
           onClick={onSpeak}
         />
-        {onSpeedRead && (
-          <ActionBtn
-            ariaLabel="Speed read selection"
-            icon={Zap}
-            label="Speed"
-            onClick={onSpeedRead}
-          />
-        )}
-        {onAnalyzeReadability && (
-          <ActionBtn
-            ariaLabel="Analyze readability and complexity"
-            icon={BarChart2}
-            label="Metrics"
-            onClick={onAnalyzeReadability}
-          />
-        )}
         {onXRay && (
           <ActionBtn
-            ariaLabel="Lookup character in X-Ray Dossier"
+            ariaLabel="Lookup in X-Ray"
             icon={Users}
             label="X-Ray"
             onClick={onXRay}

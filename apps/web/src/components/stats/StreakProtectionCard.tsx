@@ -1,4 +1,4 @@
-import { Info, RotateCcw, Shield, ShieldAlert, ShieldCheck, Sparkles, Trophy } from 'lucide-react';
+import { Flame, Info, RotateCcw, Shield, ShieldAlert, ShieldCheck, Trophy } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import type { ReadingSession } from '@/types';
@@ -164,7 +164,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
 
       {/* Motivational message banner */}
       <div className="text-xs font-medium text-light-text/90 dark:text-dark-text/90 bg-light-surface/60 dark:bg-dark-surface/60 px-3.5 py-2.5 rounded-xl border border-light-border dark:border-dark-border flex items-center gap-2">
-        <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
+        <Flame className="w-4 h-4 shrink-0 text-amber-500" />
         <span>{smartStreak.statusMessage}</span>
       </div>
 
@@ -274,7 +274,7 @@ export function StreakProtectionCard({ dailyGoal, sessions }: StreakProtectionCa
               </div>
             ) : (
               <div className="mt-3 py-2 px-3 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-semibold flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
+                <Trophy className="w-4 h-4" />
                 <span>Apex Diamond Status Achieved! Over 100 days of consistent reading.</span>
               </div>
             )}

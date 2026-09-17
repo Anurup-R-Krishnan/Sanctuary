@@ -1,4 +1,4 @@
-import { ChevronDown, Filter, Globe, Grid3X3, List, SortAsc, Sparkles } from "lucide-react";
+import { Calendar, ChevronDown, Filter, Globe, Grid3X3, List, SortAsc } from "lucide-react";
 import React from "react";
 
 import type { FilterOption, SortOption, ViewMode } from "@/types";
@@ -166,7 +166,7 @@ export function LibraryToolbar({
             onClick={onOpenDailyDigest}
             variant="secondary"
           >
-            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+            <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
             <span className="hidden sm:inline whitespace-nowrap">Daily Digest</span>
           </Button>
         )}

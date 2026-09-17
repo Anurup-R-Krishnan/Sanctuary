@@ -170,14 +170,7 @@ export class FoliateRendition implements DocumentRendition {
     await this.applyFlowToRenderer();
   }
 
-  // Listens on the renderer (foliate-paginator), not the outer <foliate-view>.
-  // <foliate-view> re-wraps the renderer's "relocate" event before re-dispatching
-  // it, and that wrapped shape has no top-level `index` (it nests under
-  // `section.current` instead) — every read of `detail.index` on the outer
-  // event silently defaulted to 0, forever, which is why progress never moved
-  // past chapter one's own weight. The renderer's own event carries the raw
-  // `{ index, fraction, range }` this class actually needs; `cfi` is
-  // recovered via the view's own (public) getCFI(index, range).
+  // Listen on renderer to receive { index, fraction, range } relocate payload.
   private setupRelocateListener(): void {
     const renderer = this.view.renderer;
     if (!renderer) return;

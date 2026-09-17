@@ -1,8 +1,5 @@
 /**
- * Focus Sprint Engine & Web Audio Harmonic Chime Synthesizer
- *
- * Manages timed reading focus sprints and synthesizes peaceful, asset-free
- * harmonic singing-bowl chimes via the Web Audio API upon sprint completion.
+ * Focus sprint timer utilities and completion chime synthesizer.
  */
 
 export const FOCUS_SPRINT_PRESETS = [15, 25, 45, 60] as const;
@@ -86,24 +83,34 @@ export function estimateSprintWords(
   return Math.round(elapsedMinutes * safeWpm);
 }
 
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext(customContext?: AudioContext | null): AudioContext | null {
+  if (customContext !== undefined) {
+    return customContext;
+  }
+  if (typeof window === "undefined") return null;
+  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) return null;
+    sharedAudioContext = new AudioContextClass();
+  }
+  return sharedAudioContext;
+}
+
 /**
- * Synthesizes a peaceful Tibetan singing bowl harmonic chime using Web Audio API.
- * Completely asset-free with zero downloaded audio files.
+ * Plays a peaceful completion chime using Web Audio API.
+ * Asset-free with zero downloaded audio files.
  */
 export async function playSingingBowlChime(
   customContext?: AudioContext | null
 ): Promise<boolean> {
   try {
-    let ctx = customContext;
-    if (!ctx) {
-      const AudioContextClass =
-        (typeof window !== "undefined" && window.AudioContext) ||
-        (typeof window !== "undefined" &&
-          (window as unknown as { webkitAudioContext: typeof AudioContext })
-            .webkitAudioContext);
-      if (!AudioContextClass) return false;
-      ctx = new AudioContextClass();
-    }
+    const ctx = getAudioContext(customContext);
+    if (!ctx) return false;
 
     if (ctx.state === "suspended") {
       await ctx.resume();

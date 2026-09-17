@@ -1,12 +1,5 @@
 /**
- * Chapter Readability & Cognitive Complexity Metrics Engine.
- *
- * Provides instantaneous, client-side linguistic evaluation of chapter passages:
- * - Phonetically calibrated syllable counting for English vocabulary
- * - Flesch Reading Ease & Flesch-Kincaid Grade Level
- * - Gunning Fog Index for formal education equivalence
- * - Lexical Diversity (Type-Token Ratio & Hapax Legomena)
- * - Polysyllabic vocabulary frequency distribution
+ * Text readability calculations: Flesch Reading Ease, Flesch-Kincaid, and Gunning Fog.
  */
 
 export interface ChapterReadabilityMetrics {
@@ -49,7 +42,7 @@ export interface ReadabilityInterpretation {
 }
 
 /**
- * Counts syllables in an English word using phonetic morphology rules.
+ * Estimates syllables in a word.
  */
 export function countSyllables(rawWord: string): number {
   if (!rawWord) return 0;
@@ -85,7 +78,7 @@ export function countSyllables(rawWord: string): number {
 }
 
 /**
- * Splits prose text into discrete sentences, ignoring abbreviations and ellipses.
+ * Splits prose text into sentences, ignoring common abbreviations.
  */
 export function extractSentences(text: string): string[] {
   if (!text || typeof text !== "string") return [];
@@ -95,7 +88,7 @@ export function extractSentences(text: string): string[] {
     .replace(/\.{3,}/g, "…")
     .replace(
       /(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|vs|etc|e\.g|i\.e)\./gi,
-      (m) => m.replace(".", "@dot@")
+      (m) => m.replace(/\./g, "@dot@")
     );
 
   const rawSentences = normalized.split(/[.!?]+(?:\s+|$)/);

@@ -1,9 +1,5 @@
 /**
- * X-Ray Character & Entity Dossier Index Engine
- *
- * Lightweight, high-precision client-side Named Entity Recognition (NER),
- * honorific prefix binding, proper noun sequence collation, occurrence timeline
- * aggregation, and contextual excerpt generation with zero external dependencies.
+ * Character and entity extraction indexer for book X-Ray feature.
  */
 
 export type EntityType = 'character' | 'concept' | 'location';
@@ -630,7 +626,7 @@ function clusterEntities(
 
       for (const otherName of sortedNames) {
         if (otherName !== name && !mergedNames.has(otherName)) {
-          if (otherName === surname || otherName === firstname) {
+          if (otherName === surname || (otherName === firstname && !HONORIFIC_TITLES.has(firstname))) {
             const otherData = nameMap.get(otherName)!;
             aliases.push(otherName);
             totalMentions += otherData.mentions;
@@ -784,7 +780,7 @@ export function buildXRayBookIndex(
 
       for (const otherName of sortedNames) {
         if (otherName !== name && !mergedNames.has(otherName)) {
-          if (otherName === surname || otherName === firstname) {
+          if (otherName === surname || (otherName === firstname && !HONORIFIC_TITLES.has(firstname))) {
             const otherData = globalNameMap.get(otherName)!;
             aliases.push(otherName);
             totalMentions += otherData.totalMentions;
@@ -849,8 +845,6 @@ export function buildXRayBookIndex(
     else if (ent.category === 'location') locationsCount++;
     else termsCount++;
   }
-
-  entities.sort((a, b) => b.mentionsCount - a.mentionsCount);
 
   return {
     charactersCount,

@@ -1,4 +1,4 @@
-import { ChevronRight, Sparkles, X } from 'lucide-react';
+import { BookOpen, ChevronRight, X } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -65,7 +65,7 @@ export function ReaderNextInSeriesBanner({
             />
           ) : (
             <div className="w-9 h-9 rounded-xl bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4" />
+              <BookOpen className="w-4 h-4" />
             </div>
           )}
           <div className="overflow-hidden">

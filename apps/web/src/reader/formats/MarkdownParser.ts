@@ -304,7 +304,7 @@ function rehypeObsidianReader() {
 }
 
 /**
- * Creates the ChatGPT-style header with </> language indicator and clipboard Copy button.
+ * Creates code block header with language indicator and clipboard copy button.
  */
 function createCodeHeaderElement(langDisplay: string, isMermaid: boolean): Element {
   const iconPolyline = isMermaid
@@ -430,7 +430,7 @@ function createCodeHeaderElement(langDisplay: string, isMermaid: boolean): Eleme
 }
 
 /**
- * Decorates code blocks with ChatGPT-style luxury cards, header badges, and copy buttons.
+ * Wraps code blocks with header badges and copy buttons.
  */
 function rehypeCodeCardEnhancer() {
   return (tree: Root) => {
@@ -932,7 +932,7 @@ html[data-theme="light"] .shiki span {
   text-decoration: var(--shiki-light-text-decoration) !important;
 }
 
-/* ChatGPT-Style Luxury Code Block Cards */
+/* Code blocks */
 figure.code-card {
   position: relative;
   margin: 1.6rem 0;
@@ -1075,7 +1075,7 @@ figure.mermaid-card .mermaid svg {
   height: auto !important;
 }
 
-/* Jupyter Notebook Cell and Terminal Architecture */
+/* Notebook cells */
 .cell {
   position: relative;
   margin: 1.75rem 0;
@@ -1146,7 +1146,7 @@ tr:nth-child(even) td {
   background-color: color-mix(in srgb, currentColor 2.5%, transparent);
 }
 
-/* Deluxe Obsidian and GFM Callouts */
+/* Callouts */
 .callout {
   margin: 1.6rem 0;
   padding: 1rem 1.25rem;

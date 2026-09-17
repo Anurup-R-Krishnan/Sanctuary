@@ -1,10 +1,5 @@
 /**
- * Hands-Free Continuous Auto-Scroll & Calibrated Pacing Engine.
- *
- * Implements delta-time sub-pixel accumulation for buttery smooth scrolling
- * across varying display refresh rates (60 Hz, 120 Hz, 144 Hz).
- * Provides WPM velocity calibration, user interaction pause handling,
- * and visual pacer tracking.
+ * Auto-scroll velocity calculation and delta accumulator utilities.
  */
 
 export interface AutoScrollPreset {
@@ -32,7 +27,7 @@ export const DEFAULT_AUTO_SCROLL_VELOCITY = 36;
 export const DEFAULT_AUTO_RESUME_DELAY_MS = 2500;
 
 /**
- * Clamps auto-scroll velocity within safe physiological reading limits.
+ * Clamps auto-scroll velocity within bounds.
  */
 export function clampVelocity(velocity: number): number {
   if (typeof velocity !== "number" || isNaN(velocity)) {

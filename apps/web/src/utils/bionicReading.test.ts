@@ -12,7 +12,7 @@ beforeAll(() => {
   ensureTestDom();
 });
 
-describe("bionicReading — Saccade Acceleration & Fixation Engine", () => {
+describe("bionicReading", () => {
   describe("getFixationCount", () => {
     it("returns 0 for empty or negative lengths", () => {
       expect(getFixationCount(0)).toBe(0);

@@ -1,8 +1,5 @@
 /**
- * Interactive Reading Goals & Time-Budgeted Session Timer Engine
- *
- * Provides session elapsed mathematics, cumulative daily goal tracking,
- * idle timeout detection, SVG circular progress calculations, and harmonic Web Audio chimes.
+ * Session timer utilities and progress ring geometry calculations.
  */
 
 export interface ProgressRingGeometry {
@@ -127,18 +124,27 @@ export function isUserInactive(
   return now - lastActivityTimestamp > thresholdMs;
 }
 
+let cachedTimerAudioCtx: AudioContext | null = null;
+
+function getTimerAudioContext(customAudioCtx?: AudioContext): AudioContext | null {
+  if (customAudioCtx) return customAudioCtx;
+  if (typeof window === "undefined") return null;
+  if (!cachedTimerAudioCtx || cachedTimerAudioCtx.state === "closed") {
+    const AudioCtxClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtxClass) return null;
+    cachedTimerAudioCtx = new AudioCtxClass();
+  }
+  return cachedTimerAudioCtx;
+}
+
 /**
- * Synthesizes a gentle harmonic Web Audio celebration chime (528 Hz & 660 Hz solfeggio tone)
- * when a reading session or daily goal is successfully achieved.
+ * Plays a session completion chime using Web Audio API.
  */
 export async function playSessionCompletionChime(customAudioCtx?: AudioContext): Promise<boolean> {
   try {
-    const AudioCtxClass =
-      typeof window !== "undefined"
-        ? window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-        : null;
-
-    const ctx = customAudioCtx || (AudioCtxClass ? new AudioCtxClass() : null);
+    const ctx = getTimerAudioContext(customAudioCtx);
     if (!ctx) return false;
     if (ctx.state === 'suspended') {
       await ctx.resume();
@@ -153,7 +159,6 @@ export async function playSessionCompletionChime(customAudioCtx?: AudioContext):
     masterGain.gain.exponentialRampToValueAtTime(0.18, now + 0.05);
     masterGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    // Fundamental tone: 528 Hz (relaxation harmonic)
     const osc1 = ctx.createOscillator();
     osc1.type = 'sine';
     osc1.frequency.setValueAtTime(528, now);
@@ -161,7 +166,6 @@ export async function playSessionCompletionChime(customAudioCtx?: AudioContext):
     osc1.start(now);
     osc1.stop(now + duration);
 
-    // Overtone: 660 Hz (perfect fifth harmonic)
     const osc2 = ctx.createOscillator();
     osc2.type = 'sine';
     osc2.frequency.setValueAtTime(660, now);

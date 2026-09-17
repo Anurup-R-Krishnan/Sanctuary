@@ -2,7 +2,7 @@ import {
   BookOpen,
   Keyboard,
   List,
-  Sparkles,
+  SlidersHorizontal,
   X,
 } from "lucide-react";
 import React, { useEffect } from "react";
@@ -49,13 +49,13 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     ],
   },
   {
-    icon: Sparkles,
-    title: "Focus & Reading Intelligence",
+    icon: SlidersHorizontal,
+    title: "Reading Tools",
     items: [
       { keys: ["Z"], description: "Zen Focus ambient reading mode" },
       { keys: ["A"], description: "Auto-scroll continuous reading" },
-      { keys: ["X"], description: "X-Ray character & location dossier" },
-      { keys: ["M"], description: "Readability & cognitive complexity" },
+      { keys: ["X"], description: "X-Ray character directory" },
+      { keys: ["M"], description: "Readability metrics" },
     ],
   },
 ];
