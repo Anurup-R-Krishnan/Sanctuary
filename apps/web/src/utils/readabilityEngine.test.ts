@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import {
   analyzeReadability,
+  checkReadabilityWithRetext,
   countSyllables,
   extractSentences,
   extractWords,
@@ -203,6 +204,29 @@ describe("readabilityEngine", () => {
       expect(metrics.polysyllabicWords.length).toBeGreaterThanOrEqual(3);
       // Top word should have the highest syllables (extraordinary or communication)
       expect(metrics.polysyllabicWords[0].syllables).toBeGreaterThanOrEqual(4);
+    });
+
+    it("detects challenging sentences using retext-readability", () => {
+      const complexText =
+        "The incomprehensibility of this multidimensional epistemological taxonomy exacerbates systemic hermeneutical reconciliation problems.";
+      const metrics = analyzeReadability(complexText);
+      expect(metrics.difficultSentences.length).toBeGreaterThanOrEqual(1);
+      expect(metrics.difficultSentences[0].reason).toContain("Unexpected hard to read sentence");
+    });
+  });
+
+  describe("checkReadabilityWithRetext", () => {
+    it("returns empty array for empty or short text", () => {
+      expect(checkReadabilityWithRetext("")).toEqual([]);
+      expect(checkReadabilityWithRetext("Short text.")).toEqual([]);
+    });
+
+    it("identifies difficult sentences based on retext-readability algorithm consensus", () => {
+      const difficultText =
+        "This is an easy sentence. However, the incomprehensibility of this multidimensional epistemological taxonomy exacerbates systemic hermeneutical reconciliation problems.";
+      const warnings = checkReadabilityWithRetext(difficultText);
+      expect(warnings.length).toBeGreaterThanOrEqual(1);
+      expect(warnings[0].actual).toContain("incomprehensibility");
     });
   });
 });

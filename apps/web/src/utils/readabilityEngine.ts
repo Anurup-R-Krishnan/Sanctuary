@@ -1,12 +1,33 @@
 /**
- * Text readability calculations: Flesch Reading Ease, Flesch-Kincaid, and Gunning Fog.
+ * Readability analysis powered by retext-readability and standard formulas:
+ * Flesch Reading Ease, Flesch-Kincaid, Gunning Fog, Coleman-Liau, and Automated Readability Index.
  */
 
+import { automatedReadability } from "automated-readability";
+import { colemanLiau } from "coleman-liau";
+import { flesch } from "flesch";
+import { fleschKincaid } from "flesch-kincaid";
+import { gunningFog } from "gunning-fog";
+import { retext } from "retext";
+import retextReadability from "retext-readability";
+import { syllable } from "syllable";
+
+export interface DifficultSentence {
+  actual: string;
+  column?: number;
+  line?: number;
+  offset?: number;
+  reason: string;
+}
+
 export interface ChapterReadabilityMetrics {
+  automatedReadabilityIndex: number;
   averageSentenceLength: number;
   averageSyllablesPerWord: number;
+  colemanLiauIndex: number;
   complexWordCount: number;
   complexWordPercentage: number;
+  difficultSentences: DifficultSentence[];
   estimatedReadingMinutes: number;
   fleschKincaidGradeLevel: number;
   fleschReadingEase: number;
@@ -42,38 +63,22 @@ export interface ReadabilityInterpretation {
 }
 
 /**
- * Estimates syllables in a word.
+ * Estimates syllables in a word using standard phonological heuristics and the syllable library.
  */
 export function countSyllables(rawWord: string): number {
-  if (!rawWord) return 0;
+  if (!rawWord || typeof rawWord !== "string") return 0;
   const word = rawWord.toLowerCase().replace(/[^a-z]/g, "");
   if (!word) return 0;
   if (word.length <= 2) return 1;
 
-  let working = word;
-  const isLeEnding = /(?:[^aeiouy])le$/.test(working);
-
-  // Silent 'e' at end (not preceded by another 'e' and not ending with consonant+le)
-  if (working.endsWith("e") && !working.endsWith("ee") && !isLeEnding) {
-    working = working.slice(0, -1);
-  } else if (working.endsWith("ed") && !/(?:[td])ed$/.test(working)) {
-    working = working.slice(0, -2);
-  } else if (
-    working.endsWith("es") &&
-    !/(?:[sz]|ch|sh|x)es$/.test(working)
-  ) {
-    working = working.slice(0, -2);
+  let count = syllable(word);
+  // Phonological adjustment for regular English silent endings
+  if (count > 1 && /(?:[^td])ed$/.test(word) && !/(?:ee|ie)d$/.test(word)) {
+    count -= 1;
   }
-
-  // Count vowel groups
-  const vowelGroups = working.match(/[aeiouy]+/g);
-  let count = vowelGroups ? vowelGroups.length : 0;
-
-  // Words ending in consonant+le when le was trimmed or not picked up
-  if (isLeEnding && !working.endsWith("le")) {
+  if (/(?:[sz]|ch|sh|x)es$/.test(word) && count === 1) {
     count += 1;
   }
-
   return Math.max(1, count);
 }
 
@@ -175,7 +180,29 @@ export function interpretFleschScore(score: number): ReadabilityInterpretation {
 }
 
 /**
- * Computes comprehensive readability metrics.
+ * Checks text for challenging or hard-to-read sentences using retext-readability.
+ */
+export function checkReadabilityWithRetext(
+  text: string,
+  options?: { age?: number; minWords?: number; threshold?: number }
+): DifficultSentence[] {
+  if (!text || text.trim().length === 0) return [];
+  try {
+    const file = retext().use(retextReadability, options).processSync(text);
+    return file.messages.map((m) => ({
+      actual: typeof m.actual === "string" ? m.actual : "",
+      column: m.place && "start" in m.place ? m.place.start.column : undefined,
+      line: m.place && "start" in m.place ? m.place.start.line : undefined,
+      offset: m.place && "start" in m.place ? m.place.start.offset : undefined,
+      reason: m.reason,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Computes comprehensive readability metrics using retext-readability and standard formula libraries.
  */
 export function analyzeReadability(
   text: string,
@@ -189,10 +216,13 @@ export function analyzeReadability(
 
   if (totalWords === 0) {
     return {
+      automatedReadabilityIndex: 0,
       averageSentenceLength: 0,
       averageSyllablesPerWord: 0,
+      colemanLiauIndex: 0,
       complexWordCount: 0,
       complexWordPercentage: 0,
+      difficultSentences: [],
       estimatedReadingMinutes: 0,
       fleschKincaidGradeLevel: 0,
       fleschReadingEase: 100,
@@ -213,10 +243,12 @@ export function analyzeReadability(
   const wordSyllableMap = new Map<string, number>();
   let syllableCount = 0;
   let complexWordCount = 0;
+  let letterCount = 0;
 
   for (const word of words) {
     const freq = (wordFrequencyMap.get(word) || 0) + 1;
     wordFrequencyMap.set(word, freq);
+    letterCount += word.length;
 
     let syllables = wordSyllableMap.get(word);
     if (syllables === undefined) {
@@ -238,7 +270,7 @@ export function analyzeReadability(
     }
   }
 
-  // Polysyllabic words list (unique words with >= 3 syllables, ranked by frequency then syllables)
+  // Polysyllabic words list (unique words with >= 3 syllables, ranked by syllables then frequency)
   const polysyllabicWords: PolysyllabicWord[] = [];
   for (const [word, freq] of wordFrequencyMap.entries()) {
     const syllables = wordSyllableMap.get(word) || 0;
@@ -263,32 +295,70 @@ export function analyzeReadability(
   const typeTokenRatio = (uniqueWordCount / totalWords) * 100;
   const hapaxPercentage = (hapaxCount / totalWords) * 100;
 
-  // Flesch Reading Ease = 206.835 - 1.015 * (words / sentences) - 84.6 * (syllables / words)
-  const rawFre =
-    206.835 -
-    1.015 * averageSentenceLength -
-    84.6 * averageSyllablesPerWord;
-  const fleschReadingEase = Math.max(0, Math.min(100, Math.round(rawFre * 10) / 10));
+  // Use authoritative formula libraries
+  const rawFre = flesch({
+    sentence: sentenceCount,
+    syllable: syllableCount,
+    word: totalWords,
+  });
+  const fleschReadingEase = Number.isNaN(rawFre)
+    ? 100
+    : Math.max(0, Math.min(100, Math.round(rawFre * 10) / 10));
 
-  // Flesch-Kincaid Grade Level = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
-  const rawFkgl =
-    0.39 * averageSentenceLength +
-    11.8 * averageSyllablesPerWord -
-    15.59;
-  const fleschKincaidGradeLevel = Math.max(0, Math.round(rawFkgl * 10) / 10);
+  const rawFkgl = fleschKincaid({
+    sentence: sentenceCount,
+    syllable: syllableCount,
+    word: totalWords,
+  });
+  const fleschKincaidGradeLevel = Number.isNaN(rawFkgl)
+    ? 0
+    : Math.max(0, Math.round(rawFkgl * 10) / 10);
 
-  // Gunning Fog Index = 0.4 * ((words / sentences) + 100 * (complexWords / words))
-  const rawGunningFog = 0.4 * (averageSentenceLength + complexWordPercentage);
-  const gunningFogIndex = Math.max(0, Math.round(rawGunningFog * 10) / 10);
+  const rawGunningFog = gunningFog({
+    complexPolysillabicWord: complexWordCount,
+    sentence: sentenceCount,
+    word: totalWords,
+  });
+  const gunningFogIndex = Number.isNaN(rawGunningFog)
+    ? 0
+    : Math.max(0, Math.round(rawGunningFog * 10) / 10);
+
+  const rawAri = automatedReadability({
+    character: letterCount,
+    sentence: sentenceCount,
+    word: totalWords,
+  });
+  const automatedReadabilityIndex = Number.isNaN(rawAri)
+    ? 0
+    : Math.max(0, Math.round(rawAri * 10) / 10);
+
+  const rawCl = colemanLiau({
+    letter: letterCount,
+    sentence: sentenceCount,
+    word: totalWords,
+  });
+  const colemanLiauIndex = Number.isNaN(rawCl)
+    ? 0
+    : Math.max(0, Math.round(rawCl * 10) / 10);
 
   const safeWpm = Math.max(50, wpm);
   const estimatedReadingMinutes = Math.max(1, Math.ceil(totalWords / safeWpm));
 
+  // Retext-readability difficult sentence consensus
+  let difficultSentences: DifficultSentence[] = [];
+  if (totalWords >= 5) {
+    const textSample = text.length > 30000 ? text.slice(0, 30000) : text;
+    difficultSentences = checkReadabilityWithRetext(textSample);
+  }
+
   return {
+    automatedReadabilityIndex,
     averageSentenceLength: Math.round(averageSentenceLength * 10) / 10,
     averageSyllablesPerWord: Math.round(averageSyllablesPerWord * 100) / 100,
+    colemanLiauIndex,
     complexWordCount,
     complexWordPercentage: Math.round(complexWordPercentage * 10) / 10,
+    difficultSentences,
     estimatedReadingMinutes,
     fleschKincaidGradeLevel,
     fleschReadingEase,

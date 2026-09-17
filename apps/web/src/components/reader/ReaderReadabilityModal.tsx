@@ -322,12 +322,42 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Challenging Sentences (retext-readability) */}
+          {metrics.difficultSentences && metrics.difficultSentences.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
+                  Challenging Sentences ({metrics.difficultSentences.length})
+                </h3>
+                <span className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+                  retext-readability consensus
+                </span>
+              </div>
+
+              <div className="space-y-2 max-h-36 overflow-y-auto p-1 custom-scrollbar">
+                {metrics.difficultSentences.slice(0, 5).map((item, idx) => (
+                  <div
+                    className="p-3 rounded-xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border text-xs space-y-1"
+                    key={idx}
+                  >
+                    <p className="text-light-text dark:text-dark-text italic leading-relaxed">
+                      &ldquo;{item.actual}&rdquo;
+                    </p>
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                      {item.reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="sticky bottom-0 z-20 flex items-center justify-between px-6 py-3.5 bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-md border-t border-light-border/60 dark:border-dark-border/60">
           <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted hidden sm:block">
-            Formulas: Flesch Reading Ease, Flesch-Kincaid & Gunning Fog index.
+            Formulas: Flesch Reading Ease, Flesch-Kincaid, Gunning Fog & retext-readability.
           </p>
           <button
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold text-xs hover:opacity-90 transition-opacity"

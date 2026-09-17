@@ -253,7 +253,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
   },
   {
     category: 'pages',
-    description: 'Read 5,000 pages in your library',
+    description: 'Read 5,000 pages',
     evaluate: (input) => {
       const pages = input.aggregates.totalPagesRead;
       return {
@@ -307,13 +307,13 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
     },
     icon: 'compass',
     id: 'genre_explorer',
-    name: 'Genre Voyager',
+    name: 'Genre Explorer',
     rarity: 'rare',
     target: 3,
   },
   {
     category: 'special',
-    description: 'Read and complete every book in an entire series',
+    description: 'Complete every book in a series',
     evaluate: (input) => {
       const seriesMap = new Map<string, Book[]>();
       for (const b of input.books) {
@@ -337,7 +337,7 @@ const BADGE_DEFINITIONS: readonly BadgeDefinition[] = [
     },
     icon: 'layers',
     id: 'series_finisher',
-    name: 'Series Master',
+    name: 'Series Finisher',
     rarity: 'epic',
     target: 1,
   },
