@@ -397,10 +397,8 @@ export async function fetchCatalogFeed(
   const res = await api.fetchOpdsProxy(url, buildCatalogAuthHeader(catalog), OPDS_ACCEPT_HEADER);
 
   if (!res.ok) {
-    // Distinguish between our auth (no x-upstream-url) and upstream catalog rejecting credentials (has x-upstream-url)
-    if (res.status === 401 && res.headers.has("x-upstream-url")) {
-      throw new Error("This catalog rejected the saved credentials.");
-    }
+    if (res.status === 401 || res.status === 403) throw new Error("This catalog rejected the saved credentials.");
+    if (res.status === 429) throw new Error("Too many catalog requests. Try again in a few minutes.");
     throw new Error(`Failed to load catalog feed: ${res.status} ${res.statusText}`);
   }
 

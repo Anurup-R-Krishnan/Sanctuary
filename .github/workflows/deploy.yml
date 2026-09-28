@@ -1,4 +1,6 @@
-name: Deploy to Cloudflare Pages
+# Quality gate only. Deployment is done by Cloudflare Pages' Git integration
+# (project "sanctuaryreader"), which builds every push to main.
+name: CI
 
 on:
   push:
@@ -19,7 +21,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.2
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -33,34 +35,5 @@ jobs:
       - name: Unit & integration tests
         run: bun run --cwd apps/web test
 
-  deploy:
-    runs-on: ubuntu-latest
-    name: Build & deploy
-    needs: quality-gate
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build application
-        run: bun run web:build
-        env:
-          VITE_DISABLE_AUTH: "false"
-
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/web/dist --project-name=sanctuaryreader --commit-dirty=true
+      - name: Backend type check & tests
+        run: bunx tsc -p functions/tsconfig.json --noEmit && bun test functions

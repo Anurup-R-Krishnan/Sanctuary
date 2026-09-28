@@ -33,7 +33,7 @@ Run from the repo root.
 - `bun run web:build` — production web build → `apps/web/dist`.
 - `bun run check` — `tsc --noEmit` on `apps/web/tsconfig.json` only.
 - `bun run lint` — ESLint across the whole repo.
-- `bun run test` — the web app's test suite (the only suite that matters in CI).
+- `bun run test` — the web app's test suite.
 - `bun test functions` — backend unit tests; `bunx tsc -p functions/tsconfig.json --noEmit` typechecks the backend.
 - `bun run test:content` — the book-content repository test only.
 - `bun run mobile:dev` / `mobile:android` / `mobile:web` — Expo entry points.
@@ -49,8 +49,9 @@ only metadata (title, author, progress, bookmarks); R2 stores the actual EPUB
 bytes and cover art. Every write goes to local storage first, then through a
 coalescing `SyncQueue` to the edge. Auth is first-party: email + password on
 D1 (PBKDF2), opaque session tokens sent as `Authorization: Bearer` (no cookies)
-— see `functions/CLAUDE.md`. Guest mode is a first-class, fully offline path
-("Continue as Guest"; the desktop app starts there). With `DISABLE_AUTH=true`
+— see `functions/CLAUDE.md`. An account is optional: every client starts in the
+local, offline guest library, and the sign-in screen appears only when the user
+clicks Sign In in the header. With `DISABLE_AUTH=true`
 on a local host the backend maps every request to `"guest-user"`.
 `MigrationDialog` offers to upload a guest's local books after they sign in. `apps/mobile` reuses `packages/core`'s API client but
 has its own small Zustand store, AsyncStorage cache, and sync queues — it does
@@ -94,21 +95,23 @@ matter most:
 
 ## Deployment
 
-`.github/workflows/deploy.yml` runs a `quality-gate` job (`bun run check`,
-`bun run --cwd apps/web lint`, `bun run --cwd apps/web test`) on every push and
-PR, then deploys `apps/web/dist` to Cloudflare Pages on `main` via
-`wrangler-action`. The production build sets `VITE_DISABLE_AUTH: "false"`
-(sign-in available; guests still supported). `wrangler.toml` binds D1 (`SANCTUARY_DB`) and R2
-(`SANCTUARY_BUCKET`) and sets the Pages output dir to `apps/web/dist`.
+Cloudflare Pages' Git integration (project `sanctuaryreader`, the only Pages
+project for this app) builds and deploys every push to `main`. Dashboard build
+command: `bun run web:build` (the builder installs deps from `bun.lock` itself),
+output `apps/web/dist`. `wrangler.toml` is the builder's config source: its
+`[vars]` (`DISABLE_AUTH`, `BUN_VERSION`) and the D1 (`SANCTUARY_DB`) / R2
+(`SANCTUARY_BUCKET`) bindings override the dashboard — set variables there, not
+in the dashboard. Preview (branch) deployments are disabled because they would
+inherit the production bindings. The R2 bucket is private (no r2.dev URL).
+`.github/workflows/deploy.yml` is CI only: `bun run check`, web lint + tests,
+and the backend typecheck + `bun test functions`. It does not deploy.
 
-Note CI lints and tests only `apps/web` — changes to `apps/mobile` or
-`functions/` are not covered by the quality gate.
+Mobile and `cargo check` are not covered by CI.
 
 ## Desktop app (Tauri, `apps/web/src-tauri/`)
 
 - Wraps the web build: `beforeDevCommand: bun run dev:guest` (5173),
   `beforeBuildCommand: bun run build`, `frontendDist: ../dist`.
-- Starts in guest/offline mode (`appRuntime.isOfflineFirst` in `App.tsx`).
 - Native file access: `platform/nativeFiles.ts` (dialog + fs plugins).
   `hooks/useNativeBookEvents.ts` is mounted once in `App.tsx` and handles the
   File ▸ Add Book menu, files passed on launch (pulled via the
@@ -125,10 +128,10 @@ those are persisted device-type values, and existing D1 rows depend on them.
 
 ## Roadmap status (updated 2026-09-28)
 
-Done — tier A (owner priorities): Local pill removed · Clerk deleted, first-party
+Done — tier A (owner priorities): Local pill removed · Clerk deleted (production D1/R2 verified empty of old-account data), optional first-party
 auth on D1 (security-reviewed, end-to-end tested with wrangler) · Daily Digest
 removed · AI/marketing copy and "reading personality" removed · Catalogs fixed
-(tested against live Gutenberg feeds; proxy SSRF/XSS hardened) · Insights made
+(tested against live Gutenberg feeds; open to guests with a per-IP rate limit; proxy SSRF/XSS hardened) · Insights made
 honest, Vocabulary gets an All-words list with delete · daily goal is MINUTES
 everywhere (field name `dailyGoal` kept to avoid a migration) · empty library
 redesigned, one Add Book entry · new fonts + semantic token architecture, no
@@ -140,17 +143,15 @@ dead code removed (`FoliateEpubAdapter`, `utils/annotationExport`, ghost
 lightbox test, `web:tauri`, `test:desktop` → `test:content`).
 
 Open:
-- [ ] Existing D1 rows keyed by old Clerk ids are orphaned (see
-  `functions/CLAUDE.md` for the reassignment SQL). Decide before prod rollout.
-- [ ] Catalogs require sign-in (the proxy needs a user); guests — including the
-  desktop default — see "Sign in to browse online catalogs."
 - [ ] ~217 `dark:` variants remain: mostly deliberate status hues
   (emerald/amber/red-400) plus a few asymmetric pairs; legacy `light.*`/`dark.*`
   Tailwind colours are still defined. Finish and delete the legacy palette.
 - [ ] `index.tsx` still monkey-patches `HTMLIFrameElement.sandbox` (epub.js era).
   Harmless now that book content has a CSP, but remove once verified in the reader.
 - [ ] epub.js facade (`utils/epub.ts`, `FoliateReaderSession.setupShims()`;
+  `session.rendition` is now typed as `SessionRendition` — every member must
+  forward to FoliateRendition; it was `any` and silently lacked setStyles/
+  resize/setFlow/TTS, which broke all reader theme/typography changes;
   consumers `useReaderSearch`, `useReaderAnnotations`, `ReaderEngineHost`) —
   load-bearing ghost layer; planned refactor, not a cleanup.
-- [ ] CI covers only `apps/web` — add `bun test functions`,
-  `bunx tsc -p functions/tsconfig.json --noEmit` and `cargo check` gates.
+- [ ] CI has no `cargo check` or mobile gate.

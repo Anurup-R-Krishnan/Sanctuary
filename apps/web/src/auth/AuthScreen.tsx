@@ -5,10 +5,10 @@ import { authApiUrl, type AuthResponseUser } from "./authApi";
 import { useSanctuaryAuth } from "./useSanctuaryAuth";
 
 interface AuthScreenProps {
-  onContinueAsGuest: () => void;
+  onCancel: () => void;
 }
 
-export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
+export function AuthScreen({ onCancel }: AuthScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +61,7 @@ export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
         </div>
         <h1 className="font-sans text-3xl font-semibold text-fg tracking-tight">Sanctuary</h1>
         <p className="font-sans text-sm text-fg-muted mt-1.5 max-w-xs">
-          Sign in to sync your library and reading progress across devices
+          Optional. An account syncs your library and reading progress across devices.
         </p>
       </div>
 
@@ -140,10 +140,10 @@ export function AuthScreen({ onContinueAsGuest }: AuthScreenProps) {
       </div>
 
       <button
-        onClick={onContinueAsGuest}
+        onClick={onCancel}
         className="mt-8 px-5 py-2.5 rounded-xl text-sm font-medium text-fg-muted hover:text-fg bg-surface/40 hover:bg-surface/70 border border-line transition-all duration-instant shadow-xs"
       >
-        Continue as Guest (Offline only)
+        Not now
       </button>
     </div>
   );

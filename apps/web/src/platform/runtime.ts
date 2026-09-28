@@ -9,7 +9,6 @@ export interface AppRuntime {
    * sign-in, sync and online catalogs are hidden.
    */
   hasRemoteApi: boolean;
-  isOfflineFirst: boolean;
   platform: AppPlatform;
 }
 
@@ -21,6 +20,5 @@ export const appRuntime: AppRuntime = Object.freeze({
   canUseNativeFilePicker: isTauriRuntime(),
   hasRemoteApi: !isTauriRuntime() || Boolean(import.meta.env.VITE_API_BASE_URL),
   canUseNativeMenus: isTauriRuntime(),
-  isOfflineFirst: isTauriRuntime(),
   platform: isTauriRuntime() ? "desktop" : "web",
 });

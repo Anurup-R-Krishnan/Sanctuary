@@ -4,7 +4,7 @@
 #
 # Fixes:
 #   - Sets APPIMAGE_EXTRACT_AND_RUN=1 so linuxdeploy works without FUSE
-#   - The desktop app starts in guest/offline mode (appRuntime.isOfflineFirst). Export
+#   - The app starts in the local guest library (sign-in is optional). Export
 #     VITE_API_BASE_URL=https://<deployed-pages-site> before running to enable sign-in/sync;
 #     tauri's beforeBuildCommand builds the frontend, so there is no separate web build here.
 set -euo pipefail

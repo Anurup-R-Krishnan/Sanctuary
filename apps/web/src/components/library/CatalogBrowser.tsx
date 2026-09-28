@@ -93,14 +93,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
         setFeed(data);
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : "Failed to load catalog feed";
-        // Handle upstream catalog rejection (401 WITH x-upstream-url) vs. our own auth (401 WITHOUT x-upstream-url)
-        if (errMsg.includes("This catalog rejected the saved credentials")) {
-          setError("This catalog rejected the saved credentials.");
-        } else if (errMsg.includes("401")) {
-          setError("Sign in to browse online catalogs.");
-        } else {
-          setError(errMsg);
-        }
+        setError(errMsg);
       } finally {
         setIsLoading(false);
       }

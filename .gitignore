@@ -45,3 +45,6 @@ test-results/
 !apps/web/public/mobydick.epub
 .codegraph/
 .trace-mcp/
+
+# Wrangler local secrets
+.dev.vars
