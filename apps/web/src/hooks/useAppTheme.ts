@@ -15,8 +15,8 @@ export function useAppTheme() {
     root.classList.toggle("dark", theme === Theme.DARK);
     root.classList.toggle("reduce-motion", reduceMotion);
 
-    const bgColor = theme === Theme.DARK ? "#0f0e0d" : "#fefcf8";
-    document.body.style.backgroundColor = bgColor;
+    // Follow the --color-page token (index.css) so the page colour is defined once.
+    document.body.style.backgroundColor = "rgb(var(--color-page))";
     document.body.style.transition = reduceMotion ? "none" : "background-color 0.3s ease";
   }, [theme, reduceMotion]);
 

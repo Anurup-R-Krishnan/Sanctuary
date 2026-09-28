@@ -43,16 +43,20 @@ defined as **RGB channels** in `:root` and `.dark` so opacity modifiers work
 
 | Token           | Light (RGB channels)    | Dark (RGB channels)     | Usage                                      |
 |-----------------|-------------------------|-------------------------|--------------------------------------------|
-| `--color-page`  | `255 252 248`           | `15 14 13`              | Primary page/app background                |
-| `--color-surface` | `243 236 225`         | `40 34 28`              | Card/panel backgrounds, overlays           |
-| `--color-surface-raised` | `254 252 248`   | `28 25 22`              | Raised surfaces above surface              |
+| `--color-page`  | `255 255 255` (white)   | `15 14 13`              | Primary page/app background                |
+| `--color-surface` | `250 250 250`         | `40 34 28`              | Card/panel backgrounds, overlays           |
+| `--color-surface-raised` | `255 255 255`   | `28 25 22`              | Raised surfaces above surface              |
 | `--color-fg`    | `9 9 11`                | `250 250 250`           | Primary/body text                          |
 | `--color-fg-muted` | `113 113 122`        | `161 161 170`           | Secondary text, disabled, captions         |
-| `--color-line`  | `231 220 201`           | `51 43 34`              | Borders, dividers                          |
+| `--color-line`  | `228 228 231`           | `51 43 34`              | Borders, dividers                          |
 | `--color-accent` | `166 126 80` (gold)   | `200 160 106` (gold)    | Interactive accent, highlights, focus ring |
 | `--color-accent-fg` | `255 255 255` (white) | `15 14 13` (dark)      | Text/icons on accent backgrounds           |
 | `--color-danger` | `220 38 38` (red)      | `239 68 68` (light red) | Errors, destructive actions                |
 | `--color-success` | `34 197 94` (green)   | `74 222 128` (light green) | Confirmations, success states            |
+| `--color-subtle` | `250 250 250`         | `28 25 22`              | Quiet fills                                |
+| `--color-line-subtle` | `244 244 245`    | `28 25 22`              | Hairlines                                  |
+
+The light theme is white with neutral greys; gold is the only warm colour (accent).
 
 Tailwind utility mapping (always use the short form in components):
 - `text-fg`, `bg-fg`, `border-fg` — primary text and foreground

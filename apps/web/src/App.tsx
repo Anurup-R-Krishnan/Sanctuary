@@ -38,9 +38,6 @@ import { useProgressSync } from "./hooks/useProgressSync";
 import { useReadingSession } from "./hooks/useReadingSession";
 
 const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
-// The desktop app is offline-first: it opens straight into the local library,
-// and signing in to sync is optional (header "Sign In").
-const START_AS_GUEST = DISABLE_AUTH || appRuntime.isOfflineFirst;
 
 function App() {
   // Auth & Session
@@ -48,7 +45,9 @@ function App() {
   const { isLoaded, isSignedIn, user, signOut } = useSanctuaryAuth();
   const api = useSanctuaryApi();
   
-  const [explicitGuest, setExplicitGuest] = useState(START_AS_GUEST);
+  // An account is optional: everyone starts in the local (guest) library, and
+  // the sign-in screen only appears when asked for via the header.
+  const [isAuthScreenOpen, setIsAuthScreenOpen] = useState(false);
 
   const isGuest = mode === "guest";
   const isPersistent = mode === "authenticated";
@@ -61,10 +60,14 @@ function App() {
         setSession("authenticated", user.id);
       }
       // If mode is "guest", MigrationDialog handles the transition!
-    } else if (explicitGuest && mode === "initializing") {
+    } else if (mode === "initializing") {
       setSession("guest", null);
     }
-  }, [isLoaded, isSignedIn, user, mode, explicitGuest, setSession]);
+  }, [isLoaded, isSignedIn, user, mode, setSession]);
+
+  useEffect(() => {
+    if (isSignedIn) setIsAuthScreenOpen(false);
+  }, [isSignedIn]);
 
   // Global UI State
   const { theme, view, searchTerm, setView, setSearchTerm, toggleTheme } = useUIStore();
@@ -156,14 +159,13 @@ function App() {
 
   // Handlers
   const handleShowLogin = useCallback(() => {
-    setExplicitGuest(false);
+    setIsAuthScreenOpen(true);
   }, []);
 
   const handleSignOut = useCallback(async () => {
     if (isSignedIn) {
       await signOut();
     }
-    setExplicitGuest(false);
     resetSession();
   }, [isSignedIn, signOut, resetSession]);
 
@@ -189,8 +191,8 @@ function App() {
     );
   }
 
-  if (!DISABLE_AUTH && !isSignedIn && !explicitGuest) {
-    return <AuthScreen onContinueAsGuest={() => setExplicitGuest(true)} />;
+  if (!DISABLE_AUTH && !isSignedIn && isAuthScreenOpen) {
+    return <AuthScreen onCancel={() => setIsAuthScreenOpen(false)} />;
   }
 
   if (isRestoringSession) {

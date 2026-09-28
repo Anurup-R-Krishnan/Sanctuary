@@ -14,3 +14,6 @@ bucket_name = "sanctuary"
 
 [vars]
 DISABLE_AUTH = "false"
+# Read by the Pages Git builder (this file is its config source; dashboard
+# variables are ignored). Keep in step with CI's bun-version.
+BUN_VERSION = "1.4.2"

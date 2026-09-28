@@ -1,4 +1,6 @@
-import { errorJson, handleOptions, requireUser, CORS_HEADERS, SECURITY_HEADERS, type PagesContext } from "./_shared";
+import { clientIp, isRateLimited } from "../utils/authFlow";
+import { getSchemaReady } from "../utils/schemaCache";
+import { errorJson, handleOptions, CORS_HEADERS, SECURITY_HEADERS, type PagesContext } from "./_shared";
 
 export const onRequestOptions = () => handleOptions();
 
@@ -88,9 +90,16 @@ function capBytes(body: ReadableStream<Uint8Array>, limit: number): ReadableStre
 // send no CORS headers at all, which otherwise blocks every fetch straight
 // from the reader UI regardless of how permissive the server actually is
 // about who may read its content.
+// No account is needed: catalogs are public and an account is optional in the
+// app. Abuse is bounded per IP instead (the SSRF blocklist, type allowlist,
+// size cap and sandbox CSP below apply to everyone).
+const REQUESTS_PER_IP_PER_HOUR = 600;
+
 export async function onRequestGet({ env, request }: PagesContext): Promise<Response> {
-  const user = await requireUser(request, env);
-  if (user instanceof Response) return user;
+  await getSchemaReady(env.SANCTUARY_DB);
+  if (await isRateLimited(env.SANCTUARY_DB, `opds:ip:${clientIp(request)}`, REQUESTS_PER_IP_PER_HOUR, 60 * 60)) {
+    return errorJson("Too many catalog requests. Try again later.", 429);
+  }
 
   const url = new URL(request.url);
   const target = parseTargetUrl(url.searchParams.get("url"));

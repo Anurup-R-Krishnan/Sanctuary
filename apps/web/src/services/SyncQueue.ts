@@ -121,8 +121,9 @@ class SyncQueueManager {
   private status: SyncQueueStatus = "idle";
   private listeners = new Set<(status: SyncQueueStatus) => void>();
 
+  /** The API client for signed-in users; null for guests, whose data is local only. */
   getApi(): SanctuaryApiClient | null {
-    return this.api;
+    return this.isPersistent ? this.api : null;
   }
 
   getStatus(): SyncQueueStatus {

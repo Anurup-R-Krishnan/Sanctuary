@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
         short_name: 'Sanctuary',
         description: 'An offline-first EPUB reader.',
         theme_color: '#caa16eff',
-        background_color: '#F8F4EC',
+        background_color: '#FFFFFF',
         display: 'standalone',
         start_url: '/',
         icons: [

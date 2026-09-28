@@ -38,7 +38,7 @@ touch it.
 | `api/annotations.ts` | `GET`/`POST`/`DELETE` | Highlights, underlines, and marginalia notes, keyed by `bookId` + `cfi`. `GET` filters by `?bookId=`. |
 | `api/settings.ts` | `GET`/`PUT` | Reader preferences as a single row. `GET` returns a sparse object (nulls stripped) so the client can merge partials; `PUT` writes only the columns present in `SETTINGS_COLUMNS`. Has a catch-all `onRequest` for unsupported verbs. |
 | `api/goals.ts` | `GET` | Aggregates sessions into day/week/month goal windows, each with `targetMinutes`, `totalMinutes`, and `progressPercent`. |
-| `api/opds-proxy.ts` | `GET /api/opds-proxy?url=` | CORS-bypass proxy for OPDS catalog feeds. Forwards `X-Target-Authorization` / `X-Target-Accept` to the target host. 45 s timeout, 150 MB response cap, and an SSRF blocklist (`isBlockedHost` rejects loopback/private hostnames). |
+| `api/opds-proxy.ts` | `GET /api/opds-proxy?url=` | CORS-bypass proxy for OPDS feeds and book downloads. **No account needed** (catalogs work for guests); limited to 600 requests / IP / hour via `auth_attempts`. Redirects followed by hand with every hop re-checked by `isBlockedHost` (loopback, private, CGNAT, IPv6 ULA/link-local, NAT64); `X-Target-Authorization` dropped on origin change; content-type allowlist; streamed 150 MB cap; `CSP: sandbox` on responses. |
 
 ## utils/
 
@@ -63,16 +63,6 @@ Auth-related tables (added with first-party auth):
 - `auth_sessions` — `id TEXT PRIMARY KEY`, `user_id TEXT NOT NULL`, `token_hash TEXT NOT NULL UNIQUE`, `created_at INTEGER NOT NULL`, `expires_at INTEGER NOT NULL`. Index on `user_id` for fast session lookups.
 - `auth_attempts` — `key TEXT PRIMARY KEY`, `count INTEGER NOT NULL`, `window_start INTEGER NOT NULL`. Rate-limiting state per IP and email.
 
-## Migration note: Clerk user IDs
-
-Existing D1 rows in `books`, `user_settings`, `reading_sessions`, and `annotations` are keyed by Clerk user IDs (format `user_...`). These rows are left untouched and remain orphaned unless an operator reassigns them:
-
-```sql
--- Example: reassign a Clerk user's books to a new first-party user
-UPDATE books SET user_id = '<new-user-id>' WHERE user_id = 'user_<clerk-id>';
-```
-
-This is intentional to avoid data loss. If you deployed with Clerk and have production users, plan a migration before rolling out first-party auth.
 
 ## `api/_shared.ts` conventions
 

@@ -88,7 +88,6 @@ We use **Husky** to enforce quality:
 - [Boxy Svg](https://boxy-svg.com) : simple & effective svg editor
 - [Bun](https://bun.sh) : super fast runtime for JavaScript and TypeScript
 - [Cloudflare Workers](https://workers.cloudflare.com/) : edge deployment platform
-- [Clerk](https://clerk.com/) : authentication and user management
 - [Epub.js](https://github.com/futurepress/epub.js/) : epub rendering library
 - [Eslint](https://eslint.org) : super tool to find & fix problems
 - [Github](https://github.com) : for all their great work year after year, pushing OSS forward

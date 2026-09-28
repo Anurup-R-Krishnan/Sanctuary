@@ -10,6 +10,36 @@ import type { TTSControllerState } from "../foliate/FoliateTTSController";
 import { FoliateDocumentAdapter } from "../foliate/FoliateDocumentAdapter";
 import { FoliateRendition } from "../foliate/FoliateRendition";
 
+/**
+ * What hooks and components may call on `session.rendition`. Every member must
+ * forward to FoliateRendition — this was `any`, which hid that setStyles,
+ * resize, setFlow, updateBackground, getCurrentDocument and getTTSController
+ * were missing (reader themes, typography and TTS silently did nothing).
+ */
+export type SessionRendition = Pick<
+  FoliateRendition,
+  | "clearSearch"
+  | "getContents"
+  | "getCurrentDocument"
+  | "getTTSController"
+  | "resize"
+  | "setFlow"
+  | "setStyles"
+  | "updateBackground"
+> & {
+  annotations: FoliateRendition["annotations"];
+  destroy(): void;
+  display(target?: string): Promise<boolean>;
+  next(): Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  off(event: string, cb: any): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  on(event: string, cb: any): void;
+  prev(): Promise<void>;
+  search: FoliateRendition["search"];
+  themes: { default(styles: Record<string, Record<string, string>>, bionicReading?: boolean): void };
+};
+
 export type FoliateReaderSessionOptions = ReaderEngineOptions;
 export type FoliateReaderSessionCallbacks = ReaderEngineCallbacks;
 
@@ -27,8 +57,7 @@ export class FoliateReaderSession implements IReaderSession {
   public totalLocations = 1;
 
   // Compatibility shims for useReaderEngine, useReaderAnnotations, and useReaderSearch
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public rendition: any = null;
+  public rendition: SessionRendition | null = null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public epubBook: any = null;
 
@@ -134,24 +163,28 @@ export class FoliateReaderSession implements IReaderSession {
   private setupShims(): void {
     // Provide a compatibility interface so existing hooks (useReaderEngine, useReaderAnnotations)
     // continue to function smoothly without throwing undefined errors.
+    const inst = this.renditionInstance;
+    if (!inst) return;
     this.rendition = {
-      annotations: this.renditionInstance?.annotations,
-      clearSearch: () => this.renditionInstance?.clearSearch(),
+      annotations: inst.annotations,
+      clearSearch: () => inst.clearSearch(),
       destroy: () => this.destroy(),
       display: (target?: string) => this.display(target ?? ""),
-      getContents: () => this.renditionInstance?.getContents() ?? [],
+      getContents: () => inst.getContents(),
+      getCurrentDocument: () => inst.getCurrentDocument(),
+      getTTSController: () => inst.getTTSController(),
       next: () => this.next(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      off: (event: string, cb: any) => this.renditionInstance?.off(event, cb),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      on: (event: string, cb: any) => this.renditionInstance?.on(event, cb),
+      off: (event, cb) => inst.off(event, cb),
+      on: (event, cb) => inst.on(event, cb),
       prev: () => this.prev(),
-      search: (query: string) => this.renditionInstance?.search(query) ?? Promise.resolve([]),
+      resize: (width?: number, height?: number) => inst.resize(width, height),
+      search: (query: string) => inst.search(query),
+      setFlow: (options: ReaderFlowOptions) => inst.setFlow(options),
+      setStyles: (styles, bionicReading) => inst.setStyles(styles, bionicReading),
       themes: {
-        default: (styles: Record<string, Record<string, string>>, bionicReading?: boolean) => {
-          this.renditionInstance?.setStyles(styles, bionicReading);
-        },
+        default: (styles, bionicReading) => inst.setStyles(styles, bionicReading),
       },
+      updateBackground: (color: string) => inst.updateBackground(color),
     };
 
     this.epubBook = {

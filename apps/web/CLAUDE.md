@@ -24,7 +24,7 @@ covers the web app's internal architecture only.
 | `components/vocabulary/` | Vocabulary list and word card UI. | 1 |
 | `config/` | Constants (mime types, keyboard maps, feature flags). | 3 |
 | `hooks/` | Reader lifecycle (useReaderEngine, useReaderSearch, useReaderAnnotations), auth (useSanctuaryAuth), theme, progress sync, reading session. | 16 |
-| `platform/` | Runtime detection (`appRuntime`: platform, canUseNativeFilePicker, canUseNativeMenus, isOfflineFirst), native file dialog, native book event listeners. | 2 |
+| `platform/` | Runtime detection (`appRuntime`: platform, canUseNativeFilePicker, canUseNativeMenus, hasRemoteApi), native file dialog, native book event listeners. | 2 |
 | `reader/engine/` | Core reader session (FoliateReaderSession, ReaderThemeController), spine-weight progress estimator, PBKDF2 password derivation. | 6 |
 | `reader/formats/` | Multi-format parser registry (EPUB, FB2, MOBI, TXT, HTML, Markdown, PDF), format detector. | 8 |
 | `reader/contracts/` | TypeScript interfaces: BookDocument, DocumentRendition, ReaderSession, ReaderEngine, Progress, Locator. | 5 |
@@ -158,9 +158,10 @@ All stores use Zustand's simple `create()` pattern with atomic setters. `useSett
    - Offers to upload all locally-stored books to the server.
    - Uses LibraryService to sync each book's metadata + blob.
 
-6. **Guest Mode** (`App.tsx`, `START_AS_GUEST`):
-   - Enabled by `VITE_DISABLE_AUTH=true` (env var) or `appRuntime.isOfflineFirst` (desktop).
-   - Skips AuthScreen; goes straight to the library.
+6. **Guest Mode is the default** (`App.tsx`):
+   - Every visit starts in the local guest library; an account is optional.
+   - `AuthScreen` renders only after the header's Sign In (`isAuthScreenOpen`); "Not now" returns to the library. Signing out returns to guest mode, not the auth screen.
+   - `VITE_DISABLE_AUTH=true` hides sign-in entirely. So does `appRuntime.hasRemoteApi === false` (desktop build without `VITE_API_BASE_URL`).
    - All reads/writes stay local. No token is needed.
 
 ## Desktop Hooks & Native Integration
@@ -168,7 +169,7 @@ All stores use Zustand's simple `create()` pattern with atomic setters. `useSett
 ### Runtime Detection (`platform/runtime.ts`)
 
 - `appRuntime.platform === "desktop"` / `canUseNativeFilePicker` — true when running in Tauri (detected via `window.__TAURI_INTERNALS__`).
-- `appRuntime.isOfflineFirst` — true if desktop (forces START_AS_GUEST).
+- `appRuntime.hasRemoteApi` — false on desktop builds without `VITE_API_BASE_URL`; hides sign-in and catalogs.
 
 ### File Dialog (`platform/nativeFiles.ts`)
 
