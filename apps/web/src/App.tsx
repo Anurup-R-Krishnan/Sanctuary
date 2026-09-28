@@ -259,7 +259,6 @@ function App() {
                 onBrowseCatalog={appRuntime.hasRemoteApi ? handleBrowseCatalog : undefined}
                 onOpenBook={startSession}
                 onOpenLibrary={() => setView(View.LIBRARY)}
-                onShowLogin={isGuest && appRuntime.hasRemoteApi ? handleShowLogin : undefined}
               />
             )}
             {v === View.LIBRARY && (

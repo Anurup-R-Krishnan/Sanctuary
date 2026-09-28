@@ -17,35 +17,11 @@ interface HomeViewProps {
   onBrowseCatalog?: () => void;
   onOpenBook: (book: Book) => void;
   onOpenLibrary: () => void;
-  onShowLogin?: () => void;
 }
-
-const FEATURES = [
-  {
-    numeral: "I",
-    text: "EPUB, PDF, MOBI, AZW3, FB2, CBZ comics, Markdown, HTML and plain text.",
-    title: "Any book file",
-  },
-  {
-    numeral: "II",
-    text: "Books are kept on this device and open without a connection. Syncing is optional.",
-    title: "Yours, offline",
-  },
-  {
-    numeral: "III",
-    text: "Highlight passages, write notes and export them as Markdown or JSON.",
-    title: "Notes that stay",
-  },
-  {
-    numeral: "IV",
-    text: "Themes, fine typography controls, read aloud, bionic reading and a dyslexia-friendly font.",
-    title: "Read your way",
-  },
-];
 
 const reveal = (step: number): CSSProperties => ({ animationDelay: `${step * 90}ms`, animationFillMode: "both" });
 
-export default function HomeView({ onAddBook, onBrowseCatalog, onOpenBook, onOpenLibrary, onShowLogin }: HomeViewProps) {
+export default function HomeView({ onAddBook, onBrowseCatalog, onOpenBook, onOpenLibrary }: HomeViewProps) {
   const books = useBookStore((state) => state.books);
   const recentBooks = useBookStore((state) => state.recentBooks);
   const upload = useBookUpload(onAddBook);
@@ -153,33 +129,6 @@ export default function HomeView({ onAddBook, onBrowseCatalog, onOpenBook, onOpe
             ))}
           </ul>
         </section>
-      )}
-
-      <section className="animate-fadeInUp" style={reveal(6)}>
-        <div className="rule-ornament font-display text-xl" aria-hidden="true">
-          <span>❧</span>
-        </div>
-        <dl className="mt-10 grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-4">
-          {FEATURES.map((feature) => (
-            <div key={feature.title}>
-              <dt className="flex items-baseline gap-3">
-                <span className="folio text-sm text-accent">{feature.numeral}</span>
-                <span className="font-display text-lg font-medium tracking-tight text-fg">{feature.title}</span>
-              </dt>
-              <dd className="mt-2 text-sm leading-relaxed text-fg-muted">{feature.text}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      {onShowLogin && (
-        <p className="animate-fadeInUp text-center text-sm text-fg-muted" style={reveal(7)}>
-          Reading on more than one device?{" "}
-          <button className="font-medium text-accent underline-offset-4 hover:underline" onClick={onShowLogin} type="button">
-            Sign in to sync
-          </button>
-          . An account is optional.
-        </p>
       )}
     </div>
   );

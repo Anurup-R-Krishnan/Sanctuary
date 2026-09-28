@@ -5,7 +5,6 @@ import { useSyncStatus } from "@/services/SyncQueue";
 import { Theme } from "@/types";
 
 import AddBookButton from "./AddBookButton";
-import { Button } from "./Button";
 import { IconButton } from "./IconButton";
 import { Input } from "./Input";
 
@@ -33,7 +32,7 @@ function BrandMark({ onClick }: { onClick?: () => void }) {
       onClick={onClick}
       type="button"
     >
-      <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shadow-sm">
+      <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shadow-paper ring-1 ring-inset ring-black/10">
         <BookOpen className="w-4 h-4 text-accent-fg" strokeWidth={1.75} />
       </div>
       <span className="hidden sm:block font-display text-xl font-medium tracking-tight text-fg">Sanctuary</span>
@@ -53,10 +52,14 @@ function AccountControls({
     // No sign-in entry when there is no backend (desktop build without an API URL).
     if (!onShowLogin) return null;
     return (
-      <Button onClick={onShowLogin} variant="secondary" className="gap-2">
-        <LogIn className="w-4 h-4" />
-        <span className="hidden sm:inline">Sign In</span>
-      </Button>
+      <button
+        className="group inline-flex h-10 items-center gap-2 rounded-lg border border-accent/45 bg-accent/[0.07] px-3 text-sm font-medium text-accent transition-colors duration-instant hover:border-accent hover:bg-accent hover:text-accent-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page sm:px-4"
+        onClick={onShowLogin}
+        type="button"
+      >
+        <LogIn className="h-4 w-4 transition-transform duration-instant group-hover:translate-x-0.5" strokeWidth={1.75} />
+        <span className="hidden sm:inline">Sign in</span>
+      </button>
     );
   }
 
@@ -65,7 +68,7 @@ function AccountControls({
   return (
     <div className="flex items-center gap-2">
       {(userImage || userEmail) && (
-        <div className="hidden lg:flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-surface/60 border border-line">
+        <div className="hidden lg:flex items-center gap-2 rounded-full border border-line bg-surface-raised py-1 pl-1 pr-3">
           {userImage ? (
             <img src={userImage} alt="" className="w-7 h-7 rounded-full" />
           ) : (
@@ -101,8 +104,8 @@ function SyncStatusIndicator({ isGuest }: { isGuest?: boolean }) {
   if (status === "syncing") {
     return (
       <div
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-accent bg-accent/10 border border-accent/20"
-        title="Syncing changes with cloud..."
+        className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent"
+        title="Syncing changes"
       >
         <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
         <span className="hidden sm:inline">Syncing</span>
@@ -113,8 +116,8 @@ function SyncStatusIndicator({ isGuest }: { isGuest?: boolean }) {
   if (status === "failed") {
     return (
       <div
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20"
-        title="Offline or sync retrying..."
+        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-subtle px-2.5 py-1 text-xs font-medium text-fg-muted"
+        title="Offline. Changes will sync when the connection returns."
       >
         <CloudOff className="w-3 h-3 shrink-0" />
         <span className="hidden sm:inline">Offline</span>
@@ -124,8 +127,8 @@ function SyncStatusIndicator({ isGuest }: { isGuest?: boolean }) {
 
   return (
     <div
-      className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
-      title="All reading data synced to cloud"
+      className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-raised px-2.5 py-1 text-xs font-medium text-fg-muted"
+      title="All changes synced"
     >
       <Cloud className="w-3 h-3 shrink-0" />
       <span>Synced</span>
@@ -176,7 +179,7 @@ function Header({
                 />
               ) : onOpenGlobalSearch ? (
                 <button
-                  className="hidden sm:flex items-center px-1.5 py-0.5 rounded bg-line/60 border border-line text-2xs font-mono text-fg-muted hover:text-fg transition-colors mr-1"
+                  className="mr-1 hidden items-center rounded border border-line bg-surface-raised px-1.5 py-0.5 font-mono text-2xs text-fg-muted shadow-[0_1px_0_rgb(var(--color-line))] transition-colors hover:text-fg sm:flex"
                   onClick={onOpenGlobalSearch}
                   title="Full-text search (Cmd+K)"
                   type="button"
@@ -198,9 +201,9 @@ function Header({
             label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             icon={
               isDark ? (
-                <Moon className="w-4 h-4 text-amber-300" />
+                <Moon className="w-4 h-4 text-fg-muted" strokeWidth={1.75} />
               ) : (
-                <Sun className="w-4 h-4 text-amber-500" />
+                <Sun className="w-4 h-4 text-fg-muted" strokeWidth={1.75} />
               )
             }
             variant="ghost"

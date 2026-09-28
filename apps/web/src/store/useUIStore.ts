@@ -1,6 +1,9 @@
 import { create } from "zustand";
 
+import { safeStorageGet, safeStorageSet } from "@/reader/persistence/storage";
 import { Theme, View } from "@/types";
+
+export const APP_THEME_STORAGE_KEY = "sanctuary-app-theme";
 
 interface UIState {
   isCatalogOpen: boolean;
@@ -13,8 +16,12 @@ interface UIState {
   view: View;
 }
 
+function readStoredTheme(): Theme {
+  return safeStorageGet(APP_THEME_STORAGE_KEY) === Theme.DARK ? Theme.DARK : Theme.LIGHT;
+}
+
 export const useUIStore = create<UIState>((set) => ({
-  theme: Theme.LIGHT,
+  theme: readStoredTheme(),
   view: View.HOME,
   isCatalogOpen: false,
   searchTerm: "",
@@ -22,7 +29,9 @@ export const useUIStore = create<UIState>((set) => ({
   setView: (view) => set({ view }),
   setSearchTerm: (searchTerm) => set({ searchTerm }),
   toggleTheme: () =>
-    set((state) => ({
-      theme: state.theme === Theme.LIGHT ? Theme.DARK : Theme.LIGHT
-    }))
+    set((state) => {
+      const theme = state.theme === Theme.LIGHT ? Theme.DARK : Theme.LIGHT;
+      safeStorageSet(APP_THEME_STORAGE_KEY, theme);
+      return { theme };
+    })
 }));

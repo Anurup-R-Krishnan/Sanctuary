@@ -1,5 +1,5 @@
-import { AlertTriangle, Clock, Heart, Trash2, ArrowRight } from "lucide-react";
-import React, { useState, useCallback } from "react";
+import { AlertTriangle, ArrowRight, Heart, PencilLine, Trash2 } from "lucide-react";
+import React, { useCallback, useState } from "react";
 
 import type { Book } from "@/types";
 
@@ -10,350 +10,252 @@ import { clampPercent } from "@/utils/number";
 
 import { ConfirmDialog } from "./Dialog";
 import { GenerativeBookCover } from "./GenerativeBookCover";
-import { IconButton } from "./IconButton";
 
 type BookCardVariant = "default" | "compact" | "featured";
 
 interface BookCardProps {
   book: Book;
   onDelete?: (id: string) => void;
+  onEdit?: (book: Book) => void;
   onSelect: (book: Book) => void;
   onToggleFavorite?: (id: string) => void;
   variant?: BookCardVariant;
 }
 
+const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+const getBookProgressPercent = (book: Pick<Book, "progress">) => Math.round(clampPercent(book.progress || 0));
 
-const getBookProgressPercent = (book: Book) => {
-  const totalPages = Math.max(1, book.totalPages || 100);
-  return clampPercent((book.progress / totalPages) * 100);
-};
+function progressLabel(percent: number): string {
+  if (percent >= 100) return "Finished";
+  if (percent <= 0) return "Not started";
+  return `${percent}% read`;
+}
 
-const BookCover = ({
-  book,
-  imageError,
-  imageLoaded,
-  handleImageLoad,
-  handleImageError,
-  variant = "default",
-  reduceMotion = false
-}: {
-  book: Book;
-  imageError: boolean;
-  imageLoaded: boolean;
-  handleImageLoad: () => void;
-  handleImageError: () => void;
-  variant?: BookCardVariant;
-  reduceMotion?: boolean;
-}) => {
-  const isCompact = variant === "compact";
-  const isFeatured = variant === "featured";
-
+const BookCover = ({ book, reduceMotion, variant }: { book: Book; reduceMotion: boolean; variant: BookCardVariant }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const coverSrc = useAuthedCoverUrl(book.coverUrl);
 
-  const containerClass = isCompact
-    ? "w-14 h-20 rounded-lg overflow-hidden bg-subtle border border-line/40 flex-shrink-0 relative"
-    : isFeatured
-      ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-subtle border border-line/40 shadow-lg flex-shrink-0 relative"
-      : "w-full aspect-[2/3] rounded-t-xl overflow-hidden bg-subtle relative";
+  const containerClass = {
+    compact: "relative h-20 w-14 shrink-0 overflow-hidden rounded-[3px] border border-line/60 bg-subtle shadow-sm",
+    default: "relative aspect-[2/3] w-full overflow-hidden bg-subtle",
+    featured: "relative aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-[4px] border border-line/60 bg-subtle shadow-paper sm:w-40",
+  }[variant];
 
   return (
     <div className={containerClass}>
       {coverSrc && !imageError ? (
         <img
-          src={coverSrc}
-          alt={book.title}
+          alt=""
           className={cx(
-            "w-full h-full object-cover transition-all duration-500",
-            imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
-            !reduceMotion && "group-hover:scale-105"
+            "h-full w-full object-cover transition-[opacity,transform] duration-500",
+            imageLoaded ? "opacity-100" : "opacity-0",
+            !reduceMotion && variant === "default" && "group-hover:scale-[1.03]"
           )}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
+          onError={() => setImageError(true)}
+          onLoad={() => setImageLoaded(true)}
+          src={coverSrc}
         />
       ) : (
         <GenerativeBookCover author={book.author} title={book.title} variant={variant} />
       )}
+      {variant !== "compact" && <div aria-hidden="true" className="book-spine-shadow pointer-events-none absolute inset-y-0 left-0 w-3" />}
     </div>
   );
 };
 
-const FavoriteButton = ({
-  isFavorite,
-  onClick,
-  variant = "default"
-}: {
-  isFavorite: boolean;
+const CardAction = ({ active = false, icon, label, onClick, tone = "default" }: {
+  active?: boolean;
+  icon: React.ReactNode;
+  label: string;
   onClick: (e: React.MouseEvent) => void;
-  variant?: BookCardVariant;
-}) => {
-  if (variant === "compact") return null;
+  tone?: "danger" | "default";
+}) => (
+  <button
+    aria-label={label}
+    aria-pressed={tone === "default" && label.includes("favorites") ? active : undefined}
+    className={cx(
+      "flex h-8 w-8 items-center justify-center rounded-md border border-line/80 bg-surface-raised/95 shadow-paper transition-colors duration-instant focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+      active ? "text-accent" : "text-fg-muted",
+      tone === "danger" ? "hover:border-danger/40 hover:text-danger" : "hover:border-accent/50 hover:text-accent"
+    )}
+    onClick={onClick}
+    onKeyDown={(e) => e.stopPropagation()}
+    title={label}
+    type="button"
+  >
+    {icon}
+  </button>
+);
 
-  const isFeatured = variant === "featured";
-  const className = isFeatured
-    ? cx(
-      "p-2 rounded-xl transition-all duration-instant",
-      isFavorite
-        ? "text-red-500 bg-red-50 dark:bg-red-950/30"
-        : "text-fg-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-    )
-    : cx(
-      "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-md transition-all duration-instant opacity-0 group-hover:opacity-100",
-      isFavorite ? "bg-red-500/90 text-white" : "bg-black/20 text-white hover:bg-red-500/90"
-    );
-  const iconClassName = cx(isFeatured ? "w-5 h-5" : "w-4 h-4", isFavorite && "fill-current");
-
+function StatusBadges({ book, isRecent, percent }: { book: Book; isRecent: boolean; percent: number }) {
+  const hasContentIssue = !!book.contentStatus && book.contentStatus !== "available";
+  if (!hasContentIssue && percent < 100 && !isRecent) return null;
   return (
-    <IconButton
-      onClick={onClick}
-      className={className}
-      icon={<Heart className={iconClassName} strokeWidth={1.5} />}
-      label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-      variant="ghost"
-      size="md"
-    />
-  );
-};
-
-const DeleteButton = ({
-  onClick,
-  variant = "default"
-}: {
-  onClick: (e: React.MouseEvent) => void;
-  variant?: BookCardVariant;
-}) => {
-  if (variant === "compact") return null;
-
-  const isFeatured = variant === "featured";
-  const className = isFeatured
-    ? "p-2 rounded-xl transition-all duration-instant text-fg-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-    : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-md transition-all duration-instant opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
-  
-  const iconClassName = isFeatured ? "w-5 h-5" : "w-4 h-4";
-
-  return (
-    <IconButton
-      onClick={onClick}
-      className={className}
-      aria-label="Delete book"
-      label="Delete book"
-      icon={<Trash2 className={iconClassName} strokeWidth={1.5} />}
-      variant="ghost"
-      size="md"
-    />
-  );
-};
-
-const ProgressBar = ({ progress, variant = "default" }: { progress: number; variant?: BookCardVariant }) => {
-  if (progress <= 0) return null;
-
-  if (variant === "compact") {
-    return (
-      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent flex items-center justify-center">
-        <span className="text-3xs font-bold text-white">{progress}%</span>
-      </div>
-    );
-  }
-
-  if (variant === "featured") {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-fg-muted">Progress</span>
-          <span className="font-semibold text-accent">{progress}%</span>
-        </div>
-        <div className="h-2 bg-line/60 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-accent rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="absolute bottom-0 left-0 right-0 h-1 bg-line/60">
-      <div
-        className="h-full bg-accent transition-all duration-500"
-        style={{ width: `${progress}%` }}
-      />
+    <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
+      {hasContentIssue ? (
+        <span className="inline-flex items-center gap-1 rounded-[3px] bg-danger px-1.5 py-0.5 text-2xs font-semibold text-white" title="The book file needs to be imported again">
+          <AlertTriangle className="h-3 w-3" strokeWidth={2} />
+          {book.contentStatus === "missing" ? "Missing file" : "Damaged file"}
+        </span>
+      ) : percent >= 100 ? (
+        <span className="rounded-[3px] border border-line/80 bg-surface-raised/95 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-fg">Finished</span>
+      ) : (
+        <span className="rounded-[3px] bg-accent px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-accent-fg">Recent</span>
+      )}
     </div>
   );
-};
+}
 
-const BookMetadata = ({ title, author, variant = "default" }: { title: string; author: string; variant?: BookCardVariant }) => {
-  const isFeatured = variant === "featured";
-  const isCompact = variant === "compact";
-  
-  return (
-    <div className={isFeatured ? "mb-2" : ""}>
-      <h3 className={cx(
-        isFeatured ? "font-display font-medium text-3xl sm:text-[2.6rem] sm:leading-[1.08]" : isCompact ? "font-sans font-semibold text-sm" : "font-display font-medium text-lg",
-        "text-fg line-clamp-2 leading-snug tracking-tight group-hover:text-accent transition-colors duration-instant"
-      )}>
-        {title}
-      </h3>
-      <p className={cx(
-        isFeatured ? "font-sans text-lg sm:text-xl mt-2" : "text-xs font-sans",
-        !isFeatured && "mt-0.5",
-        "text-fg-muted/80 line-clamp-1"
-      )}>
-        {author}
-      </p>
-    </div>
-  );
-};
-
-function BookCard({
-  book,
-  onSelect,
-  onToggleFavorite,
-  onDelete,
-  variant = "default"
-}: BookCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
+function BookCard({ book, onDelete, onEdit, onSelect, onToggleFavorite, variant = "default" }: BookCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const reduceMotion = useSettings((state) => state.reduceMotion);
 
-  const progressPercentage = getBookProgressPercent(book);
-  const isRecent = book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
-  const isCompleted = progressPercentage >= 100;
+  const percent = getBookProgressPercent(book);
+  const isRecent = !!book.lastOpenedAt && Date.now() - new Date(book.lastOpenedAt).getTime() < RECENT_WINDOW_MS;
+  const isFavorite = !!book.isFavorite;
 
-  const handleImageLoad = () => setImageLoaded(true);
-  const handleImageError = () => setImageError(true);
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const stop = (handler: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    onToggleFavorite?.(book.id);
-  };
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDeleteConfirm(true);
+    handler();
   };
 
   const handleConfirmDelete = useCallback(() => {
     setShowDeleteConfirm(false);
     onDelete?.(book.id);
   }, [book.id, onDelete]);
-  const handleCardKeyDown = (e: React.KeyboardEvent, selectedBook: Book) => {
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      onSelect(selectedBook);
+      onSelect(book);
     }
   };
 
-  const commonCoverProps = {
-    book,
-    imageError,
-    imageLoaded,
-    handleImageLoad,
-    handleImageError,
-    reduceMotion
-  };
+  const actions = (
+    <>
+      {onToggleFavorite && (
+        <CardAction
+          active={isFavorite}
+          icon={<Heart className={cx("h-4 w-4", isFavorite && "fill-current")} strokeWidth={1.75} />}
+          label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          onClick={stop(() => onToggleFavorite(book.id))}
+        />
+      )}
+      {onEdit && (
+        <CardAction icon={<PencilLine className="h-4 w-4" strokeWidth={1.75} />} label="Edit details" onClick={stop(() => onEdit(book))} />
+      )}
+      {onDelete && (
+        <CardAction icon={<Trash2 className="h-4 w-4" strokeWidth={1.75} />} label="Delete book" onClick={stop(() => setShowDeleteConfirm(true))} tone="danger" />
+      )}
+    </>
+  );
 
-  const isFeatured = variant === "featured";
-  const isCompact = variant === "compact";
-  const Tag: "div" | "article" = variant === "compact" ? "div" : "article";
+  const revealActions = "opacity-0 transition-opacity duration-instant group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100";
+
+  const cardProps = {
+    "aria-label": `${book.title} by ${book.author}. ${progressLabel(percent)}.`,
+    onClick: () => onSelect(book),
+    onKeyDown: handleKeyDown,
+    role: "button",
+    tabIndex: 0,
+  } as const;
 
   return (
-    <Tag
-      onClick={() => onSelect(book)}
-      onKeyDown={(e: React.KeyboardEvent) => handleCardKeyDown(e, book)}
-      role="button"
-      tabIndex={0}
-      className={cx(
-        "group border border-line bg-surface transition-colors cursor-pointer",
-        isCompact && "flex items-center gap-4 p-4 rounded-xl hover:border-accent/40",
-        isFeatured && "relative overflow-hidden rounded-xl hover:border-accent/40 p-6 sm:p-7 bg-surface-raised dark:from-accent/[0.08] shadow-sm",
-        !isCompact && !isFeatured && "relative overflow-hidden rounded-xl hover:border-accent/35"
-      )}
-    >
-      {isCompact ? (
-        <>
-          <div className="relative flex-shrink-0">
-            <BookCover {...commonCoverProps} variant="compact" />
-            <ProgressBar progress={progressPercentage} variant="compact" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <BookMetadata title={book.title} author={book.author} variant="compact" />
-          </div>
-          <div className="flex items-center gap-2">
-            {book.isFavorite && <Heart className="w-4 h-4 text-red-500 fill-current" strokeWidth={1.5} />}
-            {isRecent && <Clock className="w-4 h-4 text-accent" strokeWidth={1.5} />}
-          </div>
-        </>
-      ) : isFeatured ? (
-        <div className="flex items-start gap-6 sm:gap-8">
-          <div className="relative flex-shrink-0">
-            <BookCover {...commonCoverProps} variant="featured" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent mb-2">
-              <Clock className="w-3.5 h-3.5" strokeWidth={2} />
-              Now Reading
-            </p>
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <BookMetadata title={book.title} author={book.author} variant="featured" />
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <FavoriteButton isFavorite={!!book.isFavorite} onClick={handleFavoriteClick} variant="featured" />
-                {onDelete && <DeleteButton onClick={handleDeleteClick} variant="featured" />}
+    <>
+      {variant === "compact" ? (
+        <div
+          {...cardProps}
+          className="group relative flex h-full cursor-pointer items-center gap-4 rounded-lg border border-line bg-surface-raised p-3 pr-4 transition-colors duration-instant hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <BookCover book={book} reduceMotion={reduceMotion} variant="compact" />
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 font-display text-base font-medium leading-snug text-fg transition-colors group-hover:text-accent">{book.title}</h3>
+            <p className="mt-0.5 truncate text-xs text-fg-muted">{book.author}</p>
+            <div className="mt-2 flex items-center gap-2">
+              <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-line">
+                <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
               </div>
-            </div>
-            <div className="space-y-4 max-w-md">
-              <ProgressBar progress={progressPercentage} variant="featured" />
-              <div className="inline-flex items-center gap-2 text-sm font-medium text-accent">
-                <span className="whitespace-nowrap">{isCompleted ? "Read again" : "Resume reading"}</span>
-                <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
-              </div>
+              <span className="text-2xs tabular-nums text-fg-muted">{percent}%</span>
             </div>
           </div>
+          {(onToggleFavorite || onEdit || onDelete) && (
+            <div className={cx("flex shrink-0 items-center gap-1.5", revealActions)}>{actions}</div>
+          )}
         </div>
-      ) : (
-        <>
-          <div className="relative">
-            <BookCover {...commonCoverProps} variant="default" />
-            <FavoriteButton isFavorite={!!book.isFavorite} onClick={handleFavoriteClick} variant="default" />
-            {onDelete && <DeleteButton onClick={handleDeleteClick} variant="default" />}
-            <ProgressBar progress={progressPercentage} variant="default" />
-            <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {isRecent && (
-                <div className="px-2 py-1 bg-accent text-white dark:text-black text-xs font-bold rounded-lg shadow-xs">Recent</div>
-              )}
-              {isCompleted && (
-                <div className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-xs">Complete</div>
-              )}
-              {book.contentStatus && book.contentStatus !== "available" && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white text-xs font-semibold rounded-lg" title="The local EPUB needs to be re-imported">
-                  <AlertTriangle className="w-3 h-3" strokeWidth={2} />
-                  {book.contentStatus === "missing" ? "Missing file" : "Damaged file"}
+      ) : variant === "featured" ? (
+        <article
+          {...cardProps}
+          className="group paper-card relative cursor-pointer overflow-hidden p-6 transition-colors duration-instant hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:p-8"
+        >
+          <div className="flex items-start gap-6 sm:gap-9">
+            <BookCover book={book} reduceMotion={reduceMotion} variant="featured" />
+            <div className="flex min-w-0 flex-1 flex-col self-stretch">
+              <div className="flex items-start justify-between gap-4">
+                <p className="label-caps !text-accent">Now reading</p>
+                <div className="flex shrink-0 items-center gap-1.5">{actions}</div>
+              </div>
+              <h3 className="mt-3 line-clamp-2 font-display text-3xl font-medium leading-[1.08] tracking-tight text-fg sm:text-[2.6rem]">{book.title}</h3>
+              <p className="mt-2 truncate text-lg text-fg-muted">{book.author}</p>
+              <div className="mt-auto max-w-md pt-6">
+                <div className="flex items-baseline justify-between text-sm">
+                  <span className="text-fg-muted">{progressLabel(percent)}</span>
+                  <span className="font-display text-xl font-medium tabular-nums text-fg">{percent}%</span>
                 </div>
-              )}
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-line">
+                  <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${percent}%` }} />
+                </div>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-accent">
+                  {percent >= 100 ? "Read again" : "Resume reading"}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+                </span>
+              </div>
             </div>
           </div>
-          <div className="p-4 space-y-2">
-            <BookMetadata title={book.title} author={book.author} variant="default" />
-            {progressPercentage > 0 && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-fg-muted">{book.progress} / {book.totalPages} pages</span>
-                <span className="font-semibold text-accent">{progressPercentage}%</span>
-              </div>
+        </article>
+      ) : (
+        <article
+          {...cardProps}
+          className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-lg border border-line bg-surface-raised shadow-paper transition-[border-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <div className="relative">
+            <BookCover book={book} reduceMotion={reduceMotion} variant="default" />
+            <StatusBadges book={book} isRecent={isRecent} percent={percent} />
+            {(onToggleFavorite || onEdit || onDelete) && (
+              <div className={cx("absolute right-2.5 top-2.5 flex flex-col gap-1.5", revealActions)}>{actions}</div>
             )}
+            {isFavorite && (
+              <Heart aria-hidden="true" className="absolute bottom-3 right-3 h-4 w-4 fill-accent text-accent drop-shadow-sm transition-opacity group-hover:opacity-0" strokeWidth={1.75} />
+            )}
+            <div className="absolute inset-x-0 bottom-0 h-[3px] bg-line/80">
+              <div className="h-full bg-accent transition-[width] duration-500" style={{ width: `${percent}%` }} />
+            </div>
           </div>
-        </>
+          <div className="flex flex-1 flex-col px-4 pb-4 pt-3.5">
+            <h3 className="line-clamp-2 min-h-[2.75em] font-display text-lg font-medium leading-snug tracking-tight text-fg transition-colors group-hover:text-accent">
+              {book.title}
+            </h3>
+            <p className="mt-1 truncate text-xs text-fg-muted">{book.author || "Unknown author"}</p>
+            <div className="mt-auto flex items-center justify-between border-t border-line/60 pt-3 text-xs">
+              <span className="text-fg-muted">{progressLabel(percent)}</span>
+              {percent > 0 && percent < 100 && <span className="font-semibold tabular-nums text-accent">{percent}%</span>}
+            </div>
+          </div>
+        </article>
       )}
       <ConfirmDialog
+        confirmLabel="Delete"
+        description={`"${book.title}" and its reading progress will be removed. This cannot be undone.`}
+        isDestructive
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleConfirmDelete}
-        title="Delete Book"
-        description={`Are you sure you want to delete "${book.title}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        isDestructive
+        title="Delete book"
       />
-    </Tag>
+    </>
   );
-};
+}
 
 export default BookCard;
