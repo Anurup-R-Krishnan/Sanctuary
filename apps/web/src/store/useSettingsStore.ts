@@ -21,6 +21,7 @@ type SettingsValues = {
   annualGoalYear: number;
   barPosition: "top" | "bottom";
   bionicReading: boolean;
+  dropCap: boolean;
   bookVoiceOverrides: Record<string, string>;
   brightness: number;
   continuous: boolean;
@@ -68,6 +69,7 @@ type SettingsActions = {
   setAnnualGoalYear: (v: number) => void;
   setBarPosition: (v: "top" | "bottom") => void;
   setBionicReading: (v: boolean) => void;
+  setDropCap: (v: boolean) => void;
   setBookVoiceOverride: (bookId: string, voiceURI: string) => void;
   setBrightness: (v: number) => void;
   setContinuous: (v: boolean) => void;
@@ -115,7 +117,7 @@ const DEFAULTS: SettingsValues = {
   lineHeight: 1.65,
   textAlignment: "justify",
   fontPairing: "merriweather-georgia",
-  maxTextWidth: 150,
+  maxTextWidth: 90,
   hyphenation: true,
   pageMargin: 40,
   paragraphSpacing: 17,
@@ -128,13 +130,14 @@ const DEFAULTS: SettingsValues = {
   brightness: 100,
   grayscale: false,
   bionicReading: false,
+  dropCap: true,
   showScrollbar: false,
   showPageCounter: true,
   progressBarType: "bar",
   barPosition: "bottom",
   showFloatingCapsule: true,
-  readerForeground: "#1a1a1a",
-  readerBackground: "#ffffff",
+  readerForeground: "#5C4B37",
+  readerBackground: "#F4ECD8",
   readerAccent: "#8B7355",
   keybinds: {
     nextPage: ["ArrowRight", "ArrowDown", " "],
@@ -189,6 +192,7 @@ export const pickValues = (state: Settings): SettingsValues => ({
   annualBookGoal: state.annualBookGoal,
   annualGoalYear: state.annualGoalYear,
   bionicReading: state.bionicReading,
+  dropCap: state.dropCap,
   fontSize: state.fontSize,
   fontWeight: state.fontWeight,
   letterSpacing: state.letterSpacing,
@@ -288,6 +292,7 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.fontWeight === "number") out.fontWeight = raw.fontWeight;
   if (typeof raw.letterSpacing === "number") out.letterSpacing = raw.letterSpacing;
   if (typeof raw.bionicReading === "boolean") out.bionicReading = raw.bionicReading;
+  if (typeof raw.dropCap === "boolean") out.dropCap = raw.dropCap;
   if (typeof raw.lineHeight === "number") out.lineHeight = raw.lineHeight;
   if (raw.textAlignment === "left" || raw.textAlignment === "justify" || raw.textAlignment === "center") out.textAlignment = raw.textAlignment;
   if (typeof raw.fontPairing === "string") out.fontPairing = raw.fontPairing;
@@ -450,6 +455,7 @@ const createSetAction = <K extends keyof SettingsValues>(key: K, set: (partial: 
 export const useSettingsStore = create<Settings>((set) => ({
   ...DEFAULTS,
   setBionicReading: createSetAction("bionicReading", set),
+  setDropCap: createSetAction("dropCap", set),
   setFontSize: createSetAction("fontSize", set),
   setFontWeight: createSetAction("fontWeight", set),
   setLetterSpacing: createSetAction("letterSpacing", set),

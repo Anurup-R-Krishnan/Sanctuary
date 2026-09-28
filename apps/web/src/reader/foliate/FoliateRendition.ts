@@ -71,6 +71,7 @@ export class FoliateRendition implements DocumentRendition {
   private listeners = new Map<string, Set<EventListenerCallback>>();
   private flowOptions: ReaderFlowOptions;
   private background: string;
+  private textWidthPx: number | null = null;
   private currentProgress = 0;
   private currentSectionIndex = 0;
   private totalSections = 1;
@@ -604,6 +605,7 @@ export class FoliateRendition implements DocumentRendition {
     const isScrolled = effectiveMode !== "paginated";
 
     renderer.setAttribute("flow", isScrolled ? "scrolled" : "paginated");
+    if (this.textWidthPx) renderer.setAttribute("max-inline-size", `${this.textWidthPx}px`);
     this.scrollContinuity.setMode(effectiveMode);
 
     if (!isScrolled) {
@@ -742,6 +744,11 @@ export class FoliateRendition implements DocumentRendition {
       }
     }
     return [];
+  }
+
+  public setTextWidth(px: number): void {
+    this.textWidthPx = px;
+    this.view?.renderer?.setAttribute("max-inline-size", `${px}px`);
   }
 
   public setStyles(styles: Record<string, Record<string, string>>, bionicReading?: boolean): void {

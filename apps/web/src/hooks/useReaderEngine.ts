@@ -48,6 +48,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     const themeConfig = useSettingsShallow<ReaderThemeConfig>((state) => ({
         bionicReading: state.bionicReading,
         continuous: state.continuous,
+        dropCap: state.dropCap,
         fontPairing: state.fontPairing,
         fontSize: state.fontSize,
         fontWeight: state.fontWeight,
@@ -83,6 +84,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
         // every live iframe document.
         try {
             sessionRef.current.rendition.setStyles(styles, themeConfig.bionicReading);
+            sessionRef.current.rendition.setTextWidth(Math.round(themeConfig.maxTextWidth * themeConfig.fontSize * 0.5));
         } catch { /* benign */ }
         // Sync background color on the host container and every document frame
         sessionRef.current.updateReaderBackground(themeConfig.readerBackground);

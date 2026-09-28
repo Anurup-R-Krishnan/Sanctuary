@@ -54,6 +54,11 @@ export default function HomeView({ onAddBook, onBrowseCatalog, onOpenBook, onOpe
     () => recentBooks.find((book) => book.lastOpenedAt && book.progress < 100) ?? null,
     [recentBooks]
   );
+  const specimenBook = lastBook ?? recentBooks[0] ?? books[0] ?? null;
+  const specimenBackBooks = useMemo(
+    () => recentBooks.filter((book) => book.id !== specimenBook?.id).slice(0, 2),
+    [recentBooks, specimenBook]
+  );
   const shelf = useMemo(
     () => recentBooks.filter((book) => book.id !== lastBook?.id).slice(0, 6),
     [recentBooks, lastBook]
@@ -118,7 +123,7 @@ export default function HomeView({ onAddBook, onBrowseCatalog, onOpenBook, onOpe
         </div>
 
         <div className="animate-fadeInUp px-4 sm:px-8 lg:px-0" style={reveal(4)}>
-          <BookPageSpecimen />
+          <BookPageSpecimen backBooks={specimenBackBooks} book={specimenBook} onOpenBook={onOpenBook} />
         </div>
       </section>
 

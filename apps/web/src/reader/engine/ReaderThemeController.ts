@@ -3,6 +3,7 @@ import { isColorDark } from "../foliate/FoliateRendition";
 export interface ReaderThemeConfig {
     bionicReading?: boolean;
     continuous: boolean;
+    dropCap?: boolean;
     fontPairing: string;
     fontSize: number;
     fontWeight?: number;
@@ -48,13 +49,29 @@ export class ReaderThemeController {
             pageMargin,
             paragraphSpacing,
             maxTextWidth,
+            dropCap,
         } = config;
 
         const resolvedWeight = fontWeight ?? 400;
         const fontFamily = FONT_FAMILIES[fontPairing] ?? `'${fontPairing}', Georgia, serif`;
         const horizontalPadding = continuous ? pageMargin : Math.max(8, pageMargin);
 
+        const dropCapRules: Record<string, Record<string, string>> = dropCap
+            ? {
+                "h1 + p::first-letter, h2 + p::first-letter, h3 + p::first-letter, h4 + p::first-letter, section > p:first-of-type::first-letter, body > p:first-of-type::first-letter": {
+                    "float": "left",
+                    "font-size": "3.3em",
+                    "line-height": "0.82",
+                    "font-weight": "500",
+                    "padding-right": "0.06em",
+                    "margin-top": "0.05em",
+                    "color": readerAccent || "inherit",
+                },
+            }
+            : {};
+
         return {
+            ...dropCapRules,
             "html": {
                 "color-scheme": isColorDark(readerBackground) ? "dark" : "light",
                 "background-color": readerBackground,
