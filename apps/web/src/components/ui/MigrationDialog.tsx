@@ -4,7 +4,6 @@ import { createPortal } from "react-dom";
 
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
-import { getVerifiedBookContent } from "@/services/bookContentRepository";
 import { libraryService } from "@/services/LibraryService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getAllBooks } from "@/utils/db";
@@ -35,7 +34,7 @@ export function MigrationDialog() {
     }
   }, [isLoaded, isSignedIn, mode, setSession, user?.id]);
 
-  const handleDiscard = useCallback(() => {
+  const handleNotNow = useCallback(() => {
     setShow(false);
     setSession("authenticated", user?.id ?? null);
   }, [setSession, user?.id]);
@@ -47,29 +46,17 @@ export function MigrationDialog() {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        handleDiscard();
+        handleNotNow();
       }
     };
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [show, isMigrating, handleDiscard]);
+  }, [show, isMigrating, handleNotNow]);
 
   const handleMigrate = async () => {
     setIsMigrating(true);
     try {
-      const books = await getAllBooks();
-      const pending = books.filter(b => b.syncStatus === "pending" || b.syncStatus === "local-only");
-      
-      for (const book of pending) {
-        const content = await getVerifiedBookContent(book.id);
-        if (!content) {
-          console.warn(`Skipping migration for ${book.id}: local EPUB content is missing.`);
-          continue;
-        }
-        const file = new File([content.blob], `${book.title}.epub`, { type: "application/epub+zip" });
-        await libraryService._migrateBook(file, { ...book, epubBlob: content.blob }, api);
-      }
-      
+      await libraryService.uploadStoredBooks(api, ["pending", "local-only"]);
       setShow(false);
       setSession("authenticated", user?.id ?? null);
     } catch (error) {
@@ -110,12 +97,12 @@ export function MigrationDialog() {
         
         <div className="flex gap-3 justify-end items-center">
           <button
-            onClick={handleDiscard}
+            onClick={handleNotNow}
             disabled={isMigrating}
             type="button"
             className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg rounded-xl hover:bg-line/40 transition-colors focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
           >
-            Discard
+            Not now
           </button>
           <button
             onClick={handleMigrate}
