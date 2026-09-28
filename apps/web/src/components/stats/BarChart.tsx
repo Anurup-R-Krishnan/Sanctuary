@@ -14,8 +14,11 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
     return `${val}`;
   };
 
+  const isEmpty = data.every((d) => d.value <= 0);
+
   return (
-    <div aria-label="Activity bar chart" className="flex items-end gap-1.5 h-32 pt-6 relative" role="region">
+    <div>
+    <div aria-label="Activity bar chart" className="flex items-stretch gap-1.5 h-32 pt-6 relative" role="region">
       {data.map((d, idx) => {
         const isHovered = hoveredIdx === idx;
         const barHeight = maxValue > 0 ? (d.value / maxValue) * 100 : 0;
@@ -35,7 +38,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
             {/* Tooltip */}
             {isHovered && (
               <div
-                className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-md bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 text-2xs font-semibold tracking-wide whitespace-nowrap shadow-md pointer-events-none animate-fadeIn"
+                className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-md bg-fg text-page text-2xs font-semibold tracking-wide whitespace-nowrap shadow-md pointer-events-none animate-fadeIn"
                 role="tooltip"
               >
                 <span className="opacity-75 mr-1">{d.label}:</span>
@@ -44,9 +47,9 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
             )}
 
             {/* Bar Rail & Fill */}
-            <div className="w-full bg-line/60 rounded-t flex-1 flex items-end min-h-0 overflow-hidden">
+            <div className="w-full bg-line/40 rounded-t-[3px] flex-1 flex items-end min-h-0 overflow-hidden">
               <div
-                className={`w-full bg-accent rounded-t transition-all duration-300 ${
+                className={`w-full bg-accent rounded-t-[3px] transition-all duration-300 ${
                   isHovered ? "opacity-100 brightness-110 shadow-xs" : "opacity-85 group-hover:opacity-100"
                 }`}
                 style={{ height: `${Math.max(barHeight, d.value > 0 ? 4 : 0)}%` }}
@@ -66,6 +69,8 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
           </div>
         );
       })}
+    </div>
+    {isEmpty && <p className="mt-3 text-center text-xs text-fg-muted">No reading time recorded yet.</p>}
     </div>
   );
 };
