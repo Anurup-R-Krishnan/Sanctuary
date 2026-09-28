@@ -98,11 +98,11 @@ export function ReaderShortcutsHelpModal({
       />
 
       {/* Modal Container */}
-      <div className="relative z-10 w-full max-w-2xl bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text border border-light-border dark:border-dark-border rounded-3xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-7 gap-6 animate-scaleUp">
+      <div className="relative z-10 w-full max-w-2xl bg-page text-fg border border-line rounded-3xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-7 gap-6 animate-scaleUp">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-light-border dark:border-dark-border">
+        <div className="flex items-center justify-between pb-4 border-b border-line">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shadow-xs">
               <Keyboard className="w-5 h-5" />
             </div>
             <div>
@@ -112,7 +112,7 @@ export function ReaderShortcutsHelpModal({
               >
                 Keyboard Shortcuts
               </h2>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-xs text-fg-muted">
                 Navigate, focus, and read at the speed of thought
               </p>
             </div>
@@ -120,7 +120,7 @@ export function ReaderShortcutsHelpModal({
 
           <button
             aria-label="Close keyboard shortcuts modal"
-            className="p-2 rounded-full text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors cursor-pointer"
+            className="p-2 rounded-full text-fg-muted hover:text-fg hover:bg-line/40 transition-colors cursor-pointer"
             onClick={onClose}
             type="button"
           >
@@ -135,9 +135,9 @@ export function ReaderShortcutsHelpModal({
             return (
               <div
                 key={category.title}
-                className="p-4 rounded-2xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border flex flex-col justify-between space-y-3"
+                className="p-4 rounded-2xl bg-surface border border-line flex flex-col justify-between space-y-3"
               >
-                <div className="flex items-center gap-2 text-xs font-semibold text-light-accent dark:text-dark-accent">
+                <div className="flex items-center gap-2 text-xs font-semibold text-accent">
                   <Icon className="w-4 h-4 shrink-0" />
                   <span>{category.title}</span>
                 </div>
@@ -148,14 +148,14 @@ export function ReaderShortcutsHelpModal({
                       key={item.description}
                       className="flex items-center justify-between gap-2 text-xs"
                     >
-                      <span className="text-light-text-muted dark:text-dark-text-muted leading-tight">
+                      <span className="text-fg-muted leading-tight">
                         {item.description}
                       </span>
                       <div className="flex items-center gap-1 shrink-0">
                         {item.keys.map((k) => (
                           <kbd
                             key={k}
-                            className="px-1.5 py-0.5 min-w-[20px] text-center text-[11px] font-mono font-medium rounded-md bg-light-surface/60 dark:bg-dark-surface/60 text-light-text dark:text-dark-text border border-light-border dark:border-dark-border shadow-xs"
+                            className="px-1.5 py-0.5 min-w-[20px] text-center text-xs font-mono font-medium rounded-md bg-surface/60 text-fg border border-line shadow-xs"
                           >
                             {k}
                           </kbd>
@@ -170,12 +170,12 @@ export function ReaderShortcutsHelpModal({
         </div>
 
         {/* Footer Hint */}
-        <div className="flex items-center justify-between pt-3 border-t border-light-border/60 dark:border-dark-border/60 text-[11px] text-light-text-muted dark:text-dark-text-muted">
+        <div className="flex items-center justify-between pt-3 border-t border-line/60 text-xs text-fg-muted">
           <span>Tip: Key bindings can also be customized in Reader Settings.</span>
           <button
             onClick={onClose}
             type="button"
-            className="px-3.5 py-1.5 rounded-xl font-semibold text-xs bg-light-accent text-white dark:bg-dark-accent dark:text-black hover:opacity-90 transition-opacity shadow-xs"
+            className="px-3.5 py-1.5 rounded-xl font-semibold text-xs bg-accent text-white dark:text-black hover:opacity-90 transition-opacity shadow-xs"
           >
             Got it
           </button>

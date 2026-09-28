@@ -124,10 +124,32 @@ export async function lookupWord(term: string): Promise<VocabularyDefinition | n
 
 /**
  * Saves a word into user's vocabulary collection with initial Leitner schedule.
+ * If the word already exists, preserves its createdAt, repetitionLevel, and review schedule.
  */
 export async function saveVocabularyWord(params: SaveWordParams): Promise<VocabularyItem> {
   const normalized = normalizeWord(params.word);
   const now = new Date();
+
+  // Check if word already exists
+  const existing = await getVocabWord(normalized);
+
+  if (existing) {
+    // Preserve existing schedule and mastery level, update definition/context only
+    const updated: VocabularyItem = {
+      ...existing,
+      audioUrl: params.audioUrl,
+      bookId: params.bookId,
+      bookTitle: params.bookTitle,
+      cfi: params.cfi,
+      contextSentence: params.contextSentence,
+      definition: params.definition,
+      example: params.example,
+      partOfSpeech: params.partOfSpeech,
+      phonetic: params.phonetic,
+    };
+    await putVocabWord(updated);
+    return updated;
+  }
 
   // A brand-new word hasn't been reviewed yet, so it should be due
   // immediately rather than pre-scheduled a day out the way calculateNextReview("again")

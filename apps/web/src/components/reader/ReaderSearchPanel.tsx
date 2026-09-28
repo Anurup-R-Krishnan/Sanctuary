@@ -110,22 +110,22 @@ export function ReaderSearchPanel({
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-4 border-b border-light-border dark:border-dark-border flex flex-wrap items-center gap-2">
+            <div className="p-4 border-b border-line flex flex-wrap items-center gap-2">
                 <form onSubmit={handleSubmit} className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-light-text-muted dark:text-dark-text-muted" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
                     <Input
                         ref={inputRef}
                         type="text"
                         placeholder="Search book..."
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        className="pl-9 pr-8 py-2 bg-light-surface/60 dark:bg-dark-surface/60 border-light-border dark:border-dark-border focus:bg-transparent"
+                        className="pl-9 pr-8 py-2 bg-surface/60 border-line focus:bg-transparent"
                     />
                     {inputValue && (
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-fg-muted hover:text-fg"
                         >
                             <X className="w-3.5 h-3.5" />
                         </button>
@@ -136,15 +136,15 @@ export function ReaderSearchPanel({
 
             {/* Results Navigation (if we have results) */}
             {searchState.results.length > 0 && (
-                <div className="px-4 py-2 bg-light-surface/60 dark:bg-dark-surface/60 border-b border-light-border dark:border-dark-border flex items-center justify-between text-xs text-light-text-muted dark:text-dark-text-muted">
+                <div className="px-4 py-2 bg-surface/60 border-b border-line flex items-center justify-between text-xs text-fg-muted">
                     <span>
                         {searchState.activeIndex + 1} of {searchState.results.length} matches
                     </span>
                     <div className="flex flex-wrap items-center gap-1">
-                        <button type="button" aria-label="Previous match" onClick={onPrev} className="p-1 hover:bg-light-border/40 dark:hover:bg-dark-border/40 rounded">
+                        <button type="button" aria-label="Previous match" onClick={onPrev} className="p-1 hover:bg-line/40 rounded">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <button type="button" aria-label="Next match" onClick={onNext} className="p-1 hover:bg-light-border/40 dark:hover:bg-dark-border/40 rounded">
+                        <button type="button" aria-label="Next match" onClick={onNext} className="p-1 hover:bg-line/40 rounded">
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -154,12 +154,12 @@ export function ReaderSearchPanel({
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={resultsContainerRef}>
                 {searchState.isSearching ? (
-                    <div className="flex flex-col items-center justify-center h-40 gap-3 text-light-text-muted dark:text-dark-text-muted">
+                    <div className="flex flex-col items-center justify-center h-40 gap-3 text-fg-muted">
                         <Loader2 className="w-6 h-6 animate-spin" />
                         <span className="text-sm">Searching...</span>
                     </div>
                 ) : searchState.error ? (
-                    <div className="p-6 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
+                    <div className="p-6 text-center text-sm text-fg-muted">
                         {searchState.error}
                     </div>
                 ) : searchState.results.length > 0 ? (
@@ -170,16 +170,16 @@ export function ReaderSearchPanel({
                                 <button
                                     key={result.id}
                                     onClick={() => onGoToResult(index)}
-                                    className={`text-left p-4 border-b border-light-border/60 dark:border-dark-border/60 transition-colors ${
+                                    className={`text-left p-4 border-b border-line/60 transition-colors ${
                                         isActive
-                                            ? "bg-light-accent/10 dark:bg-dark-accent/10 border-l-2 border-l-light-accent dark:border-l-dark-accent"
-                                            : "hover:bg-light-surface/60 dark:hover:bg-dark-surface/60 border-l-2 border-l-transparent"
+                                            ? "bg-accent/10 border-l-2 border-l-accent"
+                                            : "hover:bg-surface/60 border-l-2 border-l-transparent"
                                     }`}
                                 >
-                                    <div className="text-xs font-medium text-light-accent dark:text-dark-accent mb-1 truncate">
+                                    <div className="text-xs font-medium text-accent mb-1 truncate">
                                         {result.chapterLabel}
                                     </div>
-                                    <div className="text-sm text-light-text dark:text-dark-text line-clamp-3 leading-relaxed">
+                                    <div className="text-sm text-fg line-clamp-3 leading-relaxed">
                                         <SafeHighlight text={result.excerpt} query={searchState.query} />
                                     </div>
                                 </button>
@@ -188,19 +188,19 @@ export function ReaderSearchPanel({
                     </div>
                 ) : searchState.query ? (
                     <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
-                        <div className="w-14 h-14 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
-                            <Search className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                        <div className="w-14 h-14 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+                            <Search className="w-6 h-6 text-fg-muted" strokeWidth={1.5} />
                         </div>
-                        <p className="text-light-text dark:text-dark-text font-medium">No matches found</p>
-                        <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Try a different search term.</p>
+                        <p className="text-fg font-medium">No matches found</p>
+                        <p className="mt-1 text-sm text-fg-muted">Try a different search term.</p>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
-                        <div className="w-14 h-14 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
-                            <Search className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                        <div className="w-14 h-14 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+                            <Search className="w-6 h-6 text-fg-muted" strokeWidth={1.5} />
                         </div>
-                        <p className="text-light-text dark:text-dark-text font-medium">Search your book</p>
-                        <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Enter a term to search the entire book.</p>
+                        <p className="text-fg font-medium">Search your book</p>
+                        <p className="mt-1 text-sm text-fg-muted">Enter a term to search the entire book.</p>
                     </div>
                 )}
             </div>

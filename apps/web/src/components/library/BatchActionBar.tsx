@@ -79,20 +79,20 @@ export function BatchActionBar({
         visible ? "translate-y-0" : "translate-y-36 pointer-events-none"
       }`}
     >
-      <div className="flex items-center gap-2 rounded-2xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-xl px-4 py-3">
+      <div className="flex items-center gap-2 rounded-2xl bg-surface border border-line shadow-xl px-4 py-3">
         {/* Selection badge */}
-        <span className="min-w-[2rem] rounded-full bg-light-accent/15 dark:bg-dark-accent/20 px-2.5 py-1 text-center text-xs font-semibold text-light-accent dark:text-dark-accent">
+        <span className="min-w-[2rem] rounded-full bg-light-accent/15 dark:bg-dark-accent/20 px-2.5 py-1 text-center text-xs font-semibold text-accent">
           {selectedBookIds.length}
         </span>
 
-        <div className="h-5 w-px bg-light-border dark:bg-dark-border" />
+        <div className="h-5 w-px bg-line" />
 
         {/* Assign Collection */}
         {collectionInputVisible ? (
           <div className="flex items-center gap-1">
             <input
               ref={inputRef}
-              className="w-36 rounded-lg border border-light-border dark:border-dark-border bg-light-primary dark:bg-dark-primary px-2.5 py-1 text-sm text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+              className="w-36 rounded-lg border border-line bg-page px-2.5 py-1 text-sm text-fg outline-none focus:ring-1 focus:ring-accent"
               placeholder="Collection name…"
               value={collectionName}
               onChange={(e) => setCollectionName(e.target.value)}
@@ -105,7 +105,7 @@ export function BatchActionBar({
               }}
             />
             <button
-              className="rounded-lg px-2.5 py-1 text-xs font-medium bg-light-accent text-white dark:bg-dark-accent dark:text-black hover:opacity-90 disabled:opacity-40 transition-opacity"
+              className="rounded-lg px-2.5 py-1 text-xs font-medium bg-accent text-white dark:text-black hover:opacity-90 disabled:opacity-40 transition-opacity"
               disabled={!collectionName.trim()}
               onClick={handleAssign}
              type="button"
@@ -114,7 +114,7 @@ export function BatchActionBar({
             </button>
             <button
               aria-label="Cancel collection assignment"
-              className="rounded-lg p-1 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text transition-colors"
+              className="rounded-lg p-1 text-fg-muted hover:text-fg transition-colors"
               onClick={() => setCollectionInputVisible(false)}
               type="button"
             >
@@ -123,7 +123,7 @@ export function BatchActionBar({
           </div>
         ) : (
           <button
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-fg hover:bg-line/40 transition-colors"
             onClick={() => setCollectionInputVisible(true)}
             type="button"
           >
@@ -134,7 +134,7 @@ export function BatchActionBar({
 
         {/* Mark Finished */}
         <button
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-fg hover:bg-line/40 transition-colors"
           onClick={() => onMarkFinished(selectedBookIds)}
           type="button"
         >
@@ -145,7 +145,7 @@ export function BatchActionBar({
         {/* Export Annotations */}
         {onExportAnnotations && (
           <button
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-fg hover:bg-line/40 transition-colors"
             onClick={() => onExportAnnotations(selectedBookIds)}
             type="button"
           >
@@ -164,12 +164,12 @@ export function BatchActionBar({
           Delete
         </button>
 
-        <div className="h-5 w-px bg-light-border dark:bg-dark-border" />
+        <div className="h-5 w-px bg-line" />
 
         {/* Clear */}
         <button
           aria-label="Clear selection"
-          className="rounded-lg p-1.5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+          className="rounded-lg p-1.5 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
           onClick={onClearSelection}
          type="button"
 

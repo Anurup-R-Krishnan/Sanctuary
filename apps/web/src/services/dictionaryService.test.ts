@@ -245,4 +245,71 @@ describe("dictionaryService — vocabulary lookup & Leitner spaced repetition", 
       expect(db.deleteVocabWord).toHaveBeenCalledWith("luminous");
     });
   });
+
+  describe("saveVocabularyWord — preserve schedule for existing words", () => {
+    it("creates a new word with current date and immediate review", async () => {
+      (db.getVocabWord as ReturnType<typeof mock>).mockResolvedValue(null);
+
+      const result = await saveVocabularyWord({
+        word: "ethereal",
+        definition: "Extremely delicate or light.",
+        example: "The ethereal quality of her voice.",
+        partOfSpeech: "adjective",
+      });
+
+      expect(result.word).toBe("ethereal");
+      expect(result.repetitionLevel).toBe(0);
+      expect(result.intervalDays).toBe(0);
+      expect(db.putVocabWord).toHaveBeenCalled();
+
+      const savedItem = (db.putVocabWord as ReturnType<typeof mock>).mock.calls[0]?.[0] as VocabularyItem;
+      expect(savedItem.createdAt).toBeTruthy();
+      // nextReviewAt should be approximately now (within 1 second)
+      expect(Math.abs(new Date(savedItem.nextReviewAt).getTime() - Date.now())).toBeLessThan(1000);
+    });
+
+    it("preserves existing schedule, mastery level, and createdAt when updating a word", async () => {
+      const existingWord: VocabularyItem = {
+        audioUrl: "old-audio.mp3",
+        bookId: "book-123",
+        bookTitle: "Old Book",
+        createdAt: "2026-04-01T00:00:00.000Z",
+        definition: "Old definition",
+        example: "Old example",
+        id: "ethereal",
+        intervalDays: 7,
+        lastReviewedAt: "2026-04-15T00:00:00.000Z",
+        nextReviewAt: "2026-04-22T00:00:00.000Z",
+        partOfSpeech: "adjective",
+        repetitionLevel: 3,
+        word: "ethereal",
+      };
+
+      (db.getVocabWord as ReturnType<typeof mock>).mockResolvedValue(existingWord);
+
+      const result = await saveVocabularyWord({
+        word: "ethereal",
+        definition: "New definition with fresh wording.",
+        example: "A new example sentence.",
+        partOfSpeech: "adjective",
+        bookId: "new-book",
+        bookTitle: "New Book",
+      });
+
+      // Schedule and mastery should be preserved
+      expect(result.repetitionLevel).toBe(3);
+      expect(result.intervalDays).toBe(7);
+      expect(result.nextReviewAt).toBe("2026-04-22T00:00:00.000Z");
+      expect(result.createdAt).toBe("2026-04-01T00:00:00.000Z");
+      expect(result.lastReviewedAt).toBe("2026-04-15T00:00:00.000Z");
+
+      // But definition and source should be updated
+      expect(result.definition).toBe("New definition with fresh wording.");
+      expect(result.example).toBe("A new example sentence.");
+      expect(result.bookTitle).toBe("New Book");
+      expect(result.bookId).toBe("new-book");
+
+      expect(db.putVocabWord).toHaveBeenCalled();
+    });
+  });
 });

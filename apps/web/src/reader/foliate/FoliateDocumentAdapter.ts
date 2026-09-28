@@ -22,6 +22,7 @@ import { parseHtmlToBook } from "../formats/HtmlParser";
 import { parseMarkdownToBook } from "../formats/MarkdownParser";
 import { parsePdfToBook } from "../formats/PdfParser";
 import { parseTxtToBook } from "../formats/TxtParser";
+import { installBookContentSecurity, secureSections } from "./contentSecurity";
 
 export interface FoliateRawSection {
   createDocument?(): Promise<Document> | Document;
@@ -168,6 +169,7 @@ export class FoliateDocumentAdapter implements BookDocument {
         }
         const { makeBook } = await import("foliate-js/view.js");
         rawBook = (await makeBook(fileInput)) as unknown as FoliateRawBook;
+        installBookContentSecurity(rawBook as { transformTarget?: EventTarget });
         break;
       }
 
@@ -179,6 +181,7 @@ export class FoliateDocumentAdapter implements BookDocument {
             ? source
             : new File([source instanceof Blob ? source : new Blob([source])], fileName);
           rawBook = (await makeBook(fileInput)) as unknown as FoliateRawBook;
+          installBookContentSecurity(rawBook as { transformTarget?: EventTarget });
         } else {
           const { makeFB2 } = await import("foliate-js/fb2.js");
           const blob = source instanceof Blob ? source : new Blob([source], { type: "application/x-fictionbook+xml" });
@@ -237,6 +240,8 @@ export class FoliateDocumentAdapter implements BookDocument {
       throw new Error(`Foliate could not parse book format: ${format}`);
     }
 
+    // Every format: sections are served from sanitized copies (see contentSecurity.ts).
+    secureSections(rawBook.sections);
     return new FoliateDocumentAdapter(rawBook, format);
   }
 
@@ -280,6 +285,3 @@ export class FoliateDocumentAdapter implements BookDocument {
     this.rawBook.destroy?.();
   }
 }
-
-export const FoliateEpubAdapter = FoliateDocumentAdapter;
-export type FoliateEpubAdapter = FoliateDocumentAdapter;

@@ -204,7 +204,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
             tabIndex={-1}
           />
           <div
-            className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-light-surface/95 dark:bg-dark-surface/95 backdrop-blur-2xl shadow-2xl border-l border-light-border dark:border-dark-border pointer-events-auto flex flex-col z-[100] animate-slideInRight"
+            className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-surface/95 backdrop-blur-2xl shadow-2xl border-l border-line pointer-events-auto flex flex-col z-[100] animate-slideInRight"
             role="dialog"
             aria-modal="true"
             aria-label="Reader drawer"

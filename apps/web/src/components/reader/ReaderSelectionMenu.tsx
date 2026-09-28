@@ -61,7 +61,7 @@ function ReaderSelectionMenuImpl({
   }) => (
     <button
       aria-label={ariaLabel || label}
-      className="p-2 sm:p-2.5 md:p-3 flex flex-col items-center justify-center gap-1 shrink-0 min-w-[48px] sm:min-w-[54px] hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:bg-light-border/60 dark:active:bg-dark-border/60 active:scale-[0.95] transition-all duration-instant rounded-xl text-light-text dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+      className="p-2 sm:p-2.5 md:p-3 flex flex-col items-center justify-center gap-1 shrink-0 min-w-[48px] sm:min-w-[54px] hover:bg-line/40 active:bg-line/60 active:scale-[0.95] transition-all duration-instant rounded-xl text-fg focus:outline-none focus:ring-2 focus:ring-accent"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -71,7 +71,7 @@ function ReaderSelectionMenuImpl({
       type="button"
     >
       <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-      <span className="text-[10px] font-medium leading-none whitespace-nowrap">{label}</span>
+      <span className="text-2xs font-medium leading-none whitespace-nowrap">{label}</span>
     </button>
   );
 
@@ -79,11 +79,11 @@ function ReaderSelectionMenuImpl({
     <div
       role="toolbar"
       aria-label="Text selection actions"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-xl shadow-2xl rounded-2xl border border-light-border dark:border-dark-border overflow-hidden flex flex-col animate-slideUp pointer-events-auto max-w-[calc(100vw-1.5rem)] sm:max-w-none"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-page/95 backdrop-blur-xl shadow-2xl rounded-2xl border border-line overflow-hidden flex flex-col animate-slideUp pointer-events-auto max-w-[calc(100vw-1.5rem)] sm:max-w-none"
     >
       {/* Top Color Palette Swatch Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-light-surface/60 dark:bg-dark-surface/60 border-b border-light-border dark:border-dark-border gap-3">
-        <span className="text-[10px] font-medium text-light-text-muted dark:text-dark-text-muted">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-surface/60 border-b border-line gap-3">
+        <span className="text-2xs font-medium text-fg-muted">
           Highlight Palette
         </span>
         <div className="flex items-center gap-1.5">
@@ -94,7 +94,7 @@ function ReaderSelectionMenuImpl({
                 aria-label={`Highlight with ${c.label}`}
                 className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-transform active:scale-90 flex items-center justify-center ${
                   isSelected
-                    ? "ring-2 ring-offset-1 ring-light-accent dark:ring-dark-accent scale-110"
+                    ? "ring-2 ring-offset-1 ring-accent scale-110"
                     : "hover:scale-110 opacity-85 hover:opacity-100"
                 }`}
                 key={c.id}
@@ -130,7 +130,7 @@ function ReaderSelectionMenuImpl({
               label="Define"
               onClick={onDefine}
             />
-            <div className="w-px h-8 bg-light-border dark:bg-dark-border shrink-0" />
+            <div className="w-px h-8 bg-line shrink-0" />
           </>
         )}
         <ActionBtn
@@ -145,7 +145,7 @@ function ReaderSelectionMenuImpl({
           label="Underline"
           onClick={onUnderline}
         />
-        <div className="w-px h-8 bg-light-border dark:bg-dark-border shrink-0" />
+        <div className="w-px h-8 bg-line shrink-0" />
         <ActionBtn
           ariaLabel="Add note"
           icon={Edit3}

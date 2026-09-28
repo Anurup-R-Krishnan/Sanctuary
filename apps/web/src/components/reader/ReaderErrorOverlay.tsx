@@ -36,17 +36,17 @@ export function ReaderErrorOverlay({ error, onRetry, onRetryFromStart, onReplace
     };
 
     return (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-sm p-6 pointer-events-auto">
-            <div className="max-w-md w-full bg-light-surface dark:bg-dark-surface rounded-2xl shadow-2xl border border-light-border dark:border-dark-border p-8 text-center animate-scaleIn">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-page/95 backdrop-blur-sm p-6 pointer-events-auto">
+            <div className="max-w-md w-full bg-surface rounded-2xl shadow-2xl border border-line p-8 text-center animate-scaleIn">
                 <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                     <AlertCircle className="w-8 h-8" />
                 </div>
                 
-                <h2 className="text-xl font-bold text-light-text dark:text-dark-text mb-2">
+                <h2 className="text-xl font-bold text-fg mb-2">
                     {error.title}
                 </h2>
                 
-                <p className="text-light-text-muted dark:text-dark-text-muted mb-8">
+                <p className="text-fg-muted mb-8">
                     {error.message}
                 </p>
                 {replaceError && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{replaceError}</p>}

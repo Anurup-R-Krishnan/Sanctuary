@@ -11,6 +11,8 @@ import { createPortal } from "react-dom";
 
 import type { LightboxImageTarget } from "@/reader/contracts/engine";
 
+import { calculateZoomIn, calculateZoomOut, sanitizeDownloadFilename } from "./lightboxUtils";
+
 export interface ReaderImageLightboxProps {
   image: LightboxImageTarget | null;
   onClose: () => void;
@@ -43,13 +45,13 @@ export function ReaderImageLightbox({
   }, [image]);
 
   const handleZoomIn = useCallback(() => {
-    setScale((prev) => Math.min(5, Number((prev + 0.25).toFixed(2))));
+    setScale((prev) => calculateZoomIn(prev));
   }, []);
 
   const handleZoomOut = useCallback(() => {
     setScale((prev) => {
-      const next = Math.max(0.5, Number((prev - 0.25).toFixed(2)));
-      if (next <= 1) setPosition({ x: 0, y: 0 });
+      const [next, shouldReset] = calculateZoomOut(prev);
+      if (shouldReset) setPosition({ x: 0, y: 0 });
       return next;
     });
   }, []);
@@ -67,10 +69,7 @@ export function ReaderImageLightbox({
     if (!image?.src) return;
     const a = document.createElement("a");
     a.href = image.src;
-    const filename = (image.title || image.alt || "book-image")
-      .replace(/[^a-z0-9_-]/gi, "_")
-      .toLowerCase();
-    a.download = `${filename}.png`;
+    a.download = sanitizeDownloadFilename(image.title, image.alt);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -211,7 +210,7 @@ export function ReaderImageLightbox({
             {image.caption || image.title || image.alt || "Image View"}
           </span>
           {image.naturalWidth && image.naturalHeight && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-dark-border/60 text-dark-text-muted shrink-0 font-mono border border-dark-border">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-dark-border/60 text-dark-text-muted shrink-0 font-mono border border-dark-border">
               {image.naturalWidth} × {image.naturalHeight} px
             </span>
           )}
@@ -292,7 +291,7 @@ export function ReaderImageLightbox({
             aria-label="Invert colors for dark diagrams"
             className={`p-2 rounded-full active:scale-90 transition-all ${
               isInverted
-                ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold shadow-sm"
+                ? "bg-accent text-white dark:text-black font-semibold shadow-sm"
                 : "text-dark-text-muted hover:text-dark-text hover:bg-dark-border/40"
             }`}
             onClick={handleToggleInvert}

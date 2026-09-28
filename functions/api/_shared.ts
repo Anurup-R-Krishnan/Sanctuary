@@ -1,6 +1,7 @@
 import type { Env } from "../types";
 
 import { getUserId } from "../utils/auth";
+import { getSchemaReady } from "../utils/schemaCache";
 
 export type PagesContext<Params extends Record<string, string> = Record<string, string>> = EventContext<Env, string, Params>;
 
@@ -45,9 +46,14 @@ export const json = (body: unknown, init: ResponseInit = {}) =>
     headers: { "Content-Type": "application/json", ...BASE_HEADERS, ...init.headers },
   });
 
+// The WebWorker lib's CacheStorage type shadows workers-types' `caches.default`.
+const edgeCache = (): Cache => (caches as unknown as { default: Cache }).default;
+
 export const errorJson = (message: string, status = 400) => json({ error: message }, { status });
 
 export async function requireUser(request: Request, env: Env): Promise<string | Response> {
+  // Session lookup needs the auth tables, so bootstrap before resolving the user.
+  await getSchemaReady(env.SANCTUARY_DB);
   const userId = await getUserId(request, env);
   if (!userId) return errorJson("Unauthorized", 401);
   return userId;
@@ -225,7 +231,7 @@ export async function withEdgeCache(
   cacheKeyModifier: string,
   fetcher: () => Promise<Response>
 ): Promise<Response> {
-  const cache = caches.default;
+  const cache = edgeCache();
   const url = new URL(request.url);
   url.searchParams.set("_cache", cacheKeyModifier);
   
@@ -253,7 +259,7 @@ export async function withEdgeCache(
 }
 
 export async function purgeEdgeCache(request: Request, cacheKeyModifier: string): Promise<void> {
-  const cache = caches.default;
+  const cache = edgeCache();
   const url = new URL(request.url);
   url.search = ""; // Strip query params to purge base route
   url.searchParams.set("_cache", cacheKeyModifier);

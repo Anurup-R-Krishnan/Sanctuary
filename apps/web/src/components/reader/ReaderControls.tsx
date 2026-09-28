@@ -77,7 +77,7 @@ function ReaderControls({
         return (
             <div className="select-none">
                 <div
-                    className="flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-light-surface/80 dark:hover:bg-dark-surface/80"
+                    className="flex flex-wrap items-center gap-1 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-surface/80"
                     style={{ paddingLeft: `${8 + depth * 12}px` }}
                     onClick={() => onNavigate(item.href)}
                     onKeyDown={(e) => {
@@ -101,7 +101,7 @@ function ReaderControls({
                     )}
                     {!hasSubs && <div className="w-4" />}
                     <span
-                        className="text-sm truncate flex-1 text-light-text dark:text-dark-text opacity-80"
+                        className="text-sm truncate flex-1 text-fg opacity-80"
                     >
                         {item.label}
                     </span>
@@ -118,8 +118,8 @@ function ReaderControls({
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
-                <h2 className="font-semibold text-light-text dark:text-dark-text">Contents</h2>
+            <div className="p-4 border-b border-line flex items-center justify-between">
+                <h2 className="font-semibold text-fg">Contents</h2>
                 {onClose && (
                     <IconButton
                         onClick={onClose}
@@ -153,19 +153,19 @@ function ReaderControls({
             </div>
 
             {/* Tabs */}
-            <div className="flex p-1 bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border rounded-xl mb-4" role="tablist">
+            <div className="flex p-1 bg-surface/60 border border-line rounded-xl mb-4" role="tablist">
                 <Button
                     onClick={() => setActiveTab("chapters")}
                     role="tab"
                     aria-selected={activeTab === "chapters"}
                     variant="nav"
                     className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "chapters"
-                        ? "text-light-accent dark:text-dark-accent font-semibold"
-                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
+                        ? "text-accent font-semibold"
+                        : "text-fg-muted/60 hover:text-fg"
                         }`}
                 >
                     {activeTab === "chapters" && (
-                        <div className="absolute inset-0 bg-light-primary dark:bg-dark-primary rounded-lg shadow-xs border border-light-border dark:border-dark-border" />
+                        <div className="absolute inset-0 bg-page rounded-lg shadow-xs border border-line" />
                     )}
                     <List className="w-4 h-4 relative" />
                     <span className="relative">Chapters</span>
@@ -176,12 +176,12 @@ function ReaderControls({
                     aria-selected={activeTab === "bookmarks"}
                     variant="nav"
                     className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "bookmarks"
-                        ? "text-light-accent dark:text-dark-accent font-semibold"
-                        : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
+                        ? "text-accent font-semibold"
+                        : "text-fg-muted/60 hover:text-fg"
                         }`}
                 >
                     {activeTab === "bookmarks" && (
-                        <div className="absolute inset-0 bg-light-primary dark:bg-dark-primary rounded-lg shadow-xs border border-light-border dark:border-dark-border" />
+                        <div className="absolute inset-0 bg-page rounded-lg shadow-xs border border-line" />
                     )}
                     <BookmarkIcon className="w-4 h-4 relative" />
                     <span className="relative">Bookmarks</span>
@@ -210,7 +210,7 @@ function ReaderControls({
                             {filteredToc.length > 0 ? (
                                 filteredToc.map(item => <TocEntry key={item.id} item={item} />)
                             ) : (
-                                <p className="text-center py-8 text-sm text-light-text-muted dark:text-dark-text-muted opacity-80">No chapters found</p>
+                                <p className="text-center py-8 text-sm text-fg-muted opacity-80">No chapters found</p>
                             )}
                         </div>
                     </>
@@ -218,15 +218,15 @@ function ReaderControls({
                     <div className="space-y-2">
                         {bookmarks.length > 0 ? (
                             bookmarks.map(bm => (
-                                <div key={bm.id} className="group flex flex-wrap items-center gap-3 p-3 rounded-xl border border-light-border/40 dark:border-dark-border/40 hover:bg-light-surface/80 dark:hover:bg-dark-surface/80 transition-colors">
+                                <div key={bm.id} className="group flex flex-wrap items-center gap-3 p-3 rounded-xl border border-line/40 hover:bg-surface/80 transition-colors">
                                     <Button
                                         onClick={() => onNavigate(bm.cfi)}
                                         variant="ghost"
                                         className="flex-1 !justify-start !text-left !px-0 !py-0 !rounded-none"
                                     >
                                         <span className="flex flex-col items-start gap-0.5">
-                                            <span className="text-sm font-medium text-light-text dark:text-dark-text">{bm.title}</span>
-                                            <span className="text-xs text-light-text-muted dark:text-dark-text-muted">{new Date(bm.createdAt).toLocaleDateString()}</span>
+                                            <span className="text-sm font-medium text-fg">{bm.title}</span>
+                                            <span className="text-xs text-fg-muted">{new Date(bm.createdAt).toLocaleDateString()}</span>
                                         </span>
                                     </Button>
                                     <IconButton
@@ -241,11 +241,11 @@ function ReaderControls({
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-10 px-6 text-center animate-fadeIn">
-                                <div className="w-14 h-14 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
-                                    <BookmarkIcon className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+                                <div className="w-14 h-14 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+                                    <BookmarkIcon className="w-6 h-6 text-fg-muted" strokeWidth={1.5} />
                                 </div>
-                                <p className="text-light-text dark:text-dark-text font-medium">No bookmarks yet</p>
-                                <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">Bookmark pages while reading to find them quickly.</p>
+                                <p className="text-fg font-medium">No bookmarks yet</p>
+                                <p className="mt-1 text-sm text-fg-muted">Bookmark pages while reading to find them quickly.</p>
                             </div>
                         )}
                     </div>

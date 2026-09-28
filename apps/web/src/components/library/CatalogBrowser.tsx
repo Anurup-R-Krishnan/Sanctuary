@@ -27,7 +27,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import {
   downloadCatalogBook,
   fetchCatalogFeed,
-  getOfflineSampleFeed,
+  resolveOpenSearchUrl,
   resolveSearchUrl,
 } from "@/services/opdsService";
 import { useCatalogStore } from "@/store/useCatalogStore";
@@ -60,6 +60,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
   const [importingId, setImportingId] = useState<string | null>(null);
   const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
   const [importError, setImportError] = useState<string | null>(null);
+  const [resolvedSearchLinks, setResolvedSearchLinks] = useState<Map<string, string>>(new Map());
 
   // Add catalog form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -91,7 +92,15 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
         const data = await fetchCatalogFeed(api, url, activeCatalog);
         setFeed(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load catalog feed");
+        const errMsg = err instanceof Error ? err.message : "Failed to load catalog feed";
+        // Handle upstream catalog rejection (401 WITH x-upstream-url) vs. our own auth (401 WITHOUT x-upstream-url)
+        if (errMsg.includes("This catalog rejected the saved credentials")) {
+          setError("This catalog rejected the saved credentials.");
+        } else if (errMsg.includes("401")) {
+          setError("Sign in to browse online catalogs.");
+        } else {
+          setError(errMsg);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -104,6 +113,17 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
       void loadFeed(currentUrl);
     }
   }, [isOpen, currentUrl, loadFeed]);
+
+  // Resolve OpenSearch description links to their atom templates
+  useEffect(() => {
+    if (!feed?.searchLink || !activeCatalog) return;
+    const cacheKey = `${activeCatalog.id}:${feed.searchLink}`;
+    if (resolvedSearchLinks.has(cacheKey)) return; // Already resolved
+
+    void resolveOpenSearchUrl(api, feed.searchLink, activeCatalog).then((resolved) => {
+      setResolvedSearchLinks((prev) => new Map(prev).set(cacheKey, resolved));
+    });
+  }, [feed?.searchLink, activeCatalog, api, resolvedSearchLinks]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -214,25 +234,25 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
       role="dialog"
       tabIndex={-1}
     >
-      <div className="relative w-full max-w-5xl h-[min(85vh,calc(100vh-5rem))] flex flex-col rounded-2xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-5xl h-[min(85vh,calc(100vh-5rem))] flex flex-col rounded-2xl bg-surface border border-line shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-surface/80 dark:bg-dark-surface/80 backdrop-blur">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-surface/80 backdrop-blur">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-light-accent/15 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-light-accent/15 dark:bg-dark-accent/20 text-accent flex items-center justify-center">
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="catalog-browser-title" className="text-lg font-bold text-light-text dark:text-dark-text flex items-center gap-2">
+              <h2 id="catalog-browser-title" className="text-lg font-bold text-fg flex items-center gap-2">
                 OPDS Catalog Browser
               </h2>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-xs text-fg-muted">
                 Browse public domain ebooks and personal media servers
               </p>
             </div>
           </div>
 
           <IconButton
-            className="text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text"
+            className="text-fg-muted hover:text-fg"
             icon={<X className="w-5 h-5" />}
             label="Close catalog browser"
             onClick={onClose}
@@ -241,7 +261,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
         </div>
 
         {/* Toolbar: Catalog switcher, search, and actions */}
-        <div className="px-6 py-3 border-b border-light-border/60 dark:border-dark-border/60 flex flex-wrap items-center justify-between gap-3 bg-light-surface/40 dark:bg-dark-surface/40">
+        <div className="px-6 py-3 border-b border-line/60 flex flex-wrap items-center justify-between gap-3 bg-surface/40">
           {/* Catalog tabs */}
           <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-1 sm:pb-0">
             {catalogs.map((catalog) => (
@@ -249,8 +269,8 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                 <button
                   className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all inline-flex items-center gap-1.5 ${
                     activeCatalogId === catalog.id
-                      ? "bg-light-accent text-white dark:bg-dark-accent dark:text-black shadow-xs font-semibold"
-                      : "bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 border border-light-border/60 dark:border-dark-border/60"
+                      ? "bg-accent text-white dark:text-black shadow-xs font-semibold"
+                      : "bg-surface text-fg hover:bg-line/40 border border-line/60"
                   }`}
                   onClick={() => setActiveCatalog(catalog.id)}
                   type="button"
@@ -289,9 +309,9 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
 
           {/* Search in catalog */}
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-light-text-muted dark:text-dark-text-muted pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted pointer-events-none" />
             <input
-              className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border focus:outline-none focus:border-light-accent dark:focus:border-dark-accent text-light-text dark:text-dark-text placeholder:text-light-text-muted/60"
+              className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-page border border-line focus:outline-none focus:border-accent text-fg placeholder:text-light-text-muted/60"
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter catalog books..."
               type="text"
@@ -303,16 +323,16 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
         {/* Add Catalog Form Dropdown */}
         {showAddForm && (
           <form
-            className="px-6 py-4 bg-light-surface/60 dark:bg-dark-surface/60 border-b border-light-border dark:border-dark-border flex flex-col gap-3 animate-fadeIn"
+            className="px-6 py-4 bg-surface/60 border-b border-line flex flex-col gap-3 animate-fadeIn"
             onSubmit={handleAddCatalogSubmit}
           >
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex-1 min-w-[180px]">
-                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                <label className="block text-xs font-semibold text-fg-muted mb-1">
                   Catalog Name
                 </label>
                 <input
-                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text focus:outline-none focus:border-light-accent dark:focus:border-dark-accent"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-page border border-line text-fg focus:outline-none focus:border-accent"
                   onChange={(e) => setNewCatalogName(e.target.value)}
                   placeholder="e.g. My Calibre Server"
                   required
@@ -321,11 +341,11 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                 />
               </div>
               <div className="flex-2 min-w-[240px]">
-                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                <label className="block text-xs font-semibold text-fg-muted mb-1">
                   OPDS Feed URL
                 </label>
                 <input
-                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text focus:outline-none focus:border-light-accent dark:focus:border-dark-accent"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-page border border-line text-fg focus:outline-none focus:border-accent"
                   onChange={(e) => setNewCatalogUrl(e.target.value)}
                   placeholder="https://example.com/opds"
                   required
@@ -334,11 +354,11 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                 />
               </div>
               <div className="w-48">
-                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                <label className="block text-xs font-semibold text-fg-muted mb-1">
                   Authentication
                 </label>
                 <select
-                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text focus:outline-none focus:border-light-accent dark:focus:border-dark-accent"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-page border border-line text-fg focus:outline-none focus:border-accent"
                   onChange={(e) => setAuthType(e.target.value as "basic" | "bearer" | "none")}
                   value={authType}
                 >
@@ -350,14 +370,14 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
             </div>
 
             {authType === "basic" && (
-              <div className="flex flex-wrap items-end gap-3 pt-1 border-t border-light-border/60 dark:border-dark-border/60">
+              <div className="flex flex-wrap items-end gap-3 pt-1 border-t border-line/60">
                 <div className="flex-1 min-w-[160px]">
-                  <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">
                     Username
                   </label>
                   <input
                     autoComplete="username"
-                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text focus:outline-none focus:border-light-accent dark:focus:border-dark-accent"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-page border border-line text-fg focus:outline-none focus:border-accent"
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Calibre username"
                     type="text"
@@ -365,12 +385,12 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                   />
                 </div>
                 <div className="flex-1 min-w-[160px]">
-                  <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+                  <label className="block text-xs font-semibold text-fg-muted mb-1">
                     Password
                   </label>
                   <input
                     autoComplete="current-password"
-                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text focus:outline-none focus:border-light-accent dark:focus:border-dark-accent"
+                    className="w-full px-3 py-1.5 text-xs rounded-lg bg-page border border-line text-fg focus:outline-none focus:border-accent"
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Calibre password"
                     type="password"
@@ -381,12 +401,12 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
             )}
 
             {authType === "bearer" && (
-              <div className="pt-1 border-t border-light-border/60 dark:border-dark-border/60">
-                <label className="block text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted mb-1">
+              <div className="pt-1 border-t border-line/60">
+                <label className="block text-xs font-semibold text-fg-muted mb-1">
                   Bearer Token or API Key
                 </label>
                 <input
-                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text font-mono focus:outline-none focus:border-light-accent dark:focus:border-dark-accent"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg bg-page border border-line text-fg font-mono focus:outline-none focus:border-accent"
                   onChange={(e) => setBearerToken(e.target.value)}
                   placeholder="eyJhbGciOi..."
                   type="password"
@@ -411,23 +431,23 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
 
         {/* Sub-navigation / Breadcrumbs */}
         {feed && (history.length > 0 || feed.navigationLinks.length > 0) && (
-          <div className="px-6 py-2 border-b border-light-border/60 dark:border-dark-border/60 flex items-center gap-2 text-xs overflow-x-auto bg-light-surface/30 dark:bg-dark-surface/30">
+          <div className="px-6 py-2 border-b border-line/60 flex items-center gap-2 text-xs overflow-x-auto bg-surface/30">
             {history.length > 0 && (
               <button
-                className="px-2 py-1 rounded bg-light-surface dark:bg-dark-surface border border-light-border/60 dark:border-dark-border/60 hover:bg-light-border/40 font-medium text-light-text dark:text-dark-text"
+                className="px-2 py-1 rounded bg-surface border border-line/60 hover:bg-light-border/40 font-medium text-fg"
                 onClick={handleBack}
                 type="button"
               >
                 ← Back
               </button>
             )}
-            <span className="font-semibold text-light-text dark:text-dark-text truncate">
+            <span className="font-semibold text-fg truncate">
               {feed.title}
             </span>
             {feed.navigationLinks.slice(0, 5).map((nav, idx) => (
               <button
                 key={idx}
-                className="px-2 py-0.5 rounded text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text underline underline-offset-2 flex-shrink-0"
+                className="px-2 py-0.5 rounded text-fg-muted hover:text-fg underline underline-offset-2 flex-shrink-0"
                 onClick={() => handleNavigate(nav.href)}
                 type="button"
               >
@@ -441,55 +461,41 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
         <div className="flex-1 p-6 overflow-y-auto">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
-              <Loader2 className="w-8 h-8 text-light-accent dark:text-dark-accent animate-spin mb-3" />
-              <p className="text-sm font-medium text-light-text dark:text-dark-text">
+              <Loader2 className="w-8 h-8 text-accent animate-spin mb-3" />
+              <p className="text-sm font-medium text-fg">
                 Fetching catalog feed...
               </p>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1">
+              <p className="text-xs text-fg-muted mt-1">
                 Parsing publications and acquisition links
               </p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-64 text-center max-w-md mx-auto">
               <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
-              <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">
+              <h3 className="text-sm font-semibold text-fg">
                 Unable to Load Catalog
               </h3>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 mb-4">
+              <p className="text-xs text-fg-muted mt-1 mb-4">
                 {error}
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button
-                  className="gap-2"
-                  onClick={() => void loadFeed(currentUrl)}
-                  size="sm"
-                  variant="secondary"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Retry
-                </Button>
-                <Button
-                  className="gap-2"
-                  onClick={() => {
-                    setFeed(getOfflineSampleFeed());
-                    setError(null);
-                  }}
-                  size="sm"
-                  variant="primary"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Browse Offline Classics
-                </Button>
-              </div>
+              <Button
+                className="gap-2"
+                onClick={() => void loadFeed(currentUrl)}
+                size="sm"
+                variant="secondary"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Retry
+              </Button>
             </div>
           ) : filteredEntries.length === 0 ? (
             searchQuery ? (
               <div className="flex flex-col items-center justify-center h-64 text-center max-w-sm mx-auto">
-                <Search className="w-10 h-10 text-light-text-muted/40 dark:text-dark-text-muted/40 mb-3" />
-                <p className="text-sm font-semibold text-light-text dark:text-dark-text">
+                <Search className="w-10 h-10 text-fg-muted/40 mb-3" />
+                <p className="text-sm font-semibold text-fg">
                   No matching publications
                 </p>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 mb-4">
+                <p className="text-xs text-fg-muted mt-1 mb-4">
                   No books in this view matched &ldquo;{searchQuery}&rdquo;.
                 </p>
                 <div className="flex items-center gap-2">
@@ -500,8 +506,13 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                     <Button
                       className="gap-1.5"
                       onClick={() => {
-                        const searchUrl = resolveSearchUrl(feed.searchLink!, searchQuery);
-                        void loadFeed(searchUrl);
+                        const searchLink = feed.searchLink!;
+                        const cacheKey = `${activeCatalog.id}:${searchLink}`;
+                        const cached = resolvedSearchLinks.get(cacheKey);
+                        // Resolve the OpenSearch description on demand if the effect hasn't finished yet.
+                        void (cached ? Promise.resolve(cached) : resolveOpenSearchUrl(api, searchLink, activeCatalog)).then(
+                          (template) => loadFeed(resolveSearchUrl(template, searchQuery))
+                        );
                       }}
                       size="sm"
                       variant="primary"
@@ -513,27 +524,27 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
               </div>
             ) : feed?.navigationLinks && feed.navigationLinks.length > 0 ? (
               <div className="space-y-4">
-                <div className="border-b border-light-border/60 dark:border-dark-border/60 pb-2">
-                  <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">
+                <div className="border-b border-line/60 pb-2">
+                  <h3 className="text-sm font-semibold text-fg">
                     Catalog Categories & Collections
                   </h3>
-                  <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                  <p className="text-xs text-fg-muted">
                     Select a section below to explore publications
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {feed.navigationLinks.map((nav, idx) => (
                     <button
-                      className="p-3.5 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 hover:bg-light-surface/90 dark:hover:bg-dark-surface/90 border border-light-border dark:border-dark-border flex items-center justify-between text-left transition-all group"
+                      className="p-3.5 rounded-xl bg-surface/60 hover:bg-surface/90 border border-line flex items-center justify-between text-left transition-all group"
                       key={idx}
                       onClick={() => handleNavigate(nav.href)}
                       type="button"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-light-accent/15 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-light-accent/15 dark:bg-dark-accent/20 text-accent flex items-center justify-center shrink-0">
                           <Folder className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-semibold text-light-text dark:text-dark-text truncate group-hover:text-light-accent dark:group-hover:text-dark-accent">
+                        <span className="text-xs font-semibold text-fg truncate group-hover:text-accent">
                           {nav.title || nav.rel}
                         </span>
                       </div>
@@ -544,24 +555,13 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-center max-w-sm mx-auto">
-                <BookOpen className="w-10 h-10 text-light-text-muted/40 dark:text-dark-text-muted/40 mb-3" />
-                <p className="text-sm font-medium text-light-text dark:text-dark-text">
+                <BookOpen className="w-10 h-10 text-fg-muted/40 mb-3" />
+                <p className="text-sm font-medium text-fg">
                   No publications found
                 </p>
-                <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 mb-4">
+                <p className="text-xs text-fg-muted mt-1">
                   This feed currently has no direct book entries.
                 </p>
-                <Button
-                  className="gap-2"
-                  onClick={() => {
-                    setFeed(getOfflineSampleFeed());
-                  }}
-                  size="sm"
-                  variant="secondary"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Load Offline Classics
-                </Button>
               </div>
             )
           ) : (
@@ -587,6 +587,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                     isImporting={importingId === entry.id}
                     key={entry.id}
                     onImport={handleImportBook}
+                    onNavigate={handleNavigate}
                   />
                 ))}
               </div>
@@ -596,7 +597,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
 
         {/* Dedicated Feed Pagination Footer */}
         {feed?.pagination && (feed.pagination.previous || feed.pagination.next) && (
-          <div className="px-6 py-3 border-t border-light-border dark:border-dark-border flex items-center justify-between bg-light-surface/40 dark:bg-dark-surface/40">
+          <div className="px-6 py-3 border-t border-line flex items-center justify-between bg-surface/40">
             <Button
               className="gap-1 !text-xs !py-1.5"
               disabled={!feed.pagination.previous}
@@ -608,7 +609,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
               Previous Page
             </Button>
 
-            <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
+            <span className="text-xs text-fg-muted font-medium">
               Feed Navigation
             </span>
 

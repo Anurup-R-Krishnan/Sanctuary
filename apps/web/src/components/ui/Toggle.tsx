@@ -21,10 +21,10 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                 aria-checked={checked}
                 onClick={() => onChange(!checked)}
                 className={cx(
-                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-light-accent dark:focus-visible:ring-dark-accent",
+                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent",
                     checked
-                        ? "bg-light-accent/10 dark:bg-dark-accent/10 border border-light-accent/20 dark:border-dark-accent/20"
-                        : "bg-light-surface/50 dark:bg-dark-surface/50 border border-light-border/60 dark:border-dark-border/60 hover:bg-light-surface/80 dark:hover:bg-dark-surface/80 hover:border-light-accent/30 dark:hover:border-dark-accent/30",
+                        ? "bg-accent/10 border border-accent/20"
+                        : "bg-surface/50 border border-line/60 hover:bg-surface/80 hover:border-accent/30",
                     className
                 )}
                 {...props}
@@ -32,24 +32,24 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                 <div className="flex-1 min-w-0 flex items-center gap-3">
                     {Icon && (
                         <div className="flex-shrink-0">
-                            <Icon className={cx("w-5 h-5", checked ? "text-light-accent dark:text-dark-accent" : "text-light-text-muted dark:text-dark-text-muted")} />
+                            <Icon className={cx("w-5 h-5", checked ? "text-accent" : "text-fg-muted")} />
                         </div>
                     )}
                     <div>
-                        {label && <span className="text-sm font-medium text-light-text dark:text-dark-text block">{label}</span>}
-                        {sublabel && <span className="text-xs text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5 block">{sublabel}</span>}
+                        {label && <span className="text-sm font-medium text-fg block">{label}</span>}
+                        {sublabel && <span className="text-xs text-fg-muted/70 mt-0.5 block">{sublabel}</span>}
                     </div>
                 </div>
                 <div className={cx(
                     "relative flex-shrink-0 w-12 h-6 rounded-full transition-all duration-fast ease-out",
-                    checked ? "bg-light-accent dark:bg-dark-accent" : "bg-light-border dark:bg-dark-border"
+                    checked ? "bg-accent" : "bg-line"
                 )}>
                     <div className={cx(
                         "absolute top-1 w-4 h-4 bg-white dark:bg-dark-text rounded-full shadow-md transition-all duration-fast ease-out flex items-center justify-center",
                         checked ? "left-7" : "left-1"
                     )}>
                         {checked && (
-                            <Check className="w-2.5 h-2.5 text-light-accent dark:text-dark-accent" strokeWidth={3} />
+                            <Check className="w-2.5 h-2.5 text-accent" strokeWidth={3} />
                         )}
                     </div>
                 </div>

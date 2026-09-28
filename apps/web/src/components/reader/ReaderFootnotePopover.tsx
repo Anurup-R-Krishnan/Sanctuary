@@ -88,14 +88,14 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
         width: `${popoverWidth}px`,
       }}
     >
-      <div className="bg-light-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden flex flex-col backdrop-blur-md">
+      <div className="bg-page rounded-2xl shadow-2xl border border-line overflow-hidden flex flex-col backdrop-blur-md">
         {/* Header */}
-        <div className="px-4 py-2.5 bg-light-surface/50 dark:bg-dark-surface/50 border-b border-light-border dark:border-dark-border flex items-center justify-between">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent tracking-wide">
+        <div className="px-4 py-2.5 bg-surface/50 border-b border-line flex items-center justify-between">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-accent/15 text-accent tracking-wide">
             {footnote.title}
           </span>
           <IconButton
-            className="w-7 h-7 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text !rounded-full"
+            className="w-7 h-7 text-fg-muted hover:text-fg !rounded-full"
             icon={<X className="w-3.5 h-3.5" />}
             label="Close footnote preview (Esc)"
             onClick={onClose}
@@ -106,15 +106,15 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
 
         {/* Content */}
         <div
-          className="px-4 py-3 max-h-56 overflow-y-auto text-sm leading-relaxed text-light-text dark:text-dark-text prose prose-sm dark:prose-invert"
+          className="px-4 py-3 max-h-56 overflow-y-auto text-sm leading-relaxed text-fg prose prose-sm dark:prose-invert"
           dangerouslySetInnerHTML={{ __html: footnote.contentHtml }}
         />
 
         {/* Action Footer */}
         {onNavigate && footnote.href && (
-          <div className="px-4 py-2 bg-light-surface/40 dark:bg-dark-surface/40 border-t border-light-border dark:border-dark-border flex justify-end">
+          <div className="px-4 py-2 bg-surface/40 border-t border-line flex justify-end">
             <button
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline active:opacity-80 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline active:opacity-80 transition-colors"
               onClick={() => {
                 onClose();
                 onNavigate(footnote.href);

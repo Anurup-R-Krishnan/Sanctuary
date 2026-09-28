@@ -146,7 +146,7 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
             ? `${formatClock(progress.remainingSeconds)} remaining`
             : `${formatClock(progress.elapsedSeconds)} read`
         }`}
-        className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-instant hover:scale-105 active:scale-95 border border-light-border dark:border-dark-border ${className}`}
+        className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-instant hover:scale-105 active:scale-95 border border-line ${className}`}
         onClick={() => setIsModalOpen(true)}
         style={{ color: readerForeground }}
         title="Open Reading Session Timer"
@@ -193,7 +193,7 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
         </div>
 
         {/* Duration Clock */}
-        <span className="font-mono text-[11px] tracking-tight font-medium opacity-80 group-hover:opacity-100 transition-opacity">
+        <span className="font-mono text-xs tracking-tight font-medium opacity-80 group-hover:opacity-100 transition-opacity">
           {sessionBudgetMinutes > 0
             ? formatClock(progress.remainingSeconds)
             : formatClock(progress.elapsedSeconds)}

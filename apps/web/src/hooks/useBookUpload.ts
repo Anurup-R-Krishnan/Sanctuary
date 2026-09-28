@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { isSupportedExtension, SUPPORTED_FILE_ACCEPT } from "@/reader/formats/FormatDetector";
+import { pickNativeBookPaths, readNativeBook } from "@/platform/nativeFiles";
+import { appRuntime } from "@/platform/runtime";
+import { isSupportedExtension, SUPPORTED_EXTENSIONS, SUPPORTED_FILE_ACCEPT } from "@/reader/formats/FormatDetector";
+
 
 export interface UseBookUploadResult {
   clearError: () => void;
@@ -51,7 +54,7 @@ export function useBookUpload(onAddBook: (file: File) => Promise<void>): UseBook
   const handleFile = useCallback(
     async (file: File) => {
       if (!isSupportedExtension(file.name)) {
-        setErrorMessage("Unsupported format. Supported: EPUB, FB2, MOBI, AZW, AZW3, TXT, HTML, Markdown.");
+        setErrorMessage(`Unsupported format. Supported: ${SUPPORTED_EXTENSIONS.join(", ")}.`);
         return;
       }
       setIsLoading(true);
@@ -93,13 +96,21 @@ export function useBookUpload(onAddBook: (file: File) => Promise<void>): UseBook
 
   const handleDragLeave = useCallback(() => setIsDragging(false), []);
 
-  const openPicker = useCallback(() => inputRef.current?.click(), []);
-  const clearError = useCallback(() => setErrorMessage(null), []);
+  const openPicker = useCallback(async () => {
+    if (!appRuntime.canUseNativeFilePicker) {
+      inputRef.current?.click();
+      return;
+    }
+    try {
+      for (const path of await pickNativeBookPaths()) {
+        await handleFile(await readNativeBook(path));
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not open the file");
+    }
+  }, [handleFile]);
 
-  useEffect(() => {
-    window.addEventListener("sanctuary:add-book", openPicker);
-    return () => window.removeEventListener("sanctuary:add-book", openPicker);
-  }, [openPicker]);
+  const clearError = useCallback(() => setErrorMessage(null), []);
 
   return {
     inputRef,

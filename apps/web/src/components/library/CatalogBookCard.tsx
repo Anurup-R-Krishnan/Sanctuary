@@ -11,6 +11,7 @@ interface CatalogBookCardProps {
   isImported?: boolean;
   isImporting?: boolean;
   onImport: (entry: OpdsEntry) => void;
+  onNavigate?: (url: string) => void;
 }
 
 export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
@@ -18,14 +19,16 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
   isImported = false,
   isImporting = false,
   onImport,
+  onNavigate,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const isNavigable = entry.navigationUrl && !entry.acquisitionUrl;
 
   return (
-    <div className="flex flex-col justify-between p-4 rounded-xl bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40 transition-all">
+    <div className="flex flex-col justify-between p-4 rounded-xl bg-surface border border-line hover:border-accent/40 transition-all">
       <div className="flex gap-4">
         {/* Book Cover */}
-        <div className="w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-light-primary dark:bg-dark-primary border border-light-border/60 dark:border-dark-border/60 relative flex items-center justify-center">
+        <div className="w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-page border border-line/60 relative flex items-center justify-center">
           {entry.coverUrl && !imageError ? (
             <img
               alt={entry.title}
@@ -41,21 +44,21 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
 
         {/* Book Details */}
         <div className="flex-1 min-w-0 flex flex-col justify-start">
-          <h3 className="text-sm font-semibold text-light-text dark:text-dark-text line-clamp-2 leading-snug">
+          <h3 className="text-sm font-semibold text-fg line-clamp-2 leading-snug">
             {entry.title}
           </h3>
           {entry.author && (
-            <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 truncate">
+            <p className="text-xs text-fg-muted mt-1 truncate">
               {entry.author}
             </p>
           )}
           {entry.published && (
-            <p className="text-[11px] text-light-text-muted/70 dark:text-dark-text-muted/70 mt-0.5">
+            <p className="text-xs text-fg-muted/70 mt-0.5">
               {entry.published.slice(0, 10)}
             </p>
           )}
           {entry.summary && (
-            <p className="text-xs text-light-text-muted dark:text-dark-text-muted/90 mt-2 line-clamp-3 leading-relaxed">
+            <p className="text-xs text-fg-muted/90 mt-2 line-clamp-3 leading-relaxed">
               {entry.summary.replace(/<[^>]*>?/gm, "")}
             </p>
           )}
@@ -63,12 +66,26 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
       </div>
 
       {/* Action footer */}
-      <div className="mt-4 pt-3 border-t border-light-border/60 dark:border-dark-border/60 flex items-center justify-between">
-        <span className="text-[11px] text-light-text-muted/70 dark:text-dark-text-muted/70 uppercase tracking-wider font-mono">
-          {entry.format?.includes("epub") ? "EPUB" : entry.format || "EBOOK"}
-        </span>
+      <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between">
+        {isNavigable ? (
+          <span className="text-xs text-fg-muted/70 uppercase tracking-wider font-mono">
+            CATALOG
+          </span>
+        ) : (
+          <span className="text-xs text-fg-muted/70 uppercase tracking-wider font-mono">
+            {entry.format?.includes("epub") ? "EPUB" : entry.format || "EBOOK"}
+          </span>
+        )}
 
-        {isImported ? (
+        {isNavigable ? (
+          <Button
+            onClick={() => onNavigate?.(entry.navigationUrl!)}
+            size="sm"
+            variant="secondary"
+          >
+            Open
+          </Button>
+        ) : isImported ? (
           <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
             <Check className="w-3.5 h-3.5" />
             Imported

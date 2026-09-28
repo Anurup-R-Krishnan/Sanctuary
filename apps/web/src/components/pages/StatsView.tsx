@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Calendar, Clock, Flame, PieChart, Star, Target, TrendingUp, Trophy, Users, Zap } from "lucide-react";
+import { BarChart3, BookOpen, Calendar, Clock, Flame, PieChart, Target, TrendingUp, Trophy, Users, Zap } from "lucide-react";
 import React, { lazy, Suspense, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
@@ -59,10 +59,10 @@ function GoalProgress({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">{label}</span>
-        <span className="text-xs font-bold text-light-text dark:text-dark-text">{totalMinutes} / {targetMinutes}m</span>
+        <span className="text-xs text-fg-muted font-medium">{label}</span>
+        <span className="text-xs font-bold text-fg">{totalMinutes} / {targetMinutes}m</span>
       </div>
-      <div className="h-2 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
+      <div className="h-2 bg-line/60 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${colorClassName}`}
           style={{ width: `${progress}%` }}
@@ -134,34 +134,46 @@ function StatsView() {
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
   const dailyProgressPercent = dailyGoal > 0 ? clampPercent((stats.dailyProgress / dailyGoal) * 100) : 0;
-  const activeReadingDays = stats.weeklyData.filter((d) => d.minutes > 0).length;
-  const averageSessionMinutes = stats.totalReadingTime > 0
-    ? Math.round(stats.totalReadingTime / Math.max(activeReadingDays * 4, 1))
-    : 0;
   const completionRate = stats.totalBooksInLibrary > 0
     ? `${clampPercent((stats.totalBooksRead / stats.totalBooksInLibrary) * 100)}%`
     : "N/A";
+  const averageSessionMinutes = sessions.length > 0 ? Math.round(stats.totalReadingTime / sessions.length) : 0;
+
+  // Only show reading speed when based on books with real page counts
+  const booksWithPageCounts = books.filter((b) => b.totalPages && b.totalPages > 0).length;
+  const shouldShowReadingSpeed = booksWithPageCounts > 0;
+
   const insights = [
     { icon: BookOpen, title: "Completion Rate", value: completionRate, desc: "Books finished" },
     { icon: Clock, title: "Avg Session", value: `${averageSessionMinutes} min`, desc: "Per sitting" },
-    { icon: TrendingUp, title: "Pages/Session", value: `${stats.averageReadingSpeed > 0 ? Math.round(stats.averageReadingSpeed / 2) : 0}`, desc: "Average" },
+    ...(shouldShowReadingSpeed
+      ? [{ icon: TrendingUp, title: "Reading Speed", value: `${stats.averageReadingSpeed}`, desc: "Pages/hour" }]
+      : []),
     { icon: Target, title: "Today's Goal", value: `${dailyProgressPercent}%`, desc: "Progress" },
   ];
+
   const milestones = [
     { icon: BookOpen, title: "5 Books", progress: stats.totalBooksRead, target: 5, show: stats.totalBooksRead < 5 },
     { icon: Flame, title: "7 Day Streak", progress: stats.currentStreak, target: 7, show: stats.currentStreak < 7 },
     { icon: Calendar, title: "100 Pages", progress: stats.totalPagesRead, target: 100, show: stats.totalPagesRead < 100 },
-    { icon: Clock, title: "10 Hours", progress: stats.totalReadingTime, target: 600, show: stats.totalReadingTime < 600 },
+    {
+      icon: Clock,
+      title: "10 Hours",
+      progress: Math.round(stats.totalReadingTime * 10) / 10,
+      progressDisplay: `${(stats.totalReadingTime / 60).toFixed(1)} / 10 h`,
+      target: 600,
+      show: stats.totalReadingTime < 600,
+      isTimeFormat: true,
+    },
   ].filter((milestone) => milestone.show);
 
   return (
     <div className="page-narrow page-stack">
       <div>
-        <h2 className="text-3xl font-sans font-bold tracking-tight text-light-text dark:text-dark-text">Stats</h2>
-        <p className="text-light-text-muted dark:text-dark-text-muted text-sm font-sans">Your reading journey and milestones</p>
+        <h2 className="text-3xl font-sans font-bold tracking-tight text-fg">Stats</h2>
       </div>
 
-      <div className="flex gap-1 p-1 bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border rounded-xl">
+      <div className="flex gap-1 p-1 bg-surface/60 border border-line rounded-xl">
         {TABS.map((tab) => (
           <Button
             key={tab.id}
@@ -169,12 +181,12 @@ function StatsView() {
             variant="nav"
             className={`relative flex-1 gap-1.5 py-2 px-2.5 !rounded-lg text-sm font-medium transition-all duration-instant ${
               activeTab === tab.id
-                ? "text-light-accent dark:text-dark-accent"
-                : "text-light-text-muted/60 dark:text-dark-text-muted/60 hover:text-light-text dark:hover:text-dark-text"
+                ? "text-accent"
+                : "text-fg-muted/60 hover:text-fg"
             }`}
           >
             {activeTab === tab.id && (
-              <div className="absolute inset-0 bg-light-surface dark:bg-dark-surface rounded-lg shadow-sm" />
+              <div className="absolute inset-0 bg-surface rounded-lg shadow-sm" />
             )}
             <tab.icon className="w-3.5 h-3.5 relative" strokeWidth={1.75} />
             <span className="hidden sm:inline relative">{tab.label}</span>
@@ -185,44 +197,44 @@ function StatsView() {
       {activeTab === "overview" && (
         <div className="space-y-10">
           {/* Hero: the one thing that matters today */}
-          <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-light-accent/8 via-amber-500/5 to-transparent dark:from-dark-accent/12 dark:via-amber-500/8 dark:to-transparent border border-light-accent/15 dark:border-dark-accent/15">
+          <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-light-accent/8 via-amber-500/5 to-transparent dark:from-dark-accent/12 dark:via-amber-500/8 dark:to-transparent border border-accent/15">
             <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
               <div className="relative flex-shrink-0 mx-auto sm:mx-0">
                 <ProgressRing progress={dailyProgressPercent} size={128} stroke={8} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold text-light-text dark:text-dark-text tabular-nums leading-none">
+                  <span className="text-3xl font-bold text-fg tabular-nums leading-none">
                     {dailyProgressPercent}%
                   </span>
-                  <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted mt-1">today</span>
+                  <span className="text-2xs text-fg-muted mt-1">today</span>
                 </div>
               </div>
 
               <div className="flex-1 text-center sm:text-left">
-                <p className="text-3xl font-bold text-light-text dark:text-dark-text tabular-nums">
+                <p className="text-3xl font-bold text-fg tabular-nums">
                   {stats.dailyProgress}{" "}
-                  <span className="text-base font-normal text-light-text-muted dark:text-dark-text-muted">/ {dailyGoal} pages</span>
+                  <span className="text-base font-normal text-fg-muted">/ {dailyGoal} min</span>
                 </p>
-                <p className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1">
-                  {stats.dailyProgress >= dailyGoal ? "Goal achieved for today" : `${dailyGoal - stats.dailyProgress} pages to your goal`}
+                <p className="text-sm text-fg-muted mt-1">
+                  {stats.dailyProgress >= dailyGoal ? "Goal achieved for today" : `${dailyGoal - stats.dailyProgress} min to your goal`}
                 </p>
 
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
                   <Flame className="w-4 h-4 text-orange-500" strokeWidth={2} />
-                  <span className="text-sm font-semibold text-light-text dark:text-dark-text tabular-nums">{stats.currentStreak}</span>
-                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted">day streak</span>
-                  <span className="text-light-text-muted/30 dark:text-dark-text-muted/30">·</span>
-                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted">best {stats.longestStreak}d</span>
+                  <span className="text-sm font-semibold text-fg tabular-nums">{stats.currentStreak}</span>
+                  <span className="text-xs text-fg-muted">day streak</span>
+                  <span className="text-fg-muted/30">·</span>
+                  <span className="text-xs text-fg-muted">best {stats.longestStreak}d</span>
                 </div>
               </div>
             </div>
 
             {goals && (
-              <div className="mt-6 pt-6 border-t border-light-accent/10 dark:border-dark-accent/10 grid grid-cols-2 gap-6">
+              <div className="mt-6 pt-6 border-t border-accent/10 grid grid-cols-2 gap-6">
                 <GoalProgress
                   label="Daily time goal"
                   totalMinutes={goals.day.totalMinutes}
                   targetMinutes={goals.day.targetMinutes}
-                  colorClassName="bg-light-accent dark:bg-dark-accent"
+                  colorClassName="bg-accent"
                 />
                 <GoalProgress
                   label="Weekly time goal"
@@ -233,40 +245,40 @@ function StatsView() {
               </div>
             )}
             {goals && goalsStale && (
-              <span className="absolute top-4 right-4 text-[10px] text-light-text-muted/60 px-2 py-0.5 rounded-full bg-light-border/60 dark:bg-dark-border/60 border border-light-border dark:border-dark-border font-medium">Offline</span>
+              <span className="absolute top-4 right-4 text-2xs text-light-text-muted/60 px-2 py-0.5 rounded-full bg-line/60 border border-line font-medium">Offline</span>
             )}
           </div>
 
           {/* Quiet detail: supporting numbers, no card chrome */}
           <div>
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-light-border dark:divide-dark-border">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line">
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.totalBooksRead}</p>
-                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">Books read</p>
+                <p className="text-2xl font-bold text-fg tabular-nums">{stats.totalBooksRead}</p>
+                <p className="text-xs text-fg-muted mt-0.5">Books read</p>
               </div>
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{Math.round(stats.totalReadingTime / 60)}h</p>
-                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">{dailyAvg} min/day</p>
+                <p className="text-2xl font-bold text-fg tabular-nums">{Math.round(stats.totalReadingTime / 60)}h</p>
+                <p className="text-xs text-fg-muted mt-0.5">{dailyAvg} min/day</p>
               </div>
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.averageReadingSpeed}</p>
-                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">Pages/hr</p>
+                <p className="text-2xl font-bold text-fg tabular-nums">{stats.averageReadingSpeed}</p>
+                <p className="text-xs text-fg-muted mt-0.5">Pages/hr</p>
               </div>
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">{stats.booksCompletedThisMonth}</p>
-                <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-0.5">This month</p>
+                <p className="text-2xl font-bold text-fg tabular-nums">{stats.booksCompletedThisMonth}</p>
+                <p className="text-xs text-fg-muted mt-0.5">This month</p>
               </div>
             </div>
           </div>
 
           {/* Annual Reading Challenge Card */}
-          <div className="p-6 rounded-3xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-light-border/60 dark:border-dark-border/60">
+          <div className="p-6 rounded-3xl bg-surface/40 border border-line">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-line/60">
               <div>
-                <span className="text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted uppercase [letter-spacing:0.05em]">
+                <span className="text-xs font-semibold text-fg-muted uppercase [letter-spacing:0.05em]">
                   Annual Challenge · {activeAnnualChallenge.year}
                 </span>
-                <h3 className="text-lg font-bold text-light-text dark:text-dark-text mt-0.5">
+                <h3 className="text-lg font-bold text-fg mt-0.5">
                   {activeAnnualChallenge.goal} Books Challenge
                 </h3>
               </div>
@@ -284,7 +296,7 @@ function StatsView() {
                     {preset} books
                   </Button>
                 ))}
-                <div className="flex items-center gap-1 ml-1 pl-2 border-l border-light-border dark:border-dark-border">
+                <div className="flex items-center gap-1 ml-1 pl-2 border-l border-line">
                   <Button
                     onClick={() => setAnnualBookGoal(Math.max(1, annualBookGoal - 1))}
                     variant="secondary"
@@ -311,7 +323,7 @@ function StatsView() {
               <div className="relative flex-shrink-0 mx-auto sm:mx-0">
                 <ProgressRing progress={activeAnnualChallenge.percentComplete} size={96} stroke={7} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-light-text dark:text-dark-text tabular-nums leading-none">
+                  <span className="text-xl font-bold text-fg tabular-nums leading-none">
                     {activeAnnualChallenge.percentComplete}%
                   </span>
                 </div>
@@ -319,9 +331,9 @@ function StatsView() {
 
               <div className="flex-1 text-center sm:text-left space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-2">
-                  <p className="text-2xl font-bold text-light-text dark:text-dark-text tabular-nums">
+                  <p className="text-2xl font-bold text-fg tabular-nums">
                     {activeAnnualChallenge.completedBooks}{" "}
-                    <span className="text-sm font-normal text-light-text-muted dark:text-dark-text-muted">
+                    <span className="text-sm font-normal text-fg-muted">
                       of {activeAnnualChallenge.goal} books completed
                     </span>
                   </p>
@@ -347,7 +359,7 @@ function StatsView() {
                       On schedule for {activeAnnualChallenge.year}
                     </span>
                   )}
-                  <span className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                  <span className="text-xs text-fg-muted">
                     · {activeAnnualChallenge.daysRemaining} days left
                   </span>
                 </div>
@@ -358,8 +370,8 @@ function StatsView() {
           {/* Smart Reading Streak & Habit Protection Showcase */}
           <Suspense
             fallback={
-              <div className="p-6 rounded-3xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border flex items-center justify-center min-h-[220px]">
-                <LoadingSpinner className="w-5 h-5 text-light-text-muted dark:text-dark-text-muted" />
+              <div className="p-6 rounded-3xl bg-surface/40 border border-line flex items-center justify-center min-h-[220px]">
+                <LoadingSpinner className="w-5 h-5 text-fg-muted" />
               </div>
             }
           >
@@ -368,8 +380,8 @@ function StatsView() {
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">This Week</h3>
-              <span className="text-xs text-light-text-muted dark:text-dark-text-muted tabular-nums">{weeklyTotal} min</span>
+              <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide">This Week</h3>
+              <span className="text-xs text-fg-muted tabular-nums">{weeklyTotal} min</span>
             </div>
             <BarChart
               data={stats.weeklyData.map((d) => ({ label: d.day, value: d.minutes }))}
@@ -377,8 +389,8 @@ function StatsView() {
               unit="min"
             />
             <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
-                Weekly goal: <span className="font-semibold tabular-nums text-light-text dark:text-dark-text">{weeklyGoal} pages</span>
+              <p className="text-xs text-fg-muted">
+                Weekly goal: <span className="font-semibold tabular-nums text-fg">{weeklyGoal} min</span>
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -399,20 +411,6 @@ function StatsView() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 text-left">
-            <div className="p-2 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 flex-shrink-0">
-              <Star className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
-            </div>
-            <div>
-              <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted font-medium uppercase tracking-wide">
-                Reading Style
-              </p>
-              <h3 className="text-base font-semibold text-light-text dark:text-dark-text mt-0.5">{stats.readingPersonality}</h3>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed max-w-md">
-                {stats.personalityDescription}
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
@@ -425,8 +423,8 @@ function StatsView() {
             />
           </Suspense>
 
-          <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
-            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
+          <div className="p-5 rounded-2xl bg-surface/40 border border-line">
+            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
             <BarChart
               data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
               maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
@@ -436,42 +434,42 @@ function StatsView() {
 
           <div className="grid sm:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Genres</h3>
+              <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Genres</h3>
               {stats.genreDistribution.length > 0 ? (
                 <div className="space-y-2.5">
                   {stats.genreDistribution.map((g) => (
                     <div key={g.genre} className="flex items-center gap-2.5">
                       <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                      <span className="flex-1 text-sm text-light-text dark:text-dark-text">{g.genre}</span>
-                      <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
+                      <span className="flex-1 text-sm text-fg">{g.genre}</span>
+                      <span className="text-xs font-medium text-fg-muted tabular-nums">
                         {g.count}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Add genres to see distribution</p>
+                <p className="text-sm text-fg-muted">Add genres to see distribution</p>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Top Authors</h3>
+              <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Top Authors</h3>
               {stats.authorNetwork.length > 0 ? (
                 <div className="space-y-2.5">
                   {stats.authorNetwork.map((a) => (
                     <div key={a.author} className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-light-accent/8 dark:bg-dark-accent/8 flex items-center justify-center flex-shrink-0">
-                        <Users className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" strokeWidth={1.75} />
+                      <div className="w-8 h-8 rounded-lg bg-accent/8 flex items-center justify-center flex-shrink-0">
+                        <Users className="w-3.5 h-3.5 text-accent" strokeWidth={1.75} />
                       </div>
-                      <span className="flex-1 text-sm text-light-text dark:text-dark-text">{a.author}</span>
-                      <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted tabular-nums">
+                      <span className="flex-1 text-sm text-fg">{a.author}</span>
+                      <span className="text-xs font-medium text-fg-muted tabular-nums">
                         {a.books}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Start reading to see favorites</p>
+                <p className="text-sm text-fg-muted">Start reading to see favorites</p>
               )}
             </div>
           </div>
@@ -481,24 +479,24 @@ function StatsView() {
       {activeTab === "badges" && (
         <div className="space-y-6">
           {/* Showcase Mastery Banner */}
-          <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-5 rounded-2xl bg-surface/40 border border-line flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-light-text dark:text-dark-text flex items-center gap-2">
+              <h3 className="text-base font-bold text-fg flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-500" />
                 <span>Reading Trophy Case</span>
               </h3>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-xs text-fg-muted">
                 {badgeSummary.unlocked} of {badgeSummary.total} accomplishments unlocked ({badgeSummary.percent}%)
               </p>
             </div>
             <div className="w-full sm:w-48 space-y-1.5">
-              <div className="h-2 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden">
+              <div className="h-2 rounded-full bg-line/60 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 transition-all duration-500"
                   style={{ width: `${badgeSummary.percent}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] text-light-text-muted dark:text-dark-text-muted font-mono">
+              <div className="flex justify-between text-2xs text-fg-muted font-mono">
                 <span>{badgeSummary.unlocked} Unlocked</span>
                 <span>{badgeSummary.percent}%</span>
               </div>
@@ -511,8 +509,8 @@ function StatsView() {
               <button
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
                   badgeFilter === status
-                    ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold shadow-sm"
-                    : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border/60 dark:border-dark-border/60 hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted"
+                    ? "bg-accent text-white dark:text-black font-semibold shadow-sm"
+                    : "bg-surface/60 border border-line/60 hover:bg-line/40 text-fg-muted"
                 }`}
                 key={status}
                 onClick={() => setBadgeFilter(status)}
@@ -531,7 +529,7 @@ function StatsView() {
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center text-sm text-light-text-muted dark:text-dark-text-muted">
+            <div className="py-12 text-center text-sm text-fg-muted">
               No trophies match this filter. Keep reading to unlock more!
             </div>
           )}
@@ -541,41 +539,41 @@ function StatsView() {
       {activeTab === "insights" && (
         <div className="space-y-8">
           <div>
-            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Insights</h3>
+            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Insights</h3>
             <div className="space-y-3">
               {insights.map((item) => (
                 <div key={item.title} className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 flex-shrink-0">
-                    <item.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
+                  <div className="p-2 rounded-lg bg-surface/80 border border-line/60 flex-shrink-0">
+                    <item.icon className="w-4 h-4 text-fg-muted" strokeWidth={1.75} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-light-text dark:text-dark-text">{item.title}</p>
-                    <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">{item.desc}</p>
+                    <p className="text-sm font-medium text-fg">{item.title}</p>
+                    <p className="text-xs text-fg-muted">{item.desc}</p>
                   </div>
-                  <span className="text-base font-bold text-light-accent dark:text-dark-accent tabular-nums">{item.value}</span>
+                  <span className="text-base font-bold text-accent tabular-nums">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Milestones</h3>
+            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Milestones</h3>
             <div className="space-y-3">
               {milestones.map((m) => (
                   <div key={m.title} className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 flex-shrink-0">
-                      <m.icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.75} />
+                    <div className="p-2 rounded-lg bg-surface/80 border border-line/60 flex-shrink-0">
+                      <m.icon className="w-4 h-4 text-fg-muted" strokeWidth={1.75} />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-light-text dark:text-dark-text">{m.title}</span>
-                        <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted tabular-nums">
-                          {m.progress}/{m.target}
+                        <span className="text-sm font-medium text-fg">{m.title}</span>
+                        <span className="text-2xs text-fg-muted tabular-nums">
+                          {m.progressDisplay || `${m.progress}/${m.target}`}
                         </span>
                       </div>
-                      <div className="h-1 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
+                      <div className="h-1 bg-line/60 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all"
+                          className="h-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 rounded-full transition-all"
                           style={{ width: `${clampPercent((m.progress / m.target) * 100)}%` }}
                         />
                       </div>
@@ -583,24 +581,6 @@ function StatsView() {
                   </div>
                 ))}
             </div>
-          </div>
-
-          <div className="p-5 rounded-xl bg-gradient-to-br from-amber-500/5 to-yellow-500/5 dark:from-amber-500/8 dark:to-yellow-500/8 border border-amber-500/10 dark:border-amber-500/15">
-            <h3 className="text-sm font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide mb-3">Tips</h3>
-            <ul className="space-y-2 text-xs text-light-text-muted dark:text-dark-text-muted">
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Set a consistent reading time daily
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Start with shorter sessions
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-light-accent dark:text-dark-accent mt-px">-</span>
-                Use immersive mode for focus
-              </li>
-            </ul>
           </div>
         </div>
       )}

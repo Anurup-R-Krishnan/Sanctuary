@@ -12,6 +12,8 @@ import {
 } from "../_shared";
 import { getSchemaReady } from "../../utils/schemaCache";
 
+const COVER_CONTENT_TYPE = /^image\/(jpeg|png|webp|gif|avif)$/;
+
 export const onRequestOptions = () => handleOptions();
 
 export async function onRequestGet({ env, params, request }: PagesContext<{ id: string }>): Promise<Response> {
@@ -43,7 +45,8 @@ async function handleGet(
         ...CORS_HEADERS,
         ...SECURITY_HEADERS,
         "Cache-Control": "private, max-age=86400",
-        "Content-Type": cover.httpMetadata?.contentType || "image/jpeg",
+        "Content-Security-Policy": "sandbox; default-src 'none'",
+        "Content-Type": COVER_CONTENT_TYPE.test(cover.httpMetadata?.contentType ?? "") ? cover.httpMetadata!.contentType! : "image/jpeg",
         ...(cover.etag ? { ETag: `"${cover.etag}"` } : {}),
       },
     });
@@ -115,7 +118,8 @@ async function handlePut(
   const url = new URL(request.url);
   if (url.searchParams.get("asset") !== "cover") return errorJson("Unsupported content asset", 400);
 
-  const contentType = request.headers.get("content-type") || "image/jpeg";
+  const contentType = (request.headers.get("content-type") || "image/jpeg").split(";")[0].trim().toLowerCase();
+  if (!COVER_CONTENT_TYPE.test(contentType)) return errorJson("Cover must be a JPEG, PNG, WebP, GIF or AVIF image", 415);
   await env.SANCTUARY_BUCKET.put(coverKey(user, id), request.body, { httpMetadata: { contentType } });
 
   const coverUrl = contentUrl(id, "cover");

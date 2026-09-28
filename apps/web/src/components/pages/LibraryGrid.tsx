@@ -13,6 +13,7 @@ import { LibraryEmptyState } from "@/components/library/LibraryEmptyState";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { SectionHeader } from "@/components/library/SectionHeader";
 import { SkeletonCard } from "@/components/library/SkeletonCard";
+import { appRuntime } from "@/platform/runtime";
 import { formatBatchAnnotationsAsMarkdown, triggerFileDownload } from "@/services/annotationExportService";
 import { useBookStore } from "@/store/useBookStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -21,10 +22,6 @@ import BookCard from "../ui/BookCard";
 
 const CatalogBrowser = lazy(() =>
   import("@/components/library/CatalogBrowser").then((m) => ({ default: m.CatalogBrowser }))
-);
-
-const DailyDigestModal = lazy(() =>
-  import("@/components/digest/DailyDigestModal").then((m) => ({ default: m.DailyDigestModal }))
 );
 
 const SeriesShelfModal = lazy(() =>
@@ -93,7 +90,6 @@ function LibraryGrid({
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
-  const [isDailyDigestOpen, setIsDailyDigestOpen] = useState(false);
   const [isSeriesShelfOpen, setIsSeriesShelfOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -178,8 +174,8 @@ function LibraryGrid({
       <div className="page-stack animate-fadeIn">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <div className="h-8 w-40 rounded-lg bg-light-border/60 dark:bg-dark-border/60 animate-pulse-soft" />
-            <div className="h-4 w-28 rounded bg-light-border/40 dark:bg-dark-border/40 animate-pulse-soft" />
+            <div className="h-8 w-40 rounded-lg bg-line/60 animate-pulse-soft" />
+            <div className="h-4 w-28 rounded bg-line/40 animate-pulse-soft" />
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -194,7 +190,7 @@ function LibraryGrid({
   if (books.length === 0) {
     return (
       <>
-        <LibraryEmptyState onAddBook={addBook} onOpenCatalog={() => setIsCatalogOpen(true)} />
+        <LibraryEmptyState onOpenCatalog={appRuntime.hasRemoteApi ? () => setIsCatalogOpen(true) : undefined} />
         <Suspense fallback={null}>
           <CatalogBrowser
             api={api}
@@ -216,8 +212,7 @@ function LibraryGrid({
             bookCount={books.length}
             filterBy={filterBy}
             filterLabel={filterLabel}
-            onOpenCatalog={() => setIsCatalogOpen(true)}
-            onOpenDailyDigest={() => setIsDailyDigestOpen(true)}
+            onOpenCatalog={appRuntime.hasRemoteApi ? () => setIsCatalogOpen(true) : undefined}
             setFilterBy={setFilterBy}
             setShowFilterMenu={setShowFilterMenu}
             setShowSortMenu={setShowSortMenu}
@@ -234,8 +229,8 @@ function LibraryGrid({
           aria-label={isSelecting ? "Exit selection mode" : "Select books"}
           className={`shrink-0 rounded-xl p-2 transition-colors ${
             isSelecting
-              ? "bg-light-text dark:bg-dark-text text-white dark:text-black"
-              : "text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+              ? "bg-fg text-white dark:text-black"
+              : "text-fg-muted hover:bg-line/40"
           }`}
           onClick={() => {
             if (isSelecting) {
@@ -261,8 +256,8 @@ function LibraryGrid({
           <button
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filterBy !== "collection"
-                ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent font-semibold border border-light-accent/30 dark:border-dark-accent/30"
-                : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                ? "bg-accent/15 text-accent font-semibold border border-accent/30"
+                : "bg-surface/60 border border-line text-fg-muted hover:bg-line/40"
             }`}
             onClick={() => setFilterBy("all")}
           >
@@ -273,8 +268,8 @@ function LibraryGrid({
               key={col}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 filterBy === "collection" && activeCollection === col
-                  ? "bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent font-semibold border border-light-accent/30 dark:border-dark-accent/30"
-                  : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                  ? "bg-accent/15 text-accent font-semibold border border-accent/30"
+                  : "bg-surface/60 border border-line text-fg-muted hover:bg-line/40"
               }`}
               onClick={() => {
                 setActiveCollection(col);
@@ -323,7 +318,7 @@ function LibraryGrid({
                 <button
                   onClick={() => setIsSeriesShelfOpen(true)}
                   type="button"
-                  className="text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-accent hover:underline flex items-center gap-1"
                 >
                   <span>View All Series</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -334,7 +329,7 @@ function LibraryGrid({
                   .slice(0, 2)
                   .map(([series, seriesBooks]) => (
                     <div key={series}>
-                      <div className="flex items-center gap-1 mb-2 text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
+                      <div className="flex items-center gap-1 mb-2 text-xs font-medium text-fg-muted">
                         <span>{series}</span>
                         <ChevronRight className="w-3 h-3" />
                       </div>
@@ -347,24 +342,24 @@ function LibraryGrid({
         </section>
       )}
 
-      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm && !isSelecting ? "pt-6 border-t border-light-border dark:border-dark-border" : ""}>
+      <section className={(recentBooks.length > 0 || favoriteBooks.length > 0) && filterBy === "all" && !searchTerm && !isSelecting ? "pt-6 border-t border-line" : ""}>
         <SectionHeader
           title={searchTerm ? "Results" : "All Books"}
           count={displayBooks.length}
           icon={searchTerm ? Search : undefined}
         />
         {searchTerm && (
-          <p className="mb-4 text-xs text-light-text-muted dark:text-dark-text-muted">
+          <p className="mb-4 text-xs text-fg-muted">
             Showing matches for &ldquo;{searchTerm}&rdquo;. Curated sections are hidden while searching.
           </p>
         )}
         {displayBooks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
-            <div className="w-16 h-16 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
-              <Search className="w-7 h-7 text-light-text-muted dark:text-dark-text-muted" strokeWidth={1.5} />
+            <div className="w-16 h-16 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+              <Search className="w-7 h-7 text-fg-muted" strokeWidth={1.5} />
             </div>
-            <p className="text-light-text dark:text-dark-text font-medium">No books found</p>
-            <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">
+            <p className="text-fg font-medium">No books found</p>
+            <p className="mt-1 text-sm text-fg-muted">
               Try a different search term or clear your query.
             </p>
           </div>
@@ -383,8 +378,8 @@ function LibraryGrid({
                 >
                   <div className={`absolute top-2.5 right-2.5 z-10 w-5 h-5 rounded-full border-2 shadow-sm flex items-center justify-center transition-colors ${
                     selectedBookIds.has(book.id)
-                      ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text text-white dark:text-black"
-                      : "bg-light-surface/90 dark:bg-dark-surface/90 border-light-border dark:border-dark-border"
+                      ? "bg-fg border-fg text-white dark:text-black"
+                      : "bg-surface/90 border-line"
                   }`}>
                     {selectedBookIds.has(book.id) && (
                       <div className="w-2 h-2 rounded-full bg-white dark:bg-black" />
@@ -407,7 +402,7 @@ function LibraryGrid({
                   />
                   <button
                     aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-light-accent outline-none rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-light-accent dark:hover:bg-dark-accent dark:hover:text-black transition-all"
+                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-light-accent outline-none rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-accent dark:hover:text-black transition-all"
                     onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
                   >
                     <span className="sr-only">Edit</span>
@@ -434,8 +429,8 @@ function LibraryGrid({
                 >
                   <div className={`absolute top-1/2 left-3 z-10 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-colors ${
                     selectedBookIds.has(book.id)
-                      ? "bg-light-text dark:bg-dark-text border-light-text dark:border-dark-text"
-                      : "bg-light-surface/90 dark:bg-dark-surface/90 border-light-border dark:border-dark-border"
+                      ? "bg-fg border-fg"
+                      : "bg-surface/90 border-line"
                   }`} />
                   <div className="pointer-events-none">
                     <BookCard
@@ -456,7 +451,7 @@ function LibraryGrid({
                   />
                   <button
                     aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-1/2 right-3 z-10 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-light-accent dark:hover:bg-dark-accent dark:hover:text-black transition-all"
+                    className="absolute top-1/2 right-3 z-10 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-accent dark:hover:text-black transition-all"
                     onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
                   >
                     <span className="sr-only">Edit</span>
@@ -487,19 +482,6 @@ function LibraryGrid({
             isOpen={isSeriesShelfOpen}
             onClose={() => setIsSeriesShelfOpen(false)}
             onSelectBook={onSelectBook}
-          />
-        </Suspense>
-      )}
-
-      {isDailyDigestOpen && (
-        <Suspense fallback={null}>
-          <DailyDigestModal
-            isOpen={isDailyDigestOpen}
-            onClose={() => setIsDailyDigestOpen(false)}
-            onOpenBook={(bookId) => {
-              const target = books.find((b) => b.id === bookId);
-              if (target) onSelectBook(target);
-            }}
           />
         </Suspense>
       )}

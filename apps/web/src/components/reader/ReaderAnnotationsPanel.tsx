@@ -24,12 +24,10 @@ import {
 } from "@/config/annotationConfig";
 import {
   type ExportPreset,
-  formatReaderAnnotationsAsMarkdown,
-} from "@/services/annotationExportService";
-import {
   exportAnnotationsAsJson,
-  triggerDownload,
-} from "@/utils/annotationExport";
+  formatReaderAnnotationsAsMarkdown,
+  triggerFileDownload,
+} from "@/services/annotationExportService";
 
 interface ReaderAnnotationsPanelProps {
   annotations: ReaderAnnotation[];
@@ -144,7 +142,7 @@ export function ReaderAnnotationsPanel({
       const safeTitle = (bookTitle || "book")
         .replace(/[^a-z0-9]/gi, "_")
         .toLowerCase();
-      triggerDownload(md, `${safeTitle}_annotations_${preset}.md`, "text/markdown");
+      triggerFileDownload(md, `${safeTitle}_annotations_${preset}.md`, "text/markdown");
       setIsExportMenuOpen(false);
     },
     [bookTitle, bookAuthor, sorted]
@@ -155,19 +153,19 @@ export function ReaderAnnotationsPanel({
     const safeTitle = (bookTitle || "book")
       .replace(/[^a-z0-9]/gi, "_")
       .toLowerCase();
-    triggerDownload(jsonStr, `${safeTitle}_annotations.json`, "application/json");
+    triggerFileDownload(jsonStr, `${safeTitle}_annotations.json`, "application/json");
     setIsExportMenuOpen(false);
   }, [bookTitle, bookAuthor, sorted]);
 
   return (
     <div className="flex flex-col h-full select-text">
       {/* Header */}
-      <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
+      <div className="p-4 border-b border-line flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="font-semibold text-light-text dark:text-dark-text">
+          <h2 className="font-semibold text-fg">
             Annotations
           </h2>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted font-mono">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-surface/80 border border-line text-fg-muted font-mono">
             {annotations.length}
           </span>
         </div>
@@ -178,7 +176,7 @@ export function ReaderAnnotationsPanel({
               <button
                 aria-expanded={isExportMenuOpen}
                 aria-haspopup="true"
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
                 onClick={() => setIsExportMenuOpen((prev) => !prev)}
                 title="Export annotations"
                 type="button"
@@ -196,12 +194,12 @@ export function ReaderAnnotationsPanel({
                     onClick={() => setIsExportMenuOpen(false)}
                     type="button"
                   />
-                  <div className="absolute right-0 top-full mt-1 w-48 rounded-xl shadow-lg border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-light-text-muted dark:text-dark-text-muted uppercase">
+                  <div className="absolute right-0 top-full mt-1 w-48 rounded-xl shadow-lg border border-line bg-surface p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-2 py-1 text-2xs font-semibold tracking-wider text-fg-muted uppercase">
                       Markdown Presets
                     </div>
                     <button
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-light-text dark:text-dark-text hover:bg-light-accent/10 dark:hover:bg-dark-accent/10 hover:text-light-accent dark:hover:text-dark-accent transition-colors"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-fg hover:bg-accent/10 hover:text-accent transition-colors"
                       onClick={() => handleExportPreset("obsidian")}
                       type="button"
                     >
@@ -209,7 +207,7 @@ export function ReaderAnnotationsPanel({
                       <span>Obsidian Callouts</span>
                     </button>
                     <button
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-light-text dark:text-dark-text hover:bg-light-accent/10 dark:hover:bg-dark-accent/10 hover:text-light-accent dark:hover:text-dark-accent transition-colors"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-fg hover:bg-accent/10 hover:text-accent transition-colors"
                       onClick={() => handleExportPreset("notion")}
                       type="button"
                     >
@@ -217,16 +215,16 @@ export function ReaderAnnotationsPanel({
                       <span>Notion Bullets</span>
                     </button>
                     <button
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-light-text dark:text-dark-text hover:bg-light-accent/10 dark:hover:bg-dark-accent/10 hover:text-light-accent dark:hover:text-dark-accent transition-colors"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-fg hover:bg-accent/10 hover:text-accent transition-colors"
                       onClick={() => handleExportPreset("standard")}
                       type="button"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       <span>Standard Markdown</span>
                     </button>
-                    <div className="my-1 border-t border-light-border/60 dark:border-dark-border/60" />
+                    <div className="my-1 border-t border-line/60" />
                     <button
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-light-text dark:text-dark-text hover:bg-light-accent/10 dark:hover:bg-dark-accent/10 hover:text-light-accent dark:hover:text-dark-accent transition-colors"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-left text-fg hover:bg-accent/10 hover:text-accent transition-colors"
                       onClick={handleExportJson}
                       type="button"
                     >
@@ -241,7 +239,7 @@ export function ReaderAnnotationsPanel({
           {onClose && (
             <button
               aria-label="Close annotations panel"
-              className="p-1.5 rounded-lg text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+              className="p-1.5 rounded-lg text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
               onClick={onClose}
               title="Close panel"
               type="button"
@@ -254,12 +252,12 @@ export function ReaderAnnotationsPanel({
 
       {/* Category / Color Filter Bar */}
       {annotations.length > 0 && (
-        <div className="px-4 py-2 border-b border-light-border/60 dark:border-dark-border/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="px-4 py-2 border-b border-line/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <button
             className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors shrink-0 ${
               activeFilter === "all"
-                ? "bg-light-accent text-white dark:bg-dark-accent dark:text-black font-semibold shadow-xs"
-                : "bg-light-surface dark:bg-dark-surface border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                ? "bg-accent text-white dark:text-black font-semibold shadow-xs"
+                : "bg-surface border border-line/60 text-fg-muted hover:text-fg"
             }`}
             onClick={() => setActiveFilter("all")}
             type="button"
@@ -274,8 +272,8 @@ export function ReaderAnnotationsPanel({
               <button
                 className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${
                   isActive
-                    ? "bg-light-accent text-white dark:bg-dark-accent dark:text-black font-semibold shadow-xs"
-                    : "bg-light-surface dark:bg-dark-surface border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                    ? "bg-accent text-white dark:text-black font-semibold shadow-xs"
+                    : "bg-surface border border-line/60 text-fg-muted hover:text-fg"
                 }`}
                 key={col.id}
                 onClick={() => setActiveFilter(col.id)}
@@ -286,7 +284,7 @@ export function ReaderAnnotationsPanel({
                   style={{ backgroundColor: col.value }}
                 />
                 <span>{col.label}</span>
-                <span className="text-[10px] opacity-75">({count})</span>
+                <span className="text-2xs opacity-75">({count})</span>
               </button>
             );
           })}
@@ -294,15 +292,15 @@ export function ReaderAnnotationsPanel({
             <button
               className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${
                 activeFilter === "notes"
-                  ? "bg-light-accent text-white dark:bg-dark-accent dark:text-black font-semibold shadow-xs"
-                  : "bg-light-surface dark:bg-dark-surface border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                  ? "bg-accent text-white dark:text-black font-semibold shadow-xs"
+                  : "bg-surface border border-line/60 text-fg-muted hover:text-fg"
               }`}
               onClick={() => setActiveFilter("notes")}
               type="button"
             >
               <MessageSquare className="w-3 h-3" />
               <span>Notes</span>
-              <span className="text-[10px] opacity-75">({counts.notes})</span>
+              <span className="text-2xs opacity-75">({counts.notes})</span>
             </button>
           )}
         </div>
@@ -310,30 +308,30 @@ export function ReaderAnnotationsPanel({
 
       {/* Search Bar */}
       {annotations.length > 0 && (
-        <div className="px-4 py-2 border-b border-light-border/60 dark:border-dark-border/60 bg-light-surface/30 dark:bg-dark-surface/30">
+        <div className="px-4 py-2 border-b border-line/60 bg-surface/30">
           <div className="relative flex items-center">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 text-light-text-muted dark:text-dark-text-muted pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 text-fg-muted pointer-events-none" />
             <input
               type="search"
               aria-label="Search annotations"
               placeholder="Search highlights, notes, chapters..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-1 text-xs rounded-xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text placeholder:text-light-text-muted/60 dark:placeholder:text-dark-text-muted/60 outline-none focus:border-light-accent dark:focus:border-dark-accent focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent transition-colors"
+              className="w-full pl-8 pr-7 py-1 text-xs rounded-xl bg-page border border-line text-fg placeholder:text-fg-muted/60 outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className="absolute right-2 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                className="absolute right-2 text-fg-muted hover:text-fg"
               >
                 <X className="w-3 h-3" />
               </button>
             )}
           </div>
           {searchQuery && (
-            <div className="mt-1 flex items-center justify-between text-[11px] text-light-text-muted dark:text-dark-text-muted">
+            <div className="mt-1 flex items-center justify-between text-xs text-fg-muted">
               <span>{filteredAnnotations.length} {filteredAnnotations.length === 1 ? "match" : "matches"}</span>
               <button
                 type="button"
@@ -351,32 +349,32 @@ export function ReaderAnnotationsPanel({
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
-            <div className="w-14 h-14 mb-4 rounded-2xl bg-light-surface/60 dark:bg-dark-surface/60 flex items-center justify-center border border-light-border dark:border-dark-border">
+            <div className="w-14 h-14 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
               <MessageSquare
-                className="w-6 h-6 text-light-text-muted dark:text-dark-text-muted"
+                className="w-6 h-6 text-fg-muted"
                 strokeWidth={1.5}
               />
             </div>
-            <p className="text-light-text dark:text-dark-text font-medium">
+            <p className="text-fg font-medium">
               No highlights yet
             </p>
-            <p className="mt-1 text-sm text-light-text-muted dark:text-dark-text-muted">
+            <p className="mt-1 text-sm text-fg-muted">
               Select text while reading to create highlights and notes.
             </p>
           </div>
         ) : filteredAnnotations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
-            <p className="text-light-text dark:text-dark-text font-medium">
+            <p className="text-fg font-medium">
               {searchQuery ? "No annotations match your search" : "No annotations match this filter"}
             </p>
-            <p className="mt-1 text-xs text-light-text-muted dark:text-dark-text-muted">
+            <p className="mt-1 text-xs text-fg-muted">
               {searchQuery
                 ? `No highlights or notes containing "${searchQuery}".`
                 : "Try selecting a different color or category."}
             </p>
             {(searchQuery || activeFilter !== "all") && (
               <button
-                className="mt-3 text-xs text-light-accent dark:text-dark-accent underline"
+                className="mt-3 text-xs text-accent underline"
                 onClick={() => {
                   setSearchQuery("");
                   setActiveFilter("all");
@@ -393,7 +391,7 @@ export function ReaderAnnotationsPanel({
               const colorObj = getAnnotationColor(item.color);
               return (
                 <div
-                  className="group relative border-b border-light-border/60 dark:border-dark-border/60 p-4 hover:bg-light-surface/60 dark:hover:bg-dark-surface/60 transition-colors"
+                  className="group relative border-b border-line/60 p-4 hover:bg-surface/60 transition-colors"
                   key={item.id}
                 >
                   {/* Top Action Bar */}
@@ -402,7 +400,7 @@ export function ReaderAnnotationsPanel({
                       <div className="relative">
                         <button
                           aria-label="Change highlight color"
-                          className="p-1.5 text-light-text-muted hover:text-light-accent dark:hover:text-dark-accent rounded hover:bg-light-border/40 dark:hover:bg-dark-border/40 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                          className="p-1.5 text-light-text-muted hover:text-accent rounded hover:bg-line/40 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveColorPickerId(
@@ -416,7 +414,7 @@ export function ReaderAnnotationsPanel({
                         </button>
 
                         {activeColorPickerId === item.id && (
-                          <div className="absolute right-0 top-full mt-1 z-20 bg-light-primary dark:bg-dark-primary p-1.5 rounded-xl shadow-xl border border-light-border dark:border-dark-border flex items-center gap-1.5 animate-fadeIn">
+                          <div className="absolute right-0 top-full mt-1 z-20 bg-page p-1.5 rounded-xl shadow-xl border border-line flex items-center gap-1.5 animate-fadeIn">
                             {ANNOTATION_COLORS.map((c) => {
                               const isSelected =
                                 item.color?.toLowerCase() ===
@@ -426,7 +424,7 @@ export function ReaderAnnotationsPanel({
                                   aria-label={`Change to ${c.label}`}
                                   className={`w-5 h-5 rounded-full transition-transform active:scale-90 flex items-center justify-center ${
                                     isSelected
-                                      ? "ring-2 ring-offset-1 ring-light-accent dark:ring-dark-accent scale-110"
+                                      ? "ring-2 ring-offset-1 ring-accent scale-110"
                                       : "hover:scale-110 opacity-80 hover:opacity-100"
                                   }`}
                                   key={c.id}
@@ -460,7 +458,7 @@ export function ReaderAnnotationsPanel({
                     {onCreateQuoteCard && (
                       <button
                         aria-label="Generate quote card"
-                        className="p-1.5 text-light-text-muted hover:text-light-accent dark:hover:text-dark-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                        className="p-1.5 text-light-text-muted hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded hover:bg-line/40"
                         onClick={(e) => {
                           e.stopPropagation();
                           onCreateQuoteCard(item.text, item.chapterLabel);
@@ -485,7 +483,7 @@ export function ReaderAnnotationsPanel({
 
                   {/* Annotation Content */}
                   <div
-                    className="w-full text-left pr-20 cursor-pointer focus:outline-none focus:bg-light-surface/80 dark:focus:bg-dark-surface/80 rounded-lg"
+                    className="w-full text-left pr-20 cursor-pointer focus:outline-none focus:bg-surface/80 rounded-lg"
                     onClick={() => onGoToAnnotation(item.cfiRange)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -502,20 +500,20 @@ export function ReaderAnnotationsPanel({
                         style={{ backgroundColor: colorObj.value }}
                       />
                       <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${colorObj.bgClass} ${colorObj.textClass}`}
+                        className={`text-2xs font-semibold px-2 py-0.5 rounded-full ${colorObj.bgClass} ${colorObj.textClass}`}
                       >
                         {colorObj.name}
                       </span>
-                      <span className="text-xs font-medium text-light-accent dark:text-dark-accent truncate max-w-[140px]">
+                      <span className="text-xs font-medium text-accent truncate max-w-[140px]">
                         {item.chapterLabel || "Chapter"}
                       </span>
-                      <span className="text-[11px] text-light-text-muted/60 dark:text-dark-text-muted/60 ml-auto">
+                      <span className="text-xs text-fg-muted/60 ml-auto">
                         {new Date(item.createdAt).toLocaleDateString()}
                       </span>
                     </div>
 
                     <p
-                      className="text-sm text-light-text dark:text-dark-text leading-relaxed line-clamp-3 pl-3.5 border-l-2"
+                      className="text-sm text-fg leading-relaxed line-clamp-3 pl-3.5 border-l-2"
                       style={{ borderLeftColor: colorObj.value }}
                     >
                       {item.text}
@@ -524,10 +522,10 @@ export function ReaderAnnotationsPanel({
 
                   {/* Marginalia Note Area */}
                   {editingId === item.id ? (
-                    <div className="mt-3 p-3 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border space-y-2.5">
+                    <div className="mt-3 p-3 rounded-xl bg-surface/60 border border-line space-y-2.5">
                       {/* Color Palette Switcher in Edit Mode */}
-                      <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60">
-                        <span className="text-[11px] font-medium text-light-text dark:text-dark-text">
+                      <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-surface/80 border border-line/60">
+                        <span className="text-xs font-medium text-fg">
                           {getAnnotationColor(editingColor).name}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -540,7 +538,7 @@ export function ReaderAnnotationsPanel({
                                 aria-label={`Select ${c.label}`}
                                 className={`w-4 h-4 rounded-full transition-transform active:scale-90 flex items-center justify-center ${
                                   isSelected
-                                    ? "ring-2 ring-offset-1 ring-light-accent dark:ring-dark-accent scale-110"
+                                    ? "ring-2 ring-offset-1 ring-accent scale-110"
                                     : "hover:scale-110 opacity-80 hover:opacity-100"
                                 }`}
                                 key={c.id}
@@ -562,7 +560,7 @@ export function ReaderAnnotationsPanel({
                       </div>
 
                       <textarea
-                        className="w-full resize-none text-xs rounded-lg border border-light-border dark:border-dark-border p-2 bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text focus:outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+                        className="w-full resize-none text-xs rounded-lg border border-line p-2 bg-surface text-fg focus:outline-none focus:ring-1 focus:ring-accent"
                         onChange={(e) => setEditingNote(e.target.value)}
                         placeholder="Edit note..."
                         rows={3}
@@ -570,14 +568,14 @@ export function ReaderAnnotationsPanel({
                       />
                       <div className="flex justify-end gap-1.5">
                         <button
-                          className="px-2.5 py-1 text-xs font-medium rounded-lg text-light-text-muted hover:text-light-text dark:hover:text-dark-text transition-colors"
+                          className="px-2.5 py-1 text-xs font-medium rounded-lg text-light-text-muted hover:text-fg transition-colors"
                           onClick={handleCancelEdit}
                           type="button"
                         >
                           Cancel
                         </button>
                         <button
-                          className="px-2.5 py-1 text-xs font-medium rounded-lg bg-light-accent dark:bg-dark-accent text-white hover:opacity-90 transition-opacity"
+                          className="px-2.5 py-1 text-xs font-medium rounded-lg bg-accent text-white hover:opacity-90 transition-opacity"
                           onClick={() => handleSaveEdit(item.id)}
                           type="button"
                         >
@@ -586,16 +584,16 @@ export function ReaderAnnotationsPanel({
                       </div>
                     </div>
                   ) : item.note ? (
-                    <div className="flex items-start justify-between gap-2 mt-2.5 bg-light-surface/50 dark:bg-dark-surface/50 p-2.5 rounded-lg border border-light-border dark:border-dark-border">
+                    <div className="flex items-start justify-between gap-2 mt-2.5 bg-surface/50 p-2.5 rounded-lg border border-line">
                       <div className="flex items-start gap-2 flex-1 min-w-0">
-                        <MessageSquare className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent shrink-0 mt-0.5" />
-                        <p className="text-xs text-light-text dark:text-dark-text leading-normal break-words">
+                        <MessageSquare className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+                        <p className="text-xs text-fg leading-normal break-words">
                           {item.note}
                         </p>
                       </div>
                       <button
                         aria-label="Edit note"
-                        className="p-1 text-light-text-muted hover:text-light-text dark:hover:text-dark-text rounded opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                        className="p-1 text-light-text-muted hover:text-fg rounded opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                         onClick={() => handleStartEdit(item)}
                         title="Edit note"
                         type="button"
@@ -606,7 +604,7 @@ export function ReaderAnnotationsPanel({
                   ) : (
                     <div className="mt-1 flex justify-end">
                       <button
-                        className="text-[11px] text-light-text-muted/70 hover:text-light-accent dark:hover:text-dark-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
+                        className="text-xs text-light-text-muted/70 hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
                         onClick={() => handleStartEdit(item)}
                         type="button"
                       >

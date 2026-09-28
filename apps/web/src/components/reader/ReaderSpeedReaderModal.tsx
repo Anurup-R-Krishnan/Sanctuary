@@ -199,12 +199,12 @@ export function ReaderSpeedReaderModal({
         tabIndex={-1}
         type="button"
       />
-      <div className="relative z-10 w-full max-w-xl bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text border border-light-border dark:border-dark-border rounded-3xl shadow-2xl overflow-hidden flex flex-col p-5 sm:p-7 gap-5 animate-scaleUp">
+      <div className="relative z-10 w-full max-w-xl bg-page text-fg border border-line rounded-3xl shadow-2xl overflow-hidden flex flex-col p-5 sm:p-7 gap-5 animate-scaleUp">
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between gap-3 border-b border-light-border dark:border-dark-border pb-3">
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-light-accent/15 dark:bg-dark-accent/15 flex items-center justify-center shrink-0">
-              <Zap className="w-4 h-4 text-light-accent dark:text-dark-accent" />
+            <div className="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-accent" />
             </div>
             <div className="min-w-0">
               <h2
@@ -213,7 +213,7 @@ export function ReaderSpeedReaderModal({
               >
                 {chapterLabel || "Speed Reader (RSVP)"}
               </h2>
-              <span className="text-[11px] text-light-text-muted dark:text-dark-text-muted block truncate">
+              <span className="text-xs text-fg-muted block truncate">
                 {tokens.length} words · {formatDuration(remainingMs)} remaining
               </span>
             </div>
@@ -221,7 +221,7 @@ export function ReaderSpeedReaderModal({
 
           <button
             aria-label="Close speed reader"
-            className="p-2 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="p-2 rounded-full hover:bg-line/40 transition-colors text-fg-muted hover:text-fg"
             onClick={onClose}
             type="button"
           >
@@ -231,47 +231,47 @@ export function ReaderSpeedReaderModal({
 
         {/* Central RSVP Fixed Focal Display Box */}
         {tokens.length === 0 ? (
-          <div className="h-44 sm:h-52 flex flex-col items-center justify-center gap-3 text-sm text-light-text-muted dark:text-dark-text-muted text-center px-4 bg-light-surface/30 dark:bg-dark-surface/30 rounded-2xl border border-dashed border-light-border dark:border-dark-border">
+          <div className="h-44 sm:h-52 flex flex-col items-center justify-center gap-3 text-sm text-fg-muted text-center px-4 bg-surface/30 rounded-2xl border border-dashed border-line">
             <p>No readable text found in this chapter or selection.</p>
             <button
               type="button"
               onClick={() => setSampleText(SAMPLE_PASSAGE)}
-              className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-light-accent/10 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/25 transition-all active:scale-95"
+              className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-light-accent/10 dark:bg-dark-accent/15 text-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/25 transition-all active:scale-95"
             >
               Load Sample Passage
             </button>
           </div>
         ) : (
-          <div className="relative flex flex-col items-center justify-center bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border rounded-2xl h-44 sm:h-52 select-none overflow-hidden px-4">
+          <div className="relative flex flex-col items-center justify-center bg-surface/40 border border-line rounded-2xl h-44 sm:h-52 select-none overflow-hidden px-4">
             {/* Top Reticle Notch */}
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-3.5 bg-light-accent dark:bg-dark-accent rounded-full opacity-60 pointer-events-none" />
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-3.5 bg-accent rounded-full opacity-60 pointer-events-none" />
 
             {/* Fixed Horizontal ORP Word Anchor Container */}
             <div className="flex items-baseline w-full max-w-lg text-3xl sm:text-4xl md:text-5xl font-sans tracking-normal leading-none my-auto">
               {/* Left Segment: right-aligned up to the focal letter */}
-              <div className="flex-1 text-right truncate text-light-text dark:text-dark-text opacity-95">
+              <div className="flex-1 text-right truncate text-fg opacity-95">
                 {currentToken?.left || ""}
               </div>
 
               {/* Center ORP Letter: anchored precisely at the central axis */}
-              <div className="w-auto shrink-0 font-bold text-light-accent dark:text-dark-accent px-0.5 transition-colors">
+              <div className="w-auto shrink-0 font-bold text-accent px-0.5 transition-colors">
                 {currentToken?.orp || ""}
               </div>
 
               {/* Right Segment: left-aligned from the focal letter */}
-              <div className="flex-1 text-left truncate text-light-text dark:text-dark-text opacity-95">
+              <div className="flex-1 text-left truncate text-fg opacity-95">
                 {currentToken?.right || ""}
               </div>
             </div>
 
             {/* Bottom Reticle Notch */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-3.5 bg-light-accent dark:bg-dark-accent rounded-full opacity-60 pointer-events-none" />
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-0.5 h-3.5 bg-accent rounded-full opacity-60 pointer-events-none" />
           </div>
         )}
 
         {/* Peripheral Context Line */}
         {tokens.length > 0 && (
-          <div className="text-center text-xs text-light-text-muted dark:text-dark-text-muted opacity-60 truncate px-4">
+          <div className="text-center text-xs text-fg-muted opacity-60 truncate px-4">
             “{contextSnippet}”
           </div>
         )}
@@ -279,13 +279,13 @@ export function ReaderSpeedReaderModal({
         {/* Scrubber Progress Slider */}
         {tokens.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted">
+            <div className="flex items-center justify-between text-xs font-medium text-fg-muted">
               <span>Word {currentIndex + 1} of {tokens.length}</span>
               <span>{Math.round(((currentIndex + 1) / tokens.length) * 100)}%</span>
             </div>
             <input
               aria-label="Speed reading progress"
-              className="w-full h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-lg appearance-none cursor-pointer accent-light-accent dark:accent-dark-accent"
+              className="w-full h-1.5 bg-line/60 rounded-lg appearance-none cursor-pointer accent-accent"
               max={Math.max(0, tokens.length - 1)}
               min={0}
               onChange={(e) => setCurrentIndex(Number(e.target.value))}
@@ -301,7 +301,7 @@ export function ReaderSpeedReaderModal({
           <div className="flex items-center gap-2">
             <button
               aria-label="Restart from beginning"
-              className="p-2.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text disabled:opacity-30 disabled:pointer-events-none"
+              className="p-2.5 rounded-full hover:bg-line/40 active:scale-95 transition-all text-fg-muted hover:text-fg disabled:opacity-30 disabled:pointer-events-none"
               disabled={tokens.length === 0}
               onClick={handleRestart}
               title="Restart"
@@ -312,7 +312,7 @@ export function ReaderSpeedReaderModal({
 
             <button
               aria-label="Rewind 10 words (Left Arrow)"
-              className="p-2.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text disabled:opacity-30 disabled:pointer-events-none"
+              className="p-2.5 rounded-full hover:bg-line/40 active:scale-95 transition-all text-fg-muted hover:text-fg disabled:opacity-30 disabled:pointer-events-none"
               disabled={tokens.length === 0}
               onClick={handleRewind}
               title="Rewind 10 words"
@@ -323,7 +323,7 @@ export function ReaderSpeedReaderModal({
 
             <button
               aria-label={isPlaying ? "Pause (Space)" : "Play (Space)"}
-              className="px-5 py-2.5 rounded-full bg-light-accent dark:bg-dark-accent text-white dark:text-black font-semibold flex items-center gap-2 shadow-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
+              className="px-5 py-2.5 rounded-full bg-accent text-white dark:text-black font-semibold flex items-center gap-2 shadow-md hover:opacity-90 active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
               disabled={tokens.length === 0}
               onClick={handleTogglePlay}
               type="button"
@@ -343,7 +343,7 @@ export function ReaderSpeedReaderModal({
 
             <button
               aria-label="Forward 10 words (Right Arrow)"
-              className="p-2.5 rounded-full hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:scale-95 transition-all text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text disabled:opacity-30 disabled:pointer-events-none"
+              className="p-2.5 rounded-full hover:bg-line/40 active:scale-95 transition-all text-fg-muted hover:text-fg disabled:opacity-30 disabled:pointer-events-none"
               disabled={tokens.length === 0}
               onClick={handleForward}
               title="Forward 10 words"
@@ -360,8 +360,8 @@ export function ReaderSpeedReaderModal({
                 aria-label={`Set speed to ${preset} words per minute`}
                 className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
                   wpm === preset
-                    ? "bg-light-accent/20 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent font-semibold"
-                    : "bg-light-border/40 dark:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                    ? "bg-accent/20 text-accent font-semibold"
+                    : "bg-line/40 text-fg-muted hover:text-fg"
                 }`}
                 key={preset}
                 onClick={() => setWpm(preset)}
@@ -375,8 +375,8 @@ export function ReaderSpeedReaderModal({
               aria-label="Custom speed slider"
               className={`p-1.5 rounded-lg transition-all ${
                 showSpeedCustomizer
-                  ? "bg-light-accent/20 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent"
-                  : "bg-light-border/40 dark:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+                  ? "bg-accent/20 text-accent"
+                  : "bg-line/40 text-fg-muted hover:text-fg"
               }`}
               onClick={() => setShowSpeedCustomizer((prev) => !prev)}
               title="Custom Speed"
@@ -389,13 +389,13 @@ export function ReaderSpeedReaderModal({
 
         {/* Custom Speed Slider Popover/Drawer */}
         {showSpeedCustomizer && (
-          <div className="flex items-center gap-3 p-3 bg-light-surface/50 dark:bg-dark-surface/50 border border-light-border dark:border-dark-border rounded-xl animate-fadeIn">
-            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted shrink-0 w-16">
+          <div className="flex items-center gap-3 p-3 bg-surface/50 border border-line rounded-xl animate-fadeIn">
+            <span className="text-xs font-medium text-fg-muted shrink-0 w-16">
               {wpm} WPM
             </span>
             <input
               aria-label="Custom words per minute"
-              className="w-full h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-lg appearance-none cursor-pointer accent-light-accent dark:accent-dark-accent"
+              className="w-full h-1.5 bg-line/60 rounded-lg appearance-none cursor-pointer accent-accent"
               max={900}
               min={100}
               onChange={(e) => setWpm(Number(e.target.value))}
@@ -407,11 +407,11 @@ export function ReaderSpeedReaderModal({
         )}
 
         {/* Bottom Keyboard Hint Bar */}
-        <div className="text-[11px] text-light-text-muted dark:text-dark-text-muted text-center pt-1 border-t border-light-border/60 dark:border-dark-border/60">
-          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">Space</span> toggle play ·{" "}
-          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">←/→</span> ±10 words ·{" "}
-          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">↑/↓</span> ±25 WPM ·{" "}
-          <span className="font-mono bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border shadow-2xs px-1.5 py-0.5 rounded mr-1">Esc</span> close
+        <div className="text-xs text-fg-muted text-center pt-1 border-t border-line/60">
+          <span className="font-mono bg-surface border border-line shadow-2xs px-1.5 py-0.5 rounded mr-1">Space</span> toggle play ·{" "}
+          <span className="font-mono bg-surface border border-line shadow-2xs px-1.5 py-0.5 rounded mr-1">←/→</span> ±10 words ·{" "}
+          <span className="font-mono bg-surface border border-line shadow-2xs px-1.5 py-0.5 rounded mr-1">↑/↓</span> ±25 WPM ·{" "}
+          <span className="font-mono bg-surface border border-line shadow-2xs px-1.5 py-0.5 rounded mr-1">Esc</span> close
         </div>
       </div>
     </div>,

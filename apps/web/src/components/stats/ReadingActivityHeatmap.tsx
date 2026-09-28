@@ -26,7 +26,7 @@ export interface ReadingActivityHeatmapProps {
 }
 
 const CELL_BG_CLASSES = [
-  'bg-light-border/40 dark:bg-dark-border/40 border-light-border/30 dark:border-dark-border/30',
+  'bg-line/40 border-line/30',
   'bg-emerald-500/30 dark:bg-emerald-500/35 border-emerald-500/20',
   'bg-emerald-500/55 dark:bg-emerald-500/55 border-emerald-500/30',
   'bg-emerald-600/80 dark:bg-emerald-500/75 border-emerald-600/40',
@@ -81,27 +81,27 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
   return (
     <div className="space-y-6">
       {/* Heatmap Card */}
-      <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-4">
+      <div className="p-5 rounded-2xl bg-surface/40 border border-line space-y-4">
         {/* Card Header & Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-sm font-semibold text-light-text dark:text-dark-text tracking-wide">
+              <h3 className="text-sm font-semibold text-fg tracking-wide">
                 Reading Consistency Matrix
               </h3>
             </div>
-            <p className="text-xs text-light-text-muted dark:text-dark-text-muted mt-0.5">
+            <p className="text-xs text-fg-muted mt-0.5">
               {gridData.totalActiveDays} active reading days · {formatMinutesDuration(gridData.totalMinutes)} total
             </p>
           </div>
 
-          <div className="flex items-center bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border p-0.5 rounded-lg text-xs font-medium self-start sm:self-auto">
+          <div className="flex items-center bg-surface/60 border border-line p-0.5 rounded-lg text-xs font-medium self-start sm:self-auto">
             <button
               className={`px-2.5 py-1 rounded-md transition-all ${
                 selectedHorizon === 'recent'
-                  ? 'bg-white dark:bg-dark-surface shadow-xs text-light-text dark:text-dark-text font-semibold'
-                  : 'text-light-text-muted dark:text-dark-text-muted hover:text-light-text'
+                  ? 'bg-white dark:bg-dark-surface shadow-xs text-fg font-semibold'
+                  : 'text-fg-muted hover:text-light-text'
               }`}
               onClick={() => setSelectedHorizon('recent')}
               type="button"
@@ -111,8 +111,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             <button
               className={`px-2.5 py-1 rounded-md transition-all ${
                 selectedHorizon === 'annual'
-                  ? 'bg-white dark:bg-dark-surface shadow-xs text-light-text dark:text-dark-text font-semibold'
-                  : 'text-light-text-muted dark:text-dark-text-muted hover:text-light-text'
+                  ? 'bg-white dark:bg-dark-surface shadow-xs text-fg font-semibold'
+                  : 'text-fg-muted hover:text-light-text'
               }`}
               onClick={() => setSelectedHorizon('annual')}
               type="button"
@@ -135,10 +135,10 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
                   top: `${hoveredCell.y - 6}px`,
                 }}
               >
-                <div className="font-semibold text-[11px] leading-tight">
+                <div className="font-semibold text-xs leading-tight">
                   {hoveredCell.cell.formattedDate}
                 </div>
-                <div className="text-[10px] text-stone-300 dark:text-stone-600 mt-0.5 flex items-center gap-1.5">
+                <div className="text-2xs text-stone-300 dark:text-stone-600 mt-0.5 flex items-center gap-1.5">
                   {hoveredCell.cell.minutes > 0 ? (
                     <>
                       <span className="font-bold text-emerald-400 dark:text-emerald-600">
@@ -155,7 +155,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
                   )}
                 </div>
                 {hoveredCell.cell.minutes >= dailyTargetMinutes && (
-                  <div className="text-[9px] text-emerald-400 dark:text-emerald-700 font-semibold mt-0.5">
+                  <div className="text-3xs text-emerald-400 dark:text-emerald-700 font-semibold mt-0.5">
                     ✓ Daily goal reached
                   </div>
                 )}
@@ -164,7 +164,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             )}
 
             {/* Month Labels Row */}
-            <div className="flex text-[10px] text-light-text-muted dark:text-dark-text-muted mb-1.5 h-4 relative">
+            <div className="flex text-2xs text-fg-muted mb-1.5 h-4 relative">
               <div className="w-[28px] shrink-0" /> {/* Day labels + gap spacer: 20px + 8px */}
               <div className="flex gap-1 flex-1 relative">
                 {gridData.monthLabels.map((m, idx) => (
@@ -182,7 +182,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             {/* Grid with Day Labels */}
             <div className="flex gap-2">
               {/* Day of Week Labels (Mon, Wed, Fri, Sun) */}
-              <div className="flex flex-col justify-between text-[9px] text-light-text-muted dark:text-dark-text-muted w-5 py-0.5 select-none shrink-0 leading-none h-[108px]">
+              <div className="flex flex-col justify-between text-3xs text-fg-muted w-5 py-0.5 select-none shrink-0 leading-none h-[108px]">
                 <span>Mon</span>
                 <span>Wed</span>
                 <span>Fri</span>
@@ -223,27 +223,27 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
         </div>
 
         {/* Legend & Active Cell Details Footer */}
-        <div className="pt-2 border-t border-light-border/60 dark:border-dark-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div className="text-light-text dark:text-dark-text font-medium min-h-[1.25rem] flex items-center gap-1.5">
+        <div className="pt-2 border-t border-line/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div className="text-fg font-medium min-h-[1.25rem] flex items-center gap-1.5">
             {activeCell ? (
               <>
-                <span className="font-semibold text-light-text dark:text-dark-text">
+                <span className="font-semibold text-fg">
                   {activeCell.formattedDate}:
                 </span>
-                <span className="text-light-text-muted dark:text-dark-text-muted">
+                <span className="text-fg-muted">
                   {activeCell.minutes > 0
                     ? `${activeCell.minutes} min · ${activeCell.pages} pages (${activeCell.sessionCount} sessions)`
                     : 'No reading recorded'}
                 </span>
               </>
             ) : (
-              <span className="text-light-text-muted dark:text-dark-text-muted text-[11px]">
+              <span className="text-fg-muted text-xs">
                 Hover or tap any square to inspect daily reading time
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 text-[10px] text-light-text-muted dark:text-dark-text-muted self-end sm:self-auto">
+          <div className="flex items-center gap-1.5 text-2xs text-fg-muted self-end sm:self-auto">
             <span>Less</span>
             {[0, 1, 2, 3, 4].map((level) => (
               <div
@@ -258,57 +258,57 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
 
       {/* Reading Velocity Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
           <div className="p-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
             <Clock className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
               Peak Hour
             </span>
-            <p className="text-lg font-bold text-light-text dark:text-dark-text mt-0.5">
+            <p className="text-lg font-bold text-fg mt-0.5">
               {velocity.peakReadingHourLabel}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
           <div className="p-2 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
               Top Reading Day
             </span>
-            <p className="text-lg font-bold text-light-text dark:text-dark-text mt-0.5">
+            <p className="text-lg font-bold text-fg mt-0.5">
               {velocity.bestDayOfWeek}
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
           <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
             <Timer className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
               Avg Session
             </span>
-            <p className="text-lg font-bold text-light-text dark:text-dark-text mt-0.5">
+            <p className="text-lg font-bold text-fg mt-0.5">
               {velocity.averageMinutesPerSession}m
             </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border flex items-start gap-3">
+        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
           <div className="p-2 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
             <Flame className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] font-medium text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
+            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
               Longest Session
             </span>
-            <p className="text-lg font-bold text-light-text dark:text-dark-text mt-0.5">
+            <p className="text-lg font-bold text-fg mt-0.5">
               {formatMinutesDuration(velocity.longestSessionMinutes)}
             </p>
           </div>
@@ -316,20 +316,20 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
       </div>
 
       {/* Time-of-Day Breakdown */}
-      <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-4">
+      <div className="p-5 rounded-2xl bg-surface/40 border border-line space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wide">
+            <h4 className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
               Reading by Time of Day
             </h4>
-            <p className="text-xs text-light-text dark:text-dark-text font-medium mt-0.5 capitalize">
+            <p className="text-xs text-fg font-medium mt-0.5 capitalize">
               Most active: {circadian.peakPeriod}
             </p>
           </div>
         </div>
 
         {/* Stacked Percentage Bar */}
-        <div className="h-3 w-full rounded-full overflow-hidden flex bg-light-border/60 dark:bg-dark-border/60">
+        <div className="h-3 w-full rounded-full overflow-hidden flex bg-line/60">
           {circadian.morningPercent > 0 && (
             <div
               className="bg-amber-400 dark:bg-amber-500 transition-all"
@@ -367,8 +367,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
               <Sunrise className="w-3.5 h-3.5" />
             </div>
             <div>
-              <p className="font-semibold text-light-text dark:text-dark-text">Morning</p>
-              <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+              <p className="font-semibold text-fg">Morning</p>
+              <p className="text-xs text-fg-muted">
                 {circadian.morningPercent}% ({formatMinutesDuration(circadian.morningMinutes)})
               </p>
             </div>
@@ -379,8 +379,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
               <Sun className="w-3.5 h-3.5" />
             </div>
             <div>
-              <p className="font-semibold text-light-text dark:text-dark-text">Afternoon</p>
-              <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+              <p className="font-semibold text-fg">Afternoon</p>
+              <p className="text-xs text-fg-muted">
                 {circadian.afternoonPercent}% ({formatMinutesDuration(circadian.afternoonMinutes)})
               </p>
             </div>
@@ -391,8 +391,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
               <Sunset className="w-3.5 h-3.5" />
             </div>
             <div>
-              <p className="font-semibold text-light-text dark:text-dark-text">Evening</p>
-              <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+              <p className="font-semibold text-fg">Evening</p>
+              <p className="text-xs text-fg-muted">
                 {circadian.eveningPercent}% ({formatMinutesDuration(circadian.eveningMinutes)})
               </p>
             </div>
@@ -403,8 +403,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
               <Moon className="w-3.5 h-3.5" />
             </div>
             <div>
-              <p className="font-semibold text-light-text dark:text-dark-text">Night</p>
-              <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+              <p className="font-semibold text-fg">Night</p>
+              <p className="text-xs text-fg-muted">
                 {circadian.nightPercent}% ({formatMinutesDuration(circadian.nightMinutes)})
               </p>
             </div>

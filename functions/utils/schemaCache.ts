@@ -1,10 +1,21 @@
-import { ensureAnnotationsSchema, ensureBooksSchema, ensureSessionsSchema, ensureSettingsSchema } from "./schemaBootstrap";
+import {
+  ensureAnnotationsSchema,
+  ensureAuthAttemptsSchema,
+  ensureAuthSessionsSchema,
+  ensureBooksSchema,
+  ensureSessionsSchema,
+  ensureSettingsSchema,
+  ensureUsersSchema
+} from "./schemaBootstrap";
 
 let schemaReady: Promise<void> | null = null;
 
 export function getSchemaReady(db: D1Database): Promise<void> {
   if (!schemaReady) {
     schemaReady = Promise.all([
+      ensureUsersSchema(db),
+      ensureAuthSessionsSchema(db),
+      ensureAuthAttemptsSchema(db),
       ensureBooksSchema(db),
       ensureSettingsSchema(db),
       ensureSessionsSchema(db),

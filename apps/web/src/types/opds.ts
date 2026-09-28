@@ -29,6 +29,7 @@ export interface OpdsEntry {
   coverUrl?: string;
   format?: string;
   id: string;
+  navigationUrl?: string;
   published?: string;
   summary?: string;
   thumbnailUrl?: string;

@@ -76,7 +76,7 @@ function ReaderFooter({
             {progressBarType !== "none" && (
                 <button
                     type="button"
-                    className={`fixed left-0 right-0 z-50 h-1.5 hover:h-2.5 bg-light-border/70 dark:bg-dark-border/70 cursor-pointer pointer-events-auto group transition-[opacity,height] duration-150 ${showUI ? "opacity-100" : "opacity-60"} ${thinBarClass}`}
+                    className={`fixed left-0 right-0 z-50 h-1.5 hover:h-2.5 bg-line/70 cursor-pointer pointer-events-auto group transition-[opacity,height] duration-150 ${showUI ? "opacity-100" : "opacity-60"} ${thinBarClass}`}
                     onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
@@ -97,7 +97,7 @@ function ReaderFooter({
                 className={`fixed left-0 right-0 z-50 pointer-events-none transition-all duration-300 ${showUI ? "opacity-100" : "opacity-0"} ${isTop ? "top-0" : "bottom-0"}`}
             >
                 <div className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto transition-all duration-300 ${pillPositionClass}`}>
-                    <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-light-border dark:border-dark-border flex items-center gap-3" style={{ backgroundColor: getTranslucentBg(readerBackground, "F0") }}>
+                    <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-line flex items-center gap-3" style={{ backgroundColor: getTranslucentBg(readerBackground, "F0") }}>
                         <div className="flex items-center shrink-0">
                             <IconButton
                                 onClick={(e) => { e.stopPropagation(); onPrevPage(); }}
@@ -120,7 +120,7 @@ function ReaderFooter({
                                     style={{ "--reader-progress-color": readerAccent } as CSSProperties}
                                     aria-label="Reading position"
                                 />
-                                <div className="absolute left-0 right-0 h-1.5 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden pointer-events-none">
+                                <div className="absolute left-0 right-0 h-1.5 rounded-full bg-line/60 overflow-hidden pointer-events-none">
                                     <div
                                         style={{ width: `${progressPercent}%`, background: fillGradient, boxShadow: fillGlow }}
                                         className="h-full transition-[width] duration-100 ease-out"
@@ -128,7 +128,7 @@ function ReaderFooter({
                                 </div>
                             </div>
                             {showPageCounter && (
-                                <div className="flex justify-center items-center text-xs mt-0.5 text-light-text-muted dark:text-dark-text-muted gap-2 font-medium select-none truncate">
+                                <div className="flex justify-center items-center text-xs mt-0.5 text-fg-muted gap-2 font-medium select-none truncate">
                                     <span className="tabular-nums">{safeCurrentPage}</span>
                                     <span className="opacity-60">/</span>
                                     <span className="tabular-nums">{safeTotalPages}</span>

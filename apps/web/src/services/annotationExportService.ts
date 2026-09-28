@@ -355,3 +355,31 @@ export function formatReaderAnnotationsAsMarkdown(
 
   return lines.join("\n");
 }
+
+/**
+ * Exports reader annotations to JSON format.
+ */
+export function exportAnnotationsAsJson(
+  bookTitle: string,
+  bookAuthor: string,
+  annotations: ReaderAnnotation[]
+): string {
+  const data = {
+    bookTitle: bookTitle || "Untitled",
+    bookAuthor: bookAuthor || "Unknown Author",
+    exportedAt: new Date().toISOString(),
+    count: annotations.length,
+    annotations: annotations.map((item) => ({
+      id: item.id,
+      text: item.text,
+      note: item.note ?? null,
+      color: item.color,
+      type: item.type,
+      chapterLabel: item.chapterLabel ?? null,
+      cfiRange: item.cfiRange,
+      createdAt: new Date(item.createdAt).toISOString(),
+    })),
+  };
+
+  return JSON.stringify(data, null, 2);
+}

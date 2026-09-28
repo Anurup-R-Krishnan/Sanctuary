@@ -25,13 +25,13 @@ export class ErrorBoundary extends Component<Props, State> {
   override render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-[100dvh] flex items-center justify-center bg-light-primary dark:bg-dark-primary p-6">
+        <div className="min-h-[100dvh] flex items-center justify-center bg-page p-6">
           <div className="text-center max-w-md">
             <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-red-500/10 flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
-            <h2 className="text-xl font-bold text-light-text dark:text-dark-text mb-3">Something went wrong</h2>
-            <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">{this.state.error?.message || "An unexpected error occurred"}</p>
+            <h2 className="text-xl font-bold text-fg mb-3">Something went wrong</h2>
+            <p className="text-sm text-fg-muted mb-6">{this.state.error?.message || "An unexpected error occurred"}</p>
             <Button
               onClick={() => window.location.reload()}
               variant="primary"

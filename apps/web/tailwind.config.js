@@ -8,12 +8,27 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
-        serif: ['Crimson Pro', 'Georgia', 'serif'],
-        mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
+        sans: 'var(--font-ui)',
+        display: 'var(--font-display)',
+        serif: 'var(--font-reader)',
+        mono: 'var(--font-mono)',
       },
       colors: {
-        // Light theme colors
+        // Semantic color tokens using CSS variables
+        page: 'rgb(var(--color-page) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        'surface-raised': 'rgb(var(--color-surface-raised) / <alpha-value>)',
+        fg: 'rgb(var(--color-fg) / <alpha-value>)',
+        'fg-muted': 'rgb(var(--color-fg-muted) / <alpha-value>)',
+        line: 'rgb(var(--color-line) / <alpha-value>)',
+        'line-subtle': 'rgb(var(--color-line-subtle) / <alpha-value>)',
+        subtle: 'rgb(var(--color-subtle) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        'accent-fg': 'rgb(var(--color-accent-fg) / <alpha-value>)',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
+        success: 'rgb(var(--color-success) / <alpha-value>)',
+
+        // Legacy light/dark colors for backward compatibility during migration
         light: {
           primary: '#FEFCF8', // warm off-white, not clinical pure white
           secondary: '#FAF6F0', // warm paper tone
@@ -25,7 +40,6 @@ export default {
           border: '#E7DCC9', // warm border, replaces cold zinc-200
           'border-muted': '#F3ECE1',
         },
-        // Dark theme colors
         dark: {
           primary: '#0F0E0D', // warm near-black, not pure zinc
           secondary: '#1C1916', // warm dark surface
@@ -108,7 +122,9 @@ export default {
         'fast': '160ms',
       },
       fontSize: {
-        '2xs': ['0.625rem', { lineHeight: '0.75rem' }],
+        '3xs': ['0.5rem', { lineHeight: '0.625rem' }],    /* 8px - tiny labels */
+        '2xs': ['0.625rem', { lineHeight: '0.75rem' }],   /* 10px - small metadata */
+        'xs': ['0.6875rem', { lineHeight: '0.875rem' }],  /* 11px - captions, timestamps */
         '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
         '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
         '5xl': ['3rem', { lineHeight: '3.25rem' }],

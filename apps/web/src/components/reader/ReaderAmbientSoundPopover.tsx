@@ -102,21 +102,21 @@ function ReaderAmbientSoundPopoverComponent({
     <div
       aria-label="Ambient soundscapes panel"
       aria-modal="true"
-      className="pointer-events-auto fixed right-4 top-16 sm:right-6 sm:top-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-light-border dark:border-dark-border bg-light-surface/95 dark:bg-dark-surface/95 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl transition-all duration-instant animate-fadeIn"
+      className="pointer-events-auto fixed right-4 top-16 sm:right-6 sm:top-20 z-50 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-line bg-surface/95 p-4 sm:p-5 shadow-2xl backdrop-blur-2xl transition-all duration-instant animate-fadeIn"
       ref={popoverRef}
       role="dialog"
     >
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-light-border dark:border-dark-border">
+      <div className="flex items-center justify-between pb-3 border-b border-line">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent">
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-accent/15 text-accent">
             <Waves className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-light-text dark:text-dark-text">
+            <h3 className="text-sm font-semibold text-fg">
               Ambient Soundscapes
             </h3>
-            <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+            <p className="text-xs text-fg-muted">
               {isPlaying && activeSoundscape
                 ? `Playing ${SOUNDSCAPES.find((s) => s.id === activeSoundscape)?.label}`
                 : "Procedural acoustic masking"}
@@ -126,7 +126,7 @@ function ReaderAmbientSoundPopoverComponent({
 
         <div className="flex items-center gap-1">
           <IconButton
-            className="text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="text-fg-muted hover:text-fg"
             icon={isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             label={isPlaying ? "Pause audio" : "Play audio"}
             onClick={togglePlay}
@@ -134,7 +134,7 @@ function ReaderAmbientSoundPopoverComponent({
             variant="ghost"
           />
           <IconButton
-            className="text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text"
+            className="text-fg-muted hover:text-fg"
             icon={<X className="w-4 h-4" />}
             label="Close soundscapes"
             onClick={onClose}
@@ -156,8 +156,8 @@ function ReaderAmbientSoundPopoverComponent({
               className={cx(
                 "group relative flex flex-col items-start gap-1 p-2.5 rounded-xl border text-left transition-all duration-instant",
                 isSelected
-                  ? "border-light-accent dark:border-dark-accent bg-light-accent/10 dark:bg-dark-accent/10"
-                  : "border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40 bg-light-surface/40 dark:bg-dark-surface/40"
+                  ? "border-accent bg-accent/10"
+                  : "border-line hover:border-accent/40 bg-surface/40"
               )}
               key={soundscape.id}
               onClick={() => {
@@ -174,15 +174,15 @@ function ReaderAmbientSoundPopoverComponent({
                   className={cx(
                     "w-4 h-4 transition-colors",
                     isSelected
-                      ? "text-light-accent dark:text-dark-accent"
-                      : "text-light-text-muted dark:text-dark-text-muted group-hover:text-light-text dark:group-hover:text-dark-text"
+                      ? "text-accent"
+                      : "text-fg-muted group-hover:text-fg"
                   )}
                 />
                 {isActivePlaying && (
                   <span className="flex items-center gap-0.5 h-3">
-                    <span className="w-0.5 h-2 bg-light-accent dark:bg-dark-accent rounded-full animate-pulse" />
-                    <span className="w-0.5 h-3 bg-light-accent dark:bg-dark-accent rounded-full animate-pulse delay-75" />
-                    <span className="w-0.5 h-1.5 bg-light-accent dark:bg-dark-accent rounded-full animate-pulse delay-150" />
+                    <span className="w-0.5 h-2 bg-accent rounded-full animate-pulse" />
+                    <span className="w-0.5 h-3 bg-accent rounded-full animate-pulse delay-75" />
+                    <span className="w-0.5 h-1.5 bg-accent rounded-full animate-pulse delay-150" />
                   </span>
                 )}
               </div>
@@ -190,13 +190,13 @@ function ReaderAmbientSoundPopoverComponent({
                 className={cx(
                   "text-xs font-semibold tracking-tight",
                   isSelected
-                    ? "text-light-accent dark:text-dark-accent"
-                    : "text-light-text dark:text-dark-text"
+                    ? "text-accent"
+                    : "text-fg"
                 )}
               >
                 {soundscape.label}
               </span>
-              <span className="text-[10px] line-clamp-1 leading-tight text-light-text-muted dark:text-dark-text-muted">
+              <span className="text-2xs line-clamp-1 leading-tight text-fg-muted">
                 {soundscape.description}
               </span>
             </button>
@@ -205,8 +205,8 @@ function ReaderAmbientSoundPopoverComponent({
       </div>
 
       {/* Volume Slider */}
-      <div className="flex flex-col gap-1.5 pt-2 border-t border-light-border/60 dark:border-dark-border/60">
-        <div className="flex items-center justify-between text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-line/60">
+        <div className="flex items-center justify-between text-xs font-medium text-fg-muted">
           <span className="flex items-center gap-1.5">
             {volume === 0 ? (
               <VolumeX className="w-3.5 h-3.5" />
@@ -215,11 +215,11 @@ function ReaderAmbientSoundPopoverComponent({
             )}
             Volume
           </span>
-          <span className="font-mono text-[11px]">{volume}%</span>
+          <span className="font-mono text-xs">{volume}%</span>
         </div>
         <input
           aria-label="Soundscape volume"
-          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-light-border/60 dark:bg-dark-border/60 accent-light-accent dark:accent-dark-accent outline-none"
+          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-line/60 accent-accent outline-none"
           max={100}
           min={0}
           onChange={(e) => setVolume(parseInt(e.target.value, 10))}
@@ -230,14 +230,14 @@ function ReaderAmbientSoundPopoverComponent({
       </div>
 
       {/* Sleep Timer */}
-      <div className="flex flex-col gap-1.5 pt-3 mt-2 border-t border-light-border/60 dark:border-dark-border/60">
-        <div className="flex items-center justify-between text-xs font-medium text-light-text-muted dark:text-dark-text-muted">
+      <div className="flex flex-col gap-1.5 pt-3 mt-2 border-t border-line/60">
+        <div className="flex items-center justify-between text-xs font-medium text-fg-muted">
           <span className="flex items-center gap-1.5">
             <Timer className="w-3.5 h-3.5" />
             Sleep Timer
           </span>
           {remainingMinutes !== null && (
-            <span className="font-mono text-[11px] text-light-accent dark:text-dark-accent">
+            <span className="font-mono text-xs text-accent">
               {remainingMinutes}m left
             </span>
           )}
@@ -248,10 +248,10 @@ function ReaderAmbientSoundPopoverComponent({
             return (
               <button
                 className={cx(
-                  "flex-1 py-1 rounded-lg text-[11px] font-medium border transition-all duration-instant",
+                  "flex-1 py-1 rounded-lg text-xs font-medium border transition-all duration-instant",
                   isSelected
-                    ? "border-light-accent dark:border-dark-accent bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent"
-                    : "border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text bg-light-surface/40 dark:bg-dark-surface/40"
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-line hover:border-accent/40 text-fg-muted hover:text-fg bg-surface/40"
                 )}
                 key={opt.label}
                 onClick={() => setSleepTimer(opt.minutes)}

@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from "react";
 import type { ReaderPosition } from "@/types/reader";
 
 import { FoliateDocumentAdapter } from "@/reader/foliate/FoliateDocumentAdapter";
-import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
 import { FoliateRendition } from "@/reader/foliate/FoliateRendition";
 import { parseMarkdownToBook } from "@/reader/formats/MarkdownParser";
 
@@ -60,7 +59,7 @@ graph TD;
 export const FoliateTestHarness: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<FoliateRendition | null>(null);
-  const adapterRef = useRef<FoliateDocumentAdapter | FoliateEpubAdapter | null>(null);
+  const adapterRef = useRef<FoliateDocumentAdapter | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +81,7 @@ export const FoliateTestHarness: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        let adapter: FoliateDocumentAdapter | FoliateEpubAdapter;
+        let adapter: FoliateDocumentAdapter;
         if (sampleBook === "markdown") {
           const rawBook = await parseMarkdownToBook(SAMPLE_MARKDOWN, "The Architecture of Sanctuary");
           adapter = new FoliateDocumentAdapter(rawBook, "markdown");
@@ -91,7 +90,7 @@ export const FoliateTestHarness: React.FC = () => {
           if (!res.ok) throw new Error(`Failed to fetch mobydick.epub: ${res.statusText}`);
           const blob = await res.blob();
           if (!active) return;
-          adapter = await FoliateEpubAdapter.create(blob);
+          adapter = await FoliateDocumentAdapter.create(blob);
         }
 
         if (!active) {

@@ -11,6 +11,7 @@ export interface SanctuaryAuthContextType {
   getToken: () => Promise<string | null>;
   isLoaded: boolean;
   isSignedIn: boolean;
+  signIn: (token: string, user: { email: string | null; id: string }) => void;
   signOut: () => Promise<void>;
   user: SanctuaryUser | null;
 }

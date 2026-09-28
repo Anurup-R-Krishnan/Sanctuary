@@ -1,6 +1,7 @@
 import type { SanctuaryApiClient } from "@sanctuary/core";
 
 import { beforeAll, describe, expect, it } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import { ensureTestDom } from "../reader/foliate/testEnv";
 import {
@@ -8,7 +9,6 @@ import {
   DEFAULT_CATALOGS,
   downloadCatalogBook,
   fetchCatalogFeed,
-  getOfflineSampleFeed,
   parseOpdsFeed,
   parseOpdsJson,
   parseOpdsXml,
@@ -36,6 +36,7 @@ describe("OPDS 1.2 Atom XML Feed Parser", () => {
   <icon>/favicon.ico</icon>
   <link rel="self" href="/opds/all" type="application/atom+xml;profile=opds-catalog;kind=acquisition" />
   <link rel="start" href="/opds" type="application/atom+xml;profile=opds-catalog;kind=navigation" title="Home" />
+  <link rel="subsection" href="/opds/fiction" type="application/atom+xml;profile=opds-catalog;kind=navigation" title="Fiction" />
   <link rel="search" href="/opds/search{?query}" type="application/opensearchdescription+xml" />
 
   <entry>
@@ -405,25 +406,65 @@ describe("resolveSearchUrl helper", () => {
   });
 });
 
-describe("Offline Sample Catalog Feed", () => {
-  it("provides rich curated public domain classics with valid metadata and links", () => {
-    const feed = getOfflineSampleFeed();
-    expect(feed.entries.length).toBeGreaterThanOrEqual(6);
-    expect(feed.title).toContain("Offline Classics");
-
-    const titles = feed.entries.map((e) => e.title);
-    expect(titles).toContain("Pride and Prejudice");
-    expect(titles).toContain("Frankenstein; or, The Modern Prometheus");
-    expect(titles).toContain("Dracula");
-
-    for (const entry of feed.entries) {
-      expect(entry.author).toBeDefined();
-      expect(entry.summary).toBeDefined();
-      expect(entry.acquisitionUrl).toContain(".epub");
-      expect(entry.format).toBe("application/epub+zip");
-    }
-
-    expect(feed.navigationLinks.length).toBeGreaterThanOrEqual(3);
+describe("Navigation Entries in OPDS Feeds", () => {
+  it("parses navigation entries with rel=subsection and type containing profile=opds-catalog", () => {
+    const navXml = `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Catalog</title>
+  <entry>
+    <id>nav-1</id>
+    <title>Fiction</title>
+    <link rel="subsection" href="/categories/fiction" type="application/atom+xml;profile=opds-catalog"/>
+    <link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="/images/fiction.png"/>
+  </entry>
+</feed>`;
+    const feed = parseOpdsXml(navXml, "https://example.com");
+    const entry = feed.entries[0];
+    expect(entry?.navigationUrl).toBe("https://example.com/categories/fiction");
+    expect(entry?.acquisitionUrl).toBeUndefined();
   });
 });
 
+
+describe("parseOpdsFeed against real Project Gutenberg feeds", () => {
+  const fixture = (name: string) =>
+    readFileSync(new URL(`./__fixtures__/${name}`, import.meta.url), "utf8");
+
+  it("book page: one entry, EPUB3 chosen, related links are not navigation", () => {
+    ensureTestDom();
+    const feed = parseOpdsFeed(fixture("gutenberg-book-1342.xml"), "https://www.gutenberg.org/ebooks/1342.opds");
+    expect(feed.entries).toHaveLength(1);
+    expect(feed.entries[0].acquisitionUrl).toBe("https://www.gutenberg.org/ebooks/1342.epub3.images");
+    expect(feed.entries[0].navigationUrl).toBeUndefined();
+    expect(feed.entries[0].author).toBe("Austen, Jane");
+    expect(feed.searchLink).toBe("https://www.gutenberg.org/catalog/osd-books.xml");
+  });
+
+  it("list page: entries are folders into book pages, with next-page link", () => {
+    ensureTestDom();
+    const feed = parseOpdsFeed(fixture("gutenberg-popular.xml"), "https://www.gutenberg.org/ebooks/search.opds/?sort_order=downloads");
+    expect(feed.entries.length).toBe(3);
+    for (const entry of feed.entries) {
+      expect(entry.acquisitionUrl).toBeUndefined();
+      expect(entry.navigationUrl).toMatch(/^https:\/\/www\.gutenberg\.org\/ebooks\/\d+\.opds$/);
+    }
+    expect(feed.pagination?.next).toBe("https://www.gutenberg.org/ebooks/search.opds/?sort_order=downloads&start_index=26");
+    expect(feed.navigationLinks.some((l) => l.title === "HTML Page")).toBe(false);
+  });
+});
+
+describe("resolveSearchUrl with OpenSearch templates", () => {
+  it("fills searchTerms and drops unfilled optional parameters", () => {
+    expect(resolveSearchUrl("https://m.gutenberg.org/ebooks/search.opds/?query={searchTerms}", "jane austen")).toBe(
+      "https://m.gutenberg.org/ebooks/search.opds/?query=jane%20austen"
+    );
+    expect(resolveSearchUrl("https://x.test/s?q={searchTerms}&page={startPage?}", "a")).toBe("https://x.test/s?q=a");
+  });
+});
+
+describe("resolveSearchUrl with several optional parameters", () => {
+  it("removes every unfilled optional parameter regardless of order", () => {
+    expect(resolveSearchUrl("https://x.test/s?q={searchTerms}&a={startPage?}&b={count?}", "hi")).toBe("https://x.test/s?q=hi");
+    expect(resolveSearchUrl("https://x.test/s?a={startPage?}&q={searchTerms}", "hi")).toBe("https://x.test/s?q=hi");
+  });
+});

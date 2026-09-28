@@ -1,7 +1,7 @@
 import type { ReadingSession, SessionAggregates, Book, ReadingStats } from "@/types";
 
 import { GENRE_PALETTE } from "@/config/readerConfig";
-import { DEFAULT_BADGES, DEFAULT_PERSONALITY } from "@/types";
+import { DEFAULT_BADGES } from "@/types";
 import { calculateAnnualChallenge } from "@/utils/challenge";
 import { calculateSmartStreak } from "@/utils/streakEngine";
 
@@ -98,10 +98,10 @@ export const calculateStats = (
     monthMinutes,
     totalReadingTime,
     totalPagesRead,
-    sessionCount
   } = aggregates;
 
-  const dailyProgress = dayTotals.get(today)?.pages || 0;
+  // dailyProgress is in MINUTES (despite the old page-based logic)
+  const dailyProgress = Math.round(dayTotals.get(today)?.minutes ?? 0);
   const { current: currentStreak, longest: longestStreak } = calculateStreak(sessionDates, now);
 
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -150,26 +150,6 @@ export const calculateStats = (
     .slice(0, 5)
     .map(([author, booksCount]) => ({ author, books: booksCount }));
 
-  const avgSessionLength = sessionCount > 0 ? totalReadingTime / sessionCount : 0;
-  let readingPersonality = DEFAULT_PERSONALITY.personality;
-  let personalityDescription = DEFAULT_PERSONALITY.description;
-
-  if (sessionCount >= 10) {
-    if (avgSessionLength > 45) {
-      readingPersonality = "Binge Reader";
-      personalityDescription = "You love diving deep, often reading for hours at a time.";
-    } else if (currentStreak >= 7) {
-      readingPersonality = "Consistent Reader";
-      personalityDescription = "You read regularly, building strong habits.";
-    } else if (totalPagesRead / Math.max(1, completedBooksCount) > 300) {
-      readingPersonality = "Epic Adventurer";
-      personalityDescription = "You prefer long, immersive stories.";
-    } else {
-      readingPersonality = "Quick Reader";
-      personalityDescription = "You enjoy shorter, focused reading sessions.";
-    }
-  }
-
   return {
     annualChallenge,
     authorNetwork,
@@ -183,8 +163,6 @@ export const calculateStats = (
     heatmapData,
     longestStreak,
     monthlyData,
-    personalityDescription,
-    readingPersonality,
     totalBooksInLibrary: books.length,
     totalBooksRead: completedBooksCount,
     totalPagesRead,

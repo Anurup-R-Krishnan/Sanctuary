@@ -15,7 +15,7 @@ export const DEFAULT_CATALOGS: CatalogSource[] = [
     id: "project-gutenberg",
     isDefault: true,
     name: "Project Gutenberg",
-    url: "https://m.gutenberg.org/ebooks.opds/",
+    url: "https://www.gutenberg.org/ebooks.opds/",
   },
 ];
 
@@ -45,6 +45,49 @@ function parseFilenameFromContentDisposition(header: string | null): string | nu
   return null;
 }
 
+const NON_NAVIGATION_RELS = new Set(["related", "self", "start", "up", "alternate"]);
+
+/** EPUB3 > EPUB2 (images) > EPUB2 (no images) > other formats. */
+function acquisitionPriorityOf(type: string, href: string): number {
+  const isEpub = type.startsWith("application/epub") || /\.epub/i.test(href);
+  if (!isEpub) return 1;
+  if (/epub3/i.test(href) || type.includes("epub3")) return 4;
+  return /noimages/i.test(href) ? 2 : 3;
+}
+
+/**
+ * Catalogs like Gutenberg list several editions of one book (with and without
+ * images) as separate entries. Keep the best edition per title+author, in the
+ * position of the first one.
+ */
+function dedupeEditions(entries: OpdsEntry[], priorities: Map<OpdsEntry, number>): OpdsEntry[] {
+  const best = new Map<string, OpdsEntry>();
+  const keyOf = (entry: OpdsEntry) => `${entry.title.toLowerCase()}|${(entry.author ?? "").toLowerCase()}`;
+  for (const entry of entries) {
+    if (!entry.acquisitionUrl || !entry.author) continue; // Only dedupe entries with non-empty author
+    const current = best.get(keyOf(entry));
+    if (!current || (priorities.get(entry) ?? 0) > (priorities.get(current) ?? 0)) best.set(keyOf(entry), entry);
+  }
+  const emitted = new Set<string>();
+  const result: OpdsEntry[] = [];
+  for (const entry of entries) {
+    if (!entry.acquisitionUrl) {
+      result.push(entry);
+      continue;
+    }
+    const key = keyOf(entry);
+    if (!entry.author) {
+      // Don't dedupe entries without author
+      result.push(entry);
+      continue;
+    }
+    if (emitted.has(key)) continue;
+    emitted.add(key);
+    result.push(best.get(key) ?? entry);
+  }
+  return result;
+}
+
 export function parseOpdsXml(xmlText: string, baseUrl: string): OpdsFeed {
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlText, "application/xml");
@@ -54,17 +97,27 @@ export function parseOpdsXml(xmlText: string, baseUrl: string): OpdsFeed {
     throw new Error(`XML parsing error: ${parserError.textContent?.slice(0, 100) || "Invalid XML"}`);
   }
 
-  const feedTitle =
-    xmlDoc.querySelector("feed > title, title")?.textContent?.trim() || "OPDS Catalog";
-  const feedId = xmlDoc.querySelector("feed > id, id")?.textContent?.trim();
-  const feedIcon = xmlDoc.querySelector("feed > icon, icon")?.textContent?.trim();
-  const feedUpdated = xmlDoc.querySelector("feed > updated, updated")?.textContent?.trim();
+  // Helper to get text content with namespace-aware fallback
+  const getText = (el: Element | null): string | undefined => {
+    if (!el) return undefined;
+    const text = el.textContent?.trim();
+    return text || undefined;
+  };
+
+  // Get feed root (handles both with and without namespace)
+  const feedEl = xmlDoc.querySelector("feed") || xmlDoc.documentElement;
+
+  const feedTitle = getText(feedEl.querySelector("title")) || "OPDS Catalog";
+  const feedId = getText(feedEl.querySelector("id"));
+  const feedIcon = getText(feedEl.querySelector("icon"));
+  const feedUpdated = getText(feedEl.querySelector("updated"));
 
   const navigationLinks: OpdsLink[] = [];
   const pagination: OpdsPagination = {};
   let searchLink: string | undefined;
 
-  const feedLinks = xmlDoc.querySelectorAll("feed > link");
+  // Only get direct children links of the feed element
+  const feedLinks = Array.from(feedEl.children).filter((el) => el.localName === "link");
   feedLinks.forEach((linkEl) => {
     const rel = linkEl.getAttribute("rel") || "";
     const href = linkEl.getAttribute("href") || "";
@@ -84,7 +137,8 @@ export function parseOpdsXml(xmlText: string, baseUrl: string): OpdsFeed {
       pagination.first = resolvedHref;
     } else if (rel === "last") {
       pagination.last = resolvedHref;
-    } else if (!rel.includes("acquisition") && !rel.includes("image") && rel !== "self") {
+    } else if ((rel === "subsection" || type?.includes("atom+xml")) && !rel.includes("acquisition") && !NON_NAVIGATION_RELS.has(rel)) {
+      // Only links to other feeds are browsable; skip e.g. rel="alternate" HTML pages.
       navigationLinks.push({
         href: resolvedHref,
         rel,
@@ -95,70 +149,72 @@ export function parseOpdsXml(xmlText: string, baseUrl: string): OpdsFeed {
   });
 
   const entries: OpdsEntry[] = [];
+  const acquisitionPriorities = new Map<OpdsEntry, number>();
   const entryElements = xmlDoc.querySelectorAll("entry");
 
   entryElements.forEach((entryEl) => {
-    const id =
-      entryEl.querySelector("id")?.textContent?.trim() ||
+    const id = getText(entryEl.querySelector("id")) ||
       `opds-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const title = entryEl.querySelector("title")?.textContent?.trim() || "Untitled Book";
-    const author =
-      entryEl.querySelector("author > name, author")?.textContent?.trim() || undefined;
-    const summary =
-      entryEl.querySelector("summary, content")?.textContent?.trim() || undefined;
-    const published =
-      entryEl.querySelector("published, updated, dc\\:issued, issued")?.textContent?.trim() ||
-      undefined;
+    const title = getText(entryEl.querySelector("title")) || "Untitled Book";
+    // Parse author: use <name> child of <author> only
+    const author = getText(entryEl.querySelector("author > name"));
+    const summary = getText(entryEl.querySelector("summary")) ||
+      getText(entryEl.querySelector("content"));
+
+    // Handle published/updated date (try published first, then updated)
+    const published = getText(entryEl.querySelector("published")) ||
+      getText(entryEl.querySelector("updated"));
 
     let coverUrl: string | undefined;
     let thumbnailUrl: string | undefined;
     let acquisitionUrl: string | undefined;
+    let acquisitionPriority = 0;
+    let navigationUrl: string | undefined;
     let format: string | undefined;
 
-    const links = entryEl.querySelectorAll("link");
-    links.forEach((link) => {
+    for (const link of Array.from(entryEl.children).filter((el) => el.localName === "link")) {
       const rel = link.getAttribute("rel") || "";
       const href = link.getAttribute("href") || "";
       const type = link.getAttribute("type") || "";
-
-      if (!href) return;
+      if (!href) continue;
       const resolved = resolveUrl(href, baseUrl);
 
-      if (rel.includes("thumbnail") || rel.includes("image/thumbnail")) {
+      if (rel.includes("thumbnail")) {
         thumbnailUrl = resolved;
       } else if (rel.includes("image") || rel.includes("cover")) {
         coverUrl = resolved;
-      }
-
-      const isAcquisition =
-        rel.includes("acquisition") ||
-        type === "application/epub+zip" ||
-        href.endsWith(".epub");
-
-      if (isAcquisition) {
-        // Prioritize EPUB format if multiple acquisition links exist
-        if (!acquisitionUrl || type === "application/epub+zip" || href.endsWith(".epub")) {
+      } else if (rel.includes("acquisition")) {
+        const priority = acquisitionPriorityOf(type, href);
+        if (priority > acquisitionPriority) {
+          acquisitionPriority = priority;
           acquisitionUrl = resolved;
-          format = type || "application/epub+zip";
+          format = type || undefined;
         }
+      } else if (rel === "subsection" || (type.includes("profile=opds-catalog") && !NON_NAVIGATION_RELS.has(rel))) {
+        // A link into another feed. "related" (author, bookshelf) links are
+        // not the entry's own target, so they don't make it a folder.
+        navigationUrl ??= resolved;
       }
-    });
+    }
 
-    entries.push({
+    const entry: OpdsEntry = {
       acquisitionUrl,
       author,
       coverUrl: coverUrl || thumbnailUrl,
       format,
       id,
+      navigationUrl: acquisitionUrl ? undefined : navigationUrl,
       published,
       summary,
       thumbnailUrl: thumbnailUrl || coverUrl,
       title,
-    });
+    };
+    acquisitionPriorities.set(entry, acquisitionPriority);
+    entries.push(entry);
   });
 
   return {
-    entries,
+    entries: dedupeEditions(entries, acquisitionPriorities),
     icon: feedIcon ? resolveUrl(feedIcon, baseUrl) : undefined,
     id: feedId,
     navigationLinks,
@@ -341,6 +397,10 @@ export async function fetchCatalogFeed(
   const res = await api.fetchOpdsProxy(url, buildCatalogAuthHeader(catalog), OPDS_ACCEPT_HEADER);
 
   if (!res.ok) {
+    // Distinguish between our auth (no x-upstream-url) and upstream catalog rejecting credentials (has x-upstream-url)
+    if (res.status === 401 && res.headers.has("x-upstream-url")) {
+      throw new Error("This catalog rejected the saved credentials.");
+    }
     throw new Error(`Failed to load catalog feed: ${res.status} ${res.statusText}`);
   }
 
@@ -379,6 +439,43 @@ export async function downloadCatalogBook(
   return new File([blob], filename, { type: fileType });
 }
 
+export async function resolveOpenSearchUrl(
+  api: SanctuaryApiClient,
+  searchLink: string,
+  catalog?: CatalogSource
+): Promise<string> {
+  // If the link already contains {searchTerms}, return it as-is
+  if (searchLink.includes("{searchTerms}") || searchLink.includes("{query}") || searchLink.includes("{?query}")) {
+    return searchLink;
+  }
+
+  // Otherwise, try to fetch the OpenSearch description document
+  try {
+    const res = await api.fetchOpdsProxy(searchLink, buildCatalogAuthHeader(catalog));
+    if (!res.ok) return searchLink;
+
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "application/xml");
+
+    // Look for <Url type="application/atom+xml" template="...{searchTerms}...">
+    const urls = xml.querySelectorAll("Url");
+    for (const urlEl of urls) {
+      const type = urlEl.getAttribute("type") || "";
+      if (type.includes("atom+xml")) {
+        const template = urlEl.getAttribute("template");
+        if (template?.includes("{searchTerms}")) {
+          return template;
+        }
+      }
+    }
+
+    return searchLink;
+  } catch {
+    return searchLink;
+  }
+}
+
 export function resolveSearchUrl(searchLink: string, query: string): string {
   if (!searchLink || !query.trim()) return searchLink;
   const encoded = encodeURIComponent(query.trim());
@@ -389,95 +486,23 @@ export function resolveSearchUrl(searchLink: string, query: string): string {
     return searchLink.replace("{query}", encoded);
   }
   if (searchLink.includes("{searchTerms}")) {
-    return searchLink.replace("{searchTerms}", encoded);
+    // Substitute searchTerms, then drop optional params we don't fill ({startPage?} etc.).
+    const substituted = searchLink.replace("{searchTerms}", encoded);
+    try {
+      const urlObj = new URL(substituted);
+      // Copy first: deleting while iterating the live iterator skips entries.
+      for (const [key, value] of [...urlObj.searchParams]) {
+        if (/^\{[^}]*\?\}$/.test(value)) {
+          urlObj.searchParams.delete(key);
+        }
+      }
+      return urlObj.toString();
+    } catch {
+      // If URL parsing fails, fall back to simple replacement
+      return substituted.replace(/[?&][\w.-]+=\{[^}]*\?\}/g, "");
+    }
   }
   const separator = searchLink.includes("?") ? "&" : "?";
   return `${searchLink}${separator}query=${encoded}`;
 }
 
-export const OFFLINE_SAMPLE_CATALOG_FEED: OpdsFeed = {
-  entries: [
-    {
-      acquisitionUrl: "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice/downloads/jane-austen_pride-and-prejudice.epub",
-      author: "Jane Austen",
-      coverUrl: "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice/cover.jpg",
-      format: "application/epub+zip",
-      id: "offline-pride-and-prejudice",
-      published: "1813-01-28",
-      summary: "A romantic novel of manners following Elizabeth Bennet as she deals with issues of manners, morality, education, and marriage in Regency England.",
-      thumbnailUrl: "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice/thumbnail.jpg",
-      title: "Pride and Prejudice",
-    },
-    {
-      acquisitionUrl: "https://standardebooks.org/ebooks/mary-shelley/frankenstein/downloads/mary-shelley_frankenstein.epub",
-      author: "Mary Wollstonecraft Shelley",
-      coverUrl: "https://standardebooks.org/ebooks/mary-shelley/frankenstein/cover.jpg",
-      format: "application/epub+zip",
-      id: "offline-frankenstein",
-      published: "1818-01-01",
-      summary: "A Gothic masterpiece following Victor Frankenstein, an ambitious young scientist who creates a sapient creature in an unorthodox experiment.",
-      thumbnailUrl: "https://standardebooks.org/ebooks/mary-shelley/frankenstein/thumbnail.jpg",
-      title: "Frankenstein; or, The Modern Prometheus",
-    },
-    {
-      acquisitionUrl: "https://standardebooks.org/ebooks/bram-stoker/dracula/downloads/bram-stoker_dracula.epub",
-      author: "Bram Stoker",
-      coverUrl: "https://standardebooks.org/ebooks/bram-stoker/dracula/cover.jpg",
-      format: "application/epub+zip",
-      id: "offline-dracula",
-      published: "1897-05-26",
-      summary: "An epistolary Gothic horror novel depicting Count Dracula's attempt to move from Transylvania to England to spread the undead curse.",
-      thumbnailUrl: "https://standardebooks.org/ebooks/bram-stoker/dracula/thumbnail.jpg",
-      title: "Dracula",
-    },
-    {
-      acquisitionUrl: "https://standardebooks.org/ebooks/lewis-carroll/alices-adventures-in-wonderland/downloads/lewis-carroll_alices-adventures-in-wonderland.epub",
-      author: "Lewis Carroll",
-      coverUrl: "https://standardebooks.org/ebooks/lewis-carroll/alices-adventures-in-wonderland/cover.jpg",
-      format: "application/epub+zip",
-      id: "offline-alice-wonderland",
-      published: "1865-11-26",
-      summary: "Alice falls through a rabbit hole into a fantastical underworld populated by unforgettable anthropomorphic creatures.",
-      thumbnailUrl: "https://standardebooks.org/ebooks/lewis-carroll/alices-adventures-in-wonderland/thumbnail.jpg",
-      title: "Alice's Adventures in Wonderland",
-    },
-    {
-      acquisitionUrl: "https://standardebooks.org/ebooks/arthur-conan-doyle/the-adventures-of-sherlock-holmes/downloads/arthur-conan-doyle_the-adventures-of-sherlock-holmes.epub",
-      author: "Arthur Conan Doyle",
-      coverUrl: "https://standardebooks.org/ebooks/arthur-conan-doyle/the-adventures-of-sherlock-holmes/cover.jpg",
-      format: "application/epub+zip",
-      id: "offline-sherlock-holmes",
-      published: "1892-10-14",
-      summary: "Twelve ingenious detective short stories featuring Sherlock Holmes and his trusted friend Dr. John Watson.",
-      thumbnailUrl: "https://standardebooks.org/ebooks/arthur-conan-doyle/the-adventures-of-sherlock-holmes/thumbnail.jpg",
-      title: "The Adventures of Sherlock Holmes",
-    },
-    {
-      acquisitionUrl: "https://standardebooks.org/ebooks/f-scott-fitzgerald/the-great-gatsby/downloads/f-scott-fitzgerald_the-great-gatsby.epub",
-      author: "F. Scott Fitzgerald",
-      coverUrl: "https://standardebooks.org/ebooks/f-scott-fitzgerald/the-great-gatsby/cover.jpg",
-      format: "application/epub+zip",
-      id: "offline-great-gatsby",
-      published: "1925-04-10",
-      summary: "A tragedy set in the Jazz Age exploring themes of decadence, idealism, and social upheaval on Long Island.",
-      thumbnailUrl: "https://standardebooks.org/ebooks/f-scott-fitzgerald/the-great-gatsby/thumbnail.jpg",
-      title: "The Great Gatsby",
-    },
-  ],
-  id: "sanctuary-offline-sample-catalog",
-  navigationLinks: [
-    { href: "offline:classics", rel: "subsection", title: "All Classics" },
-    { href: "offline:fiction", rel: "subsection", title: "Classic Fiction" },
-    { href: "offline:gothic", rel: "subsection", title: "Gothic & Mystery" },
-  ],
-  title: "Sanctuary Public Domain Library (Offline Classics)",
-  updated: "2026-09-14T00:00:00Z",
-};
-
-export function getOfflineSampleFeed(): OpdsFeed {
-  return {
-    ...OFFLINE_SAMPLE_CATALOG_FEED,
-    entries: [...OFFLINE_SAMPLE_CATALOG_FEED.entries],
-    navigationLinks: [...OFFLINE_SAMPLE_CATALOG_FEED.navigationLinks],
-  };
-}

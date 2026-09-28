@@ -40,7 +40,7 @@ function SettingsView() {
     };
 
     const NavAnchor = ({ id, label, icon: Icon }: { id: string, label: string, icon: React.ComponentType<{ className?: string }> }) => (
-        <a href={`#${id}`} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 rounded-lg transition-colors">
+        <a href={`#${id}`} className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-fg-muted hover:text-fg hover:bg-line/40 rounded-lg transition-colors">
             <Icon className="w-4 h-4" />
             <span className="hidden sm:inline">{label}</span>
         </a>
@@ -50,7 +50,7 @@ function SettingsView() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 pb-40">
             <aside className="md:w-64 flex-shrink-0">
                <div className="sticky top-24 space-y-1">
-                   <h2 className="px-3 mb-4 text-2xl font-sans font-bold tracking-tight text-light-text dark:text-dark-text">Settings</h2>
+                   <h2 className="px-3 mb-4 text-2xl font-sans font-bold tracking-tight text-fg">Settings</h2>
                    <NavAnchor id="behavior" label="Behavior" icon={Settings2} />
                    <NavAnchor id="goals" label="Reading Goals" icon={Target} />
                    <NavAnchor id="data" label="Data & Storage" icon={HardDrive} />
@@ -60,7 +60,7 @@ function SettingsView() {
                            <span className="text-sm font-medium">Reset All</span>
                        </Button>
                    </div>
-                   <p className="px-3 pt-2 text-[11px] text-light-text-muted/70 dark:text-dark-text-muted/70 leading-relaxed">
+                   <p className="px-3 pt-2 text-xs text-fg-muted/70 leading-relaxed">
                        Looking for typography, theme, or layout options? Those live in the reader's own Settings panel (open a book, then tap the gear icon).
                    </p>
                </div>
@@ -69,45 +69,45 @@ function SettingsView() {
             <div className="flex-1 space-y-12">
                 <section id="behavior" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Behavior</h3>
-                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">App-wide interaction preferences.</p>
+                        <h3 className="text-xl font-semibold text-fg mb-1">Behavior</h3>
+                        <p className="text-sm text-fg-muted mb-6">App-wide interaction preferences.</p>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
+                        <div className="p-4 rounded-xl bg-surface/40 border border-line">
                             <Toggle checked={state.reduceMotion} onChange={state.setReduceMotion} label="Reduce Motion" sublabel="Disable animations and transitions across the app" />
                         </div>
                     </div>
                 </section>
 
-                <hr className="border-light-border dark:border-dark-border" />
+                <hr className="border-line" />
 
                 <section id="goals" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Reading Goals</h3>
-                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">Track your reading habits and maintain streaks.</p>
+                        <h3 className="text-xl font-semibold text-fg mb-1">Reading Goals</h3>
+                        <p className="text-sm text-fg-muted mb-6">Track your reading habits and maintain streaks.</p>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
-                        <Slider label="Daily Goal" value={state.dailyGoal} onChange={state.setDailyGoal} min={5} max={120} step={5} displayValue={`${state.dailyGoal} pages`} />
-                        <Slider label="Weekly Goal" value={state.weeklyGoal} onChange={state.setWeeklyGoal} min={20} max={500} step={10} displayValue={`${state.weeklyGoal} pages`} />
+                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-2xl bg-surface/40 border border-line">
+                        <Slider label="Daily Goal" value={state.dailyGoal} onChange={state.setDailyGoal} min={5} max={120} step={5} displayValue={`${state.dailyGoal} min`} />
+                        <Slider label="Weekly Goal" value={state.weeklyGoal} onChange={state.setWeeklyGoal} min={20} max={500} step={10} displayValue={`${state.weeklyGoal} min`} />
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
+                        <div className="p-4 rounded-xl bg-surface/40 border border-line">
                              <Toggle checked={state.trackingEnabled} onChange={state.setTrackingEnabled} label="Analytics" sublabel="Track reading time and progress" />
                         </div>
-                        <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
+                        <div className="p-4 rounded-xl bg-surface/40 border border-line">
                              <Toggle checked={state.showStreakReminder} onChange={state.setShowStreakReminder} label="Streak Reminders" sublabel="Remind me to read daily" />
                         </div>
                     </div>
                 </section>
 
-                <hr className="border-light-border dark:border-dark-border" />
+                <hr className="border-line" />
 
                 <section id="data" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h3 className="text-xl font-semibold text-light-text dark:text-dark-text mb-1">Data & Storage</h3>
-                        <p className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6">Manage your local data.</p>
+                        <h3 className="text-xl font-semibold text-fg mb-1">Data & Storage</h3>
+                        <p className="text-sm text-fg-muted mb-6">Manage your local data.</p>
                     </div>
                     <StorageManagerCard />
                     <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
