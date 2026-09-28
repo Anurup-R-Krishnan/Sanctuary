@@ -22,6 +22,7 @@ import { applyBionicReading } from "../../utils/bionicReading";
 import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
+import { readerFontFaceCss } from "./readerFonts";
 import { ScrollContinuity } from "./ScrollContinuity";
 
 // foliate-view is registered dynamically via foliate-js/view.js
@@ -331,7 +332,7 @@ export class FoliateRendition implements DocumentRendition {
 
       // Convert theme styles
       const styles = this.flowOptions.themeStyles;
-      const customFontsCss = generateCustomFontFaceCss(getLoadedCustomFonts());
+      const customFontsCss = readerFontFaceCss() + generateCustomFontFaceCss(getLoadedCustomFonts());
       let cssText = `${customFontsCss}*, *::before, *::after { font-style: normal !important; font-synthesis-style: none !important; }\nhtml, body { direction: ${docDirection} !important; writing-mode: ${writingMode} !important; box-sizing: border-box !important; overflow-wrap: break-word !important; word-break: normal !important; }\nimg, svg image, picture img { cursor: zoom-in !important; max-width: 100% !important; height: auto !important; object-fit: contain !important; }\ncode:not(pre code) { white-space: normal !important; word-break: break-word !important; }\npre { white-space: pre !important; word-break: normal !important; overflow-x: auto !important; }\npre code { white-space: pre !important; word-break: normal !important; }\ntable { max-width: 100% !important; }\n`;
       if (styles) {
         for (const [selector, rules] of Object.entries(styles)) {

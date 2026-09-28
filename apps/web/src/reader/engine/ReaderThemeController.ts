@@ -27,9 +27,9 @@ const FONT_FAMILIES: Record<string, string> = {
     "libre-baskerville": "'Libre Baskerville', Georgia, serif",
     "lora": "'Lora', Georgia, serif",
     "merriweather-georgia": "'Merriweather', Georgia, serif",
-    "opendyslexic": "'OpenDyslexic', 'Comic Sans MS', sans-serif",
+    "opendyslexic": "'OpenDyslexic', sans-serif",
     "satoshi": "'Satoshi', system-ui, sans-serif",
-    "source-serif": "'Source Serif Pro', Georgia, serif",
+    "source-serif": "'Source Serif 4', 'Source Serif Pro', Georgia, serif",
 };
 
 export class ReaderThemeController {

@@ -22,7 +22,6 @@ export const SUPPORTED_EXTENSIONS = [
   ".markdown",
   ".pdf",
   ".cbz",
-  ".cbr",
 ] as const;
 
 export const SUPPORTED_FILE_ACCEPT = SUPPORTED_EXTENSIONS.join(",");
@@ -107,7 +106,6 @@ export async function detectBookFormat(
   if (lowerName.endsWith(".html") || lowerName.endsWith(".htm")) return "html";
   if (lowerName.endsWith(".pdf")) return "pdf";
   if (lowerName.endsWith(".cbz")) return "cbz";
-  if (lowerName.endsWith(".cbr")) return "cbr";
 
   // 2. Read first 4096 bytes for signature sniffing
   let bytes: Uint8Array;
