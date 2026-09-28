@@ -320,3 +320,48 @@ export async function getAllCustomFonts(): Promise<CustomFontRecord[]> {
 export async function deleteCustomFont(id: string): Promise<void> {
   return dbDelete(READER_CACHE_STORE, id);
 }
+
+const ALL_STORES = [
+  BOOKS_STORE,
+  BOOK_CONTENTS_STORE,
+  VOCAB_STORE,
+  SESSIONS_STORE,
+  MUTATIONS_STORE,
+  READER_CACHE_STORE,
+  ANNOTATIONS_STORE,
+  SEARCH_INDEX_STORE,
+];
+
+export async function clearAllStores(): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(ALL_STORES, "readwrite");
+    bindTxFailure(tx, reject, "Failed to clear local data");
+    tx.oncomplete = () => resolve();
+    for (const name of ALL_STORES) tx.objectStore(name).clear();
+  });
+}
+
+export async function purgeAccountData(keepBookIds: ReadonlySet<string>): Promise<void> {
+  const database = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(ALL_STORES, "readwrite");
+    bindTxFailure(tx, reject, "Failed to remove account data");
+    tx.oncomplete = () => resolve();
+    for (const name of [SESSIONS_STORE, MUTATIONS_STORE, READER_CACHE_STORE]) tx.objectStore(name).clear();
+    const removeUnkept = (storeName: string, bookIdOf: (value: unknown) => unknown) => {
+      const request = tx.objectStore(storeName).openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const bookId = bookIdOf(cursor.value);
+        if (typeof bookId !== "string" || !keepBookIds.has(bookId)) cursor.delete();
+        cursor.continue();
+      };
+    };
+    removeUnkept(BOOKS_STORE, (value) => (value as { id?: unknown }).id);
+    removeUnkept(BOOK_CONTENTS_STORE, (value) => (value as { bookId?: unknown }).bookId);
+    removeUnkept(ANNOTATIONS_STORE, (value) => (value as { bookId?: unknown }).bookId);
+    removeUnkept(SEARCH_INDEX_STORE, (value) => (value as { bookId?: unknown }).bookId);
+  });
+}

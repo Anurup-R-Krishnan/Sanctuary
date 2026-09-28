@@ -49,7 +49,6 @@ type SettingsValues = {
   showFloatingCapsule: boolean;
   showPageCounter: boolean;
   showScrollbar: boolean;
-  showStreakReminder: boolean;
   spread: boolean;
   textAlignment: TextAlignment;
   trackingEnabled: boolean;
@@ -96,7 +95,6 @@ type SettingsActions = {
   setShowFloatingCapsule: (v: boolean) => void;
   setShowPageCounter: (v: boolean) => void;
   setShowScrollbar: (v: boolean) => void;
-  setShowStreakReminder: (v: boolean) => void;
   setSpread: (v: boolean) => void;
   setTextAlignment: (v: TextAlignment) => void;
   setTrackingEnabled: (v: boolean) => void;
@@ -151,7 +149,6 @@ const DEFAULTS: SettingsValues = {
   annualGoalYear: new Date().getFullYear(),
   dailyGoal: DEFAULT_DAILY_GOAL,
   weeklyGoal: 150,
-  showStreakReminder: true,
   trackingEnabled: true,
   reduceMotion: false,
   sessionBudgetMinutes: 20,
@@ -222,7 +219,6 @@ export const pickValues = (state: Settings): SettingsValues => ({
   keybinds: state.keybinds,
   dailyGoal: state.dailyGoal,
   weeklyGoal: state.weeklyGoal,
-  showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
   reduceMotion: state.reduceMotion,
   sessionBudgetMinutes: state.sessionBudgetMinutes,
@@ -271,7 +267,6 @@ export const toRemotePayload = (state: SettingsValues) => ({
   dailyGoal: state.dailyGoal,
   sessionBudgetMinutes: state.sessionBudgetMinutes,
   weeklyGoal: state.weeklyGoal,
-  showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
   // Accessibility
   reduceMotion: state.reduceMotion,
@@ -338,7 +333,6 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.annualGoalYear === "number") out.annualGoalYear = raw.annualGoalYear;
   if (typeof raw.dailyGoal === "number") out.dailyGoal = raw.dailyGoal;
   if (typeof raw.weeklyGoal === "number") out.weeklyGoal = raw.weeklyGoal;
-  if (typeof raw.showStreakReminder === "boolean") out.showStreakReminder = raw.showStreakReminder;
   if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
   if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
   if (typeof raw.sessionBudgetMinutes === "number") out.sessionBudgetMinutes = raw.sessionBudgetMinutes;
@@ -364,7 +358,6 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   if (typeof remote.dailyGoal === "number") out.dailyGoal = remote.dailyGoal;
   if (typeof remote.sessionBudgetMinutes === "number") out.sessionBudgetMinutes = remote.sessionBudgetMinutes;
   if (typeof remote.weeklyGoal === "number") out.weeklyGoal = remote.weeklyGoal;
-  if (typeof remote.showStreakReminder === "boolean") out.showStreakReminder = remote.showStreakReminder;
   if (typeof remote.trackingEnabled === "boolean") out.trackingEnabled = remote.trackingEnabled;
 
   // ── Typography ────────────────────────────────────────────────────────────
@@ -494,7 +487,6 @@ export const useSettingsStore = create<Settings>((set) => ({
   setAnnualGoalYear: createSetAction("annualGoalYear", set),
   setDailyGoal: createSetAction("dailyGoal", set),
   setWeeklyGoal: createSetAction("weeklyGoal", set),
-  setShowStreakReminder: createSetAction("showStreakReminder", set),
   setTrackingEnabled: createSetAction("trackingEnabled", set),
   setReduceMotion: createSetAction("reduceMotion", set),
   setSessionBudgetMinutes: createSetAction("sessionBudgetMinutes", set),

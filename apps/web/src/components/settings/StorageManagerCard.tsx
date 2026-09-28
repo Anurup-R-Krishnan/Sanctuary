@@ -1,4 +1,4 @@
-import { BookOpen, Database, HardDrive, Image, RefreshCw, Trash2 } from "lucide-react";
+import { BookOpen, Database, Image, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import type { StorageBreakdown } from "@/services/storageService";
@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { estimateStorageUsage, pruneUnopenedBookBlobs } from "@/services/storageService";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
   if (bytes < 1024) return `${bytes} B`;
@@ -16,28 +14,6 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-interface BreakdownBadgeProps {
-  bytes: number;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}
-
-function BreakdownBadge({ bytes, icon: Icon, label }: BreakdownBadgeProps) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface/60 border border-line">
-      <Icon className="w-4 h-4 text-fg-muted shrink-0" />
-      <div>
-        <p className="text-xs font-semibold text-fg">{formatBytes(bytes)}</p>
-        <p className="text-xs text-fg-muted">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export function StorageManagerCard() {
   const [breakdown, setBreakdown] = useState<StorageBreakdown | null>(null);
@@ -65,11 +41,10 @@ export function StorageManagerCard() {
     setShowConfirm(false);
     setIsCleaning(true);
     try {
-      // Keep blobs for the 10 most recently opened books
       const result = await pruneUnopenedBookBlobs(10);
       const message =
         result.removed === 0
-          ? "Nothing to clean — all cached books are within the keep window."
+          ? "Nothing to remove. Every cached book was opened recently."
           : `Freed ${formatBytes(result.freedBytes)} by removing ${result.removed} cached book${result.removed > 1 ? "s" : ""}.`;
       setLastCleanResult(message);
       await refresh();
@@ -78,118 +53,87 @@ export function StorageManagerCard() {
     }
   };
 
-  // ─── Usage bar colour ───────────────────────────────────────────────────────
-
-  const barColor =
-    !breakdown || breakdown.usageFraction < 0.6
-      ? "bg-emerald-500"
-      : breakdown.usageFraction < 0.85
-      ? "bg-amber-500"
-      : "bg-red-500";
-
-  // ─── Render ─────────────────────────────────────────────────────────────────
+  const isNearlyFull = !!breakdown && breakdown.usageFraction >= 0.85;
+  const otherBytes = breakdown ? Math.max(0, breakdown.usageBytes - breakdown.bookBlobBytes - breakdown.coverArtBytes) : 0;
 
   return (
     <>
-      <div className="p-5 rounded-xl bg-surface/40 border border-line space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <HardDrive className="w-5 h-5 text-fg-muted" />
-            <h4 className="text-sm font-semibold text-fg">Device Storage</h4>
+      <div className="space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-fg">Space used</p>
+            {breakdown && !isLoading && (
+              <p className="mt-1 font-display text-3xl font-medium tabular-nums text-fg">
+                {breakdown.usageLabel}
+                {breakdown.quotaBytes > 0 && (
+                  <span className="ml-2 font-sans text-sm font-normal text-fg-muted">of {breakdown.quotaLabel} available</span>
+                )}
+              </p>
+            )}
           </div>
           <button
             aria-label="Refresh storage estimate"
-            className="rounded-lg p-1.5 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-40"
+            className="rounded-md p-1.5 text-fg-muted transition-colors hover:bg-line/40 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
             disabled={isLoading || isCleaning}
             onClick={refresh}
-           type="button"
-
-           >            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            type="button"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {isLoading ? (
           <div className="space-y-3 animate-pulse-soft">
-            <div className="h-2.5 w-full rounded-full bg-line" />
-            <div className="h-4 w-40 rounded bg-line/60" />
-            <div className="flex gap-2">
-              <div className="h-12 w-28 rounded-xl bg-surface/80 border border-line/50" />
-              <div className="h-12 w-28 rounded-xl bg-surface/80 border border-line/50" />
-            </div>
+            <div className="h-9 w-40 rounded bg-line/60" />
+            <div className="h-1.5 w-full rounded-full bg-line" />
           </div>
         ) : breakdown ? (
           <>
-            {/* Usage bar */}
-            <div className="space-y-1.5">
-              <div className="h-2.5 w-full rounded-full bg-line/60 overflow-hidden">
+            {breakdown.quotaBytes > 0 && (
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-line/70">
                 <div
-                  className={`h-full rounded-full transition-all duration-700 ${barColor}`}
-                  style={{ width: `${(breakdown.usageFraction * 100).toFixed(1)}%` }}
+                  className={`h-full rounded-full transition-all duration-700 ${isNearlyFull ? "bg-danger" : "bg-accent"}`}
+                  style={{ width: `${Math.max(0.5, breakdown.usageFraction * 100).toFixed(1)}%` }}
                 />
               </div>
-              <p className="text-xs text-fg-muted">
-                {breakdown.quotaBytes > 0 ? (
-                  <>
-                    <span className="font-semibold text-fg">{breakdown.usageLabel}</span>
-                    {" used of "}
-                    <span className="font-semibold text-fg">{breakdown.quotaLabel}</span>
-                    {" quota"}
-                    {breakdown.usageFraction >= 0.85 && (
-                      <span className="ml-2 text-red-600 dark:text-red-400 font-medium">
-                        (storage almost full)
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <span className="font-semibold text-fg">{breakdown.usageLabel}</span>
-                    {" used (quota not reported by this browser)"}
-                  </>
-                )}
-              </p>
-            </div>
-
-            {/* Breakdown badges */}
-            <div className="flex flex-wrap gap-2">
-              <BreakdownBadge bytes={breakdown.bookBlobBytes} icon={BookOpen} label="Book files" />
-              <BreakdownBadge bytes={breakdown.coverArtBytes} icon={Image} label="Cover art" />
-              <BreakdownBadge
-                bytes={Math.max(0, breakdown.usageBytes - breakdown.bookBlobBytes - breakdown.coverArtBytes)}
-                icon={Database}
-                label="Sessions & sync"
-              />
-            </div>
-
-            {/* Clean result feedback */}
-            {lastCleanResult && (
-              <p className="text-xs text-fg-muted">{lastCleanResult}</p>
             )}
+            {isNearlyFull && <p className="text-sm text-danger">Storage is almost full.</p>}
 
-            {/* Action */}
-            <Button
-              className="gap-2"
-              isLoading={isCleaning}
-              variant="secondary"
-              onClick={() => setShowConfirm(true)}
-            >
-              <Trash2 className="w-4 h-4" />
-              Free Up Space
-            </Button>
+            <dl className="grid grid-cols-3 divide-x divide-line/70 border-y border-line/70">
+              {[
+                { bytes: breakdown.bookBlobBytes, icon: BookOpen, label: "Book files" },
+                { bytes: breakdown.coverArtBytes, icon: Image, label: "Covers" },
+                { bytes: otherBytes, icon: Database, label: "Other data" },
+              ].map(({ bytes, icon: Icon, label }) => (
+                <div className="px-3 py-3 first:pl-0" key={label}>
+                  <dt className="flex items-center gap-1.5 text-xs text-fg-muted">
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </dt>
+                  <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg">{formatBytes(bytes)}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-fg-muted">{lastCleanResult ?? "Book files you have not opened recently can be removed and downloaded again later."}</p>
+              <Button className="shrink-0" isLoading={isCleaning} onClick={() => setShowConfirm(true)} size="sm" variant="secondary">
+                <Trash2 className="h-3.5 w-3.5" />
+                Free up space
+              </Button>
+            </div>
           </>
         ) : (
-          <p className="text-sm text-fg-muted">
-            Storage information unavailable in this environment.
-          </p>
+          <p className="text-sm text-fg-muted">This browser does not report storage usage.</p>
         )}
       </div>
 
       <ConfirmDialog
-        confirmLabel="Free Up Space"
-        description="This will remove cached book files for the 10 oldest-opened books. Your reading progress, highlights, and bookmarks are never affected."
+        confirmLabel="Free up space"
+        description="Cached files for books outside the 10 most recently opened are removed. Progress, highlights and bookmarks are kept."
         isDestructive={false}
         isOpen={showConfirm}
-        title="Free Up Storage Space"
+        title="Free up space"
         onClose={() => setShowConfirm(false)}
         onConfirm={handleCleanup}
       />

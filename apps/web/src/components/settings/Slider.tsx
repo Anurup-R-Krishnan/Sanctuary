@@ -1,8 +1,5 @@
-import React from "react";
-
 interface SliderProps {
     displayValue?: string;
-    icon?: React.ElementType;
     label: string;
     max: number;
     min: number;
@@ -11,55 +8,37 @@ interface SliderProps {
     value: number;
 }
 
-export const Slider = ({
-    value,
-    onChange,
-    min,
-    max,
-    step = 1,
-    label,
-    displayValue,
-    icon: Icon,
-}: SliderProps) => {
-    const percentage = ((value - min) / (max - min)) * 100;
+export const Slider = ({ displayValue, label, max, min, onChange, step = 1, value }: SliderProps) => {
+    const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
 
     return (
-        <div className="group p-4 rounded-xl bg-surface/60 border border-line/60 hover:border-accent/30 transition-all duration-instant">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    {Icon && (
-                        <div className="p-2 rounded-xl bg-accent/10">
-                            <Icon className="w-4 h-4 text-accent" strokeWidth={1.75} />
-                        </div>
-                    )}
-                    <span className="text-sm font-medium text-fg">{label}</span>
-                </div>
-                <div className="px-3 py-1.5 rounded-xl bg-accent/10">
-                    <span className="text-sm font-bold text-accent tabular-nums">
-                        {displayValue || value}
-                    </span>
-                </div>
+        <div>
+            <div className="flex items-baseline justify-between gap-4">
+                <span className="text-sm font-medium text-fg">{label}</span>
+                <span className="font-display text-lg font-medium tabular-nums text-fg">{displayValue ?? value}</span>
             </div>
-            <div className="relative">
-                <div className="h-2 bg-line/60 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-accent rounded-full transition-all duration-300"
-                        style={{ width: `${percentage}%` }}
-                    />
-                </div>
-                <input
-                    type="range"
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={value}
-                    onChange={(e) => onChange(parseFloat(e.target.value))}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                />
+            <div className="relative mt-3 h-5">
+                <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-line" />
+                <div className="absolute left-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-accent" style={{ width: `${percentage}%` }} />
                 <div
-                    className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-surface rounded-full shadow-lg border-2 border-accent transition-all duration-300 pointer-events-none"
-                    style={{ left: `calc(${percentage}% - 10px)` }}
+                    className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-accent bg-surface-raised shadow-paper"
+                    style={{ left: `${percentage}%` }}
                 />
+                <input
+                    aria-label={label}
+                    aria-valuetext={displayValue}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    max={max}
+                    min={min}
+                    onChange={(e) => onChange(parseFloat(e.target.value))}
+                    step={step}
+                    type="range"
+                    value={value}
+                />
+            </div>
+            <div className="mt-1.5 flex justify-between text-2xs tabular-nums text-fg-muted">
+                <span>{min}</span>
+                <span>{max}</span>
             </div>
         </div>
     );

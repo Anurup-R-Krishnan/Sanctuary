@@ -179,7 +179,7 @@ function LibraryGrid({
             <div className="h-4 w-28 rounded bg-line/40 animate-pulse-soft" />
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {[...Array(10)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -228,9 +228,9 @@ function LibraryGrid({
         </div>
         <button
           aria-label={isSelecting ? "Exit selection mode" : "Select books"}
-          className={`shrink-0 rounded-xl p-2 transition-colors ${
+          className={`shrink-0 rounded-lg p-2 transition-colors ${
             isSelecting
-              ? "bg-fg text-white dark:text-black"
+              ? "bg-accent text-accent-fg"
               : "text-fg-muted hover:bg-line/40"
           }`}
           onClick={() => {
@@ -257,8 +257,8 @@ function LibraryGrid({
           <button
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filterBy !== "collection"
-                ? "bg-accent/15 text-accent font-semibold border border-accent/30"
-                : "bg-surface/60 border border-line text-fg-muted hover:bg-line/40"
+                ? "border border-accent bg-accent text-accent-fg"
+                : "border border-line bg-surface-raised text-fg-muted hover:border-accent/40 hover:text-fg"
             }`}
             onClick={() => setFilterBy("all")}
           >
@@ -269,8 +269,8 @@ function LibraryGrid({
               key={col}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 filterBy === "collection" && activeCollection === col
-                  ? "bg-accent/15 text-accent font-semibold border border-accent/30"
-                  : "bg-surface/60 border border-line text-fg-muted hover:bg-line/40"
+                  ? "border border-accent bg-accent text-accent-fg"
+                  : "border border-line bg-surface-raised text-fg-muted hover:border-accent/40 hover:text-fg"
               }`}
               onClick={() => {
                 setActiveCollection(col);
@@ -365,13 +365,13 @@ function LibraryGrid({
             </p>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {displayBooks.map((book) => (
               isSelecting ? (
                 <div
                   key={book.id}
                   aria-checked={selectedBookIds.has(book.id)}
-                  className="relative cursor-pointer"
+                  className="relative h-full cursor-pointer"
                   role="checkbox"
                   tabIndex={0}
                   onClick={() => toggleBookSelection(book.id)}
@@ -379,14 +379,14 @@ function LibraryGrid({
                 >
                   <div className={`absolute top-2.5 right-2.5 z-10 w-5 h-5 rounded-full border-2 shadow-sm flex items-center justify-center transition-colors ${
                     selectedBookIds.has(book.id)
-                      ? "bg-fg border-fg text-white dark:text-black"
+                      ? "bg-accent border-accent text-accent-fg"
                       : "bg-surface/90 border-line"
                   }`}>
                     {selectedBookIds.has(book.id) && (
-                      <div className="w-2 h-2 rounded-full bg-white dark:bg-black" />
+                      <div className="w-2 h-2 rounded-full bg-accent-fg" />
                     )}
                   </div>
-                  <div className="pointer-events-none">
+                  <div className="pointer-events-none h-full">
                     <BookCard
                       book={book}
                       onSelect={() => {}}
@@ -394,23 +394,14 @@ function LibraryGrid({
                   </div>
                 </div>
               ) : (
-                <div key={book.id} className="relative group/card">
+                <div key={book.id} className="h-full">
                   <BookCard
                     book={book}
                     onDelete={onDeleteBook}
+                    onEdit={setEditingBook}
                     onSelect={handleBookClick}
                     onToggleFavorite={onToggleFavorite}
                   />
-                  <button
-                    aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent outline-none rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-accent dark:hover:text-black transition-all"
-                    onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
-                  >
-                    <span className="sr-only">Edit</span>
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                  </button>
                 </div>
               )
             ))}
@@ -430,8 +421,8 @@ function LibraryGrid({
                 >
                   <div className={`absolute top-1/2 left-3 z-10 -translate-y-1/2 w-4 h-4 rounded-full border-2 transition-colors ${
                     selectedBookIds.has(book.id)
-                      ? "bg-fg border-fg"
-                      : "bg-surface/90 border-line"
+                      ? "bg-accent border-accent"
+                      : "bg-surface-raised border-line"
                   }`} />
                   <div className="pointer-events-none">
                     <BookCard
@@ -442,24 +433,15 @@ function LibraryGrid({
                   </div>
                 </div>
               ) : (
-                <div key={book.id} className="relative group/card">
+                <div key={book.id}>
                   <BookCard
                     book={book}
                     onDelete={onDeleteBook}
+                    onEdit={setEditingBook}
                     onSelect={handleBookClick}
                     onToggleFavorite={onToggleFavorite}
                     variant="compact"
                   />
-                  <button
-                    aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-1/2 right-3 z-10 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-accent dark:hover:text-black transition-all"
-                    onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
-                  >
-                    <span className="sr-only">Edit</span>
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                  </button>
                 </div>
               )
             ))}
