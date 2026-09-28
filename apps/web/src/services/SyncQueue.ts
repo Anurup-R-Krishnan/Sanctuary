@@ -6,6 +6,16 @@ import { deleteMutation, getAllMutations, putMutation, type SyncMutation } from 
 
 export type SyncQueueStatus = "local-only" | "idle" | "syncing" | "failed";
 
+export function isPermanentRejection(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : "";
+  const match = /\((\d{3})\)/.exec(message);
+  const status = error && typeof error === "object" && "status" in error && typeof error.status === "number"
+    ? error.status
+    : match ? Number(match[1]) : null;
+  if (status === null) return false;
+  return status >= 400 && status < 500 && status !== 401 && status !== 408 && status !== 429;
+}
+
 // Fallback logic for when the web app wants to run standalone without core API wrappers
 async function rawApiCall(mutation: SyncMutation, api: SanctuaryApiClient) {
   if (mutation.type === "SAVE_SESSION") {
@@ -201,19 +211,29 @@ class SyncQueueManager {
         }
 
         let processedAny = false;
+        let retryLater = false;
         for (const mutation of coalesced) {
           try {
             await rawApiCall(mutation, this.api);
             await deleteMutation(mutation.id);
             processedAny = true;
           } catch (error) {
-            // A mutation failed. Halt processing for now.
-            console.warn(`Mutation ${mutation.id} failed, will retry:`, error);
-            this.setStatus("failed");
-            this.scheduleRetry();
-            this.isProcessing = false;
-            return;
+            if (isPermanentRejection(error)) {
+              console.warn(`Mutation ${mutation.id} was rejected by the server and dropped:`, error);
+              await deleteMutation(mutation.id);
+              processedAny = true;
+            } else {
+              console.warn(`Mutation ${mutation.id} failed, will retry:`, error);
+              retryLater = true;
+            }
           }
+        }
+
+        if (retryLater) {
+          this.setStatus("failed");
+          this.scheduleRetry();
+          this.isProcessing = false;
+          return;
         }
 
         // Safety check to prevent infinite loop if deleteMutation/getAllMutations fail to align

@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 
 import type { SyncMutation } from "@/utils/db";
 
-import { coalesceMutations } from "./SyncQueue";
+import { coalesceMutations, isPermanentRejection } from "./SyncQueue";
 
 describe("SyncQueue Offline Mutation Coalescing", () => {
   it("returns unchanged list when empty or containing single mutation", () => {
@@ -119,5 +119,16 @@ describe("SyncQueue Offline Mutation Coalescing", () => {
     expect(coalesced.length).toBe(1);
     expect(coalesced[0].id).toBe("del-1");
     expect(obsoleteIds).toEqual(["patch-1"]);
+  });
+});
+
+describe("isPermanentRejection", () => {
+  it("treats client errors as permanent except auth, timeout and rate limits", () => {
+    expect(isPermanentRejection(new Error("Request to /api/settings failed (400)"))).toBe(true);
+    expect(isPermanentRejection(new Error("Request to /api/library/x failed (404)"))).toBe(true);
+    expect(isPermanentRejection(new Error("Request to /api/settings failed (401)"))).toBe(false);
+    expect(isPermanentRejection(new Error("Request to /api/settings failed (429)"))).toBe(false);
+    expect(isPermanentRejection(new Error("Request to /api/settings failed (503)"))).toBe(false);
+    expect(isPermanentRejection(new TypeError("Failed to fetch"))).toBe(false);
   });
 });

@@ -53,7 +53,8 @@ export async function ensureSettingsSchema(db: D1Database): Promise<void> {
       auto_hide_ms INTEGER NOT NULL DEFAULT 4500,
       show_progress INTEGER NOT NULL DEFAULT 1,
       show_page_meta INTEGER NOT NULL DEFAULT 1,
-      accent TEXT NOT NULL DEFAULT '#B37A4C'
+      accent TEXT NOT NULL DEFAULT '#B37A4C',
+      settings_json TEXT NOT NULL DEFAULT '{}'
     )`
   ).run();
 
@@ -70,7 +71,8 @@ export async function ensureSettingsSchema(db: D1Database): Promise<void> {
     { name: "auto_hide_ms", sql: "ALTER TABLE user_settings ADD COLUMN auto_hide_ms INTEGER NOT NULL DEFAULT 4500" },
     { name: "show_progress", sql: "ALTER TABLE user_settings ADD COLUMN show_progress INTEGER NOT NULL DEFAULT 1" },
     { name: "show_page_meta", sql: "ALTER TABLE user_settings ADD COLUMN show_page_meta INTEGER NOT NULL DEFAULT 1" },
-    { name: "accent", sql: "ALTER TABLE user_settings ADD COLUMN accent TEXT NOT NULL DEFAULT '#B37A4C'" }
+    { name: "accent", sql: "ALTER TABLE user_settings ADD COLUMN accent TEXT NOT NULL DEFAULT '#B37A4C'" },
+    { name: "settings_json", sql: "ALTER TABLE user_settings ADD COLUMN settings_json TEXT NOT NULL DEFAULT '{}'" }
   ];
 
   for (const column of requiredColumns) {
