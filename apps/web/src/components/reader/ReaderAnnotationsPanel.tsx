@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Palette,
   Pencil,
-  Quote,
   Search,
   Trash2,
   X,
@@ -34,7 +33,6 @@ interface ReaderAnnotationsPanelProps {
   bookAuthor?: string;
   bookTitle?: string;
   onClose?: () => void;
-  onCreateQuoteCard?: (text: string, chapterLabel?: string) => void;
   onDeleteAnnotation: (id: string) => void;
   onGoToAnnotation: (cfi: string) => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
@@ -45,7 +43,6 @@ export function ReaderAnnotationsPanel({
   bookAuthor = "Unknown Author",
   bookTitle = "Untitled Book",
   onClose,
-  onCreateQuoteCard,
   onDeleteAnnotation,
   onGoToAnnotation,
   onUpdateAnnotation,
@@ -453,21 +450,6 @@ export function ReaderAnnotationsPanel({
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {onCreateQuoteCard && (
-                      <button
-                        aria-label="Generate quote card"
-                        className="p-1.5 text-light-text-muted hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity rounded hover:bg-line/40"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCreateQuoteCard(item.text, item.chapterLabel);
-                        }}
-                        title="Generate quote card"
-                        type="button"
-                      >
-                        <Quote className="w-3.5 h-3.5" />
-                      </button>
                     )}
 
                     <button

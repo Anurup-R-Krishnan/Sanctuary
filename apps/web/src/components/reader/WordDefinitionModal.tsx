@@ -82,6 +82,8 @@ export function WordDefinitionModal({
 
   const handlePlayAudio = () => {
     if (definition?.audioUrl) {
+      // Pronunciation the user asked to hear (spoken content like read-aloud), not a sound effect.
+      // eslint-disable-next-line no-restricted-syntax
       const audio = new Audio(definition.audioUrl);
       audio.play().catch(() => {
         // Fallback to speech synthesis

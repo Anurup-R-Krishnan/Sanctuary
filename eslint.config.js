@@ -60,6 +60,15 @@ export default tseslint.config(
           selector: "CallExpression[callee.name='require']",
           message: "Use ESM imports instead of require() in frontend code.",
         },
+        // The app makes no sound effects (text-to-speech uses speechSynthesis).
+        {
+          selector: "NewExpression[callee.name=/^(Audio|AudioContext|webkitAudioContext|OfflineAudioContext)$/]",
+          message: "No sound effects: audio playback is not allowed in the app.",
+        },
+        {
+          selector: "MemberExpression[property.name=/^(AudioContext|webkitAudioContext)$/]",
+          message: "No sound effects: audio playback is not allowed in the app.",
+        },
       ],
     },
   }

@@ -21,7 +21,6 @@ interface UseReaderShortcutsOptions {
   onToggleAutoScroll?: () => void;
   onToggleReadability?: () => void;
   onToggleShortcutsHelp?: () => void;
-  onToggleXRay?: () => void;
   onToggleZenMode?: () => void;
   prevPage: () => void;
   setShowAnnotations?: (value: boolean) => void;
@@ -66,7 +65,6 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
         onToggleAutoScroll,
         onToggleReadability,
         onToggleShortcutsHelp,
-        onToggleXRay,
         onToggleZenMode,
         setShowAnnotations,
         setShowControls,
@@ -156,14 +154,6 @@ export function useReaderShortcuts(options: UseReaderShortcutsOptions) {
           if (!event.metaKey && !event.ctrlKey && !event.altKey) {
             event.preventDefault();
             if (!event.repeat) onToggleReadability?.();
-            return;
-          }
-          break;
-        case "x":
-        case "X":
-          if (!event.metaKey && !event.ctrlKey && !event.altKey) {
-            event.preventDefault();
-            if (!event.repeat) onToggleXRay?.();
             return;
           }
           break;

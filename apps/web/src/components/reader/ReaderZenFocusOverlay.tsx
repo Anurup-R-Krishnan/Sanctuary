@@ -15,14 +15,12 @@ import React, {
   useState,
 } from "react";
 
-import { useSettingsShallow } from "@/store/useSettingsStore";
 import {
   calculateSprintProgress,
   estimateSprintWords,
   FOCUS_SPRINT_PRESETS,
   type FocusSprintDuration,
   formatSprintTime,
-  playCompletionChime,
 } from "@/utils/focusSprintEngine";
 
 export interface ReaderZenFocusOverlayProps {
@@ -38,9 +36,6 @@ export function ReaderZenFocusOverlay({
   onClose,
   readingSpeedWpm,
 }: ReaderZenFocusOverlayProps) {
-  const { sessionChimeEnabled } = useSettingsShallow((state) => ({
-    sessionChimeEnabled: state.sessionChimeEnabled,
-  }));
   const [selectedDuration, setSelectedDuration] =
     useState<FocusSprintDuration>(initialMinutes);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
@@ -101,11 +96,8 @@ export function ReaderZenFocusOverlay({
     if (isCompleted && !showCompletionModal && isOpen) {
       setIsRunning(false);
       setShowCompletionModal(true);
-      if (sessionChimeEnabled) {
-        void playCompletionChime();
-      }
     }
-  }, [isCompleted, showCompletionModal, isOpen, sessionChimeEnabled]);
+  }, [isCompleted, showCompletionModal, isOpen]);
 
   // Auto-hide HUD on idle
   const resetHideTimer = useCallback(() => {

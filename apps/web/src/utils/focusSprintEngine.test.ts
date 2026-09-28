@@ -5,8 +5,6 @@ import {
   createInitialSprintState,
   estimateSprintWords,
   formatSprintTime,
-  playCompletionChime,
-  playSingingBowlChime,
 } from "./focusSprintEngine";
 
 describe("focusSprintEngine", () => {
@@ -83,44 +81,4 @@ describe("focusSprintEngine", () => {
     });
   });
 
-  describe("playCompletionChime", () => {
-    it("gracefully returns false when AudioContext is unavailable in test environment", async () => {
-      const result = await playCompletionChime(null);
-      expect(typeof result).toBe("boolean");
-      const aliasResult = await playSingingBowlChime(null);
-      expect(typeof aliasResult).toBe("boolean");
-    });
-
-    it("synthesizes harmonics when mock AudioContext is provided", async () => {
-      const mockGainNode = {
-        connect: () => {},
-        gain: {
-          exponentialRampToValueAtTime: () => {},
-          linearRampToValueAtTime: () => {},
-          setValueAtTime: () => {},
-        },
-      };
-
-      const mockOscillator = {
-        connect: () => {},
-        detune: { setValueAtTime: () => {} },
-        frequency: { setValueAtTime: () => {} },
-        start: () => {},
-        stop: () => {},
-        type: "sine",
-      };
-
-      const mockContext = {
-        createGain: () => mockGainNode,
-        createOscillator: () => mockOscillator,
-        currentTime: 0,
-        destination: {},
-        resume: async () => {},
-        state: "running",
-      } as unknown as AudioContext;
-
-      const result = await playCompletionChime(mockContext);
-      expect(result).toBe(true);
-    });
-  });
 });
