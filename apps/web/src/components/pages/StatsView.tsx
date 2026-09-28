@@ -6,6 +6,7 @@ import { BarChart } from "@/components/stats/BarChart";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
@@ -122,9 +123,7 @@ function StatsView() {
 
   return (
     <div className="page-narrow page-stack">
-      <div>
-        <h2 className="text-3xl font-sans font-bold tracking-tight text-fg">Stats</h2>
-      </div>
+      <PageHeader eyebrow="Your reading" title="Stats" />
 
       <div className="flex gap-1 p-1 bg-surface/60 border border-line rounded-xl">
         {TABS.map((tab) => (
@@ -150,12 +149,12 @@ function StatsView() {
       {activeTab === "overview" && (
         <div className="space-y-10">
           {/* Hero: the one thing that matters today */}
-          <div className="relative overflow-hidden p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-light-accent/8 via-amber-500/5 to-transparent dark:from-dark-accent/12 dark:via-amber-500/8 dark:to-transparent border border-accent/15">
+          <div className="relative overflow-hidden p-6 sm:p-8 rounded-xl paper-card dark:from-accent/12 dark:via-amber-500/8 border border-accent/15">
             <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
               <div className="relative flex-shrink-0 mx-auto sm:mx-0">
                 <ProgressRing progress={dailyProgressPercent} size={128} stroke={8} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold text-fg tabular-nums leading-none">
+                  <span className="font-display text-3xl font-medium text-fg tabular-nums leading-none">
                     {dailyProgressPercent}%
                   </span>
                   <span className="text-2xs text-fg-muted mt-1">today</span>
@@ -163,7 +162,7 @@ function StatsView() {
               </div>
 
               <div className="flex-1 text-center sm:text-left">
-                <p className="text-3xl font-bold text-fg tabular-nums">
+                <p className="font-display text-3xl font-medium text-fg tabular-nums">
                   {stats.dailyProgress}{" "}
                   <span className="text-base font-normal text-fg-muted">/ {dailyGoal} min</span>
                 </p>
@@ -198,7 +197,7 @@ function StatsView() {
               </div>
             )}
             {goals && goalsStale && (
-              <span className="absolute top-4 right-4 text-2xs text-light-text-muted/60 px-2 py-0.5 rounded-full bg-line/60 border border-line font-medium">Offline</span>
+              <span className="absolute top-4 right-4 text-2xs text-fg-muted/60 px-2 py-0.5 rounded-full bg-line/60 border border-line font-medium">Offline</span>
             )}
           </div>
 
@@ -206,33 +205,33 @@ function StatsView() {
           <div>
             <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line">
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-fg tabular-nums">{stats.totalBooksRead}</p>
+                <p className="font-display text-2xl font-medium text-fg tabular-nums">{stats.totalBooksRead}</p>
                 <p className="text-xs text-fg-muted mt-0.5">Books read</p>
               </div>
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-fg tabular-nums">{Math.round(stats.totalReadingTime / 60)}h</p>
+                <p className="font-display text-2xl font-medium text-fg tabular-nums">{Math.round(stats.totalReadingTime / 60)}h</p>
                 <p className="text-xs text-fg-muted mt-0.5">{dailyAvg} min/day</p>
               </div>
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-fg tabular-nums">{stats.averageReadingSpeed}</p>
+                <p className="font-display text-2xl font-medium text-fg tabular-nums">{stats.averageReadingSpeed}</p>
                 <p className="text-xs text-fg-muted mt-0.5">Pages/hr</p>
               </div>
               <div className="text-center px-2">
-                <p className="text-2xl font-bold text-fg tabular-nums">{stats.booksCompletedThisMonth}</p>
+                <p className="font-display text-2xl font-medium text-fg tabular-nums">{stats.booksCompletedThisMonth}</p>
                 <p className="text-xs text-fg-muted mt-0.5">This month</p>
               </div>
             </div>
           </div>
 
           {/* Annual Reading Challenge Card */}
-          <div className="p-6 rounded-3xl bg-surface/40 border border-line">
+          <div className="p-6 rounded-xl bg-surface/40 border border-line">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-line/60">
               <div>
                 <span className="text-xs font-semibold text-fg-muted uppercase [letter-spacing:0.05em]">
-                  Annual Challenge · {activeAnnualChallenge.year}
+                  Reading goal · {activeAnnualChallenge.year}
                 </span>
-                <h3 className="text-lg font-bold text-fg mt-0.5">
-                  {activeAnnualChallenge.goal} Books Challenge
+                <h3 className="font-display font-medium text-lg text-fg mt-0.5">
+                  {activeAnnualChallenge.goal} books this year
                 </h3>
               </div>
 
@@ -284,7 +283,7 @@ function StatsView() {
 
               <div className="flex-1 text-center sm:text-left space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-2">
-                  <p className="text-2xl font-bold text-fg tabular-nums">
+                  <p className="font-display text-2xl font-medium text-fg tabular-nums">
                     {activeAnnualChallenge.completedBooks}{" "}
                     <span className="text-sm font-normal text-fg-muted">
                       of {activeAnnualChallenge.goal} books completed
@@ -365,7 +364,7 @@ function StatsView() {
             />
           </Suspense>
 
-          <div className="p-5 rounded-2xl bg-surface/40 border border-line">
+          <div className="p-5 rounded-xl bg-surface/40 border border-line">
             <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
             <BarChart
               data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}

@@ -8,7 +8,7 @@ import React from "react";
  */
 export function SkeletonCard() {
   return (
-    <div className="w-full rounded-2xl border border-line bg-surface overflow-hidden">
+    <div className="w-full rounded-xl border border-line bg-surface overflow-hidden">
       {/* Cover placeholder (aspect ratio matches the real 2/3 cover) */}
       <div className="relative aspect-[2/3] w-full bg-page">
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent animate-shimmer" />

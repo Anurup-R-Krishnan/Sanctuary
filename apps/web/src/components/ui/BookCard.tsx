@@ -55,7 +55,7 @@ const BookCover = ({
     ? "w-14 h-20 rounded-lg overflow-hidden bg-subtle border border-line/40 flex-shrink-0 relative"
     : isFeatured
       ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-subtle border border-line/40 shadow-lg flex-shrink-0 relative"
-      : "w-full aspect-[2/3] rounded-t-2xl overflow-hidden bg-subtle relative";
+      : "w-full aspect-[2/3] rounded-t-xl overflow-hidden bg-subtle relative";
 
   return (
     <div className={containerClass}>
@@ -164,7 +164,7 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
         </div>
         <div className="h-2 bg-line/60 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 rounded-full transition-all duration-500"
+            className="h-full bg-accent rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -175,7 +175,7 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
   return (
     <div className="absolute bottom-0 left-0 right-0 h-1 bg-line/60">
       <div
-        className="h-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 transition-all duration-500"
+        className="h-full bg-accent transition-all duration-500"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -189,8 +189,8 @@ const BookMetadata = ({ title, author, variant = "default" }: { title: string; a
   return (
     <div className={isFeatured ? "mb-2" : ""}>
       <h3 className={cx(
-        isFeatured ? "text-3xl sm:text-4xl" : isCompact ? "text-sm" : "text-lg",
-        "font-sans font-semibold text-fg line-clamp-2 leading-snug tracking-tight group-hover:text-accent transition-colors duration-instant"
+        isFeatured ? "font-display font-medium text-3xl sm:text-[2.6rem] sm:leading-[1.08]" : isCompact ? "font-sans font-semibold text-sm" : "font-display font-medium text-lg",
+        "text-fg line-clamp-2 leading-snug tracking-tight group-hover:text-accent transition-colors duration-instant"
       )}>
         {title}
       </h3>
@@ -266,8 +266,8 @@ function BookCard({
       className={cx(
         "group border border-line bg-surface transition-colors cursor-pointer",
         isCompact && "flex items-center gap-4 p-4 rounded-xl hover:border-accent/40",
-        isFeatured && "relative overflow-hidden rounded-3xl hover:border-accent/40 p-6 sm:p-7 bg-gradient-to-br from-light-accent/[0.06] to-transparent dark:from-dark-accent/[0.08] shadow-sm",
-        !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-accent/35"
+        isFeatured && "relative overflow-hidden rounded-xl hover:border-accent/40 p-6 sm:p-7 bg-surface-raised dark:from-accent/[0.08] shadow-sm",
+        !isCompact && !isFeatured && "relative overflow-hidden rounded-xl hover:border-accent/35"
       )}
     >
       {isCompact ? (

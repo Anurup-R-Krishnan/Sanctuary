@@ -37,12 +37,12 @@ export function ReaderErrorOverlay({ error, onRetry, onRetryFromStart, onReplace
 
     return (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-page/95 backdrop-blur-sm p-6 pointer-events-auto">
-            <div className="max-w-md w-full bg-surface rounded-2xl shadow-2xl border border-line p-8 text-center animate-scaleIn">
+            <div className="max-w-md w-full bg-surface rounded-xl shadow-2xl border border-line p-8 text-center animate-scaleIn">
                 <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                     <AlertCircle className="w-8 h-8" />
                 </div>
                 
-                <h2 className="text-xl font-bold text-fg mb-2">
+                <h2 className="font-display font-medium text-xl text-fg mb-2">
                     {error.title}
                 </h2>
                 

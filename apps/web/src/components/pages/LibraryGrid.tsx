@@ -89,7 +89,8 @@ function LibraryGrid({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const isCatalogOpen = useUIStore((state) => state.isCatalogOpen);
+  const setIsCatalogOpen = useUIStore((state) => state.setCatalogOpen);
   const [isSeriesShelfOpen, setIsSeriesShelfOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -355,7 +356,7 @@ function LibraryGrid({
         )}
         {displayBooks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
-            <div className="w-16 h-16 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+            <div className="w-16 h-16 mb-4 rounded-xl bg-surface/60 flex items-center justify-center border border-line">
               <Search className="w-7 h-7 text-fg-muted" strokeWidth={1.5} />
             </div>
             <p className="text-fg font-medium">No books found</p>
@@ -402,7 +403,7 @@ function LibraryGrid({
                   />
                   <button
                     aria-label={`Edit metadata for ${book.title}`}
-                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-light-accent outline-none rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-accent dark:hover:text-black transition-all"
+                    className="absolute top-2 right-2 z-10 opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent outline-none rounded-full p-1 bg-black/60 dark:bg-black/70 backdrop-blur-sm text-white hover:bg-accent dark:hover:text-black transition-all"
                     onClick={(e) => { e.stopPropagation(); setEditingBook(book); }}
                   >
                     <span className="sr-only">Edit</span>

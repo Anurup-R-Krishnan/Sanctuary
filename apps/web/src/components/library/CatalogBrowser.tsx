@@ -227,15 +227,15 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
       role="dialog"
       tabIndex={-1}
     >
-      <div className="relative w-full max-w-5xl h-[min(85vh,calc(100vh-5rem))] flex flex-col rounded-2xl bg-surface border border-line shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-5xl h-[min(85vh,calc(100vh-5rem))] flex flex-col rounded-xl bg-surface border border-line shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-surface/80 backdrop-blur">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-light-accent/15 dark:bg-dark-accent/20 text-accent flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-accent/15 dark:bg-accent/20 text-accent flex items-center justify-center">
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="catalog-browser-title" className="text-lg font-bold text-fg flex items-center gap-2">
+              <h2 id="catalog-browser-title" className="font-display font-medium text-lg text-fg flex items-center gap-2">
                 OPDS Catalog Browser
               </h2>
               <p className="text-xs text-fg-muted">
@@ -276,7 +276,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                 {!catalog.isDefault && (
                   <button
                     aria-label={`Remove catalog ${catalog.name}`}
-                    className="ml-1 p-1 text-light-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="ml-1 p-1 text-fg-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeCatalog(catalog.id);
@@ -304,7 +304,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted pointer-events-none" />
             <input
-              className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-page border border-line focus:outline-none focus:border-accent text-fg placeholder:text-light-text-muted/60"
+              className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-page border border-line focus:outline-none focus:border-accent text-fg placeholder:text-fg-muted/60"
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter catalog books..."
               type="text"
@@ -427,7 +427,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
           <div className="px-6 py-2 border-b border-line/60 flex items-center gap-2 text-xs overflow-x-auto bg-surface/30">
             {history.length > 0 && (
               <button
-                className="px-2 py-1 rounded bg-surface border border-line/60 hover:bg-light-border/40 font-medium text-fg"
+                className="px-2 py-1 rounded bg-surface border border-line/60 hover:bg-line/40 font-medium text-fg"
                 onClick={handleBack}
                 type="button"
               >
@@ -534,14 +534,14 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
                       type="button"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-light-accent/15 dark:bg-dark-accent/20 text-accent flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-accent/15 dark:bg-accent/20 text-accent flex items-center justify-center shrink-0">
                           <Folder className="w-4 h-4" />
                         </div>
                         <span className="text-xs font-semibold text-fg truncate group-hover:text-accent">
                           {nav.title || nav.rel}
                         </span>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-light-text-muted group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-fg-muted group-hover:translate-x-0.5 transition-transform shrink-0" />
                     </button>
                   ))}
                 </div>

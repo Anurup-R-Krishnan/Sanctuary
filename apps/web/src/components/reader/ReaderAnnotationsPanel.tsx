@@ -346,7 +346,7 @@ export function ReaderAnnotationsPanel({
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fadeIn">
-            <div className="w-14 h-14 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+            <div className="w-14 h-14 mb-4 rounded-xl bg-surface/60 flex items-center justify-center border border-line">
               <MessageSquare
                 className="w-6 h-6 text-fg-muted"
                 strokeWidth={1.5}
@@ -397,7 +397,7 @@ export function ReaderAnnotationsPanel({
                       <div className="relative">
                         <button
                           aria-label="Change highlight color"
-                          className="p-1.5 text-light-text-muted hover:text-accent rounded hover:bg-line/40 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                          className="p-1.5 text-fg-muted hover:text-accent rounded hover:bg-line/40 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveColorPickerId(
@@ -550,7 +550,7 @@ export function ReaderAnnotationsPanel({
                       />
                       <div className="flex justify-end gap-1.5">
                         <button
-                          className="px-2.5 py-1 text-xs font-medium rounded-lg text-light-text-muted hover:text-fg transition-colors"
+                          className="px-2.5 py-1 text-xs font-medium rounded-lg text-fg-muted hover:text-fg transition-colors"
                           onClick={handleCancelEdit}
                           type="button"
                         >
@@ -575,7 +575,7 @@ export function ReaderAnnotationsPanel({
                       </div>
                       <button
                         aria-label="Edit note"
-                        className="p-1 text-light-text-muted hover:text-fg rounded opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                        className="p-1 text-fg-muted hover:text-fg rounded opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
                         onClick={() => handleStartEdit(item)}
                         title="Edit note"
                         type="button"
@@ -586,7 +586,7 @@ export function ReaderAnnotationsPanel({
                   ) : (
                     <div className="mt-1 flex justify-end">
                       <button
-                        className="text-xs text-light-text-muted/70 hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
+                        className="text-xs text-fg-muted/70 hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
                         onClick={() => handleStartEdit(item)}
                         type="button"
                       >

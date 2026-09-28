@@ -62,12 +62,12 @@ export function LibraryToolbar({
   const filterTriggerId = "library-filter-trigger";
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 border-b border-line pb-5">
       <div>
-        <h2 className="text-2xl font-bold text-fg">Library</h2>
-        <p className="text-fg-muted mt-1 text-sm">
+        <p className="label-caps">
           {bookCount} {bookCount === 1 ? "book" : "books"}
         </p>
+        <h1 className="mt-1.5 font-display text-4xl font-medium tracking-[-0.025em] text-fg sm:text-[2.75rem] sm:leading-[1.05]">Library</h1>
       </div>
       <div className="flex items-center gap-1.5">
         <div className="flex items-center p-0.5 rounded-lg border border-line bg-surface">

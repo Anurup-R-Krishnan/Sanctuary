@@ -12,11 +12,11 @@ covers the web app's internal architecture only.
 | Directory | Contents | Files |
 |-----------|----------|-------|
 | `api/` | SanctuaryApiClient hook (`useSanctuaryApi.ts`). | 1 |
-| `audio/` | Ambient soundscape controller, types, tests. | 3 |
 | `auth/` | Auth flow (AuthProvider, AuthScreen), Sanctuary first-party auth client, session store. | 5 |
 | `components/dev/` | Dev harness (FoliateTestHarness). | 1 |
 | `components/library/` | Library grid, book card, metadata modal, catalog browser, batch actions, empty state. | 11 |
-| `components/pages/` | Page shells (LibraryGrid, ReaderView, SettingsView, StatsView). | 4 |
+| `components/home/` | Landing-page parts (BookPageSpecimen, ContinueReadingCard). | 2 |
+| `components/pages/` | Page shells (HomeView, LibraryGrid, ReaderView, SettingsView, StatsView). | 5 |
 | `components/reader/` | Reader overlays, controls, panels, header/footer, session timer, readability modal, TTS/autoScroll UIs. | 31 |
 | `components/settings/` | Settings form components (typography, theme, goal). | 2 |
 | `components/stats/` | Stats charts, heatmap, streak, goals display. | 6 |
@@ -101,11 +101,10 @@ covers the web app's internal architecture only.
 | `useBookStore` | Library: book list, loading state. Synced from API/IndexedDB. |
 | `useReaderProgressStore` | Currently open book + CFI position. Persisted to localStorage. |
 | `useSessionStore` | Auth session: mode ("guest" \| "authenticated"), userId. |
-| `useUIStore` | View enum (LIBRARY \| READER \| SETTINGS \| STATS), search term, theme. |
+| `useUIStore` | View enum (HOME \| LIBRARY \| READER \| SETTINGS \| STATS; HOME is the default), catalog browser open state, search term, theme. |
 | `useSettingsStore` | Reader preferences: typography (font size, line height, margins), theme (light/dark/sepia), TTS, goals, accessibility. ~40 optional fields. |
 | `useStatsStore` | Cached stats: streak, heatmap, daily goals. |
 | `useCatalogStore` | Catalog browser state (selected feed, books, pagination). |
-| `useAmbientSoundStore` | Ambient soundscape: enabled, volume, track list, current track. |
 | `useReaderProgressStore` | (separate key) Active book session; cleared on reader close. |
 
 All stores use Zustand's simple `create()` pattern with atomic setters. `useSettingsStore` is the largest (~24 KB) due to rich reader preference schema.
@@ -197,7 +196,7 @@ All stores use Zustand's simple `create()` pattern with atomic setters. `useSett
 
 ```tsx
 const { view, setView } = useUIStore();
-// view === View.LIBRARY | View.READER | View.SETTINGS | View.STATS
+// view === View.HOME | View.LIBRARY | View.READER | View.SETTINGS | View.STATS
 setView(View.READER);  // switches the main content pane
 ```
 
@@ -213,7 +212,7 @@ setView(View.READER);  // switches the main content pane
 - **Type scale:** `text-xs` to `text-4xl` (named). No `text-[11px]` arbitrary values.
 - **Spacing:** `p-ds-1` through `p-ds-8` for spec-compliant design-system spacing (not Tailwind's default rem scale).
 - **Fonts:** Instrument Sans (UI), Newsreader (display/headings), Crimson Pro (reader-content only), JetBrains Mono (code).
-- **No italics outside reader content:** Global rule in `index.css` resets `em`, `i`, `cite` to `font-style: normal`. Reader content has its own Crimson Pro italic.
+- **No italics anywhere:** `index.css` sets `font-style: normal !important` on every element and `FoliateRendition.injectStylesToDocument` does the same inside book frames. The Crimson Pro italic face is not loaded.
 - **Color tokens:** Light/dark pairs are CSS custom properties (RGB channels) so opacity modifiers work: `bg-accent/50`.
 - **Motion:** `duration-instant` (150ms) for micro-interactions, `duration-fast` (250ms) for overlays. No longer animations on interactive feedback.
 

@@ -81,7 +81,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
   return (
     <div className="space-y-6">
       {/* Heatmap Card */}
-      <div className="p-5 rounded-2xl bg-surface/40 border border-line space-y-4">
+      <div className="p-5 rounded-xl bg-surface/40 border border-line space-y-4">
         {/* Card Header & Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -100,8 +100,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             <button
               className={`px-2.5 py-1 rounded-md transition-all ${
                 selectedHorizon === 'recent'
-                  ? 'bg-white dark:bg-dark-surface shadow-xs text-fg font-semibold'
-                  : 'text-fg-muted hover:text-light-text'
+                  ? 'bg-white dark:bg-surface shadow-xs text-fg font-semibold'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               onClick={() => setSelectedHorizon('recent')}
               type="button"
@@ -111,8 +111,8 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
             <button
               className={`px-2.5 py-1 rounded-md transition-all ${
                 selectedHorizon === 'annual'
-                  ? 'bg-white dark:bg-dark-surface shadow-xs text-fg font-semibold'
-                  : 'text-fg-muted hover:text-light-text'
+                  ? 'bg-white dark:bg-surface shadow-xs text-fg font-semibold'
+                  : 'text-fg-muted hover:text-fg'
               }`}
               onClick={() => setSelectedHorizon('annual')}
               type="button"
@@ -316,7 +316,7 @@ export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
       </div>
 
       {/* Time-of-Day Breakdown */}
-      <div className="p-5 rounded-2xl bg-surface/40 border border-line space-y-4">
+      <div className="p-5 rounded-xl bg-surface/40 border border-line space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-xs font-semibold text-fg-muted uppercase tracking-wide">

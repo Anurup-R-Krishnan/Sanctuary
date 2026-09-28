@@ -87,14 +87,14 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
           isLoading={isLoading}
           {...dropHandlers}
           className={cx(
-            "w-14 h-14 !rounded-2xl shadow-lg border-0 group transition-all duration-instant",
+            "w-14 h-14 !rounded-xl shadow-lg border-0 group transition-all duration-instant",
             "bg-accent",
             isDragging ? "scale-110" : "hover:shadow-xl hover:scale-105"
           )}
         />
 
         {isDragging && (
-          <div className="absolute -inset-4 rounded-3xl border-2 border-dashed border-accent animate-pulse pointer-events-none" />
+          <div className="absolute -inset-4 rounded-xl border-2 border-dashed border-accent animate-pulse pointer-events-none" />
         )}
 
         {errorMessage && (

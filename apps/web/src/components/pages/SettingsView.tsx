@@ -7,6 +7,7 @@ import { Slider } from "@/components/settings/Slider";
 import { StorageManagerCard } from "@/components/settings/StorageManagerCard";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { Toggle } from "@/components/ui/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { clearBooks } from "@/utils/db";
@@ -47,10 +48,13 @@ function SettingsView() {
     );
 
     return (
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 pb-40">
+        <div className="max-w-6xl mx-auto pb-40">
+        <div className="mb-8">
+            <PageHeader eyebrow="Preferences" title="Settings" />
+        </div>
+        <div className="flex flex-col md:flex-row gap-8">
             <aside className="md:w-64 flex-shrink-0">
                <div className="sticky top-24 space-y-1">
-                   <h2 className="px-3 mb-4 text-2xl font-sans font-bold tracking-tight text-fg">Settings</h2>
                    <NavAnchor id="behavior" label="Behavior" icon={Settings2} />
                    <NavAnchor id="goals" label="Reading Goals" icon={Target} />
                    <NavAnchor id="data" label="Data & Storage" icon={HardDrive} />
@@ -69,7 +73,7 @@ function SettingsView() {
             <div className="flex-1 space-y-12">
                 <section id="behavior" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h3 className="text-xl font-semibold text-fg mb-1">Behavior</h3>
+                        <h3 className="font-display font-medium text-xl text-fg mb-1">Behavior</h3>
                         <p className="text-sm text-fg-muted mb-6">App-wide interaction preferences.</p>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
@@ -83,11 +87,11 @@ function SettingsView() {
 
                 <section id="goals" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h3 className="text-xl font-semibold text-fg mb-1">Reading Goals</h3>
+                        <h3 className="font-display font-medium text-xl text-fg mb-1">Reading Goals</h3>
                         <p className="text-sm text-fg-muted mb-6">Track your reading habits and maintain streaks.</p>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-2xl bg-surface/40 border border-line">
+                    <div className="grid sm:grid-cols-2 gap-6 p-5 rounded-xl bg-surface/40 border border-line">
                         <Slider label="Daily Goal" value={state.dailyGoal} onChange={state.setDailyGoal} min={5} max={120} step={5} displayValue={`${state.dailyGoal} min`} />
                         <Slider label="Weekly Goal" value={state.weeklyGoal} onChange={state.setWeeklyGoal} min={20} max={500} step={10} displayValue={`${state.weeklyGoal} min`} />
                     </div>
@@ -106,11 +110,11 @@ function SettingsView() {
 
                 <section id="data" className="space-y-6 scroll-mt-24">
                     <div>
-                        <h3 className="text-xl font-semibold text-fg mb-1">Data & Storage</h3>
+                        <h3 className="font-display font-medium text-xl text-fg mb-1">Data & Storage</h3>
                         <p className="text-sm text-fg-muted mb-6">Manage your local data.</p>
                     </div>
                     <StorageManagerCard />
-                    <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20">
+                    <div className="p-5 rounded-xl bg-red-500/10 border border-red-500/20">
                         <div className="flex items-center gap-3 mb-3 text-red-600 dark:text-red-400">
                             <AlertTriangle className="w-5 h-5" />
                             <h4 className="font-semibold">Danger Zone</h4>
@@ -126,6 +130,7 @@ function SettingsView() {
                     </div>
                 </section>
             </div>
+        </div>
             
             <ConfirmDialog isOpen={showResetConfirm} onClose={() => setShowResetConfirm(false)} onConfirm={executeFactoryReset} title="Wipe Local Data" description="Are you sure you want to completely wipe all local data? This action cannot be undone." confirmLabel="Factory Reset" isDestructive />
         </div>

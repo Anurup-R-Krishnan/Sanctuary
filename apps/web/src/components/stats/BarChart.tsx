@@ -46,7 +46,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
             {/* Bar Rail & Fill */}
             <div className="w-full bg-line/60 rounded-t flex-1 flex items-end min-h-0 overflow-hidden">
               <div
-                className={`w-full bg-gradient-to-t from-accent to-amber-500 dark:to-amber-400 rounded-t transition-all duration-300 ${
+                className={`w-full bg-accent rounded-t transition-all duration-300 ${
                   isHovered ? "opacity-100 brightness-110 shadow-xs" : "opacity-85 group-hover:opacity-100"
                 }`}
                 style={{ height: `${Math.max(barHeight, d.value > 0 ? 4 : 0)}%` }}

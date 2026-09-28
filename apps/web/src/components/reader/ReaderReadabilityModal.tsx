@@ -110,7 +110,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-page rounded-3xl shadow-2xl border border-line flex flex-col z-10 custom-scrollbar text-fg animate-scaleUp">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-page rounded-xl shadow-2xl border border-line flex flex-col z-10 custom-scrollbar text-fg animate-scaleUp">
         {/* Header */}
         <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-page/95 backdrop-blur-md border-b border-line">
           <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
         <div className="p-6 space-y-6">
           {/* Hero Score Card */}
           <div
-            className={`p-5 rounded-2xl border ${band.border} bg-surface/60 space-y-4`}
+            className={`p-5 rounded-xl border ${band.border} bg-surface/60 space-y-4`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>

@@ -147,15 +147,15 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
       aria-modal="true"
       aria-label="Reader Theme & Contrast Studio"
     >
-      <div className="relative w-full max-w-3xl max-h-[90vh] bg-page rounded-3xl shadow-2xl border border-line flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-3xl max-h-[90vh] bg-page rounded-xl shadow-2xl border border-line flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-line">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center">
               <Palette className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight text-fg">
+              <h2 className="font-display font-medium text-xl tracking-tight text-fg">
                 Reader Theme & Contrast Studio
               </h2>
               <p className="text-xs text-fg-muted">
@@ -209,11 +209,11 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
             </div>
 
             <div
-              className="p-6 rounded-2xl border border-line shadow-inner transition-colors duration-200"
+              className="p-6 rounded-xl border border-line shadow-inner transition-colors duration-200"
               style={{ backgroundColor: draftBg }}
             >
               <h3
-                className="text-lg font-serif font-bold tracking-tight mb-2"
+                className="font-display font-medium text-lg font-serif tracking-tight mb-2"
                 style={{ color: draftAccent }}
               >
                 The Art of Thoughtful Reading
@@ -246,7 +246,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                     key={preset.id}
                     onClick={() => handleApplyPreset(preset)}
                     type="button"
-                    className={`relative p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
+                    className={`relative p-3 rounded-xl border text-left flex flex-col justify-between gap-2 transition-all ${
                       isCurrent
                         ? 'border-accent ring-2 ring-accent/20'
                         : 'border-line hover:border-accent/40'
@@ -284,7 +284,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
           </div>
 
           {/* Custom Palette Fine-Tuning */}
-          <div className="p-4 rounded-2xl bg-surface/40 border border-line space-y-4">
+          <div className="p-4 rounded-xl bg-surface/40 border border-line space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold uppercase tracking-wider text-fg-muted">
                 Custom Color Adjuster
@@ -389,7 +389,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="Name your recipe (e.g. Muted Espresso)..."
-                className="w-full sm:flex-1 px-3 py-1.5 rounded-xl text-xs bg-page border border-line text-fg placeholder:text-light-text-muted/60 focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full sm:flex-1 px-3 py-1.5 rounded-xl text-xs bg-page border border-line text-fg placeholder:text-fg-muted/60 focus:outline-none focus:ring-1 focus:ring-accent"
               />
               <button
                 type="submit"
@@ -411,7 +411,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 {customPalettes.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-2xl border border-line flex flex-col justify-between gap-2"
+                    className="p-3 rounded-xl border border-line flex flex-col justify-between gap-2"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-fg truncate">
@@ -420,7 +420,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                       <button
                         onClick={() => deleteCustomPalette(item.id)}
                         type="button"
-                        className="p-1 rounded text-light-text-muted hover:text-red-500 transition-colors"
+                        className="p-1 rounded text-fg-muted hover:text-red-500 transition-colors"
                         aria-label={`Delete ${item.label} palette`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />

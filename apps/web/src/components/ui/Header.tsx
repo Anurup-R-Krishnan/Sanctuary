@@ -12,6 +12,7 @@ import { Input } from "./Input";
 interface HeaderProps {
   isGuest?: boolean;
   onAddBook?: (file: File) => Promise<void>;
+  onGoHome?: () => void;
   onOpenGlobalSearch?: () => void;
   onSearch: (term: string) => void;
   onShowLogin?: (() => void) | undefined;
@@ -24,17 +25,19 @@ interface HeaderProps {
 }
 
 /** Brand mark + wordmark. */
-function BrandMark() {
+function BrandMark({ onClick }: { onClick?: () => void }) {
   return (
-    <div className="flex items-center gap-2.5 shrink-0">
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 dark:from-dark-accent dark:to-gold-700 shadow-sm shadow-gold-900/20 flex items-center justify-center">
-        <BookOpen className="w-4 h-4 text-white dark:text-dark-primary" strokeWidth={2} />
+    <button
+      aria-label="Sanctuary home"
+      className="flex items-center gap-2.5 shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+      onClick={onClick}
+      type="button"
+    >
+      <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center shadow-sm">
+        <BookOpen className="w-4 h-4 text-accent-fg" strokeWidth={1.75} />
       </div>
-      <div className="hidden sm:block leading-tight">
-        <p className="text-sm font-semibold text-fg">Sanctuary</p>
-        <p className="text-xs text-fg-muted">Book Reader</p>
-      </div>
-    </div>
+      <span className="hidden sm:block font-display text-xl font-medium tracking-tight text-fg">Sanctuary</span>
+    </button>
   );
 }
 
@@ -98,7 +101,7 @@ function SyncStatusIndicator({ isGuest }: { isGuest?: boolean }) {
   if (status === "syncing") {
     return (
       <div
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-accent bg-accent/10 border border-light-accent/20"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium text-accent bg-accent/10 border border-accent/20"
         title="Syncing changes with cloud..."
       >
         <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
@@ -133,6 +136,7 @@ function SyncStatusIndicator({ isGuest }: { isGuest?: boolean }) {
 function Header({
   isGuest = false,
   onAddBook,
+  onGoHome,
   onOpenGlobalSearch,
   onSearch,
   onShowLogin,
@@ -147,9 +151,9 @@ function Header({
   const isDark = theme === Theme.DARK;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-line bg-page/85 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-line bg-page/95 backdrop-blur-sm">
       <div className="container-wide h-[4.5rem] flex items-center gap-4 lg:gap-8">
-        <BrandMark />
+        <BrandMark onClick={onGoHome} />
 
         {/* Search grows to fill, but stays readable rather than stretching edge to edge. */}
         <div className="flex-1 min-w-0 max-w-xl">
@@ -172,7 +176,7 @@ function Header({
                 />
               ) : onOpenGlobalSearch ? (
                 <button
-                  className="hidden sm:flex items-center px-1.5 py-0.5 rounded bg-line/60 border border-line text-2xs font-mono text-light-text-muted hover:text-fg transition-colors mr-1"
+                  className="hidden sm:flex items-center px-1.5 py-0.5 rounded bg-line/60 border border-line text-2xs font-mono text-fg-muted hover:text-fg transition-colors mr-1"
                   onClick={onOpenGlobalSearch}
                   title="Full-text search (Cmd+K)"
                   type="button"

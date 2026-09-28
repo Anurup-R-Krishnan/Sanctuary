@@ -155,13 +155,13 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descId : undefined}
-        className="w-full max-w-md rounded-2xl bg-page border border-line shadow-2xl overflow-hidden animate-scaleIn"
+        className="w-full max-w-md rounded-xl bg-page border border-line shadow-2xl overflow-hidden animate-scaleIn"
       >
         {(title || description) && (
           <div className="px-6 py-4 border-b border-line flex justify-between items-start">
             <div>
               {title && (
-                <h2 id={titleId} className="text-lg font-bold text-fg">
+                <h2 id={titleId} className="font-display font-medium text-lg text-fg">
                   {title}
                 </h2>
               )}

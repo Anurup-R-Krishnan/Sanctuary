@@ -24,7 +24,7 @@ export const Slider = ({
     const percentage = ((value - min) / (max - min)) * 100;
 
     return (
-        <div className="group p-4 rounded-2xl bg-surface/60 border border-line/60 hover:border-accent/30 transition-all duration-instant">
+        <div className="group p-4 rounded-xl bg-surface/60 border border-line/60 hover:border-accent/30 transition-all duration-instant">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     {Icon && (
@@ -57,7 +57,7 @@ export const Slider = ({
                     className="absolute inset-0 w-full opacity-0 cursor-pointer"
                 />
                 <div
-                    className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-dark-surface rounded-full shadow-lg border-2 border-accent transition-all duration-300 pointer-events-none"
+                    className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white dark:bg-surface rounded-full shadow-lg border-2 border-accent transition-all duration-300 pointer-events-none"
                     style={{ left: `calc(${percentage}% - 10px)` }}
                 />
             </div>

@@ -241,7 +241,7 @@ function ReaderControls({
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-10 px-6 text-center animate-fadeIn">
-                                <div className="w-14 h-14 mb-4 rounded-2xl bg-surface/60 flex items-center justify-center border border-line">
+                                <div className="w-14 h-14 mb-4 rounded-xl bg-surface/60 flex items-center justify-center border border-line">
                                     <BookmarkIcon className="w-6 h-6 text-fg-muted" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-fg font-medium">No bookmarks yet</p>

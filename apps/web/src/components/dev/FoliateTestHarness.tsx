@@ -328,7 +328,7 @@ export const FoliateTestHarness: React.FC = () => {
 
         {error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-red-950/90 text-red-200 z-30 text-center">
-            <h2 className="text-lg font-bold mb-2">Foliate Initialization Failed</h2>
+            <h2 className="font-display font-medium text-lg mb-2">Foliate Initialization Failed</h2>
             <p className="text-sm font-mono bg-black/40 p-3 rounded max-w-lg mb-4">{error}</p>
             <button
               type="button"

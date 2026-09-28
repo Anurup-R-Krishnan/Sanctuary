@@ -11,6 +11,7 @@ export enum Theme {
 }
 
 export enum View {
+  HOME = "home",
   LIBRARY = "library",
   READER = "reader",
   SETTINGS = "settings",

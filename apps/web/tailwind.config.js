@@ -29,28 +29,6 @@ export default {
         success: 'rgb(var(--color-success) / <alpha-value>)',
 
         // Legacy light/dark colors for backward compatibility during migration
-        light: {
-          primary: '#FEFCF8', // warm off-white, not clinical pure white
-          secondary: '#FAF6F0', // warm paper tone
-          surface: '#F3ECE1', // deeper warm surface (was flat zinc grey)
-          card: '#FEFCF8',
-          accent: '#A67E50', // antique gold
-          text: '#09090B', // zinc-950
-          'text-muted': '#71717A', // zinc-500
-          border: '#E7DCC9', // warm border, replaces cold zinc-200
-          'border-muted': '#F3ECE1',
-        },
-        dark: {
-          primary: '#0F0E0D', // warm near-black, not pure zinc
-          secondary: '#1C1916', // warm dark surface
-          surface: '#28221C', // deeper warm brown-black surface
-          card: '#1C1916',
-          accent: '#C8A06A', // parchment gold
-          text: '#FAFAFA', // zinc-50
-          'text-muted': '#A1A1AA', // zinc-400
-          border: '#332B22', // warm dark border
-          'border-muted': '#1C1916',
-        },
         // Tonal scale built from the antique gold hue (32deg) via HSL —
         // lighter tints for subtle fills/badges, darker shades for
         // depth/hover/emphasis without resorting to flat black or grey.
@@ -115,6 +93,25 @@ export default {
         // rounded-xs/-sm utilities used across existing components.
         'ds-xs': '2px',
         'ds-sm': '7px',
+      },
+      boxShadow: {
+        sm: '0 1px 1px rgba(60, 42, 20, 0.04), 0 1px 3px rgba(60, 42, 20, 0.05)',
+        DEFAULT: 'var(--shadow-paper)',
+        md: 'var(--shadow-paper)',
+        lg: 'var(--shadow-paper)',
+        xl: '0 1px 1px rgba(60, 42, 20, 0.05), 0 18px 40px -20px rgba(60, 42, 20, 0.28)',
+        '2xl': '0 1px 1px rgba(60, 42, 20, 0.05), 0 24px 56px -24px rgba(60, 42, 20, 0.32)',
+        paper: 'var(--shadow-paper)',
+      },
+      backdropBlur: {
+        xs: '2px',
+        sm: '3px',
+        DEFAULT: '4px',
+        md: '6px',
+        lg: '8px',
+        xl: '10px',
+        '2xl': '12px',
+        '3xl': '14px',
       },
       transitionDuration: {
         // Design-system motion tokens.

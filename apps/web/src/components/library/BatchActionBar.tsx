@@ -79,9 +79,9 @@ export function BatchActionBar({
         visible ? "translate-y-0" : "translate-y-36 pointer-events-none"
       }`}
     >
-      <div className="flex items-center gap-2 rounded-2xl bg-surface border border-line shadow-xl px-4 py-3">
+      <div className="flex items-center gap-2 rounded-xl bg-surface border border-line shadow-xl px-4 py-3">
         {/* Selection badge */}
-        <span className="min-w-[2rem] rounded-full bg-light-accent/15 dark:bg-dark-accent/20 px-2.5 py-1 text-center text-xs font-semibold text-accent">
+        <span className="min-w-[2rem] rounded-full bg-accent/15 dark:bg-accent/20 px-2.5 py-1 text-center text-xs font-semibold text-accent">
           {selectedBookIds.length}
         </span>
 

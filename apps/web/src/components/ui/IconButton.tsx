@@ -18,7 +18,7 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
 const sizeStyles: Record<ButtonSize, string> = {
     sm: "p-1.5 rounded-lg",
     md: "p-2 rounded-xl",
-    lg: "p-3 rounded-2xl",
+    lg: "p-3 rounded-xl",
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(

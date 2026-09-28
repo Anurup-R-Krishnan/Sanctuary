@@ -55,7 +55,7 @@ export function ReaderNextInSeriesBanner({
       data-next-in-series-banner="true"
       className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-lg w-[calc(100%-2rem)] animate-fadeInUp"
     >
-      <div className="p-4 rounded-2xl backdrop-blur-xl bg-page/95 border border-line shadow-2xl flex items-center justify-between gap-3">
+      <div className="p-4 rounded-xl backdrop-blur-xl bg-page/95 border border-line shadow-2xl flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 overflow-hidden">
           <CoverImage
             className="w-8 h-11 object-cover rounded shadow-sm shrink-0 border border-line"

@@ -123,7 +123,7 @@ function ReaderTTSBarComponent({
       className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto max-w-[92vw] sm:max-w-md w-full animate-slideUp"
       role="region"
     >
-      <div className="bg-page/95 backdrop-blur-2xl border border-line shadow-2xl rounded-2xl px-4 py-3 flex flex-col gap-2 transition-all">
+      <div className="bg-page/95 backdrop-blur-2xl border border-line shadow-2xl rounded-xl px-4 py-3 flex flex-col gap-2 transition-all">
         {/* Voice Popover Panel */}
         {showVoicePopover && (
           <div className="border-b border-line pb-3 mb-1 animate-fadeIn flex flex-col gap-2.5">
@@ -166,7 +166,7 @@ function ReaderTTSBarComponent({
                       key={v.voiceURI}
                       className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                         isSelected
-                          ? "bg-light-accent/15 text-accent dark:bg-dark-accent/20 font-semibold"
+                          ? "bg-accent/15 text-accent dark:bg-accent/20 font-semibold"
                           : "hover:bg-line/40 text-fg"
                       }`}
                       onClick={() => onChangeVoice?.(v.voiceURI)}

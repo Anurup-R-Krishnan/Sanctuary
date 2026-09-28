@@ -199,7 +199,7 @@ export function ReaderSpeedReaderModal({
         tabIndex={-1}
         type="button"
       />
-      <div className="relative z-10 w-full max-w-xl bg-page text-fg border border-line rounded-3xl shadow-2xl overflow-hidden flex flex-col p-5 sm:p-7 gap-5 animate-scaleUp">
+      <div className="relative z-10 w-full max-w-xl bg-page text-fg border border-line rounded-xl shadow-2xl overflow-hidden flex flex-col p-5 sm:p-7 gap-5 animate-scaleUp">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
           <div className="flex items-center gap-2 min-w-0">
@@ -231,18 +231,18 @@ export function ReaderSpeedReaderModal({
 
         {/* Central RSVP Fixed Focal Display Box */}
         {tokens.length === 0 ? (
-          <div className="h-44 sm:h-52 flex flex-col items-center justify-center gap-3 text-sm text-fg-muted text-center px-4 bg-surface/30 rounded-2xl border border-dashed border-line">
+          <div className="h-44 sm:h-52 flex flex-col items-center justify-center gap-3 text-sm text-fg-muted text-center px-4 bg-surface/30 rounded-xl border border-dashed border-line">
             <p>No readable text found in this chapter or selection.</p>
             <button
               type="button"
               onClick={() => setSampleText(SAMPLE_PASSAGE)}
-              className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-light-accent/10 dark:bg-dark-accent/15 text-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/25 transition-all active:scale-95"
+              className="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-accent/10 dark:bg-accent/15 text-accent hover:bg-accent/20 dark:hover:bg-accent/25 transition-all active:scale-95"
             >
               Load Sample Passage
             </button>
           </div>
         ) : (
-          <div className="relative flex flex-col items-center justify-center bg-surface/40 border border-line rounded-2xl h-44 sm:h-52 select-none overflow-hidden px-4">
+          <div className="relative flex flex-col items-center justify-center bg-surface/40 border border-line rounded-xl h-44 sm:h-52 select-none overflow-hidden px-4">
             {/* Top Reticle Notch */}
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-0.5 h-3.5 bg-accent rounded-full opacity-60 pointer-events-none" />
 

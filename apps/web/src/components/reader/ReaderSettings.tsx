@@ -494,7 +494,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
         {/* Keyboard Shortcuts */}
         <div>
           <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Keyboard Shortcuts</h3>
-          <div className="space-y-1 p-3 rounded-2xl bg-surface/40 border border-line divide-y divide-line/60">
+          <div className="space-y-1 p-3 rounded-xl bg-surface/40 border border-line divide-y divide-line/60">
             {SHORTCUTS.map((s) => (
               <ShortcutRow
                 key={s.key}
