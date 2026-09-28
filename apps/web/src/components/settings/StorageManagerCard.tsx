@@ -91,7 +91,7 @@ export function StorageManagerCard() {
 
   return (
     <>
-      <div className="p-5 rounded-2xl bg-surface/40 border border-line space-y-5">
+      <div className="p-5 rounded-xl bg-surface/40 border border-line space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -114,7 +114,7 @@ export const ReaderAutoScrollController: React.FC<
       >
         {/* Preset Selector Popover */}
         {showPresets && (
-          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-page/95 backdrop-blur-xl border border-line shadow-2xl animate-scale-in">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-page/95 backdrop-blur-xl border border-line shadow-2xl animate-scale-in">
             {AUTO_SCROLL_PRESETS.map((preset) => {
               const isSelected =
                 Math.abs(preset.velocityPxPerSec - velocityPxPerSec) < 3;

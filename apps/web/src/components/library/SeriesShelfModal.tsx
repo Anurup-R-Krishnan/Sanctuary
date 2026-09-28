@@ -67,15 +67,15 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
       }}
       tabIndex={-1}
     >
-      <div className="relative w-full max-w-3xl max-h-[85vh] bg-page rounded-3xl shadow-2xl border border-line flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-3xl max-h-[85vh] bg-page rounded-xl shadow-2xl border border-line flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 sm:p-6 border-b border-line">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="series-shelf-modal-title" className="text-xl font-bold tracking-tight text-fg">
+              <h2 id="series-shelf-modal-title" className="font-display font-medium text-xl tracking-tight text-fg">
                 Book Series & Sagas
               </h2>
               <p className="text-xs text-fg-muted">
@@ -103,7 +103,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search series title or author..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-subtle border border-line text-fg placeholder:text-light-text-muted/60 focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-subtle border border-line text-fg placeholder:text-fg-muted/60 focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
         </div>
@@ -120,7 +120,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
             filteredGroups.map((series: SeriesGroup) => (
               <div
                 key={series.id}
-                className="p-5 rounded-2xl bg-surface/40 border border-line flex flex-col gap-4 transition-all"
+                className="p-5 rounded-xl bg-surface/40 border border-line flex flex-col gap-4 transition-all"
               >
                 {/* Series Header Info */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

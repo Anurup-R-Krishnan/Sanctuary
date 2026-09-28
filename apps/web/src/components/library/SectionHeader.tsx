@@ -28,7 +28,7 @@ export const SectionHeader = ({
   return (
     <div className="flex items-center gap-2 mb-4">
       {Icon && <Icon className="w-5 h-5 text-accent" strokeWidth={1.75} />}
-      <h3 className="text-2xl font-sans font-bold tracking-tight text-fg">{title}</h3>
+      <h3 className="font-display font-medium text-2xl tracking-tight text-fg">{title}</h3>
       {count !== undefined && (
         <span className="px-2 py-0.5 rounded-full bg-accent/10 text-xs font-medium text-accent tabular-nums">
           {count}

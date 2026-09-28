@@ -5,6 +5,7 @@ import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { FoliateTestHarness } from "@/components/dev/FoliateTestHarness";
+import HomeView from "@/components/pages/HomeView";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
 import { UploadErrorToast } from "@/components/ui/UploadErrorToast";
 import { useNativeBookEvents } from "@/hooks/useNativeBookEvents";
@@ -158,6 +159,11 @@ function App() {
   }, [books, isBookStoreLoading, startSession]);
 
   // Handlers
+  const handleBrowseCatalog = useCallback(() => {
+    setView(View.LIBRARY);
+    useUIStore.getState().setCatalogOpen(true);
+  }, [setView]);
+
   const handleShowLogin = useCallback(() => {
     setIsAuthScreenOpen(true);
   }, []);
@@ -179,12 +185,12 @@ function App() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page">
         <div className="relative mb-6">
-          <div className="relative w-20 h-20 rounded-3xl bg-accent flex items-center justify-center shadow-2xl">
+          <div className="relative w-20 h-20 rounded-xl bg-accent flex items-center justify-center shadow-2xl">
             <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
           </div>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-fg">Sanctuary</h2>
+          <h2 className="font-display font-medium text-xl text-fg">Sanctuary</h2>
           <p className="text-sm text-fg-muted">Loading…</p>
         </div>
       </div>
@@ -199,12 +205,12 @@ function App() {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page">
         <div className="relative mb-6">
-          <div className="relative w-20 h-20 rounded-3xl bg-accent flex items-center justify-center shadow-2xl">
+          <div className="relative w-20 h-20 rounded-xl bg-accent flex items-center justify-center shadow-2xl">
             <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
           </div>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-fg">Sanctuary</h2>
+          <h2 className="font-display font-medium text-xl text-fg">Sanctuary</h2>
           <p className="text-sm text-fg-muted">Opening book…</p>
         </div>
       </div>
@@ -227,7 +233,8 @@ function App() {
       {!isReader && (
         <Header
           isGuest={isGuest}
-          onAddBook={handleAddBook}
+          onAddBook={view === View.HOME ? undefined : handleAddBook}
+          onGoHome={() => setView(View.HOME)}
           onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
           onSearch={setSearchTerm}
           onShowLogin={isGuest && appRuntime.hasRemoteApi ? handleShowLogin : undefined}
@@ -241,11 +248,20 @@ function App() {
       )}
 
       <main className={`relative ${isReader ? "reader-main" : "standard-main"}`}>
-        {([View.LIBRARY, View.SETTINGS, View.STATS] as View[]).map((v) => (
+        {([View.HOME, View.LIBRARY, View.SETTINGS, View.STATS] as View[]).map((v) => (
           <div
             key={v}
             className={`${isReader ? "" : "page-shell"} ${view === v ? "animate-fadeInUp" : "hidden"}`}
           >
+            {v === View.HOME && (
+              <HomeView
+                onAddBook={handleAddBook}
+                onBrowseCatalog={appRuntime.hasRemoteApi ? handleBrowseCatalog : undefined}
+                onOpenBook={startSession}
+                onOpenLibrary={() => setView(View.LIBRARY)}
+                onShowLogin={isGuest && appRuntime.hasRemoteApi ? handleShowLogin : undefined}
+              />
+            )}
             {v === View.LIBRARY && (
               <LibraryGrid
                 addBook={handleAddBook}

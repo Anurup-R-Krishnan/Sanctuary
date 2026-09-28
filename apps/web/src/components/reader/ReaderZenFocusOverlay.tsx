@@ -273,15 +273,15 @@ export function ReaderZenFocusOverlay({
           className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
           role="dialog"
         >
-          <div className="relative w-full max-w-sm p-6 sm:p-7 rounded-3xl bg-page border border-line shadow-2xl flex flex-col items-center text-center gap-4 animate-scaleUp text-fg">
+          <div className="relative w-full max-w-sm p-6 sm:p-7 rounded-xl bg-page border border-line shadow-2xl flex flex-col items-center text-center gap-4 animate-scaleUp text-fg">
             {/* Celebration Icon */}
-            <div className="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center text-accent">
+            <div className="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center text-accent">
               <Flame className="w-6 h-6" />
             </div>
 
             <div className="space-y-1">
               <h3
-                className="text-lg font-bold tracking-tight"
+                className="font-display font-medium text-lg tracking-tight"
                 id="sprint-complete-title"
               >
                 Focus Sprint Completed!
@@ -292,7 +292,7 @@ export function ReaderZenFocusOverlay({
             </div>
 
             {/* Performance Stats Pill */}
-            <div className="w-full p-3 rounded-2xl bg-surface/50 border border-line flex items-center justify-around text-center">
+            <div className="w-full p-3 rounded-xl bg-surface/50 border border-line flex items-center justify-around text-center">
               <div>
                 <span className="text-lg font-bold font-mono text-accent block">
                   {selectedDuration}m

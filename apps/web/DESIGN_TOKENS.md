@@ -31,9 +31,30 @@ three places that MUST stay in sync:
 | `--font-mono`      | JetBrains Mono           | Code, telemetry, technical labels     |
 
 All fonts are imported in `src/index.tsx` and declared once in `:root`. Never
-hardcode font families in components; use the CSS variable. **No italics anywhere
-except reader-rendered book content.** (`em`, `i`, `cite` are normalized to
-`font-style: normal` in the app shell.)
+hardcode font families in components; use the CSS variable. Titles, book
+titles and large numbers use `font-display` at `font-medium`.
+
+**No italics anywhere, including book text.** `index.css` sets
+`font-style: normal !important` on every element, `FoliateRendition` injects the
+same rule into book frames, and ESLint rejects the `italic` class.
+
+## Paper
+
+The warm off-white palette below is fixed — do not change it.
+
+| Token / helper          | Where        | Purpose |
+|-------------------------|--------------|---------|
+| `--paper-grain`         | `index.css`  | Faint fibre texture on the app background (`.app-ambient-bg`) |
+| `--shadow-paper`        | `index.css`  | Default soft lift; Tailwind `shadow`, `shadow-md`, `shadow-lg`, `shadow-paper` |
+| `shadow-xl` / `shadow-2xl` | Tailwind  | Deeper paper lift for dialogs and hovered cards (no glow) |
+| `.label-caps`           | `index.css`  | Small-caps eyebrow labels |
+| `.rule`, `.rule-ornament` | `index.css` | Hairline rules; ornament rule with a centred fleuron |
+| `.paper-card`           | `index.css`  | Raised sheet: surface-raised, hairline border, paper shadow |
+| `.folio`                | `index.css`  | Old-style numerals for page numbers and counts |
+| `PageHeader`            | `components/ui` | Eyebrow + Newsreader title + hairline rule for every page |
+
+Radii stay at 12px (`rounded-xl`) or below. No glass blur, glow, or decorative
+gradients; backdrop blurs are capped at a few pixels.
 
 ## Semantic Colors
 

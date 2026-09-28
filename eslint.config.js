@@ -69,6 +69,14 @@ export default tseslint.config(
           selector: "MemberExpression[property.name=/^(AudioContext|webkitAudioContext)$/]",
           message: "No sound effects: audio playback is not allowed in the app.",
         },
+        {
+          selector: "Literal[value=/(^|\\s)italic(\\s|$)/]",
+          message: "No italics anywhere in the app.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/(^|\\s)italic(\\s|$)/]",
+          message: "No italics anywhere in the app.",
+        },
       ],
     },
   }

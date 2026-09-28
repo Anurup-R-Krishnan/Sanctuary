@@ -27,10 +27,10 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-[100dvh] flex items-center justify-center bg-page p-6">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-red-500/10 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-red-500/10 flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
-            <h2 className="text-xl font-bold text-fg mb-3">Something went wrong</h2>
+            <h2 className="font-display font-medium text-xl text-fg mb-3">Something went wrong</h2>
             <p className="text-sm text-fg-muted mb-6">{this.state.error?.message || "An unexpected error occurred"}</p>
             <Button
               onClick={() => window.location.reload()}

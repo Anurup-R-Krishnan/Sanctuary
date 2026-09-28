@@ -54,20 +54,20 @@ export function AuthScreen({ onCancel }: AuthScreenProps) {
   );
 
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page p-4 selection:bg-light-accent/30 selection:text-inherit">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page p-4 selection:bg-accent/30 selection:text-inherit">
       <div className="mb-8 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center shadow-glow-md mb-4 ring-1 ring-black/5 dark:ring-white/10 transition-transform duration-instant hover:scale-105">
+        <div className="w-16 h-16 rounded-xl bg-accent flex items-center justify-center shadow-glow-md mb-4 ring-1 ring-black/5 dark:ring-white/10 transition-transform duration-instant hover:scale-105">
           <BookOpen className="w-8 h-8 text-white" strokeWidth={1.5} />
         </div>
-        <h1 className="font-sans text-3xl font-semibold text-fg tracking-tight">Sanctuary</h1>
+        <h1 className="font-display font-medium text-3xl text-fg tracking-tight">Sanctuary</h1>
         <p className="font-sans text-sm text-fg-muted mt-1.5 max-w-xs">
           Optional. An account syncs your library and reading progress across devices.
         </p>
       </div>
 
       <div className="w-full max-w-sm">
-        <div className="bg-surface-raised border border-line shadow-xl rounded-2xl p-6">
-          <h2 className="font-sans text-2xl font-semibold text-fg tracking-tight mb-1">
+        <div className="bg-surface-raised border border-line shadow-xl rounded-xl p-6">
+          <h2 className="font-display font-medium text-2xl text-fg tracking-tight mb-1">
             {isSignUp ? "Create Account" : "Sign In"}
           </h2>
           <p className="font-sans text-sm text-fg-muted mb-6">

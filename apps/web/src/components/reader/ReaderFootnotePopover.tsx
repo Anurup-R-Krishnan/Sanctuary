@@ -88,7 +88,7 @@ export const ReaderFootnotePopover: React.FC<ReaderFootnotePopoverProps> = ({
         width: `${popoverWidth}px`,
       }}
     >
-      <div className="bg-page rounded-2xl shadow-2xl border border-line overflow-hidden flex flex-col backdrop-blur-md">
+      <div className="bg-page rounded-xl shadow-2xl border border-line overflow-hidden flex flex-col backdrop-blur-md">
         {/* Header */}
         <div className="px-4 py-2.5 bg-surface/50 border-b border-line flex items-center justify-between">
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-accent/15 text-accent tracking-wide">

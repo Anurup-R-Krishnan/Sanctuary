@@ -105,7 +105,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
       onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-page border border-line shadow-2xl p-6 mx-4">
+      <div className="relative w-full max-w-md rounded-xl bg-page border border-line shadow-2xl p-6 mx-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>

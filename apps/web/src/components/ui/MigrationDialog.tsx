@@ -89,13 +89,13 @@ export function MigrationDialog() {
       aria-describedby="migration-dialog-desc"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn p-4"
     >
-      <div className="bg-page rounded-2xl p-6 w-full max-w-md shadow-2xl border border-line">
+      <div className="bg-page rounded-xl p-6 w-full max-w-md shadow-2xl border border-line">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0">
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <h3 id="migration-dialog-title" className="text-xl font-bold text-fg">
+            <h3 id="migration-dialog-title" className="font-display font-medium text-xl text-fg">
               Sync Library
             </h3>
             <p id="migration-dialog-desc" className="text-sm text-fg-muted">

@@ -90,7 +90,7 @@ export function ReaderSessionTimerModal({
         type="button"
       />
 
-      <div className="relative z-10 w-full max-w-md p-6 rounded-2xl bg-page border border-line shadow-2xl space-y-5 animate-scale-in">
+      <div className="relative z-10 w-full max-w-md p-6 rounded-xl bg-page border border-line shadow-2xl space-y-5 animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-line/60">
           <div className="flex items-center gap-2.5">
@@ -111,7 +111,7 @@ export function ReaderSessionTimerModal({
           </div>
           <button
             aria-label="Close session timer dialog"
-            className="p-1.5 rounded-lg text-light-text-muted hover:text-fg hover:bg-line/40 transition-colors"
+            className="p-1.5 rounded-lg text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
             onClick={onClose}
             type="button"
           >
@@ -184,7 +184,7 @@ export function ReaderSessionTimerModal({
               Session Target
             </label>
             {isCustomActive && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-light-accent/20">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/20">
                 Custom ({sessionBudgetMinutes}m)
               </span>
             )}

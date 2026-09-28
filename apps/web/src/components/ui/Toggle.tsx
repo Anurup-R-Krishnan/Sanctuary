@@ -21,7 +21,7 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                 aria-checked={checked}
                 onClick={() => onChange(!checked)}
                 className={cx(
-                    "group w-full text-left flex items-center justify-between p-4 rounded-2xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent",
+                    "group w-full text-left flex items-center justify-between p-4 rounded-xl transition-all duration-instant cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent",
                     checked
                         ? "bg-accent/10 border border-accent/20"
                         : "bg-surface/50 border border-line/60 hover:bg-surface/80 hover:border-accent/30",
@@ -45,7 +45,7 @@ export const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
                     checked ? "bg-accent" : "bg-line"
                 )}>
                     <div className={cx(
-                        "absolute top-1 w-4 h-4 bg-white dark:bg-dark-text rounded-full shadow-md transition-all duration-fast ease-out flex items-center justify-center",
+                        "absolute top-1 w-4 h-4 bg-white dark:bg-fg rounded-full shadow-md transition-all duration-fast ease-out flex items-center justify-center",
                         checked ? "left-7" : "left-1"
                     )}>
                         {checked && (

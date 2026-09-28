@@ -26,7 +26,7 @@ function HighlightedSnippet({ query, text }: { query: string; text: string }) {
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase() ? (
           <mark
-            className="bg-gold-500/25 dark:bg-dark-accent/30 text-gold-900 dark:text-gold-200 font-medium px-0.5 rounded"
+            className="bg-gold-500/25 dark:bg-accent/30 text-gold-900 dark:text-gold-200 font-medium px-0.5 rounded"
             key={i}
           >
             {part}
@@ -113,7 +113,7 @@ export function GlobalSearchModal({
       tabIndex={-1}
     >
       <div
-        className="w-full max-w-2xl bg-page rounded-2xl shadow-2xl border border-line overflow-hidden flex flex-col my-auto"
+        className="w-full max-w-2xl bg-page rounded-xl shadow-2xl border border-line overflow-hidden flex flex-col my-auto"
       >
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3.5 border-b border-line gap-3">

@@ -137,7 +137,7 @@ export function WordDefinitionModal({
       tabIndex={-1}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-page border border-line shadow-2xl overflow-hidden p-6 relative animate-scaleUp text-fg"
+        className="w-full max-w-md rounded-xl bg-page border border-line shadow-2xl overflow-hidden p-6 relative animate-scaleUp text-fg"
       >
         {/* Close Button */}
         <button
@@ -172,12 +172,12 @@ export function WordDefinitionModal({
             {/* Word Header */}
             <div>
               <div className="flex items-center gap-3">
-                <h2 id="word-definition-title" className="text-2xl font-serif font-bold text-fg capitalize">
+                <h2 id="word-definition-title" className="font-display font-medium text-2xl font-serif text-fg capitalize">
                   {definition.word}
                 </h2>
                 <button
                   aria-label="Pronounce word"
-                  className="rounded-full p-2 text-accent hover:bg-light-accent/10 dark:hover:bg-dark-accent/15 transition-colors"
+                  className="rounded-full p-2 text-accent hover:bg-accent/10 dark:hover:bg-accent/15 transition-colors"
                   onClick={handlePlayAudio}
                   title="Listen to pronunciation"
                   type="button"
@@ -193,7 +193,7 @@ export function WordDefinitionModal({
                   </span>
                 )}
                 {definition.partOfSpeech && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-light-accent/15 dark:bg-dark-accent/20 text-accent font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-accent/15 dark:bg-accent/20 text-accent font-medium">
                     {definition.partOfSpeech}
                   </span>
                 )}

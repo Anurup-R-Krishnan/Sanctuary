@@ -97,16 +97,16 @@ export function ReaderShortcutsHelpModal({
       />
 
       {/* Modal Container */}
-      <div className="relative z-10 w-full max-w-2xl bg-page text-fg border border-line rounded-3xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-7 gap-6 animate-scaleUp">
+      <div className="relative z-10 w-full max-w-2xl bg-page text-fg border border-line rounded-xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-7 gap-6 animate-scaleUp">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-line">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center shadow-xs">
               <Keyboard className="w-5 h-5" />
             </div>
             <div>
               <h2
-                className="text-lg font-semibold tracking-tight leading-tight"
+                className="font-display font-medium text-lg tracking-tight leading-tight"
                 id="shortcuts-modal-title"
               >
                 Keyboard Shortcuts
@@ -134,7 +134,7 @@ export function ReaderShortcutsHelpModal({
             return (
               <div
                 key={category.title}
-                className="p-4 rounded-2xl bg-surface border border-line flex flex-col justify-between space-y-3"
+                className="p-4 rounded-xl bg-surface border border-line flex flex-col justify-between space-y-3"
               >
                 <div className="flex items-center gap-2 text-xs font-semibold text-accent">
                   <Icon className="w-4 h-4 shrink-0" />

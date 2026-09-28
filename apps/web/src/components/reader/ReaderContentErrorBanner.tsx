@@ -33,8 +33,8 @@ export function ReaderContentErrorBanner({
       aria-describedby="reader-content-error-desc"
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6 animate-fadeIn"
     >
-      <div className="max-w-sm w-full rounded-2xl bg-page border border-red-200/60 dark:border-red-800/40 p-8 text-center shadow-2xl">
-        <div className="mx-auto mb-5 flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/40">
+      <div className="max-w-sm w-full rounded-xl bg-page border border-red-200/60 dark:border-red-800/40 p-8 text-center shadow-2xl">
+        <div className="mx-auto mb-5 flex items-center justify-center w-14 h-14 rounded-xl bg-red-50 dark:bg-red-950/40">
           <svg
             className="w-7 h-7 text-red-500 dark:text-red-400"
             fill="none"
@@ -52,7 +52,7 @@ export function ReaderContentErrorBanner({
         </div>
         <h3
           id="reader-content-error-title"
-          className="text-lg font-semibold text-fg mb-2"
+          className="font-display font-medium text-lg text-fg mb-2"
         >
           Unable to Load Book
         </h3>

@@ -64,16 +64,28 @@ has its own small Zustand store, AsyncStorage cache, and sync queues — it does
   Keep new interfaces sorted or lint fails.
 - **Imports** use the `@/*` alias within each app (see each `tsconfig.json`).
 - **No router library on web.** Navigation is `useUIStore.view` (a `View` enum:
-  `LIBRARY | READER | SETTINGS | STATS`). Mobile *does* use React Navigation.
+  `HOME | LIBRARY | READER | SETTINGS | STATS`; `HOME` — the landing page,
+  `components/pages/HomeView.tsx` — is the default on arrival). Mobile *does* use React Navigation.
 - **Design tokens, not literals.** Web colours are semantic classes backed by
   CSS variables that swap under `.dark`: `bg-page`, `bg-surface`,
   `bg-surface-raised`, `bg-subtle`, `text-fg`, `text-fg-muted`, `border-line`,
   `border-line-subtle`, `text-accent`… Never write `light-*`/`dark:*-dark-*`
-  pairs (legacy, being phased out). Type sizes use the named scale in
+  pairs — the legacy palette is deleted from `tailwind.config.js`. Type sizes use the named scale in
   `tailwind.config.js` — no `text-[13px]`. Fonts: Instrument Sans (UI),
-  Newsreader (page headings, `font-display`), Crimson Pro (reader only).
-  **No italics anywhere except book content in the reader.** Details:
-  `apps/web/DESIGN_TOKENS.md`. Mobile uses `packages/ui`'s `tokens`.
+  Newsreader (headings, titles, numbers — `font-display`), Crimson Pro (reader).
+  Paper look: warm off-white palette (do not change it), faint paper grain,
+  hairline rules, soft `shadow-paper`, radii ≤ 12px, no glass/glow/gradients.
+  Helpers: `.label-caps`, `.rule`, `.rule-ornament`, `.paper-card`, `.folio`,
+  `PageHeader`. Details: `apps/web/DESIGN_TOKENS.md`. Mobile uses `packages/ui`'s `tokens`.
+- **No italics anywhere, including book text.** `index.css` forces
+  `font-style: normal` on everything and `FoliateRendition` injects the same into
+  book frames; ESLint rejects the `italic` class.
+- **No sound effects.** ESLint rejects `new Audio(...)` / `AudioContext`. Text-to-speech
+  (speechSynthesis) and user-requested dictionary pronunciation are the only audio.
+- **Keep reading aids.** Bionic reading, readability metrics, read aloud,
+  OpenDyslexic, speed reader, focus, auto-scroll, filters and the retext/remark
+  packages are deliberate — never remove them.
+- **No code comments** in new code.
 - **Plain copy.** No marketing/inspirational text, no invented "insights" —
   UI text states facts derived from real data.
 - **Tests are co-located** as `*.test.ts` next to the module and run under

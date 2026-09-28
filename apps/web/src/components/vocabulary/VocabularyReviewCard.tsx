@@ -96,7 +96,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center rounded-2xl bg-surface border border-line shadow-sm">
+      <div className="p-8 text-center rounded-xl bg-surface border border-line shadow-sm">
         <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-2" />
         <p className="text-xs text-fg-muted">Loading vocabulary…</p>
       </div>
@@ -145,7 +145,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
     if (!currentWord) {
       if (allWords.length === 0) {
         return (
-          <div className="p-8 text-center rounded-2xl bg-surface border border-line shadow-sm">
+          <div className="p-8 text-center rounded-xl bg-surface border border-line shadow-sm">
             <BookOpen className="w-10 h-10 text-fg-muted mx-auto mb-3" />
             <h3 className="font-semibold text-fg text-base">No saved words</h3>
             <p className="text-xs text-fg-muted mt-1 max-w-sm mx-auto">
@@ -155,7 +155,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
         );
       }
       return (
-        <div className="p-8 text-center rounded-2xl bg-surface border border-line shadow-sm">
+        <div className="p-8 text-center rounded-xl bg-surface border border-line shadow-sm">
           <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
           <h3 className="font-semibold text-fg text-base">Nothing to review right now</h3>
           <p className="text-xs text-fg-muted mt-1 max-w-sm mx-auto">
@@ -176,7 +176,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
     }
 
     return (
-      <div className="rounded-2xl bg-surface border border-line shadow-sm overflow-hidden p-6">
+      <div className="rounded-xl bg-surface border border-line shadow-sm overflow-hidden p-6">
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs font-semibold uppercase tracking-wider text-accent">
             Vocabulary Card {currentIndex + 1} of {dueWords.length}
@@ -188,7 +188,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
 
         <div className="text-center py-6">
           <div className="inline-flex items-center gap-2">
-            <h2 className="text-3xl font-serif font-bold text-fg capitalize">
+            <h2 className="font-display font-medium text-3xl font-serif text-fg capitalize">
               {currentWord.word}
             </h2>
             <button
@@ -273,7 +273,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
   function renderAllWordsContent() {
     if (allWords.length === 0) {
       return (
-        <div className="p-8 text-center rounded-2xl bg-surface border border-line shadow-sm">
+        <div className="p-8 text-center rounded-xl bg-surface border border-line shadow-sm">
           <BookOpen className="w-10 h-10 text-fg-muted mx-auto mb-3" />
           <h3 className="font-semibold text-fg text-base">No saved words</h3>
           <p className="text-xs text-fg-muted mt-1 max-w-sm mx-auto">
@@ -284,7 +284,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
     }
 
     return (
-      <div className="rounded-2xl bg-surface border border-line shadow-sm overflow-hidden">
+      <div className="rounded-xl bg-surface border border-line shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="border-b border-line bg-surface/40">

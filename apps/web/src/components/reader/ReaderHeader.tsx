@@ -262,7 +262,7 @@ function ReaderHeader({
 
                         {showToolsMenu && (
                             <div
-                                className="absolute right-0 top-full mt-2 w-52 p-1.5 rounded-2xl backdrop-blur-2xl shadow-2xl border border-line animate-slideDown flex flex-col gap-0.5 z-50"
+                                className="absolute right-0 top-full mt-2 w-52 p-1.5 rounded-xl backdrop-blur-2xl shadow-2xl border border-line animate-slideDown flex flex-col gap-0.5 z-50"
                                 style={{ backgroundColor: getTranslucentBg(readerBackground, "F5") }}
                             >
                                 {onToggleTTS && (
