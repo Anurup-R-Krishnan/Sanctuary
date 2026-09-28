@@ -149,7 +149,7 @@ function StatsView() {
       {activeTab === "overview" && (
         <div className="space-y-10">
           {/* Hero: the one thing that matters today */}
-          <div className="relative overflow-hidden p-6 sm:p-8 rounded-xl paper-card dark:from-accent/12 dark:via-amber-500/8 border border-accent/15">
+          <div className="relative overflow-hidden p-6 sm:p-8 paper-card">
             <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
               <div className="relative flex-shrink-0 mx-auto sm:mx-0">
                 <ProgressRing progress={dailyProgressPercent} size={128} stroke={8} />
@@ -171,7 +171,7 @@ function StatsView() {
                 </p>
 
                 <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
-                  <Flame className="w-4 h-4 text-orange-500" strokeWidth={2} />
+                  <Flame className="w-4 h-4 text-accent" strokeWidth={1.75} />
                   <span className="text-sm font-semibold text-fg tabular-nums">{stats.currentStreak}</span>
                   <span className="text-xs text-fg-muted">day streak</span>
                   <span className="text-fg-muted/30">·</span>
@@ -181,7 +181,7 @@ function StatsView() {
             </div>
 
             {goals && (
-              <div className="mt-6 pt-6 border-t border-accent/10 grid grid-cols-2 gap-6">
+              <div className="mt-6 pt-6 border-t border-line grid grid-cols-2 gap-6">
                 <GoalProgress
                   label="Daily time goal"
                   totalMinutes={goals.day.totalMinutes}
@@ -192,7 +192,7 @@ function StatsView() {
                   label="Weekly time goal"
                   totalMinutes={goals.week.totalMinutes}
                   targetMinutes={goals.week.targetMinutes}
-                  colorClassName="bg-amber-500"
+                  colorClassName="bg-accent/60"
                 />
               </div>
             )}
@@ -294,19 +294,19 @@ function StatsView() {
                 {/* Pace status badge */}
                 <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
                   {activeAnnualChallenge.paceStatus === "ahead" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
                       <TrendingUp className="w-3.5 h-3.5" />
-                      +{activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} ahead of schedule
+                      {activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} ahead of schedule
                     </span>
                   )}
                   {activeAnnualChallenge.paceStatus === "behind" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-line/50 text-fg-muted border border-line">
                       <Clock className="w-3.5 h-3.5" />
-                      -{activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} behind schedule
+                      {activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} behind schedule
                     </span>
                   )}
                   {activeAnnualChallenge.paceStatus === "on-pace" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-ink-500/10 text-ink-600 dark:text-ink-400 border border-ink-500/20">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
                       <Target className="w-3.5 h-3.5" />
                       On schedule for {activeAnnualChallenge.year}
                     </span>
@@ -321,7 +321,7 @@ function StatsView() {
 
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide">This Week</h3>
+              <h3 className="label-caps">This Week</h3>
               <span className="text-xs text-fg-muted tabular-nums">{weeklyTotal} min</span>
             </div>
             <BarChart
@@ -365,7 +365,7 @@ function StatsView() {
           </Suspense>
 
           <div className="p-5 rounded-xl bg-surface/40 border border-line">
-            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-4">Monthly Hours</h3>
+            <h3 className="label-caps mb-4">Monthly Hours</h3>
             <BarChart
               data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
               maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
@@ -375,7 +375,7 @@ function StatsView() {
 
           <div className="grid sm:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Genres</h3>
+              <h3 className="label-caps mb-3">Genres</h3>
               {stats.genreDistribution.length > 0 ? (
                 <div className="space-y-2.5">
                   {stats.genreDistribution.map((g) => (
@@ -394,7 +394,7 @@ function StatsView() {
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Top Authors</h3>
+              <h3 className="label-caps mb-3">Top Authors</h3>
               {stats.authorNetwork.length > 0 ? (
                 <div className="space-y-2.5">
                   {stats.authorNetwork.map((a) => (
@@ -420,7 +420,7 @@ function StatsView() {
       {activeTab === "insights" && (
         <div className="space-y-8">
           <div>
-            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Insights</h3>
+            <h3 className="label-caps mb-3">Insights</h3>
             <div className="space-y-3">
               {insights.map((item) => (
                 <div key={item.title} className="flex items-center gap-3">

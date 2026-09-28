@@ -1,416 +1,191 @@
-import {
-  Calendar,
-  Clock,
-  Flame,
-  Moon,
-  Sun,
-  Sunrise,
-  Sunset,
-  Timer,
-  TrendingUp,
-} from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 
-import type { ReadingSession } from '@/types';
-import type { ActivityDayCell } from '@/utils/readingActivityEngine';
+import type { ReadingSession } from "@/types";
+import type { ActivityDayCell } from "@/utils/readingActivityEngine";
 
 import {
   calculateCircadianDistribution,
   calculateReadingVelocity,
   generateActivityGrid,
-} from '@/utils/readingActivityEngine';
+} from "@/utils/readingActivityEngine";
 
 export interface ReadingActivityHeatmapProps {
   dailyTargetMinutes?: number;
   sessions: ReadingSession[];
 }
 
-const CELL_BG_CLASSES = [
-  'bg-line/40 border-line/30',
-  'bg-emerald-500/30 dark:bg-emerald-500/35 border-emerald-500/20',
-  'bg-emerald-500/55 dark:bg-emerald-500/55 border-emerald-500/30',
-  'bg-emerald-600/80 dark:bg-emerald-500/75 border-emerald-600/40',
-  'bg-emerald-600 dark:bg-emerald-400 border-emerald-600 dark:border-emerald-400',
-];
+const INTENSITY_CLASSES = ["bg-line/45", "bg-accent/25", "bg-accent/45", "bg-accent/70", "bg-accent"];
+const DAY_LABELS = ["Mon", "", "Wed", "", "Fri", "", "Sun"];
+const MIN_LABEL_GAP = 3;
 
-export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({
-  dailyTargetMinutes = 30,
-  sessions,
-}) => {
-  const [selectedHorizon, setSelectedHorizon] = useState<'annual' | 'recent'>('recent');
+function formatMinutes(total: number): string {
+  const minutes = Math.round(total);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest > 0 ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function describeCell(cell: ActivityDayCell): string {
+  if (cell.isFuture) return cell.formattedDate;
+  if (cell.minutes <= 0) return `${cell.formattedDate} · no reading`;
+  const sessions = `${cell.sessionCount} ${cell.sessionCount === 1 ? "session" : "sessions"}`;
+  return `${cell.formattedDate} · ${formatMinutes(cell.minutes)} · ${sessions}`;
+}
+
+export const ReadingActivityHeatmap: React.FC<ReadingActivityHeatmapProps> = ({ dailyTargetMinutes = 30, sessions }) => {
+  const [horizon, setHorizon] = useState<"annual" | "recent">("recent");
   const [activeCell, setActiveCell] = useState<ActivityDayCell | null>(null);
+  const weeksCount = horizon === "annual" ? 52 : 18;
 
-  const weeksCount = selectedHorizon === 'annual' ? 52 : 14;
+  const grid = useMemo(() => generateActivityGrid(sessions, weeksCount, dailyTargetMinutes), [sessions, weeksCount, dailyTargetMinutes]);
+  const circadian = useMemo(() => calculateCircadianDistribution(sessions), [sessions]);
+  const velocity = useMemo(() => calculateReadingVelocity(sessions), [sessions]);
+  const hasSessions = sessions.length > 0 && grid.totalMinutes > 0;
 
-  const gridData = useMemo(() => {
-    return generateActivityGrid(sessions, weeksCount, dailyTargetMinutes);
-  }, [sessions, weeksCount, dailyTargetMinutes]);
-
-  const circadian = useMemo(() => {
-    return calculateCircadianDistribution(sessions);
-  }, [sessions]);
-
-  const velocity = useMemo(() => {
-    return calculateReadingVelocity(sessions);
-  }, [sessions]);
-
-  const formatMinutesDuration = (mins: number) => {
-    if (mins < 60) return `${mins}m`;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  };
-
-  const [hoveredCell, setHoveredCell] = useState<{ cell: ActivityDayCell; x: number; y: number } | null>(null);
-
-  const handleCellHover = (cell: ActivityDayCell, e: React.MouseEvent | React.FocusEvent) => {
-    setActiveCell(cell);
-    const target = e.currentTarget as HTMLElement;
-    const container = target.closest('.heatmap-grid-scroll');
-    if (container) {
-      const containerRect = container.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      setHoveredCell({
-        cell,
-        x: targetRect.left - containerRect.left + targetRect.width / 2,
-        y: targetRect.top - containerRect.top,
-      });
+  const monthLabels = useMemo(() => {
+    const kept: typeof grid.monthLabels = [];
+    for (const label of grid.monthLabels) {
+      const previous = kept[kept.length - 1];
+      if (!previous || label.weekIndex - previous.weekIndex >= MIN_LABEL_GAP) kept.push(label);
     }
-  };
+    return kept;
+  }, [grid]);
+
+  const periods = [
+    { label: "Morning", minutes: circadian.morningMinutes, percent: circadian.morningPercent, shade: "bg-accent/35" },
+    { label: "Afternoon", minutes: circadian.afternoonMinutes, percent: circadian.afternoonPercent, shade: "bg-accent/55" },
+    { label: "Evening", minutes: circadian.eveningMinutes, percent: circadian.eveningPercent, shade: "bg-accent/80" },
+    { label: "Night", minutes: circadian.nightMinutes, percent: circadian.nightPercent, shade: "bg-fg/60" },
+  ];
+
+  const cellSize = horizon === "annual" ? 11 : 16;
+  const cellGap = horizon === "annual" ? 2 : 3;
+  const gridWidth = grid.weeksCount * (cellSize + cellGap) - cellGap;
+  const columnStyle = { gap: `${cellGap}px`, gridTemplateColumns: `repeat(${grid.weeksCount}, ${cellSize}px)` };
+  const rowStyle = { gap: `${cellGap}px`, gridTemplateRows: `repeat(7, ${cellSize}px)` };
 
   return (
-    <div className="space-y-6">
-      {/* Heatmap Card */}
-      <div className="p-5 rounded-xl bg-surface/40 border border-line space-y-4">
-        {/* Card Header & Controls */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="space-y-8">
+      <section className="paper-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-sm font-semibold text-fg tracking-wide">
-                Reading Consistency Matrix
-              </h3>
-            </div>
-            <p className="text-xs text-fg-muted mt-0.5">
-              {gridData.totalActiveDays} active reading days · {formatMinutesDuration(gridData.totalMinutes)} total
+            <h3 className="label-caps">Reading activity</h3>
+            <p className="mt-1.5 font-display text-2xl font-medium text-fg">
+              {grid.totalActiveDays} {grid.totalActiveDays === 1 ? "day" : "days"}
+              <span className="ml-2 text-base font-normal text-fg-muted">· {formatMinutes(grid.totalMinutes)} read</span>
             </p>
           </div>
-
-          <div className="flex items-center bg-surface/60 border border-line p-0.5 rounded-lg text-xs font-medium self-start sm:self-auto">
-            <button
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                selectedHorizon === 'recent'
-                  ? 'bg-white dark:bg-surface shadow-xs text-fg font-semibold'
-                  : 'text-fg-muted hover:text-fg'
-              }`}
-              onClick={() => setSelectedHorizon('recent')}
-              type="button"
-            >
-              14 Weeks
-            </button>
-            <button
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                selectedHorizon === 'annual'
-                  ? 'bg-white dark:bg-surface shadow-xs text-fg font-semibold'
-                  : 'text-fg-muted hover:text-fg'
-              }`}
-              onClick={() => setSelectedHorizon('annual')}
-              type="button"
-            >
-              Full Year
-            </button>
-          </div>
-        </div>
-
-        {/* Heatmap Grid Container */}
-        <div className="heatmap-grid-scroll overflow-x-auto pb-3 -mx-2 px-2 relative">
-          <div className="inline-block min-w-full relative">
-            {/* Floating Rich Tooltip */}
-            {hoveredCell && (
-              <div
-                className="absolute z-30 px-3 py-1.5 rounded-lg bg-stone-900/95 text-stone-100 dark:bg-stone-100/95 dark:text-stone-900 shadow-xl pointer-events-none text-xs font-sans transition-opacity duration-150 -translate-x-1/2 -translate-y-full mb-2 whitespace-nowrap border border-white/10 dark:border-black/10 backdrop-blur-xs"
-                role="tooltip"
-                style={{
-                  left: `${Math.max(70, Math.min(hoveredCell.x, (weeksCount * 16) + 20))}px`,
-                  top: `${hoveredCell.y - 6}px`,
-                }}
+          <div className="flex rounded-lg border border-line bg-subtle p-0.5 text-xs font-medium">
+            {(["recent", "annual"] as const).map((value) => (
+              <button
+                aria-pressed={horizon === value}
+                className={`rounded-md px-3 py-1 transition-colors ${horizon === value ? "bg-surface-raised text-fg shadow-sm" : "text-fg-muted hover:text-fg"}`}
+                key={value}
+                onClick={() => setHorizon(value)}
+                type="button"
               >
-                <div className="font-semibold text-xs leading-tight">
-                  {hoveredCell.cell.formattedDate}
-                </div>
-                <div className="text-2xs text-stone-300 dark:text-stone-600 mt-0.5 flex items-center gap-1.5">
-                  {hoveredCell.cell.minutes > 0 ? (
-                    <>
-                      <span className="font-bold text-emerald-400 dark:text-emerald-600">
-                        {hoveredCell.cell.minutes} min
-                      </span>
-                      <span>·</span>
-                      <span>{hoveredCell.cell.pages} pages</span>
-                      {hoveredCell.cell.sessionCount > 1 && (
-                        <span>({hoveredCell.cell.sessionCount} sessions)</span>
-                      )}
-                    </>
-                  ) : (
-                    <span>No reading recorded</span>
-                  )}
-                </div>
-                {hoveredCell.cell.minutes >= dailyTargetMinutes && (
-                  <div className="text-3xs text-emerald-400 dark:text-emerald-700 font-semibold mt-0.5">
-                    ✓ Daily goal reached
-                  </div>
-                )}
-                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-stone-900/95 dark:border-t-stone-100/95" />
-              </div>
-            )}
-
-            {/* Month Labels Row */}
-            <div className="flex text-2xs text-fg-muted mb-1.5 h-4 relative">
-              <div className="w-[28px] shrink-0" /> {/* Day labels + gap spacer: 20px + 8px */}
-              <div className="flex gap-1 flex-1 relative">
-                {gridData.monthLabels.map((m, idx) => (
-                  <span
-                    className="absolute font-medium text-stone-500 dark:text-stone-400 select-none"
-                    key={idx}
-                    style={{ left: `${m.weekIndex * 16}px` }}
-                  >
-                    {m.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Grid with Day Labels */}
-            <div className="flex gap-2">
-              {/* Day of Week Labels (Mon, Wed, Fri, Sun) */}
-              <div className="flex flex-col justify-between text-3xs text-fg-muted w-5 py-0.5 select-none shrink-0 leading-none h-[108px]">
-                <span>Mon</span>
-                <span>Wed</span>
-                <span>Fri</span>
-                <span>Sun</span>
-              </div>
-
-              {/* Week Columns */}
-              <div className="flex gap-1">
-                {gridData.cells.map((week, wi) => (
-                  <div className="flex flex-col gap-1" key={`w-${wi}`}>
-                    {week.map((cell) => {
-                      const isHovered = activeCell?.dateKey === cell.dateKey;
-                      const intensityClass = CELL_BG_CLASSES[cell.intensity];
-
-                      return (
-                        <button
-                          aria-label={`${cell.formattedDate}: ${cell.minutes} minutes`}
-                          className={`w-3 h-3 rounded-xs transition-all border ${intensityClass} ${
-                            cell.isToday
-                              ? 'ring-1 ring-emerald-500 ring-offset-1 dark:ring-offset-stone-900'
-                              : ''
-                          } ${isHovered ? 'scale-125 z-10 shadow-sm ring-1 ring-black/40 dark:ring-white/50' : ''}`}
-                          key={cell.dateKey}
-                          onBlur={() => setHoveredCell(null)}
-                          onClick={(e) => handleCellHover(cell, e)}
-                          onFocus={(e) => handleCellHover(cell, e)}
-                          onMouseEnter={(e) => handleCellHover(cell, e)}
-                          onMouseLeave={() => setHoveredCell(null)}
-                          type="button"
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Legend & Active Cell Details Footer */}
-        <div className="pt-2 border-t border-line/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div className="text-fg font-medium min-h-[1.25rem] flex items-center gap-1.5">
-            {activeCell ? (
-              <>
-                <span className="font-semibold text-fg">
-                  {activeCell.formattedDate}:
-                </span>
-                <span className="text-fg-muted">
-                  {activeCell.minutes > 0
-                    ? `${activeCell.minutes} min · ${activeCell.pages} pages (${activeCell.sessionCount} sessions)`
-                    : 'No reading recorded'}
-                </span>
-              </>
-            ) : (
-              <span className="text-fg-muted text-xs">
-                Hover or tap any square to inspect daily reading time
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5 text-2xs text-fg-muted self-end sm:self-auto">
-            <span>Less</span>
-            {[0, 1, 2, 3, 4].map((level) => (
-              <div
-                className={`w-2.5 h-2.5 rounded-xs border ${CELL_BG_CLASSES[level]}`}
-                key={level}
-              />
+                {value === "recent" ? "18 weeks" : "Year"}
+              </button>
             ))}
-            <span>More</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Reading Velocity Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
-            <Clock className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
-              Peak Hour
-            </span>
-            <p className="text-lg font-bold text-fg mt-0.5">
-              {velocity.peakReadingHourLabel}
-            </p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-sky-500/10 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 shrink-0">
-            <TrendingUp className="w-4 h-4" />
+        <div className="mt-6 flex justify-center gap-2">
+          <div className="grid shrink-0 pt-5 text-3xs text-fg-muted" style={rowStyle}>
+            {DAY_LABELS.map((label, index) => (
+              <span className="flex items-center leading-none" key={index}>{label}</span>
+            ))}
           </div>
-          <div>
-            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
-              Top Reading Day
-            </span>
-            <p className="text-lg font-bold text-fg mt-0.5">
-              {velocity.bestDayOfWeek}
-            </p>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-            <Timer className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
-              Avg Session
-            </span>
-            <p className="text-lg font-bold text-fg mt-0.5">
-              {velocity.averageMinutesPerSession}m
-            </p>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl bg-surface/60 border border-line flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 shrink-0">
-            <Flame className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-fg-muted uppercase tracking-wide">
-              Longest Session
-            </span>
-            <p className="text-lg font-bold text-fg mt-0.5">
-              {formatMinutesDuration(velocity.longestSessionMinutes)}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Time-of-Day Breakdown */}
-      <div className="p-5 rounded-xl bg-surface/40 border border-line space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-xs font-semibold text-fg-muted uppercase tracking-wide">
-              Reading by Time of Day
-            </h4>
-            <p className="text-xs text-fg font-medium mt-0.5 capitalize">
-              Most active: {circadian.peakPeriod}
-            </p>
-          </div>
-        </div>
-
-        {/* Stacked Percentage Bar */}
-        <div className="h-3 w-full rounded-full overflow-hidden flex bg-line/60">
-          {circadian.morningPercent > 0 && (
-            <div
-              className="bg-amber-400 dark:bg-amber-500 transition-all"
-              style={{ width: `${circadian.morningPercent}%` }}
-              title={`Morning: ${circadian.morningPercent}%`}
-            />
-          )}
-          {circadian.afternoonPercent > 0 && (
-            <div
-              className="bg-sky-400 dark:bg-sky-500 transition-all"
-              style={{ width: `${circadian.afternoonPercent}%` }}
-              title={`Afternoon: ${circadian.afternoonPercent}%`}
-            />
-          )}
-          {circadian.eveningPercent > 0 && (
-            <div
-              className="bg-indigo-500 dark:bg-indigo-400 transition-all"
-              style={{ width: `${circadian.eveningPercent}%` }}
-              title={`Evening: ${circadian.eveningPercent}%`}
-            />
-          )}
-          {circadian.nightPercent > 0 && (
-            <div
-              className="bg-violet-600 dark:bg-violet-500 transition-all"
-              style={{ width: `${circadian.nightPercent}%` }}
-              title={`Night: ${circadian.nightPercent}%`}
-            />
-          )}
-        </div>
-
-        {/* Legend Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-amber-400/15 text-amber-600 dark:text-amber-400">
-              <Sunrise className="w-3.5 h-3.5" />
+          <div className="min-w-0 overflow-x-auto" style={{ width: gridWidth, maxWidth: "100%" }}>
+            <div className="relative mb-1.5 h-3.5 text-3xs text-fg-muted" style={{ width: gridWidth }}>
+              {monthLabels.map((label) => (
+                <span
+                  className="absolute top-0 leading-none"
+                  key={`${label.label}-${label.weekIndex}`}
+                  style={{ left: `${(label.weekIndex / grid.weeksCount) * 100}%` }}
+                >
+                  {label.label}
+                </span>
+              ))}
             </div>
-            <div>
-              <p className="font-semibold text-fg">Morning</p>
-              <p className="text-xs text-fg-muted">
-                {circadian.morningPercent}% ({formatMinutesDuration(circadian.morningMinutes)})
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-sky-400/15 text-sky-600 dark:text-sky-400">
-              <Sun className="w-3.5 h-3.5" />
-            </div>
-            <div>
-              <p className="font-semibold text-fg">Afternoon</p>
-              <p className="text-xs text-fg-muted">
-                {circadian.afternoonPercent}% ({formatMinutesDuration(circadian.afternoonMinutes)})
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-              <Sunset className="w-3.5 h-3.5" />
-            </div>
-            <div>
-              <p className="font-semibold text-fg">Evening</p>
-              <p className="text-xs text-fg-muted">
-                {circadian.eveningPercent}% ({formatMinutesDuration(circadian.eveningMinutes)})
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-400">
-              <Moon className="w-3.5 h-3.5" />
-            </div>
-            <div>
-              <p className="font-semibold text-fg">Night</p>
-              <p className="text-xs text-fg-muted">
-                {circadian.nightPercent}% ({formatMinutesDuration(circadian.nightMinutes)})
-              </p>
+            <div className="grid" style={columnStyle}>
+              {grid.cells.map((week, weekIndex) => (
+                <div className="grid" key={weekIndex} style={rowStyle}>
+                  {week.map((cell) => (
+                    <button
+                      aria-label={describeCell(cell)}
+                      className={`h-full w-full rounded-[2px] transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 ${
+                        cell.isFuture ? "bg-transparent" : INTENSITY_CLASSES[cell.intensity] ?? INTENSITY_CLASSES[0]
+                      } ${cell.isToday ? "ring-1 ring-fg/50" : ""} ${activeCell?.dateKey === cell.dateKey ? "ring-2 ring-accent" : ""}`}
+                      disabled={cell.isFuture}
+                      key={cell.dateKey}
+                      onBlur={() => setActiveCell(null)}
+                      onFocus={() => setActiveCell(cell)}
+                      onMouseEnter={() => setActiveCell(cell)}
+                      onMouseLeave={() => setActiveCell(null)}
+                      type="button"
+                    />
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3 text-xs text-fg-muted">
+          <span className="tabular-nums">{activeCell ? describeCell(activeCell) : "Hover or focus a day for details."}</span>
+          <span className="flex items-center gap-1.5">
+            Less
+            {INTENSITY_CLASSES.map((shade) => (
+              <span className={`h-2.5 w-2.5 rounded-[2px] ${shade}`} key={shade} />
+            ))}
+            More
+          </span>
+        </div>
+      </section>
+
+      {hasSessions ? (
+        <>
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-4">
+            {[
+              { label: "Most read at", value: velocity.peakReadingHourLabel },
+              { label: "Best day", value: velocity.bestDayOfWeek },
+              { label: "Average session", value: formatMinutes(velocity.averageMinutesPerSession) },
+              { label: "Longest session", value: formatMinutes(velocity.longestSessionMinutes) },
+            ].map((item) => (
+              <div className="bg-surface-raised px-4 py-4" key={item.label}>
+                <dt className="label-caps">{item.label}</dt>
+                <dd className="mt-1.5 font-display text-xl font-medium text-fg">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <section className="paper-card p-5 sm:p-6">
+            <h3 className="label-caps">Time of day</h3>
+            <div className="mt-4 flex h-2.5 overflow-hidden rounded-full bg-line/45">
+              {periods.map((period) => (
+                <div className={period.shade} key={period.label} style={{ width: `${period.percent}%` }} />
+              ))}
+            </div>
+            <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {periods.map((period) => (
+                <li className="flex items-center gap-2" key={period.label}>
+                  <span className={`h-2.5 w-2.5 rounded-full ${period.shade}`} />
+                  <span className="text-sm text-fg">{period.label}</span>
+                  <span className="ml-auto text-xs tabular-nums text-fg-muted">
+                    {period.percent}% · {formatMinutes(period.minutes)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      ) : (
+        <p className="text-center text-sm text-fg-muted">
+          No reading sessions yet. Time you spend in the reader will show up here.
+        </p>
+      )}
     </div>
   );
 };
