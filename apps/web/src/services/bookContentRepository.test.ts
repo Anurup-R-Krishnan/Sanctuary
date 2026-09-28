@@ -67,4 +67,15 @@ describe("verifyBookContent", () => {
       byteLength: htmlBlob.size,
     });
   });
+
+  test("accepts PDF files and XHTML with an XML prologue", async () => {
+    const pdf = new Blob(["%PDF-1.7\n1 0 obj"]);
+    await expect(verifyBookContent("pdf", pdf, undefined, "pdf")).resolves.toMatchObject({ byteLength: pdf.size });
+
+    const xhtml = new Blob(['<?xml version="1.0" encoding="utf-8"?>\n<html xmlns="http://www.w3.org/1999/xhtml"><body/></html>']);
+    await expect(verifyBookContent("xhtml", xhtml)).resolves.toMatchObject({ byteLength: xhtml.size });
+
+    const html = new Blob(["<body><p>Fragment without a doctype</p></body>"]);
+    await expect(verifyBookContent("html", html, undefined, "html")).resolves.toMatchObject({ byteLength: html.size });
+  });
 });

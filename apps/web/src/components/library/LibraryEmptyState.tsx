@@ -16,7 +16,7 @@ export function LibraryEmptyState({ onOpenCatalog }: LibraryEmptyStateProps) {
       </div>
       <h2 className="font-display font-medium text-2xl text-fg mb-2">No books yet</h2>
       <p className="text-fg-muted max-w-sm mx-auto mb-2">
-        EPUB, PDF, MOBI, AZW3, FB2, CBZ, CBR, Markdown, HTML and plain text are supported.
+        EPUB, PDF, MOBI, AZW3, FB2, CBZ comics, Markdown, HTML and plain text are supported.
       </p>
       <p className="text-fg-muted max-w-sm mx-auto mb-6">
         Use Add Book at the top of the page to import one.

@@ -35,8 +35,14 @@ function isZipHeader(bytes: Uint8Array): boolean {
       (bytes[2] === 0x07 && bytes[3] === 0x08));
 }
 
+function isPdfHeader(bytes: Uint8Array): boolean {
+  return bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+}
+
+const TEXT_FORMATS = new Set(["txt", "text", "md", "markdown", "html", "htm", "xhtml"]);
+
 function isValidBookHeader(bytes: Uint8Array, formatOrFileName?: string): boolean {
-  if (isZipHeader(bytes)) return true;
+  if (isZipHeader(bytes) || isPdfHeader(bytes)) return true;
   if (bytes.length >= 68) {
     const magic = String.fromCharCode(...bytes.slice(60, 68));
     if (magic === "BOOKMOBI") return true;
@@ -44,24 +50,15 @@ function isValidBookHeader(bytes: Uint8Array, formatOrFileName?: string): boolea
   try {
     const snippet = new TextDecoder().decode(bytes.slice(0, 1024)).trimStart().toLowerCase();
     if (snippet.includes("<fictionbook")) return true;
-    if (snippet.startsWith("<!doctype html") || snippet.startsWith("<html")) return true;
+    const body = snippet.startsWith("<?xml") ? snippet.slice(snippet.indexOf("?>") + 2).trimStart() : snippet;
+    if (body.startsWith("<!doctype html") || body.startsWith("<html")) return true;
   } catch {
     // ignore
   }
   if (formatOrFileName) {
     const lower = formatOrFileName.toLowerCase();
-    if (
-      lower.endsWith(".txt") ||
-      lower.endsWith(".text") ||
-      lower.endsWith(".md") ||
-      lower.endsWith(".markdown") ||
-      lower === "txt" ||
-      lower === "text" ||
-      lower === "md" ||
-      lower === "markdown"
-    ) {
-      return true;
-    }
+    const extension = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : lower;
+    if (TEXT_FORMATS.has(extension)) return true;
   }
   return false;
 }

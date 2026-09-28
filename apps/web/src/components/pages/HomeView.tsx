@@ -23,7 +23,7 @@ interface HomeViewProps {
 const FEATURES = [
   {
     numeral: "I",
-    text: "EPUB, PDF, MOBI, AZW3, FB2, CBZ, CBR, Markdown, HTML and plain text.",
+    text: "EPUB, PDF, MOBI, AZW3, FB2, CBZ comics, Markdown, HTML and plain text.",
     title: "Any book file",
   },
   {

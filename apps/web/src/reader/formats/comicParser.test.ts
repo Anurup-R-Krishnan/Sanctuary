@@ -102,15 +102,14 @@ function createTestZip(files: Array<{ data: Uint8Array; name: string }>): Uint8A
 
 describe("Native Comic & Manga Document Parser (CBZ/CBR)", () => {
   describe("Format Detection", () => {
-    it("recognizes .cbz and .cbr file extensions", () => {
+    it("accepts .cbz and not .cbr (RAR is unsupported)", () => {
       expect(isSupportedExtension("manga_volume_01.cbz")).toBe(true);
-      expect(isSupportedExtension("graphic_novel.cbr")).toBe(true);
+      expect(isSupportedExtension("graphic_novel.cbr")).toBe(false);
       expect(isSupportedExtension("archive.zip")).toBe(false);
     });
 
     it("detects CBZ and CBR via filenames", async () => {
       expect(await detectBookFormat(new Blob(), "berserk_ch01.cbz")).toBe("cbz");
-      expect(await detectBookFormat(new Blob(), "watchmen.cbr")).toBe("cbr");
     });
 
     it("detects CBR via RAR magic byte header", async () => {
