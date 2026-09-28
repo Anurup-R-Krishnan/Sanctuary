@@ -156,7 +156,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
       }
       return (
         <div className="p-8 text-center rounded-xl bg-surface border border-line shadow-sm">
-          <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
+          <CheckCircle2 className="w-10 h-10 text-accent mx-auto mb-3" />
           <h3 className="font-semibold text-fg text-base">Nothing to review right now</h3>
           <p className="text-xs text-fg-muted mt-1 max-w-sm mx-auto">
             {dueWords.length === 0 && allWords.length > 0
@@ -244,7 +244,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
         {isRevealed && (
           <div className="grid grid-cols-3 gap-3 pt-4 border-t border-line animate-fadeIn">
             <button
-              className="py-2.5 rounded-xl text-xs font-semibold bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="py-2.5 rounded-xl text-xs font-semibold border border-line bg-surface-raised text-fg-muted hover:border-danger/40 hover:text-danger transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               onClick={() => handleRate("again")}
               type="button"
             >
@@ -258,7 +258,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
               Good (3d)
             </button>
             <button
-              className="py-2.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="py-2.5 rounded-xl text-xs font-semibold border border-accent bg-accent text-accent-fg hover:brightness-105 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               onClick={() => handleRate("easy")}
               type="button"
             >
@@ -311,7 +311,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
                     {deleteConfirmId === word.id ? (
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          className="px-2 py-1 text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                          className="px-2 py-1 text-xs font-medium bg-danger/10 text-danger hover:bg-danger/15 rounded transition-colors"
                           onClick={() => handleDeleteWord(word.id)}
                           type="button"
                         >
@@ -327,7 +327,7 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
                       </div>
                     ) : (
                       <button
-                        className="p-1.5 rounded-lg text-fg-muted hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        className="p-1.5 rounded-lg text-fg-muted hover:bg-danger/10 hover:text-danger transition-colors"
                         onClick={() => setDeleteConfirmId(word.id)}
                         title="Delete word"
                         type="button"

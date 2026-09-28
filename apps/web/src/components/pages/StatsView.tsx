@@ -1,10 +1,9 @@
-import { BarChart3, BookOpen, Clock, Flame, PieChart, Target, TrendingUp, Users, Zap } from "lucide-react";
-import React, { lazy, Suspense, useMemo, useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { lazy, type ReactNode, Suspense, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { BarChart } from "@/components/stats/BarChart";
 import { ProgressRing } from "@/components/stats/ProgressRing";
-import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useBookStore } from "@/store/useBookStore";
@@ -14,52 +13,91 @@ import { calculateAnnualChallenge } from "@/utils/challenge";
 import { clampPercent } from "@/utils/number";
 
 const ReadingActivityHeatmap = lazy(() =>
-  import("@/components/stats/ReadingActivityHeatmap").then((m) => ({
-    default: m.ReadingActivityHeatmap,
-  }))
+  import("@/components/stats/ReadingActivityHeatmap").then((m) => ({ default: m.ReadingActivityHeatmap }))
 );
 
 const VocabularyReviewCard = lazy(() =>
-  import("@/components/vocabulary/VocabularyReviewCard").then((m) => ({
-    default: m.VocabularyReviewCard,
-  }))
+  import("@/components/vocabulary/VocabularyReviewCard").then((m) => ({ default: m.VocabularyReviewCard }))
 );
 
-type StatsTab = "charts" | "insights" | "overview" | "vocabulary";
+type StatsTab = "activity" | "overview" | "vocabulary";
 
-const TABS = [
-  { icon: BarChart3, id: "overview" as StatsTab, label: "Overview" },
-  { icon: PieChart, id: "charts" as StatsTab, label: "Charts" },
-  { icon: Zap, id: "insights" as StatsTab, label: "Insights" },
-  { icon: BookOpen, id: "vocabulary" as StatsTab, label: "Vocabulary" },
-] as const;
+const TABS: { id: StatsTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "activity", label: "Activity" },
+  { id: "vocabulary", label: "Vocabulary" },
+];
 
-function GoalProgress({
-  colorClassName,
-  label,
-  targetMinutes,
-  totalMinutes,
-}: {
-  colorClassName: string;
-  label: string;
-  targetMinutes: number;
-  totalMinutes: number;
-}) {
-  const progress = targetMinutes > 0 ? clampPercent((totalMinutes / targetMinutes) * 100) : 0;
+const MAX_SPINES = 60;
 
+function formatDuration(totalMinutes: number): { unit: string; value: string } {
+  const minutes = Math.round(totalMinutes);
+  if (minutes < 60) return { unit: "min", value: `${minutes}` };
+  const hours = minutes / 60;
+  return { unit: hours === 1 ? "hour" : "hours", value: hours >= 10 ? `${Math.round(hours)}` : hours.toFixed(1).replace(/\.0$/, "") };
+}
+
+function Figure({ label, note, unit, value }: { label: string; note?: string; unit?: string; value: ReactNode }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-fg-muted font-medium">{label}</span>
-        <span className="text-xs font-bold text-fg">{totalMinutes} / {targetMinutes}m</span>
-      </div>
-      <div className="h-2 bg-line/60 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${colorClassName}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+    <div className="bg-surface-raised px-5 py-5 sm:px-6">
+      <dt className="label-caps">{label}</dt>
+      <dd className="mt-2 flex items-baseline gap-1.5">
+        <span className="font-display text-4xl font-medium leading-none tabular-nums text-fg">{value}</span>
+        {unit && <span className="text-sm text-fg-muted">{unit}</span>}
+      </dd>
+      {note && <p className="mt-1.5 text-xs text-fg-muted">{note}</p>}
     </div>
+  );
+}
+
+function StepButton({ children, label, onClick }: { children: ReactNode; label: string; onClick: () => void }) {
+  return (
+    <button
+      aria-label={label}
+      className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-surface-raised text-fg-muted transition-colors hover:border-accent/50 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
+function SectionTitle({ aside, children }: { aside?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
+      <h2 className="font-display text-2xl font-medium tracking-tight text-fg">{children}</h2>
+      {aside && <div className="text-sm text-fg-muted">{aside}</div>}
+    </div>
+  );
+}
+
+function RankedList({ empty, items, title }: { empty: string; items: { count: number; label: string }[]; title: string }) {
+  const max = Math.max(1, ...items.map((item) => item.count));
+  return (
+    <section className="paper-card p-5 sm:p-6">
+      <h3 className="label-caps">{title}</h3>
+      {items.length > 0 ? (
+        <ol className="mt-4 space-y-3.5">
+          {items.map((item, index) => (
+            <li key={item.label}>
+              <div className="flex items-baseline gap-3">
+                <span className="folio w-5 text-xs text-accent">{index + 1}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-fg">{item.label}</span>
+                <span className="text-xs tabular-nums text-fg-muted">
+                  {item.count} {item.count === 1 ? "book" : "books"}
+                </span>
+              </div>
+              <div className="ml-8 mt-1.5 h-[3px] overflow-hidden rounded-full bg-line/70">
+                <div className="h-full rounded-full bg-accent/70" style={{ width: `${(item.count / max) * 100}%` }} />
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="mt-4 text-sm text-fg-muted">{empty}</p>
+      )}
+    </section>
   );
 }
 
@@ -71,382 +109,253 @@ function StatsView() {
     stats: state.stats,
   })));
   const books = useBookStore((state) => state.books);
-  const {
-    annualBookGoal,
-    annualGoalYear,
-    dailyGoal,
-    setAnnualBookGoal,
-    setDailyGoal,
-    setWeeklyGoal,
-    weeklyGoal,
-  } = useSettingsShallow((state) => ({
+  const { annualBookGoal, annualGoalYear, dailyGoal, setAnnualBookGoal, setWeeklyGoal, weeklyGoal } = useSettingsShallow((state) => ({
     annualBookGoal: state.annualBookGoal,
     annualGoalYear: state.annualGoalYear,
     dailyGoal: state.dailyGoal,
     setAnnualBookGoal: state.setAnnualBookGoal,
-    setDailyGoal: state.setDailyGoal,
     setWeeklyGoal: state.setWeeklyGoal,
     weeklyGoal: state.weeklyGoal,
   }));
-
-  const activeAnnualChallenge = useMemo(() => {
-    return calculateAnnualChallenge(books, annualBookGoal, new Date(), annualGoalYear);
-  }, [books, annualBookGoal, annualGoalYear]);
-  
-  const onUpdateGoal = (daily: number, weekly: number) => {
-    setDailyGoal(daily);
-    setWeeklyGoal(weekly);
-  };
-  
   const [activeTab, setActiveTab] = useState<StatsTab>("overview");
-  const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
-  const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
-  const dailyProgressPercent = dailyGoal > 0 ? clampPercent((stats.dailyProgress / dailyGoal) * 100) : 0;
-  const completionRate = stats.totalBooksInLibrary > 0
-    ? `${clampPercent((stats.totalBooksRead / stats.totalBooksInLibrary) * 100)}%`
-    : "N/A";
-  const averageSessionMinutes = sessions.length > 0 ? Math.round(stats.totalReadingTime / sessions.length) : 0;
 
-  // Only show reading speed when based on books with real page counts
-  const booksWithPageCounts = books.filter((b) => b.totalPages && b.totalPages > 0).length;
-  const shouldShowReadingSpeed = booksWithPageCounts > 0;
-
-  const insights = [
-    { icon: BookOpen, title: "Completion Rate", value: completionRate, desc: "Books finished" },
-    { icon: Clock, title: "Avg Session", value: `${averageSessionMinutes} min`, desc: "Per sitting" },
-    ...(shouldShowReadingSpeed
-      ? [{ icon: TrendingUp, title: "Reading Speed", value: `${stats.averageReadingSpeed}`, desc: "Pages/hour" }]
-      : []),
-    { icon: Target, title: "Today's Goal", value: `${dailyProgressPercent}%`, desc: "Progress" },
-  ];
-
+  const challenge = useMemo(
+    () => calculateAnnualChallenge(books, annualBookGoal, new Date(), annualGoalYear),
+    [books, annualBookGoal, annualGoalYear]
+  );
+  const weeklyTotal = useMemo(() => Math.round(stats.weeklyData.reduce((sum, d) => sum + d.minutes, 0)), [stats.weeklyData]);
+  const todayIndex = (new Date().getDay() + 6) % 7;
+  const dailyPercent = dailyGoal > 0 ? Math.round(clampPercent((stats.dailyProgress / dailyGoal) * 100)) : 0;
+  const weeklyPercent = weeklyGoal > 0 ? Math.round(clampPercent((weeklyTotal / weeklyGoal) * 100)) : 0;
+  const minutesLeft = Math.max(0, dailyGoal - stats.dailyProgress);
+  const totalTime = formatDuration(stats.totalReadingTime);
+  const averageSession = sessions.length > 0 ? Math.round(stats.totalReadingTime / sessions.length) : 0;
+  const hasPageCounts = books.some((b) => (b.totalPages ?? 0) > 0) && stats.averageReadingSpeed > 0;
+  const completionRate = stats.totalBooksInLibrary > 0 ? Math.round((stats.totalBooksRead / stats.totalBooksInLibrary) * 100) : null;
+  const spineCount = Math.min(challenge.goal, MAX_SPINES);
+  const filledSpines = challenge.goal > MAX_SPINES
+    ? Math.round((challenge.completedBooks / challenge.goal) * MAX_SPINES)
+    : challenge.completedBooks;
+  const paceText = challenge.paceStatus === "ahead"
+    ? `${challenge.aheadBehindCount} ${challenge.aheadBehindCount === 1 ? "book" : "books"} ahead of pace`
+    : challenge.paceStatus === "behind"
+      ? `${challenge.aheadBehindCount} ${challenge.aheadBehindCount === 1 ? "book" : "books"} behind pace`
+      : "On pace";
 
   return (
     <div className="page-narrow page-stack">
-      <PageHeader eyebrow="Your reading" title="Stats" />
+      <PageHeader
+        actions={goals && goalsStale ? <span className="rounded-full border border-line bg-subtle px-2.5 py-1 text-xs text-fg-muted">Offline figures</span> : undefined}
+        eyebrow="Your reading"
+        title="Stats"
+      />
 
-      <div className="flex gap-1 p-1 bg-surface/60 border border-line rounded-xl">
+      <div aria-label="Stats sections" className="-mt-4 flex gap-6 border-b border-line" role="tablist">
         {TABS.map((tab) => (
-          <Button
+          <button
+            aria-selected={activeTab === tab.id}
+            className={`-mb-px border-b-2 pb-3 pt-1 text-sm font-medium transition-colors ${
+              activeTab === tab.id ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg"
+            }`}
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            variant="nav"
-            className={`relative flex-1 gap-1.5 py-2 px-2.5 !rounded-lg text-sm font-medium transition-all duration-instant ${
-              activeTab === tab.id
-                ? "text-accent"
-                : "text-fg-muted/60 hover:text-fg"
-            }`}
+            role="tab"
+            type="button"
           >
-            {activeTab === tab.id && (
-              <div className="absolute inset-0 bg-surface rounded-lg shadow-sm" />
-            )}
-            <tab.icon className="w-3.5 h-3.5 relative" strokeWidth={1.75} />
-            <span className="hidden sm:inline relative">{tab.label}</span>
-          </Button>
+            {tab.label}
+          </button>
         ))}
       </div>
 
       {activeTab === "overview" && (
-        <div className="space-y-10">
-          {/* Hero: the one thing that matters today */}
-          <div className="relative overflow-hidden p-6 sm:p-8 paper-card">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
-              <div className="relative flex-shrink-0 mx-auto sm:mx-0">
-                <ProgressRing progress={dailyProgressPercent} size={128} stroke={8} />
+        <div className="space-y-12 animate-fadeIn">
+          <section className="paper-card grid divide-y divide-line/70 md:grid-cols-[1.25fr_1fr_1fr] md:divide-x md:divide-y-0">
+            <div className="flex items-center gap-6 p-6 sm:p-7">
+              <div className="relative shrink-0">
+                <ProgressRing progress={dailyPercent} size={112} stroke={6} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="font-display text-3xl font-medium text-fg tabular-nums leading-none">
-                    {dailyProgressPercent}%
-                  </span>
-                  <span className="text-2xs text-fg-muted mt-1">today</span>
+                  <span className="font-display text-3xl font-medium leading-none tabular-nums text-fg">{dailyPercent}%</span>
                 </div>
               </div>
-
-              <div className="flex-1 text-center sm:text-left">
-                <p className="font-display text-3xl font-medium text-fg tabular-nums">
-                  {stats.dailyProgress}{" "}
-                  <span className="text-base font-normal text-fg-muted">/ {dailyGoal} min</span>
+              <div className="min-w-0">
+                <p className="label-caps">Today</p>
+                <p className="mt-2 font-display text-4xl font-medium leading-none tabular-nums text-fg">
+                  {Math.round(stats.dailyProgress)}
+                  <span className="ml-1.5 font-sans text-sm font-normal text-fg-muted">of {dailyGoal} min</span>
                 </p>
-                <p className="text-sm text-fg-muted mt-1">
-                  {stats.dailyProgress >= dailyGoal ? "Goal achieved for today" : `${dailyGoal - stats.dailyProgress} min to your goal`}
+                <p className="mt-2.5 text-sm text-fg-muted">
+                  {minutesLeft === 0 ? "Daily goal reached." : `${Math.round(minutesLeft)} min to the daily goal.`}
                 </p>
-
-                <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
-                  <Flame className="w-4 h-4 text-accent" strokeWidth={1.75} />
-                  <span className="text-sm font-semibold text-fg tabular-nums">{stats.currentStreak}</span>
-                  <span className="text-xs text-fg-muted">day streak</span>
-                  <span className="text-fg-muted/30">·</span>
-                  <span className="text-xs text-fg-muted">best {stats.longestStreak}d</span>
-                </div>
               </div>
             </div>
 
-            {goals && (
-              <div className="mt-6 pt-6 border-t border-line grid grid-cols-2 gap-6">
-                <GoalProgress
-                  label="Daily time goal"
-                  totalMinutes={goals.day.totalMinutes}
-                  targetMinutes={goals.day.targetMinutes}
-                  colorClassName="bg-accent"
-                />
-                <GoalProgress
-                  label="Weekly time goal"
-                  totalMinutes={goals.week.totalMinutes}
-                  targetMinutes={goals.week.targetMinutes}
-                  colorClassName="bg-accent/60"
-                />
+            <div className="p-6 sm:p-7">
+              <p className="label-caps">Streak</p>
+              <p className="mt-2 font-display text-5xl font-medium leading-none tabular-nums text-fg">
+                {stats.currentStreak}
+                <span className="ml-1.5 font-sans text-sm font-normal text-fg-muted">{stats.currentStreak === 1 ? "day" : "days"}</span>
+              </p>
+              <div aria-label="Days read this week" className="mt-4 flex gap-1.5">
+                {stats.weeklyData.map((day, index) => (
+                  <div className="flex flex-col items-center gap-1" key={day.day}>
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        day.minutes > 0 ? "bg-accent" : index > todayIndex ? "border border-dashed border-line" : "bg-line"
+                      } ${index === todayIndex ? "ring-2 ring-accent/30 ring-offset-1 ring-offset-surface-raised" : ""}`}
+                      title={`${day.day}: ${Math.round(day.minutes)} min`}
+                    />
+                    <span className="text-3xs text-fg-muted">{day.day.charAt(0)}</span>
+                  </div>
+                ))}
               </div>
-            )}
-            {goals && goalsStale && (
-              <span className="absolute top-4 right-4 text-2xs text-fg-muted/60 px-2 py-0.5 rounded-full bg-line/60 border border-line font-medium">Offline</span>
-            )}
-          </div>
-
-          {/* Quiet detail: supporting numbers, no card chrome */}
-          <div>
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-line">
-              <div className="text-center px-2">
-                <p className="font-display text-2xl font-medium text-fg tabular-nums">{stats.totalBooksRead}</p>
-                <p className="text-xs text-fg-muted mt-0.5">Books read</p>
-              </div>
-              <div className="text-center px-2">
-                <p className="font-display text-2xl font-medium text-fg tabular-nums">{Math.round(stats.totalReadingTime / 60)}h</p>
-                <p className="text-xs text-fg-muted mt-0.5">{dailyAvg} min/day</p>
-              </div>
-              <div className="text-center px-2">
-                <p className="font-display text-2xl font-medium text-fg tabular-nums">{stats.averageReadingSpeed}</p>
-                <p className="text-xs text-fg-muted mt-0.5">Pages/hr</p>
-              </div>
-              <div className="text-center px-2">
-                <p className="font-display text-2xl font-medium text-fg tabular-nums">{stats.booksCompletedThisMonth}</p>
-                <p className="text-xs text-fg-muted mt-0.5">This month</p>
-              </div>
+              <p className="mt-3 text-xs text-fg-muted">Longest: {stats.longestStreak} {stats.longestStreak === 1 ? "day" : "days"}</p>
             </div>
-          </div>
 
-          {/* Annual Reading Challenge Card */}
-          <div className="p-6 rounded-xl bg-surface/40 border border-line">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-line/60">
+            <div className="p-6 sm:p-7">
+              <div className="flex items-start justify-between gap-3">
+                <p className="label-caps">This week</p>
+                <div className="flex items-center gap-1">
+                  <StepButton label="Lower weekly goal" onClick={() => setWeeklyGoal(Math.max(20, weeklyGoal - 10))}>
+                    <Minus className="h-3 w-3" />
+                  </StepButton>
+                  <StepButton label="Raise weekly goal" onClick={() => setWeeklyGoal(Math.min(500, weeklyGoal + 10))}>
+                    <Plus className="h-3 w-3" />
+                  </StepButton>
+                </div>
+              </div>
+              <p className="mt-2 font-display text-5xl font-medium leading-none tabular-nums text-fg">
+                {weeklyTotal}
+                <span className="ml-1.5 font-sans text-sm font-normal text-fg-muted">of {weeklyGoal} min</span>
+              </p>
+              <div className="mt-4 h-1 overflow-hidden rounded-full bg-line">
+                <div className="h-full rounded-full bg-accent transition-[width] duration-700" style={{ width: `${weeklyPercent}%` }} />
+              </div>
+              <p className="mt-3 text-xs text-fg-muted">{weeklyPercent}% of the weekly goal</p>
+            </div>
+          </section>
+
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line/80 shadow-paper lg:grid-cols-4">
+            <Figure label="Books finished" note={completionRate === null ? undefined : `${completionRate}% of your library`} value={stats.totalBooksRead} />
+            <Figure label="Time read" note={`${sessions.length} ${sessions.length === 1 ? "session" : "sessions"}`} unit={totalTime.unit} value={totalTime.value} />
+            <Figure label="Average session" unit="min" value={averageSession} />
+            {hasPageCounts ? (
+              <Figure label="Reading speed" unit="pages/hr" value={stats.averageReadingSpeed} />
+            ) : (
+              <Figure label="Finished this month" value={stats.booksCompletedThisMonth} />
+            )}
+          </dl>
+
+          <section>
+            <SectionTitle aside={`${weeklyTotal} min`}>This week</SectionTitle>
+            <div className="mt-6">
+              <BarChart
+                data={stats.weeklyData.map((d) => ({ label: d.day, value: Math.round(d.minutes) }))}
+                highlightIndex={todayIndex}
+                maxValue={Math.max(...stats.weeklyData.map((d) => d.minutes), 1)}
+                target={dailyGoal}
+                unit="min"
+              />
+            </div>
+          </section>
+
+          <section className="paper-card p-6 sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-6">
               <div>
-                <span className="text-xs font-semibold text-fg-muted uppercase [letter-spacing:0.05em]">
-                  Reading goal · {activeAnnualChallenge.year}
-                </span>
-                <h3 className="font-display font-medium text-lg text-fg mt-0.5">
-                  {activeAnnualChallenge.goal} books this year
-                </h3>
+                <p className="label-caps">Reading goal · {challenge.year}</p>
+                <p className="mt-2 font-display text-4xl font-medium leading-tight tracking-tight text-fg">
+                  {challenge.completedBooks} of {challenge.goal} books
+                </p>
+                <p className="mt-1.5 text-sm text-fg-muted">
+                  {paceText} · {challenge.daysRemaining} {challenge.daysRemaining === 1 ? "day" : "days"} left
+                </p>
               </div>
-
-              {/* Goal Presets & Stepper */}
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-2">
                 {[12, 24, 52].map((preset) => (
-                  <Button
+                  <button
+                    aria-pressed={annualBookGoal === preset}
+                    className={`rounded-md border px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
+                      annualBookGoal === preset
+                        ? "border-accent bg-accent text-accent-fg"
+                        : "border-line bg-surface-raised text-fg-muted hover:border-accent/50 hover:text-fg"
+                    }`}
                     key={preset}
                     onClick={() => setAnnualBookGoal(preset)}
-                    variant={annualBookGoal === preset ? "primary" : "secondary"}
-                    size="sm"
-                    className="!text-xs !py-1 !px-2.5 !h-auto"
+                    type="button"
                   >
-                    {preset} books
-                  </Button>
+                    {preset}
+                  </button>
                 ))}
-                <div className="flex items-center gap-1 ml-1 pl-2 border-l border-line">
-                  <Button
-                    onClick={() => setAnnualBookGoal(Math.max(1, annualBookGoal - 1))}
-                    variant="secondary"
-                    size="sm"
-                    className="!text-xs !p-1 !h-7 !w-7"
-                    aria-label="Decrease annual goal"
-                  >
-                    -
-                  </Button>
-                  <Button
-                    onClick={() => setAnnualBookGoal(annualBookGoal + 1)}
-                    variant="secondary"
-                    size="sm"
-                    className="!text-xs !p-1 !h-7 !w-7"
-                    aria-label="Increase annual goal"
-                  >
-                    +
-                  </Button>
-                </div>
+                <span className="mx-1 h-5 w-px bg-line" />
+                <StepButton label="Lower yearly goal" onClick={() => setAnnualBookGoal(Math.max(1, annualBookGoal - 1))}>
+                  <Minus className="h-3 w-3" />
+                </StepButton>
+                <StepButton label="Raise yearly goal" onClick={() => setAnnualBookGoal(annualBookGoal + 1)}>
+                  <Plus className="h-3 w-3" />
+                </StepButton>
               </div>
             </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-              <div className="relative flex-shrink-0 mx-auto sm:mx-0">
-                <ProgressRing progress={activeAnnualChallenge.percentComplete} size={96} stroke={7} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-fg tabular-nums leading-none">
-                    {activeAnnualChallenge.percentComplete}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1 text-center sm:text-left space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-baseline gap-2">
-                  <p className="font-display text-2xl font-medium text-fg tabular-nums">
-                    {activeAnnualChallenge.completedBooks}{" "}
-                    <span className="text-sm font-normal text-fg-muted">
-                      of {activeAnnualChallenge.goal} books completed
-                    </span>
-                  </p>
-                </div>
-
-                {/* Pace status badge */}
-                <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
-                  {activeAnnualChallenge.paceStatus === "ahead" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      {activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} ahead of schedule
-                    </span>
-                  )}
-                  {activeAnnualChallenge.paceStatus === "behind" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-line/50 text-fg-muted border border-line">
-                      <Clock className="w-3.5 h-3.5" />
-                      {activeAnnualChallenge.aheadBehindCount} {activeAnnualChallenge.aheadBehindCount === 1 ? "book" : "books"} behind schedule
-                    </span>
-                  )}
-                  {activeAnnualChallenge.paceStatus === "on-pace" && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
-                      <Target className="w-3.5 h-3.5" />
-                      On schedule for {activeAnnualChallenge.year}
-                    </span>
-                  )}
-                  <span className="text-xs text-fg-muted">
-                    · {activeAnnualChallenge.daysRemaining} days left
-                  </span>
-                </div>
-              </div>
+            <div
+              aria-label={`${challenge.completedBooks} of ${challenge.goal} books finished`}
+              className="mt-7 flex flex-wrap items-end gap-[3px] border-b-2 border-fg/70 pb-px"
+              role="img"
+            >
+              {Array.from({ length: spineCount }, (_, index) => {
+                const filled = index < filledSpines;
+                const height = 30 + ((index * 7) % 4) * 4;
+                return (
+                  <span
+                    className={`w-[9px] rounded-t-[1px] ${filled ? "bg-accent" : "border border-b-0 border-line bg-subtle"}`}
+                    key={index}
+                    style={{ height, opacity: filled ? 0.7 + ((index * 13) % 4) * 0.1 : 1 }}
+                  />
+                );
+              })}
             </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="label-caps">This Week</h3>
-              <span className="text-xs text-fg-muted tabular-nums">{weeklyTotal} min</span>
-            </div>
-            <BarChart
-              data={stats.weeklyData.map((d) => ({ label: d.day, value: d.minutes }))}
-              maxValue={Math.max(...stats.weeklyData.map((d) => d.minutes), 1)}
-              unit="min"
-            />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-fg-muted">
-                Weekly goal: <span className="font-semibold tabular-nums text-fg">{weeklyGoal} min</span>
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => onUpdateGoal(Math.max(5, dailyGoal - 5), Math.max(20, weeklyGoal - 20))}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Easier
-                </Button>
-                <Button
-                  onClick={() => onUpdateGoal(dailyGoal + 5, weeklyGoal + 20)}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Harder
-                </Button>
-              </div>
-            </div>
-          </div>
-
+            {challenge.goal > MAX_SPINES && <p className="mt-2 text-xs text-fg-muted">Each spine is about {Math.round(challenge.goal / MAX_SPINES * 10) / 10} books.</p>}
+          </section>
         </div>
       )}
 
-      {activeTab === "charts" && (
-        <div className="space-y-8">
-          <Suspense fallback={null}>
-            <ReadingActivityHeatmap
-              dailyTargetMinutes={dailyGoal}
-              sessions={sessions}
-            />
+      {activeTab === "activity" && (
+        <div className="space-y-12 animate-fadeIn">
+          <Suspense fallback={<div className="flex justify-center p-8"><LoadingSpinner className="h-6 w-6" /></div>}>
+            <ReadingActivityHeatmap dailyTargetMinutes={dailyGoal} sessions={sessions} />
           </Suspense>
 
-          <div className="p-5 rounded-xl bg-surface/40 border border-line">
-            <h3 className="label-caps mb-4">Monthly Hours</h3>
-            <BarChart
-              data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
-              maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
-              unit="hours"
+          <section>
+            <SectionTitle aside="last six months">Hours by month</SectionTitle>
+            <div className="mt-6">
+              <BarChart
+                data={stats.monthlyData.map((d) => ({ label: d.month, value: d.hours }))}
+                highlightIndex={stats.monthlyData.length - 1}
+                maxValue={Math.max(...stats.monthlyData.map((d) => d.hours), 1)}
+                unit="h"
+              />
+            </div>
+          </section>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <RankedList
+              empty="No genres recorded. Genres come from book details."
+              items={stats.genreDistribution.map((g) => ({ count: g.count, label: g.genre })).sort((a, b) => b.count - a.count).slice(0, 6)}
+              title="Genres"
+            />
+            <RankedList
+              empty="Authors appear here once books are in your library."
+              items={stats.authorNetwork.map((a) => ({ count: a.books, label: a.author }))}
+              title="Authors"
             />
           </div>
-
-          <div className="grid sm:grid-cols-2 gap-8">
-            <div>
-              <h3 className="label-caps mb-3">Genres</h3>
-              {stats.genreDistribution.length > 0 ? (
-                <div className="space-y-2.5">
-                  {stats.genreDistribution.map((g) => (
-                    <div key={g.genre} className="flex items-center gap-2.5">
-                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: g.color }} />
-                      <span className="flex-1 text-sm text-fg">{g.genre}</span>
-                      <span className="text-xs font-medium text-fg-muted tabular-nums">
-                        {g.count}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-fg-muted">Add genres to see distribution</p>
-              )}
-            </div>
-
-            <div>
-              <h3 className="label-caps mb-3">Top Authors</h3>
-              {stats.authorNetwork.length > 0 ? (
-                <div className="space-y-2.5">
-                  {stats.authorNetwork.map((a) => (
-                    <div key={a.author} className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-accent/8 flex items-center justify-center flex-shrink-0">
-                        <Users className="w-3.5 h-3.5 text-accent" strokeWidth={1.75} />
-                      </div>
-                      <span className="flex-1 text-sm text-fg">{a.author}</span>
-                      <span className="text-xs font-medium text-fg-muted tabular-nums">
-                        {a.books}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-fg-muted">Start reading to see favorites</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "insights" && (
-        <div className="space-y-8">
-          <div>
-            <h3 className="label-caps mb-3">Insights</h3>
-            <div className="space-y-3">
-              {insights.map((item) => (
-                <div key={item.title} className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-surface/80 border border-line/60 flex-shrink-0">
-                    <item.icon className="w-4 h-4 text-fg-muted" strokeWidth={1.75} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-fg">{item.title}</p>
-                    <p className="text-xs text-fg-muted">{item.desc}</p>
-                  </div>
-                  <span className="text-base font-bold text-accent tabular-nums">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
       )}
 
       {activeTab === "vocabulary" && (
-        <Suspense fallback={<div className="flex justify-center p-8"><LoadingSpinner className="w-6 h-6" /></div>}>
+        <Suspense fallback={<div className="flex justify-center p-8"><LoadingSpinner className="h-6 w-6" /></div>}>
           <VocabularyReviewCard />
         </Suspense>
       )}
     </div>
   );
-};
+}
 
 export default StatsView;
