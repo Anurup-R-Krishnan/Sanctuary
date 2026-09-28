@@ -16,7 +16,6 @@ import {
   calculateSessionProgress,
   formatClock,
   isUserInactive,
-  playSessionCompletionChime,
 } from '@/utils/readingTimerEngine';
 import { toLocalDateKey } from '@/utils/stats';
 
@@ -32,17 +31,13 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
     readerAccent,
     readerForeground,
     sessionBudgetMinutes,
-    sessionChimeEnabled,
     setSessionBudgetMinutes,
-    setSessionChimeEnabled,
   } = useSettingsShallow((state) => ({
     dailyGoal: state.dailyGoal,
     readerAccent: state.readerAccent,
     readerForeground: state.readerForeground,
     sessionBudgetMinutes: state.sessionBudgetMinutes,
-    sessionChimeEnabled: state.sessionChimeEnabled,
     setSessionBudgetMinutes: state.setSessionBudgetMinutes,
-    setSessionChimeEnabled: state.setSessionChimeEnabled,
   }));
 
   const sessions = useStatsStore((state) => state.sessions);
@@ -52,7 +47,6 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const lastActivityRef = useRef<number>(Date.now());
-  const hasChimedRef = useRef<boolean>(false);
 
   // Activity listeners to detect user interaction and reset idle timer
   const recordActivity = useCallback(() => {
@@ -113,25 +107,6 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
       dailyGoal
     );
   }, [elapsedSeconds, sessionBudgetMinutes, todayPriorMinutes, dailyGoal]);
-
-  // Handle completion chime trigger once when session target is achieved
-  useEffect(() => {
-    if (progress.isSessionGoalMet && !hasChimedRef.current) {
-      hasChimedRef.current = true;
-      if (sessionChimeEnabled) {
-        void playSessionCompletionChime();
-      }
-    }
-  }, [progress.isSessionGoalMet, sessionChimeEnabled]);
-
-  // Reset chime flag if session target is changed to a higher budget
-  const prevBudgetRef = useRef(sessionBudgetMinutes);
-  useEffect(() => {
-    if (sessionBudgetMinutes > prevBudgetRef.current) {
-      hasChimedRef.current = false;
-    }
-    prevBudgetRef.current = sessionBudgetMinutes;
-  }, [sessionBudgetMinutes]);
 
   // SVG Circular progress ring calculation
   const ringRadius = 8.5;
@@ -218,10 +193,8 @@ export function ReaderSessionTimer({ className = '' }: ReaderSessionTimerProps) 
             onClose={() => setIsModalOpen(false)}
             remainingSeconds={progress.remainingSeconds}
             sessionBudgetMinutes={sessionBudgetMinutes}
-            sessionChimeEnabled={sessionChimeEnabled}
             sessionPercent={progress.sessionPercent}
             setSessionBudgetMinutes={setSessionBudgetMinutes}
-            setSessionChimeEnabled={setSessionChimeEnabled}
             todayMinutesTotal={progress.todayMinutesTotal}
           />
         </Suspense>

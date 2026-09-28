@@ -85,6 +85,8 @@ export function VocabularyReviewCard({ onRefreshStats }: VocabularyReviewCardPro
 
   const handlePlayAudio = () => {
     if (currentWord?.audioUrl) {
+      // Pronunciation the user asked to hear (spoken content like read-aloud), not a sound effect.
+      // eslint-disable-next-line no-restricted-syntax
       new Audio(currentWord.audioUrl).play().catch(() => {});
     } else if (typeof window !== "undefined" && "speechSynthesis" in window && currentWord) {
       const u = new SpeechSynthesisUtterance(currentWord.word);

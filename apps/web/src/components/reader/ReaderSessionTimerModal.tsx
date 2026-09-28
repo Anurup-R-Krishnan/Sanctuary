@@ -1,12 +1,9 @@
 import {
-  Bell,
-  BellOff,
   Check,
   CheckCircle2,
   Clock,
   Flame,
   PauseCircle,
-  Volume2,
   X,
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -15,7 +12,6 @@ import { createPortal } from 'react-dom';
 import {
   formatClock,
   formatDurationCompact,
-  playSessionCompletionChime,
 } from '@/utils/readingTimerEngine';
 
 export interface ReaderSessionTimerModalProps {
@@ -29,10 +25,8 @@ export interface ReaderSessionTimerModalProps {
   onClose: () => void;
   remainingSeconds: number;
   sessionBudgetMinutes: number;
-  sessionChimeEnabled: boolean;
   sessionPercent: number;
   setSessionBudgetMinutes: (minutes: number) => void;
-  setSessionChimeEnabled: (enabled: boolean) => void;
   todayMinutesTotal: number;
 }
 
@@ -49,13 +43,10 @@ export function ReaderSessionTimerModal({
   onClose,
   remainingSeconds,
   sessionBudgetMinutes,
-  sessionChimeEnabled,
   sessionPercent,
   setSessionBudgetMinutes,
-  setSessionChimeEnabled,
   todayMinutesTotal,
 }: ReaderSessionTimerModalProps) {
-  const [isPlayingChime, setIsPlayingChime] = useState(false);
   const [customInput, setCustomInput] = useState('');
 
   // Keyboard accessibility: Escape key dismisses modal
@@ -69,14 +60,6 @@ export function ReaderSessionTimerModal({
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-
-  const handlePreviewChime = async () => {
-    setIsPlayingChime(true);
-    await playSessionCompletionChime();
-    setTimeout(() => {
-      setIsPlayingChime(false);
-    }, 1600);
-  };
 
   const parsedCustom = parseInt(customInput, 10);
   const isValidCustom = !isNaN(parsedCustom) && parsedCustom >= 1 && parsedCustom <= 180;
@@ -294,61 +277,6 @@ export function ReaderSessionTimerModal({
           </div>
         </div>
 
-        {/* Chime Settings */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-2.5">
-            <button
-              aria-label={
-                sessionChimeEnabled
-                  ? 'Disable completion chime'
-                  : 'Enable completion chime'
-              }
-              className={`p-2 rounded-xl border transition-colors ${
-                sessionChimeEnabled
-                  ? 'bg-accent/10 border-accent/30 text-accent'
-                  : 'border-line text-fg-muted'
-              }`}
-              onClick={() => setSessionChimeEnabled(!sessionChimeEnabled)}
-              type="button"
-            >
-              {sessionChimeEnabled ? (
-                <Bell className="w-4 h-4" />
-              ) : (
-                <BellOff className="w-4 h-4" />
-              )}
-            </button>
-            <div className="text-left">
-              <div className="flex items-center gap-1.5">
-                <p className="text-xs font-medium text-fg">
-                  Completion Chime
-                </p>
-                <span
-                  className={`text-2xs font-semibold px-1.5 py-0.2 rounded-full ${
-                    sessionChimeEnabled
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-surface/80 border border-line/60 text-fg-muted'
-                  }`}
-                >
-                  {sessionChimeEnabled ? 'On' : 'Off'}
-                </span>
-              </div>
-              <p className="text-2xs text-fg-muted">
-                Plays a chime when your reading session ends
-              </p>
-            </div>
-          </div>
-
-          <button
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border border-line hover:bg-line/40 text-fg flex items-center gap-1.5 transition-opacity ${
-              isPlayingChime ? 'opacity-60 pointer-events-none' : ''
-            }`}
-            onClick={handlePreviewChime}
-            type="button"
-          >
-            <Volume2 className="w-3.5 h-3.5 text-accent" />
-            <span>{isPlayingChime ? 'Playing...' : 'Test'}</span>
-          </button>
-        </div>
       </div>
     </div>,
     document.body

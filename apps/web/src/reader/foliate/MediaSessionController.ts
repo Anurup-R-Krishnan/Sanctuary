@@ -21,28 +21,10 @@ export interface MediaSessionActionHandlers {
  */
 export class MediaSessionController {
   private isAvailable: boolean;
-  private silentAudio: HTMLAudioElement | null = null;
 
   constructor() {
     this.isAvailable =
       typeof navigator !== "undefined" && "mediaSession" in navigator && !!navigator.mediaSession;
-    this.initSilentAudio();
-  }
-
-  private initSilentAudio(): void {
-    if (typeof Audio !== "undefined") {
-      try {
-        // 1-second silent WAV to keep OS audio pipelines active on mobile screens
-        const silentWav =
-          "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-        const audio = new Audio(silentWav);
-        audio.loop = true;
-        audio.volume = 0.001;
-        this.silentAudio = audio;
-      } catch {
-        this.silentAudio = null;
-      }
-    }
   }
 
   public isSupported(): boolean {
@@ -101,16 +83,6 @@ export class MediaSessionController {
   }
 
   public setPlaybackState(state: "none" | "paused" | "playing"): void {
-    if (this.silentAudio) {
-      if (state === "playing") {
-        this.silentAudio.play().catch(() => {
-          // Browser may block unprompted audio autoplay
-        });
-      } else {
-        this.silentAudio.pause();
-      }
-    }
-
     if (!this.isAvailable) return;
 
     try {
@@ -121,16 +93,6 @@ export class MediaSessionController {
   }
 
   public destroy(): void {
-    if (this.silentAudio) {
-      try {
-        this.silentAudio.pause();
-        this.silentAudio.src = "";
-      } catch {
-        // Ignore errors during audio teardown
-      }
-      this.silentAudio = null;
-    }
-
     if (!this.isAvailable) return;
 
     const actions: MediaSessionAction[] = ["play", "pause", "nexttrack", "previoustrack"];

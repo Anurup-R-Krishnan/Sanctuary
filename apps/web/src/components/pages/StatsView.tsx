@@ -1,17 +1,14 @@
-import { BarChart3, BookOpen, Calendar, Clock, Flame, PieChart, Target, TrendingUp, Trophy, Users, Zap } from "lucide-react";
+import { BarChart3, BookOpen, Clock, Flame, PieChart, Target, TrendingUp, Users, Zap } from "lucide-react";
 import React, { lazy, Suspense, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
-import { BadgeCard } from "@/components/stats/BadgeCard";
 import { BarChart } from "@/components/stats/BarChart";
 import { ProgressRing } from "@/components/stats/ProgressRing";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { statsService } from "@/services/StatsService";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import { useStatsStore } from "@/store/useStatsStore";
-import { calculateBadgeSummary, evaluateBadges } from "@/utils/badgeEngine";
 import { calculateAnnualChallenge } from "@/utils/challenge";
 import { clampPercent } from "@/utils/number";
 
@@ -21,24 +18,17 @@ const ReadingActivityHeatmap = lazy(() =>
   }))
 );
 
-const StreakProtectionCard = lazy(() =>
-  import("@/components/stats/StreakProtectionCard").then((m) => ({
-    default: m.StreakProtectionCard,
-  }))
-);
-
 const VocabularyReviewCard = lazy(() =>
   import("@/components/vocabulary/VocabularyReviewCard").then((m) => ({
     default: m.VocabularyReviewCard,
   }))
 );
 
-type StatsTab = "badges" | "charts" | "insights" | "overview" | "vocabulary";
+type StatsTab = "charts" | "insights" | "overview" | "vocabulary";
 
 const TABS = [
   { icon: BarChart3, id: "overview" as StatsTab, label: "Overview" },
   { icon: PieChart, id: "charts" as StatsTab, label: "Charts" },
-  { icon: Trophy, id: "badges" as StatsTab, label: "Badges" },
   { icon: Zap, id: "insights" as StatsTab, label: "Insights" },
   { icon: BookOpen, id: "vocabulary" as StatsTab, label: "Vocabulary" },
 ] as const;
@@ -108,29 +98,6 @@ function StatsView() {
   };
   
   const [activeTab, setActiveTab] = useState<StatsTab>("overview");
-  const [badgeFilter, setBadgeFilter] = useState<"all" | "in-progress" | "locked" | "unlocked">("all");
-
-  const evaluatedBadges = useMemo(() => {
-    return evaluateBadges({
-      aggregates: statsService.getAggregates(),
-      books,
-      currentStreak: stats.currentStreak,
-      longestStreak: stats.longestStreak,
-    });
-  }, [books, stats.currentStreak, stats.longestStreak]);
-
-  const badgeSummary = useMemo(() => {
-    return calculateBadgeSummary(evaluatedBadges);
-  }, [evaluatedBadges]);
-
-  const filteredBadges = useMemo(() => {
-    return evaluatedBadges.filter((b) => {
-      if (badgeFilter === "unlocked") return b.unlocked;
-      if (badgeFilter === "locked") return !b.unlocked;
-      if (badgeFilter === "in-progress") return !b.unlocked && Boolean(b.target && (b.progress ?? 0) > 0);
-      return true;
-    });
-  }, [evaluatedBadges, badgeFilter]);
   const weeklyTotal = useMemo(() => stats.weeklyData.reduce((a, d) => a + d.minutes, 0), [stats.weeklyData]);
   const dailyAvg = useMemo(() => Math.round(weeklyTotal / 7), [weeklyTotal]);
   const dailyProgressPercent = dailyGoal > 0 ? clampPercent((stats.dailyProgress / dailyGoal) * 100) : 0;
@@ -152,20 +119,6 @@ function StatsView() {
     { icon: Target, title: "Today's Goal", value: `${dailyProgressPercent}%`, desc: "Progress" },
   ];
 
-  const milestones = [
-    { icon: BookOpen, title: "5 Books", progress: stats.totalBooksRead, target: 5, show: stats.totalBooksRead < 5 },
-    { icon: Flame, title: "7 Day Streak", progress: stats.currentStreak, target: 7, show: stats.currentStreak < 7 },
-    { icon: Calendar, title: "100 Pages", progress: stats.totalPagesRead, target: 100, show: stats.totalPagesRead < 100 },
-    {
-      icon: Clock,
-      title: "10 Hours",
-      progress: Math.round(stats.totalReadingTime * 10) / 10,
-      progressDisplay: `${(stats.totalReadingTime / 60).toFixed(1)} / 10 h`,
-      target: 600,
-      show: stats.totalReadingTime < 600,
-      isTimeFormat: true,
-    },
-  ].filter((milestone) => milestone.show);
 
   return (
     <div className="page-narrow page-stack">
@@ -367,17 +320,6 @@ function StatsView() {
             </div>
           </div>
 
-          {/* Smart Reading Streak & Habit Protection Showcase */}
-          <Suspense
-            fallback={
-              <div className="p-6 rounded-3xl bg-surface/40 border border-line flex items-center justify-center min-h-[220px]">
-                <LoadingSpinner className="w-5 h-5 text-fg-muted" />
-              </div>
-            }
-          >
-            <StreakProtectionCard dailyGoal={dailyGoal} sessions={sessions} />
-          </Suspense>
-
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide">This Week</h3>
@@ -476,66 +418,6 @@ function StatsView() {
         </div>
       )}
 
-      {activeTab === "badges" && (
-        <div className="space-y-6">
-          {/* Showcase Mastery Banner */}
-          <div className="p-5 rounded-2xl bg-surface/40 border border-line flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-fg flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-500" />
-                <span>Reading Trophy Case</span>
-              </h3>
-              <p className="text-xs text-fg-muted">
-                {badgeSummary.unlocked} of {badgeSummary.total} accomplishments unlocked ({badgeSummary.percent}%)
-              </p>
-            </div>
-            <div className="w-full sm:w-48 space-y-1.5">
-              <div className="h-2 rounded-full bg-line/60 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 transition-all duration-500"
-                  style={{ width: `${badgeSummary.percent}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-2xs text-fg-muted font-mono">
-                <span>{badgeSummary.unlocked} Unlocked</span>
-                <span>{badgeSummary.percent}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
-            {(["all", "unlocked", "in-progress", "locked"] as const).map((status) => (
-              <button
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
-                  badgeFilter === status
-                    ? "bg-accent text-white dark:text-black font-semibold shadow-sm"
-                    : "bg-surface/60 border border-line/60 hover:bg-line/40 text-fg-muted"
-                }`}
-                key={status}
-                onClick={() => setBadgeFilter(status)}
-                type="button"
-              >
-                {status === "all" ? "All Trophies" : status.replace("-", " ")}
-              </button>
-            ))}
-          </div>
-
-          {/* Grid */}
-          {filteredBadges.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredBadges.map((badge) => (
-                <BadgeCard badge={badge} key={badge.id} />
-              ))}
-            </div>
-          ) : (
-            <div className="py-12 text-center text-sm text-fg-muted">
-              No trophies match this filter. Keep reading to unlock more!
-            </div>
-          )}
-        </div>
-      )}
-
       {activeTab === "insights" && (
         <div className="space-y-8">
           <div>
@@ -556,32 +438,6 @@ function StatsView() {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wide mb-3">Milestones</h3>
-            <div className="space-y-3">
-              {milestones.map((m) => (
-                  <div key={m.title} className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-surface/80 border border-line/60 flex-shrink-0">
-                      <m.icon className="w-4 h-4 text-fg-muted" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-fg">{m.title}</span>
-                        <span className="text-2xs text-fg-muted tabular-nums">
-                          {m.progressDisplay || `${m.progress}/${m.target}`}
-                        </span>
-                      </div>
-                      <div className="h-1 bg-line/60 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 rounded-full transition-all"
-                          style={{ width: `${clampPercent((m.progress / m.target) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
         </div>
       )}
 

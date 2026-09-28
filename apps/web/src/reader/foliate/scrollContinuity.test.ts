@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, mock } from "bun:test";
+import { beforeAll, describe, expect, it, mock, setSystemTime } from "bun:test";
 
 import { ScrollContinuity, type ScrollContinuityRenderer } from "./ScrollContinuity";
 import { ensureTestDom } from "./testEnv";
@@ -152,7 +152,7 @@ describe("ScrollContinuity", () => {
     expect(renderer.prevMock).toHaveBeenCalledTimes(0);
   });
 
-  it("crosses on native scroll event at bottom edge in continuous mode", () => {
+  it("stays at the bottom edge until a second separate scroll gesture in continuous mode", () => {
     const sc = new ScrollContinuity();
     const renderer = createMockRenderer({
       end: 1400,
@@ -162,14 +162,31 @@ describe("ScrollContinuity", () => {
     });
     sc.attachRenderer(renderer);
     sc.setMode("continuous");
+    const doc = document.createElement("div");
+    sc.attachDocument(doc as unknown as Document);
 
     renderer.start = 1000;
     renderer.end = 1500;
-    const scrollListener = renderer.listeners["scroll"]?.[0] as EventListener;
-    expect(scrollListener).toBeDefined();
+    (renderer.listeners["scroll"]?.[0] as EventListener)(new Event("scroll"));
+    expect(renderer.nextMock).toHaveBeenCalledTimes(0);
 
-    scrollListener(new Event("scroll"));
+    const wheel = () => {
+      const WheelEventCtor = (window as unknown as { WheelEvent?: typeof WheelEvent }).WheelEvent;
+      doc.dispatchEvent(
+        WheelEventCtor ? new WheelEventCtor("wheel", { deltaY: 20 }) : Object.assign(new Event("wheel"), { deltaY: 20 })
+      );
+    };
+
+    setSystemTime(new Date(1_000_000));
+    wheel();
+    setSystemTime(new Date(1_000_100));
+    wheel();
+    expect(renderer.nextMock).toHaveBeenCalledTimes(0);
+
+    setSystemTime(new Date(1_001_000));
+    wheel();
     expect(renderer.nextMock).toHaveBeenCalledTimes(1);
+    setSystemTime();
   });
 
   it("handles short sections smaller than viewport by crossing in continuous mode", () => {

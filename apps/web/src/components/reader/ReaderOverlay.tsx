@@ -8,13 +8,6 @@ import ReaderControls from "@/components/reader/ReaderControls";
 import ReaderFooter from "@/components/reader/ReaderFooter";
 import ReaderHeader from "@/components/reader/ReaderHeader";
 import { ReaderSearchPanel } from "@/components/reader/ReaderSearchPanel";
-import { useAmbientSoundStore } from "@/store/useAmbientSoundStore";
-
-const ReaderAmbientSoundPopover = lazy(() =>
-  import("@/components/reader/ReaderAmbientSoundPopover").then((m) => ({
-    default: m.ReaderAmbientSoundPopover,
-  }))
-);
 
 const ReaderAnnotationsPanel = lazy(() =>
   import("@/components/reader/ReaderAnnotationsPanel").then((m) => ({
@@ -44,7 +37,6 @@ interface ReaderOverlayProps {
   isLoading: boolean;
   isReadabilityActive?: boolean;
   isTTSActive?: boolean;
-  isXRayActive?: boolean;
   isZenModeActive?: boolean;
   onChangeTTSParagraphPause?: (ms: number) => void;
   onChangeTTSRate?: (rate: number) => void;
@@ -56,7 +48,6 @@ interface ReaderOverlayProps {
   onCloseSearch: () => void;
   onCloseSettings: () => void;
   onCloseTTS?: () => void;
-  onCreateQuoteCard?: (text: string, chapterLabel?: string) => void;
   onDeleteAnnotation: (cfiRange: string) => void;
   onGoToSearchResult: (index: number) => void;
   onJumpToBottom: () => void;
@@ -81,7 +72,6 @@ interface ReaderOverlayProps {
   onToggleSpeedReader?: () => void;
   onToggleTOC: () => void;
   onToggleTTS?: () => void;
-  onToggleXRay?: () => void;
   onToggleZenMode?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   paragraphPauseMs?: number;
@@ -117,9 +107,6 @@ function ReaderOverlay(props: ReaderOverlayProps) {
     props.showSearch ||
     props.showAnnotations;
 
-  const isAmbientPopoverOpen = useAmbientSoundStore((state) => state.isPopoverOpen);
-  const toggleAmbientPopover = useAmbientSoundStore((state) => state.togglePopover);
-  const closeAmbientPopover = useAmbientSoundStore((state) => state.setPopoverOpen);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-50">
@@ -127,16 +114,13 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         book={props.book}
         chapterEstimatedMinutesRemaining={props.chapterEstimatedMinutesRemaining}
         chapterLabel={props.chapterLabel}
-        isAmbientActive={useAmbientSoundStore.getState().isPlaying}
         isAutoScrollActive={props.isAutoScrollActive}
         isBookmarked={props.isBookmarked}
         isFullscreen={props.isFullscreen}
         isReadabilityActive={props.isReadabilityActive}
         isTTSActive={props.isTTSActive}
-        isXRayActive={props.isXRayActive}
         isZenModeActive={props.isZenModeActive}
         onClose={props.onClose}
-        onToggleAmbient={toggleAmbientPopover}
         onToggleAnnotations={props.onToggleAnnotations}
         onToggleAutoScroll={props.onToggleAutoScroll}
         onToggleBookmark={props.onToggleBookmark}
@@ -147,17 +131,10 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         onToggleSpeedReader={props.onToggleSpeedReader}
         onToggleTOC={props.onToggleTOC}
         onToggleTTS={props.onToggleTTS}
-        onToggleXRay={props.onToggleXRay}
         onToggleZenMode={props.onToggleZenMode}
         readingSpeedWpm={props.readingSpeedWpm}
         showUI={props.showUI}
       />
-
-      {isAmbientPopoverOpen && (
-        <Suspense fallback={null}>
-          <ReaderAmbientSoundPopover onClose={() => closeAmbientPopover(false)} />
-        </Suspense>
-      )}
 
       {props.isTTSActive && props.speechState && (
         <Suspense fallback={null}>
@@ -243,7 +220,6 @@ function ReaderOverlay(props: ReaderOverlayProps) {
                   annotations={props.annotations}
                   bookAuthor={props.book.author}
                   bookTitle={props.book.title}
-                  onCreateQuoteCard={props.onCreateQuoteCard}
                   onDeleteAnnotation={props.onDeleteAnnotation}
                   onGoToAnnotation={props.onNavigate}
                   onUpdateAnnotation={props.onUpdateAnnotation}

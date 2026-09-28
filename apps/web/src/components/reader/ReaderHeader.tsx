@@ -13,8 +13,6 @@ import {
     Search,
     Settings,
     SlidersHorizontal,
-    Users,
-    Waves,
     Zap,
 } from "lucide-react";
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
@@ -31,16 +29,13 @@ interface ReaderHeaderProps {
     book: Book;
     chapterEstimatedMinutesRemaining?: number | null;
     chapterLabel?: string;
-    isAmbientActive?: boolean;
     isAutoScrollActive?: boolean;
     isBookmarked: boolean;
     isFullscreen: boolean;
     isReadabilityActive?: boolean;
     isTTSActive?: boolean;
-    isXRayActive?: boolean;
     isZenModeActive?: boolean;
     onClose: () => void;
-    onToggleAmbient?: () => void;
     onToggleAnnotations: () => void;
     onToggleAutoScroll?: () => void;
     onToggleBookmark: () => void;
@@ -51,7 +46,6 @@ interface ReaderHeaderProps {
     onToggleSpeedReader?: () => void;
     onToggleTOC: () => void;
     onToggleTTS?: () => void;
-    onToggleXRay?: () => void;
     onToggleZenMode?: () => void;
     readingSpeedWpm?: number | null;
     showUI: boolean;
@@ -61,16 +55,13 @@ function ReaderHeader({
     book,
     chapterEstimatedMinutesRemaining,
     chapterLabel,
-    isAmbientActive,
     isAutoScrollActive,
     isBookmarked,
     isFullscreen,
     isReadabilityActive,
     isTTSActive,
-    isXRayActive,
     isZenModeActive,
     onClose,
-    onToggleAmbient,
     onToggleAnnotations,
     onToggleAutoScroll,
     onToggleBookmark,
@@ -81,7 +72,6 @@ function ReaderHeader({
     onToggleSpeedReader,
     onToggleTOC,
     onToggleTTS,
-    onToggleXRay,
     onToggleZenMode,
     readingSpeedWpm,
     showUI,
@@ -115,7 +105,7 @@ function ReaderHeader({
     }, [showToolsMenu]);
 
     const hasActiveTool = Boolean(
-        isTTSActive || isZenModeActive || isXRayActive || isAutoScrollActive || isReadabilityActive || isAmbientActive
+        isTTSActive || isZenModeActive || isAutoScrollActive || isReadabilityActive
     );
 
     const ActionBtn = ({ icon: Icon, label, onClick, active }: {
@@ -299,15 +289,6 @@ function ReaderHeader({
                                         onClick={onToggleSpeedReader}
                                     />
                                 )}
-                                {onToggleXRay && (
-                                    <ToolItem
-                                        active={isXRayActive}
-                                        icon={Users}
-                                        label="X-Ray"
-                                        onClick={onToggleXRay}
-                                        shortcut="X"
-                                    />
-                                )}
                                 {onToggleReadability && (
                                     <ToolItem
                                         active={isReadabilityActive}
@@ -324,14 +305,6 @@ function ReaderHeader({
                                         label="Zen Focus"
                                         onClick={onToggleZenMode}
                                         shortcut="Z"
-                                    />
-                                )}
-                                {onToggleAmbient && (
-                                    <ToolItem
-                                        active={isAmbientActive}
-                                        icon={Waves}
-                                        label="Ambient Sound"
-                                        onClick={onToggleAmbient}
                                     />
                                 )}
                             </div>

@@ -45,7 +45,6 @@ type SettingsValues = {
   readerForeground: string;
   reduceMotion: boolean;
   sessionBudgetMinutes: number;
-  sessionChimeEnabled: boolean;
   showFloatingCapsule: boolean;
   showPageCounter: boolean;
   showScrollbar: boolean;
@@ -92,7 +91,6 @@ type SettingsActions = {
   setReaderForeground: (v: string) => void;
   setReduceMotion: (v: boolean) => void;
   setSessionBudgetMinutes: (v: number) => void;
-  setSessionChimeEnabled: (v: boolean) => void;
   setShowFloatingCapsule: (v: boolean) => void;
   setShowPageCounter: (v: boolean) => void;
   setShowScrollbar: (v: boolean) => void;
@@ -154,7 +152,6 @@ const DEFAULTS: SettingsValues = {
   trackingEnabled: true,
   reduceMotion: false,
   sessionBudgetMinutes: 20,
-  sessionChimeEnabled: true,
   bookVoiceOverrides: {},
   ttsVoiceURI: null,
   ttsRate: 1,
@@ -225,7 +222,6 @@ export const pickValues = (state: Settings): SettingsValues => ({
   trackingEnabled: state.trackingEnabled,
   reduceMotion: state.reduceMotion,
   sessionBudgetMinutes: state.sessionBudgetMinutes,
-  sessionChimeEnabled: state.sessionChimeEnabled,
   bookVoiceOverrides: state.bookVoiceOverrides,
   ttsVoiceURI: state.ttsVoiceURI,
   ttsRate: state.ttsRate,
@@ -270,7 +266,6 @@ export const toRemotePayload = (state: SettingsValues) => ({
   annualGoalYear: state.annualGoalYear,
   dailyGoal: state.dailyGoal,
   sessionBudgetMinutes: state.sessionBudgetMinutes,
-  sessionChimeEnabled: state.sessionChimeEnabled,
   weeklyGoal: state.weeklyGoal,
   showStreakReminder: state.showStreakReminder,
   trackingEnabled: state.trackingEnabled,
@@ -342,7 +337,6 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
   if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
   if (typeof raw.sessionBudgetMinutes === "number") out.sessionBudgetMinutes = raw.sessionBudgetMinutes;
-  if (typeof raw.sessionChimeEnabled === "boolean") out.sessionChimeEnabled = raw.sessionChimeEnabled;
   if (raw.bookVoiceOverrides && typeof raw.bookVoiceOverrides === "object") {
     out.bookVoiceOverrides = raw.bookVoiceOverrides as Record<string, string>;
   }
@@ -364,7 +358,6 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   if (typeof remote.annualGoalYear === "number") out.annualGoalYear = remote.annualGoalYear;
   if (typeof remote.dailyGoal === "number") out.dailyGoal = remote.dailyGoal;
   if (typeof remote.sessionBudgetMinutes === "number") out.sessionBudgetMinutes = remote.sessionBudgetMinutes;
-  if (typeof remote.sessionChimeEnabled === "boolean") out.sessionChimeEnabled = remote.sessionChimeEnabled;
   if (typeof remote.weeklyGoal === "number") out.weeklyGoal = remote.weeklyGoal;
   if (typeof remote.showStreakReminder === "boolean") out.showStreakReminder = remote.showStreakReminder;
   if (typeof remote.trackingEnabled === "boolean") out.trackingEnabled = remote.trackingEnabled;
@@ -499,7 +492,6 @@ export const useSettingsStore = create<Settings>((set) => ({
   setTrackingEnabled: createSetAction("trackingEnabled", set),
   setReduceMotion: createSetAction("reduceMotion", set),
   setSessionBudgetMinutes: createSetAction("sessionBudgetMinutes", set),
-  setSessionChimeEnabled: createSetAction("sessionChimeEnabled", set),
   setBookVoiceOverride: (bookId: string, voiceURI: string) =>
     set((state) => ({
       bookVoiceOverrides: {

@@ -4,9 +4,7 @@ import {
   Copy,
   Edit3,
   Highlighter,
-  Quote,
   Underline,
-  Users,
   Volume2,
 } from "lucide-react";
 import React, { memo, useState } from "react";
@@ -22,24 +20,20 @@ import {
 interface ReaderSelectionMenuProps {
   onAddNote: (color?: string) => void;
   onCopy: () => void;
-  onCreateQuoteCard?: () => void;
   onDefine?: () => void;
   onHighlight: (color?: string) => void;
   onSpeak: () => void;
   onUnderline: () => void;
-  onXRay?: () => void;
   selection: ReaderSelection | null;
 }
 
 function ReaderSelectionMenuImpl({
   onAddNote,
   onCopy,
-  onCreateQuoteCard,
   onDefine,
   onHighlight,
   onSpeak,
   onUnderline,
-  onXRay,
   selection,
 }: ReaderSelectionMenuProps) {
   const [activeColor, setActiveColor] = useState<string>(
@@ -158,28 +152,12 @@ function ReaderSelectionMenuImpl({
           label="Copy"
           onClick={onCopy}
         />
-        {onCreateQuoteCard && (
-          <ActionBtn
-            ariaLabel="Create quote card"
-            icon={Quote}
-            label="Quote"
-            onClick={onCreateQuoteCard}
-          />
-        )}
         <ActionBtn
           ariaLabel="Speak selection"
           icon={Volume2}
           label="Speak"
           onClick={onSpeak}
         />
-        {onXRay && (
-          <ActionBtn
-            ariaLabel="Lookup in X-Ray"
-            icon={Users}
-            label="X-Ray"
-            onClick={onXRay}
-          />
-        )}
       </div>
     </div>
   );

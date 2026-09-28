@@ -54,7 +54,6 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     items: [
       { keys: ["Z"], description: "Zen Focus ambient reading mode" },
       { keys: ["A"], description: "Auto-scroll continuous reading" },
-      { keys: ["X"], description: "X-Ray character directory" },
       { keys: ["M"], description: "Readability metrics" },
     ],
   },

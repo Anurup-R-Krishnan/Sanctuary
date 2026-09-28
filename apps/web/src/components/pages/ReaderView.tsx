@@ -14,12 +14,6 @@ import ReaderOverlay from "@/components/reader/ReaderOverlay";
 import { ReaderSelectionMenu } from "@/components/reader/ReaderSelectionMenu";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
-const QuoteCardModal = lazy(() =>
-  import("@/components/reader/QuoteCardModal").then((m) => ({
-    default: m.QuoteCardModal,
-  }))
-);
-
 const ReaderAutoScrollController = lazy(() =>
   import("@/components/reader/ReaderAutoScrollController").then((m) => ({
     default: m.ReaderAutoScrollController,
@@ -47,12 +41,6 @@ const ReaderSpeedReaderModal = lazy(() =>
 const ReaderZenFocusOverlay = lazy(() =>
   import("@/components/reader/ReaderZenFocusOverlay").then((m) => ({
     default: m.ReaderZenFocusOverlay,
-  }))
-);
-
-const ReaderXRayDrawer = lazy(() =>
-  import("@/components/reader/ReaderXRayDrawer").then((m) => ({
-    default: m.ReaderXRayDrawer,
   }))
 );
 
@@ -225,26 +213,6 @@ function ReaderView({
     engineRef.current?.clearSelection();
   }, [selection, book?.title]);
 
-  const [activeQuoteTarget, setActiveQuoteTarget] = useState<{
-    chapterLabel?: string;
-    text: string;
-  } | null>(null);
-
-  const handleOpenQuoteCard = useCallback(
-    (text?: string, chapter?: string) => {
-      const quoteText = text || selection?.text?.trim();
-      if (!quoteText) return;
-      setActiveQuoteTarget({
-        chapterLabel: chapter || position.chapterLabel || undefined,
-        text: quoteText,
-      });
-      if (selection) {
-        engineRef.current?.clearSelection();
-      }
-    },
-    [selection, position.chapterLabel]
-  );
-
   const [speedReaderTarget, setSpeedReaderTarget] = useState<{
     chapterLabel?: string;
     text: string;
@@ -282,47 +250,6 @@ function ReaderView({
       text,
     });
   }, [position.chapterLabel, book?.title]);
-
-  const [xrayTarget, setXrayTarget] = useState<{
-    chapterIndex?: number;
-    chapterLabel?: string;
-    initialQuery?: string;
-    text: string;
-  } | null>(null);
-
-  const handleOpenXRayFromChapter = useCallback(() => {
-    const rendition = engineRef.current?.rendition;
-    const doc =
-      rendition?.getCurrentDocument?.() ||
-      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.doc ||
-      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.document ||
-      null;
-    const text = extractTextFromDocument(doc);
-    setXrayTarget({
-      chapterIndex: position.sectionIndex ?? 0,
-      chapterLabel: position.chapterLabel || book?.title || "Chapter",
-      text,
-    });
-  }, [position.sectionIndex, position.chapterLabel, book?.title]);
-
-  const handleOpenXRayFromSelection = useCallback(() => {
-    if (!selection?.text) return;
-    const selectedWord = selection.text.trim();
-    const rendition = engineRef.current?.rendition;
-    const doc =
-      rendition?.getCurrentDocument?.() ||
-      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.doc ||
-      (rendition?.getContents?.()?.[0] as { doc?: Document; document?: Document })?.document ||
-      null;
-    const text = extractTextFromDocument(doc);
-    setXrayTarget({
-      chapterIndex: position.sectionIndex ?? 0,
-      chapterLabel: position.chapterLabel || book?.title || "Chapter",
-      initialQuery: selectedWord,
-      text,
-    });
-    engineRef.current?.clearSelection();
-  }, [selection, position.sectionIndex, position.chapterLabel, book?.title]);
 
   const [isZenModeActive, setIsZenModeActive] = useState(false);
   const handleToggleZenMode = useCallback(
@@ -532,7 +459,6 @@ function ReaderView({
     onToggleAutoScroll: handleToggleAutoScroll,
     onToggleReadability: handleOpenReadabilityFromChapter,
     onToggleShortcutsHelp: () => setIsShortcutsHelpOpen((prev) => !prev),
-    onToggleXRay: () => (xrayTarget ? setXrayTarget(null) : handleOpenXRayFromChapter()),
     onToggleZenMode: handleToggleZenMode,
     toggleBookmark: handleToggleBookmark,
     toggleFullscreen: handleToggleFullscreen,
@@ -671,17 +597,14 @@ function ReaderView({
         onChangeTTSRate={changeRate}
         onChangeTTSVoice={changeVoice}
         onCloseTTS={handleCloseTTS}
-        onCreateQuoteCard={(text, chapter) => handleOpenQuoteCard(text, chapter)}
         onNextTTSSentence={nextSentence}
         onPrevTTSSentence={prevSentence}
         isAutoScrollActive={isAutoScrollActive}
         isReadabilityActive={!!readabilityTarget}
-        isXRayActive={!!xrayTarget}
         onToggleAutoScroll={handleToggleAutoScroll}
         onToggleReadability={handleOpenReadabilityFromChapter}
         onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
-        onToggleXRay={handleOpenXRayFromChapter}
         onToggleZenMode={handleToggleZenMode}
         paragraphPauseMs={paragraphPauseMs}
         speechState={speechState}
@@ -691,12 +614,10 @@ function ReaderView({
       <ReaderSelectionMenu
         onAddNote={handleAddNote}
         onCopy={handleCopy}
-        onCreateQuoteCard={() => handleOpenQuoteCard()}
         onDefine={handleDefine}
         onHighlight={handleHighlight}
         onSpeak={handleSpeak}
         onUnderline={handleUnderline}
-        onXRay={handleOpenXRayFromSelection}
         selection={selection}
       />
 
@@ -731,19 +652,6 @@ function ReaderView({
         </Suspense>
       )}
 
-      {activeQuoteTarget && (
-        <Suspense fallback={null}>
-          <QuoteCardModal
-            bookAuthor={book?.author}
-            bookTitle={book?.title || "Untitled"}
-            chapterLabel={activeQuoteTarget.chapterLabel}
-            isOpen={!!activeQuoteTarget}
-            onClose={() => setActiveQuoteTarget(null)}
-            quote={activeQuoteTarget.text}
-          />
-        </Suspense>
-      )}
-
       {readabilityTarget && (
         <Suspense fallback={null}>
           <ReaderReadabilityModal
@@ -752,26 +660,6 @@ function ReaderView({
             onClose={() => setReadabilityTarget(null)}
             rawText={readabilityTarget.text}
             readingSpeedWpm={sessionStats.readingSpeedWpm || 250}
-          />
-        </Suspense>
-      )}
-
-      {xrayTarget && (
-        <Suspense fallback={null}>
-          <ReaderXRayDrawer
-            activeChapterIndex={xrayTarget.chapterIndex}
-            activeChapterText={xrayTarget.text}
-            activeChapterTitle={xrayTarget.chapterLabel}
-            initialEntityQuery={xrayTarget.initialQuery}
-            isOpen={!!xrayTarget}
-            onClose={() => setXrayTarget(null)}
-            onNavigateToChapter={(chapterIndex) => {
-              if (tocItems && tocItems[chapterIndex]?.href) {
-                engineRef.current?.display(tocItems[chapterIndex].href);
-              } else {
-                engineRef.current?.display(String(chapterIndex));
-              }
-            }}
           />
         </Suspense>
       )}

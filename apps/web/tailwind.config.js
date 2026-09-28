@@ -30,15 +30,15 @@ export default {
 
         // Legacy light/dark colors for backward compatibility during migration
         light: {
-          primary: '#FFFFFF',
-          secondary: '#FAFAFA',
-          surface: '#FAFAFA',
-          card: '#FFFFFF',
+          primary: '#FEFCF8', // warm off-white, not clinical pure white
+          secondary: '#FAF6F0', // warm paper tone
+          surface: '#F3ECE1', // deeper warm surface (was flat zinc grey)
+          card: '#FEFCF8',
           accent: '#A67E50', // antique gold
           text: '#09090B', // zinc-950
           'text-muted': '#71717A', // zinc-500
-          border: '#E4E4E7',
-          'border-muted': '#F4F4F5',
+          border: '#E7DCC9', // warm border, replaces cold zinc-200
+          'border-muted': '#F3ECE1',
         },
         dark: {
           primary: '#0F0E0D', // warm near-black, not pure zinc

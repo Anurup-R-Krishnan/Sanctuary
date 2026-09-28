@@ -1,5 +1,5 @@
 /**
- * Focus sprint timer utilities and completion chime synthesizer.
+ * Focus sprint timer utilities.
  */
 
 export const FOCUS_SPRINT_PRESETS = [15, 25, 45, 60] as const;
@@ -82,79 +82,3 @@ export function estimateSprintWords(
   const elapsedMinutes = elapsedSeconds / 60;
   return Math.round(elapsedMinutes * safeWpm);
 }
-
-let sharedAudioContext: AudioContext | null = null;
-
-function getAudioContext(customContext?: AudioContext | null): AudioContext | null {
-  if (customContext !== undefined) {
-    return customContext;
-  }
-  if (typeof window === "undefined") return null;
-  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioContextClass) return null;
-    sharedAudioContext = new AudioContextClass();
-  }
-  return sharedAudioContext;
-}
-
-/**
- * Plays a peaceful completion chime using Web Audio API.
- */
-export async function playCompletionChime(
-  customContext?: AudioContext | null
-): Promise<boolean> {
-  try {
-    const ctx = getAudioContext(customContext);
-    if (!ctx) return false;
-
-    if (ctx.state === "suspended") {
-      await ctx.resume();
-    }
-
-    const now = ctx.currentTime;
-    const duration = 3.5; // seconds
-
-    // Master gain envelope
-    const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0, now);
-    masterGain.gain.linearRampToValueAtTime(0.35, now + 0.04);
-    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-    masterGain.connect(ctx.destination);
-
-    // Harmonics: fundamental (528 Hz), third (630 Hz), overtone (1460 Hz)
-    const harmonics = [
-      { detune: 0, freq: 528, gain: 0.6 },
-      { detune: 4, freq: 630, gain: 0.25 },
-      { detune: -6, freq: 1460, gain: 0.15 },
-    ];
-
-    for (const h of harmonics) {
-      const osc = ctx.createOscillator();
-      const oscGain = ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(h.freq, now);
-      osc.detune.setValueAtTime(h.detune, now);
-
-      oscGain.gain.setValueAtTime(h.gain, now);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.9);
-
-      osc.connect(oscGain);
-      oscGain.connect(masterGain);
-
-      osc.start(now);
-      osc.stop(now + duration);
-    }
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export const playSingingBowlChime = playCompletionChime;
-
