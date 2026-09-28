@@ -1,3 +1,5 @@
+import type { SanctuaryApiClient } from "@sanctuary/core";
+
 import { v4 as uuidv4 } from "uuid";
 
 import type { Book, Bookmark } from "@/types";
@@ -102,10 +104,49 @@ const revertLocalBookAddition = (id: string) => {
   revokeTrackedCoverUrl(id);
 };
 
+type LibraryPatch = Parameters<SanctuaryApiClient["patchLibraryItem"]>[1];
+
+export function httpStatusOf(error: unknown): number | null {
+  if (error instanceof HttpError) return error.status;
+  if (error instanceof Error) {
+    const match = /\((\d{3})\)/.exec(error.message);
+    if (match) return Number(match[1]);
+  }
+  return null;
+}
+
+const isRetryableFailure = (status: number | null) =>
+  status === null || status >= 500 || status === 401 || status === 408 || status === 429;
+
+const FORMAT_FILE_INFO: Record<string, { extension: string; mime: string }> = {
+  azw: { extension: "azw", mime: "application/vnd.amazon.ebook" },
+  azw3: { extension: "azw3", mime: "application/vnd.amazon.ebook" },
+  cbr: { extension: "cbr", mime: "application/vnd.comicbook-rar" },
+  cbz: { extension: "cbz", mime: "application/vnd.comicbook+zip" },
+  epub: { extension: "epub", mime: "application/epub+zip" },
+  fb2: { extension: "fb2", mime: "application/x-fictionbook+xml" },
+  html: { extension: "html", mime: "text/html" },
+  markdown: { extension: "md", mime: "text/markdown" },
+  mobi: { extension: "mobi", mime: "application/x-mobipocket-ebook" },
+  pdf: { extension: "pdf", mime: "application/pdf" },
+  txt: { extension: "txt", mime: "text/plain" },
+  xhtml: { extension: "xhtml", mime: "application/xhtml+xml" },
+};
+
+export function fileForStoredBook(book: Pick<Book, "format" | "title">, blob: Blob): File {
+  const info = FORMAT_FILE_INFO[book.format ?? "epub"] ?? FORMAT_FILE_INFO.epub;
+  const safeTitle = (book.title || "book").replace(/[\\/:*?"<>|]+/g, " ").trim() || "book";
+  return new File([blob], `${safeTitle}.${info.extension}`, { type: info.mime });
+}
+
+const isUnsyncedLocalBook = (book: Pick<Book, "syncStatus">) =>
+  book.syncStatus === "local-only" || book.syncStatus === "pending";
+
 const syncBookUpdate = async (
   id: string,
   updater: (book: Book) => Book,
-  remoteSync: (next: Book) => Promise<void>,
+  buildPatch: (next: Book) => LibraryPatch,
+  api: SanctuaryApiClient,
   isPersistent: boolean
 ) => {
   let previousBook: Book | null = null;
@@ -146,8 +187,14 @@ const syncBookUpdate = async (
     return;
   }
 
+  if (isUnsyncedLocalBook(nextBook)) {
+    inFlightMutations.delete(id);
+    return;
+  }
+
+  const patch = buildPatch(nextBook);
   try {
-    await remoteSync(nextBook);
+    await api.patchLibraryItem(id, patch);
     const latestMeta = syncMetaByBookId.get(id);
     if (latestMeta && latestMeta.localRevision === currentRevision) {
       syncMetaByBookId.set(id, {
@@ -163,31 +210,28 @@ const syncBookUpdate = async (
       });
     }
   } catch (error) {
-    if (error instanceof HttpError && error.status === 404) {
+    const status = httpStatusOf(error);
+    if (status === 404) {
       console.warn(`Book ${id} not found on server (404). Purging local cache.`);
       revertLocalBookAddition(id);
       await Promise.all([deleteBookFromDb(id), deleteBookContent(id)]).catch(console.error);
+    } else if (isRetryableFailure(status)) {
+      const latestMeta = syncMetaByBookId.get(id);
+      if (latestMeta) syncMetaByBookId.set(id, { ...latestMeta, dirty: true, syncInFlight: false });
+      await syncQueue.enqueue("PATCH_LIBRARY", { data: patch, id }).catch((queueError) => {
+        console.error("Failed to queue book update for retry:", queueError);
+      });
     } else {
-      console.error("Failed to persist remote book update:", error);
+      console.error("Server rejected book update:", error);
       revertLocalBookState(id, previousBook, previousMeta);
       await putBookInDb({ ...previousBook, epubBlob: null }).catch((rollbackError) => {
         console.error("Failed to rollback local book update:", rollbackError);
       });
-      const latestMeta = syncMetaByBookId.get(id);
-      if (latestMeta) {
-        syncMetaByBookId.set(id, {
-          ...latestMeta,
-          dirty: true,
-          syncInFlight: false,
-        });
-      }
     }
   } finally {
     inFlightMutations.delete(id);
   }
 };
-
-import type { SanctuaryApiClient } from "@sanctuary/core";
 
 export const libraryService = {
   cleanupAllObjectUrls() {
@@ -231,10 +275,19 @@ export const libraryService = {
 
     useBookStore.getState().setIsLoading(true);
     try {
-      const [stored, localDbBooks] = await Promise.all([
-        api.getLibrary().catch(() => []),
-        getAllBooks().catch(() => [] as Book[]),
-      ]);
+      const localDbBooks = await getAllBooks().catch(() => [] as Book[]);
+      let stored: Awaited<ReturnType<SanctuaryApiClient["getLibrary"]>>;
+      try {
+        stored = await api.getLibrary();
+      } catch (error) {
+        logErrorOnce("books-load-remote", "Library server unreachable; showing books stored on this device:", error);
+        const offlineBooks = localDbBooks.map((book) =>
+          book.coverBlob ? { ...book, coverUrl: trackCoverBlobForBook(book.id, book.coverBlob) } : book
+        );
+        reconcileTrackedCoverUrls(offlineBooks);
+        useBookStore.getState().setBooks(offlineBooks);
+        return;
+      }
       const localById = new Map(localDbBooks.map((book) => [book.id, book]));
       
       const hydrated: Book[] = stored.map((s): Book => {
@@ -291,10 +344,14 @@ export const libraryService = {
         };
       });
 
-      reconcileTrackedCoverUrls(hydrated);
-      useBookStore.getState().setBooks(hydrated);
-
       const remoteIds = new Set(stored.map((b) => b.id));
+      const unsyncedLocalBooks = localDbBooks
+        .filter((book) => !remoteIds.has(book.id) && isUnsyncedLocalBook(book))
+        .map((book) => (book.coverBlob ? { ...book, coverUrl: trackCoverBlobForBook(book.id, book.coverBlob) } : book));
+      const visibleBooks = [...hydrated, ...unsyncedLocalBooks];
+
+      reconcileTrackedCoverUrls(visibleBooks);
+      useBookStore.getState().setBooks(visibleBooks);
       const postSyncBooks = await getAllBooks().catch(() => [] as Book[]);
       const unmappedLocalBooks = postSyncBooks.map(book => {
           if (book.coverBlob && !remoteIds.has(book.id)) {
@@ -306,7 +363,7 @@ export const libraryService = {
         if (!remoteIds.has(localBook.id) && !inFlightMutations.has(localBook.id)) {
           // INV-SYNC-001: Shield guest books ("pending") from GC.
           // The MigrationDialog handles migrating them explicitly.
-          if (localBook.syncStatus !== "pending") {
+          if (!isUnsyncedLocalBook(localBook)) {
             await Promise.all([deleteBookFromDb(localBook.id), deleteBookContent(localBook.id)]).catch((err) => {
               console.error(`Failed to garbage collect orphaned local book ${localBook.id}:`, err);
             });
@@ -317,6 +374,7 @@ export const libraryService = {
           }
         }
       }
+      void this.uploadStoredBooks(api, ["pending"]);
     } catch (error) {
       logErrorOnce("books-load", "Failed to load books:", error);
     } finally {
@@ -334,6 +392,23 @@ export const libraryService = {
     replaceBookInStore(localBook.id, () => persistedBook);
     await saveBookToDb(persistedBook, "Failed to persist synced book:");
     return persistedBook;
+  },
+
+  async uploadStoredBooks(api: SanctuaryApiClient, statuses: Array<NonNullable<Book["syncStatus"]>>) {
+    const books = await getAllBooks().catch(() => [] as Book[]);
+    let failures = 0;
+    for (const book of books) {
+      if (!book.syncStatus || !statuses.includes(book.syncStatus)) continue;
+      const content = await getVerifiedBookContent(book.id).catch(() => null);
+      if (!content) continue;
+      try {
+        await this._migrateBook(fileForStoredBook(book, content.blob), { ...book, epubBlob: content.blob }, api);
+      } catch (error) {
+        failures += 1;
+        console.warn(`Upload of ${book.id} failed; it stays on this device:`, error);
+      }
+    }
+    return { failures };
   },
 
   async replaceBookContent(id: string, file: File, api: SanctuaryApiClient, isPersistent: boolean) {
@@ -421,7 +496,7 @@ export const libraryService = {
         contentHash,
         contentStatus: "available",
         format: adapter.format,
-        syncStatus: isPersistent ? "synced" : "local-only",
+        syncStatus: isPersistent ? "pending" : "local-only",
         progress: 0,
         lastLocation: "",
         addedAt: new Date().toISOString(),
@@ -445,15 +520,17 @@ export const libraryService = {
 
       try {
         const result = await bookService.addBook(file, newBook, api, coverBlob);
-        if (result.coverUrl && result.coverUrl !== newBook.coverUrl) {
-          revokeTrackedCoverUrl(newBook.id);
-          const persistedBook = { ...newBook, coverUrl: result.coverUrl };
-          replaceBookInStore(newBook.id, () => persistedBook);
-          await saveBookToDb(persistedBook, "Failed to persist server cover URL locally:");
-        }
+        const coverChanged = Boolean(result.coverUrl && result.coverUrl !== newBook.coverUrl);
+        if (coverChanged) revokeTrackedCoverUrl(newBook.id);
+        const persistedBook: Book = {
+          ...newBook,
+          ...(coverChanged && result.coverUrl ? { coverUrl: result.coverUrl } : {}),
+          syncStatus: "synced",
+        };
+        replaceBookInStore(newBook.id, () => persistedBook);
+        await saveBookToDb(persistedBook, "Failed to mark uploaded book as synced:");
       } catch (error) {
-        console.error("Backend upload failed:", error);
-        console.error("Backend upload failed; keeping the local desktop copy:", error);
+        console.error("Upload failed; the book stays on this device and will be retried:", error);
         syncMetaByBookId.set(newBook.id, {
           ...getInitialSyncMeta(),
           dirty: true,
@@ -491,9 +568,8 @@ export const libraryService = {
           locationHistory: history,
         };
       },
-      async () => {
-        await api.patchLibraryItem(id, { progress, lastLocation });
-      },
+      () => ({ lastLocation, progress }),
+      api,
       isPersistent
     );
   },
@@ -502,18 +578,17 @@ export const libraryService = {
     await syncBookUpdate(
       id,
       (book) => ({ ...book, ...updates }),
-      async (nextBook) => {
-        await api.patchLibraryItem(id, {
-          title: nextBook.title,
-          author: nextBook.author,
-          coverUrl: nextBook.coverUrl,
-          progress: nextBook.progress,
-          totalPages: nextBook.totalPages,
-          lastLocation: nextBook.lastLocation,
-          favorite: nextBook.isFavorite,
-          bookmarks: nextBook.bookmarks?.map(b => ({ cfi: b.cfi, title: b.title })),
-        });
-      },
+      (nextBook) => ({
+        author: nextBook.author,
+        bookmarks: nextBook.bookmarks?.map((b) => ({ cfi: b.cfi, title: b.title })),
+        coverUrl: nextBook.coverUrl,
+        favorite: nextBook.isFavorite,
+        lastLocation: nextBook.lastLocation,
+        progress: nextBook.progress,
+        title: nextBook.title,
+        totalPages: nextBook.totalPages,
+      }),
+      api,
       isPersistent
     );
   },
