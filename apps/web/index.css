@@ -8,15 +8,15 @@
      ========================================================================== */
 
   /* Semantic Color Tokens (Light Mode) — RGB channels for opacity modifiers */
-  --color-page: 255 252 248;          /* #FFFCF8 - Primary page background */
-  --color-surface: 243 236 225;       /* #F3ECE1 - Card/surface background */
-  --color-surface-raised: 254 252 248;/* #FEFCF8 - Raised surface (e.g., cards on page) */
-  --color-fg: 9 9 11;                 /* #09090B - Primary text */
-  --color-fg-muted: 113 113 122;      /* #71717A - Secondary/disabled text */
-  --color-subtle: 250 246 240;       /* #FAF6F0 - Quiet fill (legacy light.secondary) */
-  --color-line-subtle: 243 236 225;   /* #F3ECE1 - Hairline (legacy light.border-muted) */
-  --color-line: 231 220 201;          /* #E7DCC9 - Border color */
-  --color-accent: 166 126 80;         /* #A67E50 - Antique Gold accent */
+  --color-page: 244 236 216;
+  --color-surface: 236 225 200;
+  --color-surface-raised: 249 243 229;
+  --color-fg: 59 46 32;
+  --color-fg-muted: 122 104 82;
+  --color-subtle: 240 231 209;
+  --color-line-subtle: 232 220 195;
+  --color-line: 221 205 174;
+  --color-accent: 142 104 62;
   --color-accent-fg: 255 255 255;     /* #FFFFFF - Text on accent (white) */
   --color-danger: 220 38 38;          /* #DC2626 - Error/danger state */
   --color-success: 34 197 94;         /* #22C55E - Success state */
@@ -207,8 +207,8 @@
   .app-ambient-bg {
     background-image:
       var(--paper-grain),
-      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(166, 126, 80, 0.06), transparent 60%),
-      radial-gradient(ellipse 900px 700px at 0% 100%, rgba(92, 113, 138, 0.05), transparent 60%);
+      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(142, 104, 62, 0.07), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 0% 100%, rgba(120, 90, 50, 0.05), transparent 60%);
     background-attachment: fixed;
   }
 

@@ -25,6 +25,7 @@ export type SessionRendition = Pick<
   | "resize"
   | "setFlow"
   | "setStyles"
+  | "setTextWidth"
   | "updateBackground"
 > & {
   annotations: FoliateRendition["annotations"];
@@ -181,6 +182,7 @@ export class FoliateReaderSession implements IReaderSession {
       search: (query: string) => inst.search(query),
       setFlow: (options: ReaderFlowOptions) => inst.setFlow(options),
       setStyles: (styles, bionicReading) => inst.setStyles(styles, bionicReading),
+      setTextWidth: (px: number) => inst.setTextWidth(px),
       themes: {
         default: (styles, bionicReading) => inst.setStyles(styles, bionicReading),
       },

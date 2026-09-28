@@ -389,6 +389,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
             <MiniToggle checked={state.hyphenation} onChange={state.setHyphenation} label="Hyphenation" />
             <MiniToggle checked={state.bionicReading} onChange={state.setBionicReading} label="Bionic Reading (Fixation)" />
+            <MiniToggle checked={state.dropCap} onChange={state.setDropCap} label="Drop Cap" />
           </div>
         </div>
 
@@ -406,9 +407,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
                 { value: "continuous", label: "Infinite", icon: <InfinityIcon className="w-4 h-4" /> },
               ]}
             />
-            {state.continuous && (
-              <Slider label="Max Width" value={state.maxTextWidth} min={40} max={120} step={5} onChange={state.setMaxTextWidth} format={(v) => v + "ch"} />
-            )}
+            <Slider label="Text Width" value={state.maxTextWidth} min={50} max={200} step={5} onChange={state.setMaxTextWidth} format={(v) => v + "ch"} />
             {!state.continuous && (
               <MiniToggle checked={state.spread} onChange={state.setSpread} label="Two-Page Spread" />
             )}
