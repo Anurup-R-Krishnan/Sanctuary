@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import type { Book, Bookmark } from "@/types";
 
-import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
+import { FoliateDocumentAdapter } from "@/reader/foliate/FoliateDocumentAdapter";
 import { isSupportedExtension } from "@/reader/formats/FormatDetector";
 import { BookContentError, getVerifiedBookContent, saveBookContent, verifyBookContent } from "@/services/bookContentRepository";
 import { bookService } from "@/services/bookService";
@@ -341,14 +341,14 @@ export const libraryService = {
     if (!existing) throw new Error("This book is no longer in your library.");
     if (!isSupportedExtension(file.name)) throw new Error("Unsupported format for book replacement.");
 
-    let adapter: FoliateEpubAdapter | null = null;
+    let adapter: FoliateDocumentAdapter | null = null;
     try {
       const arrayBuffer = await file.arrayBuffer();
       const contentHash = await calculateEpubHash(arrayBuffer);
       const epubBlob = new Blob([arrayBuffer], { type: file.type || "application/octet-stream" });
       await verifyBookContent(id, epubBlob, contentHash, file.name);
 
-      adapter = await FoliateEpubAdapter.create(epubBlob, file.name);
+      adapter = await FoliateDocumentAdapter.create(epubBlob, file.name);
       const title = adapter.metadata.title || existing.title;
       const author = adapter.metadata.author || existing.author;
       const coverBlob = await adapter.getCoverBlob();
@@ -382,7 +382,7 @@ export const libraryService = {
 
   async addBook(file: File, api: SanctuaryApiClient, isPersistent: boolean) {
     const bookId = uuidv4();
-    let adapter: FoliateEpubAdapter | null = null;
+    let adapter: FoliateDocumentAdapter | null = null;
 
     let importKey: string | null = null;
     try {
@@ -403,7 +403,7 @@ export const libraryService = {
       }
 
       const epubBlob = new Blob([epubArrayBuffer], { type: file.type || "application/octet-stream" });
-      adapter = await FoliateEpubAdapter.create(epubBlob, file.name);
+      adapter = await FoliateDocumentAdapter.create(epubBlob, file.name);
 
       const title = adapter.metadata.title ?? "Untitled";
       const author = adapter.metadata.author || "Unknown";

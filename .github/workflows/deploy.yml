@@ -56,7 +56,7 @@ jobs:
       - name: Build application
         run: bun run web:build
         env:
-          VITE_DISABLE_AUTH: "true"
+          VITE_DISABLE_AUTH: "false"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

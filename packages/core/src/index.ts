@@ -1,4 +1,4 @@
-export type SessionMode = "guest" | "clerk";
+export type SessionMode = "guest" | "authenticated";
 
 export interface ReaderSettings {
   // Legacy fields (kept for backwards compat — server may still send these)
@@ -125,6 +125,26 @@ export interface CoreAnnotation {
 }
 
 const jsonHeaders = { "Content-Type": "application/json" };
+
+export interface SanctuaryUser {
+  email: string | null;
+  id: string;
+}
+
+export interface AuthSignupPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthLoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: SanctuaryUser;
+}
 
 export class SanctuaryApiClient {
   constructor(public readonly options: ApiClientOptions) {}
@@ -254,6 +274,33 @@ export class SanctuaryApiClient {
         ...(targetAuth ? { "X-Target-Authorization": targetAuth } : {}),
         ...(targetAccept ? { "X-Target-Accept": targetAccept } : {}),
       },
+    });
+  }
+
+  // Auth endpoints
+  async signup(email: string, password: string): Promise<AuthResponse> {
+    return this.fetchJson<AuthResponse>("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async login(email: string, password: string): Promise<AuthResponse> {
+    return this.fetchJson<AuthResponse>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async logout(): Promise<void> {
+    await this.fetchJson<void>("/api/auth/logout", {
+      method: "POST",
+    });
+  }
+
+  async getMe(): Promise<SanctuaryUser> {
+    return this.fetchJson<SanctuaryUser>("/api/auth/me", {
+      method: "GET",
     });
   }
 }

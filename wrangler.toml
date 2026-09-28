@@ -13,4 +13,4 @@ binding = "SANCTUARY_BUCKET"
 bucket_name = "sanctuary"
 
 [vars]
-DISABLE_CLERK_AUTH = "false"
+DISABLE_AUTH = "false"

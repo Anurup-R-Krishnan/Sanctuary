@@ -123,17 +123,17 @@ function ReaderTTSBarComponent({
       className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto max-w-[92vw] sm:max-w-md w-full animate-slideUp"
       role="region"
     >
-      <div className="bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-2xl border border-light-border dark:border-dark-border shadow-2xl rounded-2xl px-4 py-3 flex flex-col gap-2 transition-all">
+      <div className="bg-page/95 backdrop-blur-2xl border border-line shadow-2xl rounded-2xl px-4 py-3 flex flex-col gap-2 transition-all">
         {/* Voice Popover Panel */}
         {showVoicePopover && (
-          <div className="border-b border-light-border dark:border-dark-border pb-3 mb-1 animate-fadeIn flex flex-col gap-2.5">
+          <div className="border-b border-line pb-3 mb-1 animate-fadeIn flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider">
+              <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
                 Voice & Audio Cadence
               </span>
               <button
                 aria-label="Close voice settings"
-                className="p-1 rounded text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text transition-colors"
+                className="p-1 rounded text-fg-muted hover:text-fg transition-colors"
                 onClick={() => setShowVoicePopover(false)}
                 type="button"
               >
@@ -144,10 +144,10 @@ function ReaderTTSBarComponent({
             {/* Optional search input when multiple voices exist */}
             {sortedVoices.length > 5 && (
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-light-text-muted dark:text-dark-text-muted pointer-events-none" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-fg-muted pointer-events-none" />
                 <input
                   aria-label="Search available voices"
-                  className="w-full pl-7 pr-3 py-1 text-xs rounded-lg bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted focus:outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+                  className="w-full pl-7 pr-3 py-1 text-xs rounded-lg bg-surface/60 border border-line text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-accent"
                   onChange={(e) => setVoiceQuery(e.target.value)}
                   placeholder="Filter voices..."
                   type="text"
@@ -166,8 +166,8 @@ function ReaderTTSBarComponent({
                       key={v.voiceURI}
                       className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                         isSelected
-                          ? "bg-light-accent/15 text-light-accent dark:bg-dark-accent/20 dark:text-dark-accent font-semibold"
-                          : "hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text dark:text-dark-text"
+                          ? "bg-light-accent/15 text-accent dark:bg-dark-accent/20 font-semibold"
+                          : "hover:bg-line/40 text-fg"
                       }`}
                       onClick={() => onChangeVoice?.(v.voiceURI)}
                       onKeyDown={(e) => {
@@ -182,13 +182,13 @@ function ReaderTTSBarComponent({
                       <div className="flex items-center gap-2 truncate pr-2">
                         {isSelected && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
                         <span className="truncate">{v.name}</span>
-                        <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted opacity-80 flex-shrink-0">
+                        <span className="text-2xs text-fg-muted opacity-80 flex-shrink-0">
                           {v.lang}
                         </span>
                       </div>
                       <button
                         aria-label={`Preview voice ${v.name}`}
-                        className="p-1 rounded text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text opacity-70 hover:opacity-100 flex-shrink-0"
+                        className="p-1 rounded text-fg-muted hover:text-fg opacity-70 hover:opacity-100 flex-shrink-0"
                         onClick={(e) => handlePreviewVoice(e, v)}
                         title="Preview voice"
                         type="button"
@@ -200,7 +200,7 @@ function ReaderTTSBarComponent({
                 })}
               </div>
             ) : (
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted italic py-1">
+              <p className="text-xs text-fg-muted py-1">
                 {sortedVoices.length === 0
                   ? "No system speech synthesis voices detected."
                   : "No voices match your filter."}
@@ -208,8 +208,8 @@ function ReaderTTSBarComponent({
             )}
 
             {/* Direct Playback Speed Selector */}
-            <div className="flex items-center justify-between gap-2 pt-2 border-t border-light-border dark:border-dark-border">
-              <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-line">
+              <span className="text-xs text-fg-muted font-medium">
                 Playback Speed:
               </span>
               <div className="flex items-center gap-1">
@@ -218,10 +218,10 @@ function ReaderTTSBarComponent({
                   return (
                     <button
                       key={opt}
-                      className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
                         isCurrent
-                          ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black shadow-sm font-semibold"
-                          : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                          ? "bg-accent text-white dark:text-black shadow-sm font-semibold"
+                          : "bg-surface/60 border border-line/60 text-fg-muted hover:text-fg hover:bg-line/40"
                       }`}
                       onClick={() => onChangeRate(opt)}
                       type="button"
@@ -235,17 +235,17 @@ function ReaderTTSBarComponent({
 
             {/* Natural paragraph pause options */}
             <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="text-xs text-light-text-muted dark:text-dark-text-muted font-medium">
+              <span className="text-xs text-fg-muted font-medium">
                 Paragraph Pause:
               </span>
               <div className="flex items-center gap-1">
                 {PAUSE_PRESETS.map((preset) => (
                   <button
                     key={preset.ms}
-                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                    className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
                       paragraphPauseMs === preset.ms
-                        ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black shadow-sm font-semibold"
-                        : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                        ? "bg-accent text-white dark:text-black shadow-sm font-semibold"
+                        : "bg-surface/60 border border-line/60 text-fg-muted hover:text-fg hover:bg-line/40"
                     }`}
                     onClick={() => onChangeParagraphPause?.(preset.ms)}
                     type="button"
@@ -260,8 +260,8 @@ function ReaderTTSBarComponent({
 
         {/* Top: Current sentence snippet */}
         {currentText && (
-          <div className="text-xs text-light-text-muted dark:text-dark-text-muted truncate px-1 italic">
-            &ldquo;{currentText}&rdquo;
+          <div className="text-xs text-fg-muted truncate px-1">
+            "{currentText}"
           </div>
         )}
 
@@ -269,7 +269,7 @@ function ReaderTTSBarComponent({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
             <IconButton
-              className="w-8 h-8 hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted"
+              className="w-8 h-8 hover:bg-line/40 text-fg-muted"
               icon={<SkipBack className="w-4 h-4" />}
               label="Previous sentence"
               onClick={onPrevSentence}
@@ -277,7 +277,7 @@ function ReaderTTSBarComponent({
 
             <button
               aria-label={isPlaying && !isPaused ? "Pause speech" : "Play speech"}
-              className="w-10 h-10 rounded-full bg-light-accent dark:bg-dark-accent text-white dark:text-black flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
+              className="w-10 h-10 rounded-full bg-accent text-white dark:text-black flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform"
               onClick={onTogglePlayPause}
               title={isPlaying && !isPaused ? "Pause speech" : "Play speech"}
               type="button"
@@ -290,7 +290,7 @@ function ReaderTTSBarComponent({
             </button>
 
             <IconButton
-              className="w-8 h-8 hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted"
+              className="w-8 h-8 hover:bg-line/40 text-fg-muted"
               icon={<SkipForward className="w-4 h-4" />}
               label="Next sentence"
               onClick={onNextSentence}
@@ -305,8 +305,8 @@ function ReaderTTSBarComponent({
               aria-label="Voice and audio settings"
               className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                 showVoicePopover
-                  ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black shadow-sm font-semibold"
-                  : "bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border/60 dark:border-dark-border/60 text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                  ? "bg-accent text-white dark:text-black shadow-sm font-semibold"
+                  : "bg-surface/60 border border-line/60 text-fg hover:bg-line/40"
               }`}
               onClick={() => setShowVoicePopover(!showVoicePopover)}
               title={activeVoice?.name || "Select voice"}
@@ -321,7 +321,7 @@ function ReaderTTSBarComponent({
             {/* Speed toggle button */}
             <button
               aria-label={`Playback speed ${rate}x, click to cycle`}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border/60 dark:border-dark-border/60 text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-surface/60 border border-line/60 text-fg hover:bg-line/40 transition-colors"
               onClick={cycleSpeed}
               title={`Playback speed ${rate}x`}
               type="button"
@@ -330,11 +330,11 @@ function ReaderTTSBarComponent({
               <span>{rate}x</span>
             </button>
 
-            <div className="w-px h-4 bg-light-border dark:bg-dark-border" />
+            <div className="w-px h-4 bg-line" />
 
             {/* Close button */}
             <IconButton
-              className="w-8 h-8 hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text-muted dark:text-dark-text-muted"
+              className="w-8 h-8 hover:bg-line/40 text-fg-muted"
               icon={<X className="w-4 h-4" />}
               label="Close audio controls (Esc)"
               onClick={onClose}

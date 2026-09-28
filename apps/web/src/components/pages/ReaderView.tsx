@@ -570,7 +570,7 @@ function ReaderView({
   if (!book) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-black font-sans">
-        <div className="flex items-center gap-3 text-light-text dark:text-dark-text">
+        <div className="flex items-center gap-3 text-fg">
           <LoadingSpinner className="h-5 w-5" />
           <span className="text-sm font-medium">Loading book...</span>
         </div>
@@ -582,7 +582,7 @@ function ReaderView({
     <div
       ref={rootRef}
       tabIndex={-1}
-      className="h-[100dvh] w-screen overflow-hidden select-none flex flex-col fixed inset-0 z-50 bg-light-primary dark:bg-dark-primary font-sans"
+      className="h-[100dvh] w-screen overflow-hidden select-none flex flex-col fixed inset-0 z-50 bg-page font-sans"
     >
       {contentError && !isLoading && (
         <ReaderContentErrorBanner
@@ -607,8 +607,8 @@ function ReaderView({
       </div>
 
       {isLoading && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-light-primary dark:bg-dark-primary">
-          <div className="flex items-center gap-3 text-light-text dark:text-dark-text">
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-page">
+          <div className="flex items-center gap-3 text-fg">
             <LoadingSpinner className="h-5 w-5" />
             <span className="text-sm font-medium">Opening book...</span>
           </div>

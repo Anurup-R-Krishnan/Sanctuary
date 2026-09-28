@@ -27,11 +27,11 @@ interface BreakdownBadgeProps {
 
 function BreakdownBadge({ bytes, icon: Icon, label }: BreakdownBadgeProps) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border">
-      <Icon className="w-4 h-4 text-light-text-muted dark:text-dark-text-muted shrink-0" />
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface/60 border border-line">
+      <Icon className="w-4 h-4 text-fg-muted shrink-0" />
       <div>
-        <p className="text-xs font-semibold text-light-text dark:text-dark-text">{formatBytes(bytes)}</p>
-        <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">{label}</p>
+        <p className="text-xs font-semibold text-fg">{formatBytes(bytes)}</p>
+        <p className="text-xs text-fg-muted">{label}</p>
       </div>
     </div>
   );
@@ -91,16 +91,16 @@ export function StorageManagerCard() {
 
   return (
     <>
-      <div className="p-5 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border space-y-5">
+      <div className="p-5 rounded-2xl bg-surface/40 border border-line space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <HardDrive className="w-5 h-5 text-light-text-muted dark:text-dark-text-muted" />
-            <h4 className="text-sm font-semibold text-light-text dark:text-dark-text">Device Storage</h4>
+            <HardDrive className="w-5 h-5 text-fg-muted" />
+            <h4 className="text-sm font-semibold text-fg">Device Storage</h4>
           </div>
           <button
             aria-label="Refresh storage estimate"
-            className="rounded-lg p-1.5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent disabled:opacity-40"
+            className="rounded-lg p-1.5 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-40"
             disabled={isLoading || isCleaning}
             onClick={refresh}
            type="button"
@@ -111,29 +111,29 @@ export function StorageManagerCard() {
 
         {isLoading ? (
           <div className="space-y-3 animate-pulse-soft">
-            <div className="h-2.5 w-full rounded-full bg-light-border dark:bg-dark-border" />
-            <div className="h-4 w-40 rounded bg-light-border/60 dark:bg-dark-border/60" />
+            <div className="h-2.5 w-full rounded-full bg-line" />
+            <div className="h-4 w-40 rounded bg-line/60" />
             <div className="flex gap-2">
-              <div className="h-12 w-28 rounded-xl bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/50 dark:border-dark-border/50" />
-              <div className="h-12 w-28 rounded-xl bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/50 dark:border-dark-border/50" />
+              <div className="h-12 w-28 rounded-xl bg-surface/80 border border-line/50" />
+              <div className="h-12 w-28 rounded-xl bg-surface/80 border border-line/50" />
             </div>
           </div>
         ) : breakdown ? (
           <>
             {/* Usage bar */}
             <div className="space-y-1.5">
-              <div className="h-2.5 w-full rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden">
+              <div className="h-2.5 w-full rounded-full bg-line/60 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${barColor}`}
                   style={{ width: `${(breakdown.usageFraction * 100).toFixed(1)}%` }}
                 />
               </div>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-xs text-fg-muted">
                 {breakdown.quotaBytes > 0 ? (
                   <>
-                    <span className="font-semibold text-light-text dark:text-dark-text">{breakdown.usageLabel}</span>
+                    <span className="font-semibold text-fg">{breakdown.usageLabel}</span>
                     {" used of "}
-                    <span className="font-semibold text-light-text dark:text-dark-text">{breakdown.quotaLabel}</span>
+                    <span className="font-semibold text-fg">{breakdown.quotaLabel}</span>
                     {" quota"}
                     {breakdown.usageFraction >= 0.85 && (
                       <span className="ml-2 text-red-600 dark:text-red-400 font-medium">
@@ -143,7 +143,7 @@ export function StorageManagerCard() {
                   </>
                 ) : (
                   <>
-                    <span className="font-semibold text-light-text dark:text-dark-text">{breakdown.usageLabel}</span>
+                    <span className="font-semibold text-fg">{breakdown.usageLabel}</span>
                     {" used (quota not reported by this browser)"}
                   </>
                 )}
@@ -163,7 +163,7 @@ export function StorageManagerCard() {
 
             {/* Clean result feedback */}
             {lastCleanResult && (
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">{lastCleanResult}</p>
+              <p className="text-xs text-fg-muted">{lastCleanResult}</p>
             )}
 
             {/* Action */}
@@ -178,7 +178,7 @@ export function StorageManagerCard() {
             </Button>
           </>
         ) : (
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
+          <p className="text-sm text-fg-muted">
             Storage information unavailable in this environment.
           </p>
         )}

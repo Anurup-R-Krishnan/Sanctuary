@@ -33,6 +33,7 @@
     "dist",
     "build",
     ".next",
-    "out"
+    "out",
+    "src-tauri"
   ]
 }

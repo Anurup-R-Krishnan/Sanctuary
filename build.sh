@@ -1,2 +1,4 @@
-VITE_DISABLE_AUTH=true bun run --cwd apps/web build
-bunx @tauri-apps/cli@2 build --no-bundle
+#!/usr/bin/env bash
+# Desktop release build. Tauri runs the web build itself (beforeBuildCommand).
+set -euo pipefail
+bun run desktop:build

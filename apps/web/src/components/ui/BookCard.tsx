@@ -3,6 +3,7 @@ import React, { useState, useCallback } from "react";
 
 import type { Book } from "@/types";
 
+import { useAuthedCoverUrl } from "@/hooks/useAuthedCoverUrl";
 import { useSettings } from "@/store/useSettingsStore";
 import { cx } from "@/utils/cx";
 import { clampPercent } from "@/utils/number";
@@ -48,17 +49,19 @@ const BookCover = ({
   const isCompact = variant === "compact";
   const isFeatured = variant === "featured";
 
+  const coverSrc = useAuthedCoverUrl(book.coverUrl);
+
   const containerClass = isCompact
-    ? "w-14 h-20 rounded-lg overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-light-border/40 dark:border-dark-border/40 flex-shrink-0 relative"
+    ? "w-14 h-20 rounded-lg overflow-hidden bg-subtle border border-line/40 flex-shrink-0 relative"
     : isFeatured
-      ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-light-secondary dark:bg-dark-secondary border border-light-border/40 dark:border-dark-border/40 shadow-lg flex-shrink-0 relative"
-      : "w-full aspect-[2/3] rounded-t-2xl overflow-hidden bg-light-secondary dark:bg-dark-secondary relative";
+      ? "w-32 sm:w-40 aspect-[2/3] rounded-xl overflow-hidden bg-subtle border border-line/40 shadow-lg flex-shrink-0 relative"
+      : "w-full aspect-[2/3] rounded-t-2xl overflow-hidden bg-subtle relative";
 
   return (
     <div className={containerClass}>
-      {book.coverUrl && !imageError ? (
+      {coverSrc && !imageError ? (
         <img
-          src={book.coverUrl}
+          src={coverSrc}
           alt={book.title}
           className={cx(
             "w-full h-full object-cover transition-all duration-500",
@@ -92,7 +95,7 @@ const FavoriteButton = ({
       "p-2 rounded-xl transition-all duration-instant",
       isFavorite
         ? "text-red-500 bg-red-50 dark:bg-red-950/30"
-        : "text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+        : "text-fg-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
     )
     : cx(
       "absolute top-3 right-3 p-2 rounded-xl backdrop-blur-md transition-all duration-instant opacity-0 group-hover:opacity-100",
@@ -123,7 +126,7 @@ const DeleteButton = ({
 
   const isFeatured = variant === "featured";
   const className = isFeatured
-    ? "p-2 rounded-xl transition-all duration-instant text-light-text-muted dark:text-dark-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+    ? "p-2 rounded-xl transition-all duration-instant text-fg-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
     : "absolute top-3 right-12 p-2 rounded-xl backdrop-blur-md transition-all duration-instant opacity-0 group-hover:opacity-100 bg-black/20 text-white hover:bg-red-500/90";
   
   const iconClassName = isFeatured ? "w-5 h-5" : "w-4 h-4";
@@ -146,8 +149,8 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
 
   if (variant === "compact") {
     return (
-      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-light-accent dark:bg-dark-accent flex items-center justify-center">
-        <span className="text-[8px] font-bold text-white">{progress}%</span>
+      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent flex items-center justify-center">
+        <span className="text-3xs font-bold text-white">{progress}%</span>
       </div>
     );
   }
@@ -156,12 +159,12 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-light-text-muted dark:text-dark-text-muted">Progress</span>
-          <span className="font-semibold text-light-accent dark:text-dark-accent">{progress}%</span>
+          <span className="text-fg-muted">Progress</span>
+          <span className="font-semibold text-accent">{progress}%</span>
         </div>
-        <div className="h-2 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
+        <div className="h-2 bg-line/60 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -170,9 +173,9 @@ const ProgressBar = ({ progress, variant = "default" }: { progress: number; vari
   }
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-1 bg-light-border/60 dark:bg-dark-border/60">
+    <div className="absolute bottom-0 left-0 right-0 h-1 bg-line/60">
       <div
-        className="h-full bg-gradient-to-r from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 transition-all duration-500"
+        className="h-full bg-gradient-to-r from-accent to-amber-500 dark:to-amber-400 transition-all duration-500"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -187,14 +190,14 @@ const BookMetadata = ({ title, author, variant = "default" }: { title: string; a
     <div className={isFeatured ? "mb-2" : ""}>
       <h3 className={cx(
         isFeatured ? "text-3xl sm:text-4xl" : isCompact ? "text-sm" : "text-lg",
-        "font-sans font-semibold text-light-text dark:text-dark-text line-clamp-2 leading-snug tracking-tight group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors duration-instant"
+        "font-sans font-semibold text-fg line-clamp-2 leading-snug tracking-tight group-hover:text-accent transition-colors duration-instant"
       )}>
         {title}
       </h3>
       <p className={cx(
         isFeatured ? "font-sans text-lg sm:text-xl mt-2" : "text-xs font-sans",
         !isFeatured && "mt-0.5",
-        "text-light-text-muted/80 dark:text-dark-text-muted/80 line-clamp-1"
+        "text-fg-muted/80 line-clamp-1"
       )}>
         {author}
       </p>
@@ -261,10 +264,10 @@ function BookCard({
       role="button"
       tabIndex={0}
       className={cx(
-        "group border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface transition-colors cursor-pointer",
-        isCompact && "flex items-center gap-4 p-4 rounded-xl hover:border-light-accent/40 dark:hover:border-dark-accent/40",
-        isFeatured && "relative overflow-hidden rounded-3xl hover:border-light-accent/40 dark:hover:border-dark-accent/40 p-6 sm:p-7 bg-gradient-to-br from-light-accent/[0.06] to-transparent dark:from-dark-accent/[0.08] shadow-sm",
-        !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-light-accent/35 dark:hover:border-dark-accent/35"
+        "group border border-line bg-surface transition-colors cursor-pointer",
+        isCompact && "flex items-center gap-4 p-4 rounded-xl hover:border-accent/40",
+        isFeatured && "relative overflow-hidden rounded-3xl hover:border-accent/40 p-6 sm:p-7 bg-gradient-to-br from-light-accent/[0.06] to-transparent dark:from-dark-accent/[0.08] shadow-sm",
+        !isCompact && !isFeatured && "relative overflow-hidden rounded-2xl hover:border-accent/35"
       )}
     >
       {isCompact ? (
@@ -278,7 +281,7 @@ function BookCard({
           </div>
           <div className="flex items-center gap-2">
             {book.isFavorite && <Heart className="w-4 h-4 text-red-500 fill-current" strokeWidth={1.5} />}
-            {isRecent && <Clock className="w-4 h-4 text-light-accent dark:text-dark-accent" strokeWidth={1.5} />}
+            {isRecent && <Clock className="w-4 h-4 text-accent" strokeWidth={1.5} />}
           </div>
         </>
       ) : isFeatured ? (
@@ -287,7 +290,7 @@ function BookCard({
             <BookCover {...commonCoverProps} variant="featured" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-light-accent dark:text-dark-accent mb-2">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent mb-2">
               <Clock className="w-3.5 h-3.5" strokeWidth={2} />
               Now Reading
             </p>
@@ -300,7 +303,7 @@ function BookCard({
             </div>
             <div className="space-y-4 max-w-md">
               <ProgressBar progress={progressPercentage} variant="featured" />
-              <div className="inline-flex items-center gap-2 text-sm font-medium text-light-accent dark:text-dark-accent">
+              <div className="inline-flex items-center gap-2 text-sm font-medium text-accent">
                 <span className="whitespace-nowrap">{isCompleted ? "Read again" : "Resume reading"}</span>
                 <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
               </div>
@@ -316,7 +319,7 @@ function BookCard({
             <ProgressBar progress={progressPercentage} variant="default" />
             <div className="absolute top-3 left-3 flex flex-col gap-2">
               {isRecent && (
-                <div className="px-2 py-1 bg-light-accent dark:bg-dark-accent text-white dark:text-black text-xs font-bold rounded-lg shadow-xs">Recent</div>
+                <div className="px-2 py-1 bg-accent text-white dark:text-black text-xs font-bold rounded-lg shadow-xs">Recent</div>
               )}
               {isCompleted && (
                 <div className="px-2 py-1 bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-xs">Complete</div>
@@ -333,8 +336,8 @@ function BookCard({
             <BookMetadata title={book.title} author={book.author} variant="default" />
             {progressPercentage > 0 && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-light-text-muted dark:text-dark-text-muted">{book.progress} / {book.totalPages} pages</span>
-                <span className="font-semibold text-light-accent dark:text-dark-accent">{progressPercentage}%</span>
+                <span className="text-fg-muted">{book.progress} / {book.totalPages} pages</span>
+                <span className="font-semibold text-accent">{progressPercentage}%</span>
               </div>
             )}
           </div>

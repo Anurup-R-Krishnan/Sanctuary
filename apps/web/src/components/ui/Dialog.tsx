@@ -155,18 +155,18 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={description ? descId : undefined}
-        className="w-full max-w-md rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl overflow-hidden animate-scaleIn"
+        className="w-full max-w-md rounded-2xl bg-page border border-line shadow-2xl overflow-hidden animate-scaleIn"
       >
         {(title || description) && (
-          <div className="px-6 py-4 border-b border-light-border dark:border-dark-border flex justify-between items-start">
+          <div className="px-6 py-4 border-b border-line flex justify-between items-start">
             <div>
               {title && (
-                <h2 id={titleId} className="text-lg font-bold text-light-text dark:text-dark-text">
+                <h2 id={titleId} className="text-lg font-bold text-fg">
                   {title}
                 </h2>
               )}
               {description && (
-                <p id={descId} className="text-sm text-light-text-muted dark:text-dark-text-muted mt-1">
+                <p id={descId} className="text-sm text-fg-muted mt-1">
                   {description}
                 </p>
               )}
@@ -186,7 +186,7 @@ export function Dialog({
         </div>
 
         {footer && (
-          <div className="px-6 py-4 bg-light-surface/50 dark:bg-dark-surface/50 border-t border-light-border dark:border-dark-border">
+          <div className="px-6 py-4 bg-surface/50 border-t border-line">
             {footer}
           </div>
         )}

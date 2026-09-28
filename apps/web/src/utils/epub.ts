@@ -1,4 +1,4 @@
-import { FoliateEpubAdapter } from "@/reader/foliate/FoliateEpubAdapter";
+import { FoliateDocumentAdapter } from "@/reader/foliate/FoliateDocumentAdapter";
 
 export type EpubMetadata = {
   creator?: string | string[];
@@ -126,10 +126,10 @@ export type EpubBookHandle = {
 
 
 export async function extractCoverBlobFromEpubSource(source: ArrayBuffer | Blob): Promise<Blob | null> {
-  let adapter: FoliateEpubAdapter | null = null;
+  let adapter: FoliateDocumentAdapter | null = null;
   try {
     const blob = source instanceof Blob ? source : new Blob([source], { type: "application/epub+zip" });
-    adapter = await FoliateEpubAdapter.create(blob);
+    adapter = await FoliateDocumentAdapter.create(blob);
     return await adapter.getCoverBlob();
   } catch (err) {
     console.warn("Cover extraction error:", err);

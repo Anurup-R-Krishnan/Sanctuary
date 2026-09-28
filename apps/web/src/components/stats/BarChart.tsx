@@ -35,7 +35,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
             {/* Tooltip */}
             {isHovered && (
               <div
-                className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-md bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 text-[10px] font-semibold tracking-wide whitespace-nowrap shadow-md pointer-events-none animate-fadeIn"
+                className="absolute -top-7 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-md bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 text-2xs font-semibold tracking-wide whitespace-nowrap shadow-md pointer-events-none animate-fadeIn"
                 role="tooltip"
               >
                 <span className="opacity-75 mr-1">{d.label}:</span>
@@ -44,9 +44,9 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
             )}
 
             {/* Bar Rail & Fill */}
-            <div className="w-full bg-light-border/60 dark:bg-dark-border/60 rounded-t flex-1 flex items-end min-h-0 overflow-hidden">
+            <div className="w-full bg-line/60 rounded-t flex-1 flex items-end min-h-0 overflow-hidden">
               <div
-                className={`w-full bg-gradient-to-t from-light-accent to-amber-500 dark:from-dark-accent dark:to-amber-400 rounded-t transition-all duration-300 ${
+                className={`w-full bg-gradient-to-t from-accent to-amber-500 dark:to-amber-400 rounded-t transition-all duration-300 ${
                   isHovered ? "opacity-100 brightness-110 shadow-xs" : "opacity-85 group-hover:opacity-100"
                 }`}
                 style={{ height: `${Math.max(barHeight, d.value > 0 ? 4 : 0)}%` }}
@@ -55,10 +55,10 @@ export const BarChart: React.FC<BarChartProps> = ({ data, maxValue, unit }) => {
 
             {/* Axis Label */}
             <span
-              className={`text-[9px] font-medium transition-colors ${
+              className={`text-3xs font-medium transition-colors ${
                 isHovered
-                  ? "text-light-text dark:text-dark-text font-bold"
-                  : "text-light-text-muted dark:text-dark-text-muted"
+                  ? "text-fg font-bold"
+                  : "text-fg-muted"
               }`}
             >
               {d.label}

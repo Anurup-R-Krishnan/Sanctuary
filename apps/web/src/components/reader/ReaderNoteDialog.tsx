@@ -77,7 +77,7 @@ export function ReaderNoteDialog({
       <div className="space-y-3">
         {selectedText && (
           <blockquote
-            className="text-xs text-light-text-muted dark:text-dark-text-muted italic border-l-2 pl-3 py-1.5 line-clamp-3 bg-light-surface/50 dark:bg-dark-surface/50 rounded-r transition-colors"
+            className="text-xs text-fg-muted border-l-2 pl-3 py-1.5 line-clamp-3 bg-surface/50 rounded-r transition-colors"
             style={{ borderLeftColor: selectedColor }}
           >
             "{selectedText}"
@@ -85,12 +85,12 @@ export function ReaderNoteDialog({
         )}
 
         {/* Color Palette Picker */}
-        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border">
+        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-surface/60 border border-line">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-light-text dark:text-dark-text">
+            <span className="text-xs font-medium text-fg">
               {currentColor.name}
             </span>
-            <span className="text-[10px] text-light-text-muted dark:text-dark-text-muted">
+            <span className="text-2xs text-fg-muted">
               • {currentColor.label}
             </span>
           </div>
@@ -104,7 +104,7 @@ export function ReaderNoteDialog({
                   aria-label={`Select ${c.label} color`}
                   className={`w-5 h-5 rounded-full transition-transform active:scale-90 flex items-center justify-center ${
                     isSelected
-                      ? "ring-2 ring-offset-1 ring-light-accent dark:ring-dark-accent scale-110"
+                      ? "ring-2 ring-offset-1 ring-accent scale-110"
                       : "hover:scale-110 opacity-80 hover:opacity-100"
                   }`}
                   key={c.id}
@@ -126,7 +126,7 @@ export function ReaderNoteDialog({
         </div>
 
         <textarea
-          className="w-full resize-none rounded-xl border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-3 text-sm text-light-text dark:text-dark-text focus:border-light-accent dark:focus:border-dark-accent focus:outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent placeholder:text-light-text-muted/60 dark:placeholder:text-dark-text-muted/60"
+          className="w-full resize-none rounded-xl border border-line bg-surface p-3 text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-fg-muted/60"
           onChange={(e) => setNote(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Write your note here... (Cmd+Enter to save)"

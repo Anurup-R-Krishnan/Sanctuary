@@ -33,7 +33,7 @@ export function ReaderContentErrorBanner({
       aria-describedby="reader-content-error-desc"
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6 animate-fadeIn"
     >
-      <div className="max-w-sm w-full rounded-2xl bg-light-primary dark:bg-dark-primary border border-red-200/60 dark:border-red-800/40 p-8 text-center shadow-2xl">
+      <div className="max-w-sm w-full rounded-2xl bg-page border border-red-200/60 dark:border-red-800/40 p-8 text-center shadow-2xl">
         <div className="mx-auto mb-5 flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/40">
           <svg
             className="w-7 h-7 text-red-500 dark:text-red-400"
@@ -52,13 +52,13 @@ export function ReaderContentErrorBanner({
         </div>
         <h3
           id="reader-content-error-title"
-          className="text-lg font-semibold text-light-text dark:text-dark-text mb-2"
+          className="text-lg font-semibold text-fg mb-2"
         >
           Unable to Load Book
         </h3>
         <p
           id="reader-content-error-desc"
-          className="text-sm text-light-text-muted dark:text-dark-text-muted mb-6 leading-relaxed"
+          className="text-sm text-fg-muted mb-6 leading-relaxed"
         >
           {contentError}
         </p>
@@ -66,14 +66,14 @@ export function ReaderContentErrorBanner({
           <button
             onClick={onClose}
             type="button"
-            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+            className="px-4 py-2.5 rounded-xl text-sm font-medium bg-page border border-line text-fg hover:bg-line/40 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
           >
             Back to Library
           </button>
           <button
             onClick={onRetry}
             type="button"
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 text-white dark:text-black transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent hover:bg-accent/90 text-white dark:text-black transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
           >
             Try Again
           </button>

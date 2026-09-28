@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fontsource-variable/instrument-sans';
+import '@fontsource-variable/newsreader';
 import '@fontsource/crimson-pro/300.css';
 import '@fontsource/crimson-pro/400.css';
 import '@fontsource/crimson-pro/500.css';

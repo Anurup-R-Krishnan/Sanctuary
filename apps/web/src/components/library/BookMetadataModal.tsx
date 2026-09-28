@@ -105,18 +105,18 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
       onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl p-6 mx-4">
+      <div className="relative w-full max-w-md rounded-2xl bg-page border border-line shadow-2xl p-6 mx-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <h2 className="text-base font-semibold text-light-text dark:text-dark-text">Edit Book Info</h2>
-            <p className="mt-0.5 text-xs text-light-text-muted dark:text-dark-text-muted truncate max-w-[18rem]">
+            <h2 className="text-base font-semibold text-fg">Edit Book Info</h2>
+            <p className="mt-0.5 text-xs text-fg-muted truncate max-w-[18rem]">
               {book.title}
             </p>
           </div>
           <button
             aria-label="Close"
-            className="rounded-lg p-1.5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+            className="rounded-lg p-1.5 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
             onClick={onClose}
             type="button"
           >
@@ -127,9 +127,9 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
         <div className="space-y-4">
           {/* Title */}
           <label className="block">
-            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted mb-1 block">Title</span>
+            <span className="text-xs font-medium text-fg-muted mb-1 block">Title</span>
             <input
-              className="w-full rounded-lg border border-light-border dark:border-dark-border bg-transparent px-3 py-2 text-sm text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+              className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-fg outline-none focus:ring-1 focus:ring-accent"
               value={edit.title}
               onChange={(e) => setEdit((s) => ({ ...s, title: e.target.value }))}
             />
@@ -137,9 +137,9 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
 
           {/* Author */}
           <label className="block">
-            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted mb-1 block">Author</span>
+            <span className="text-xs font-medium text-fg-muted mb-1 block">Author</span>
             <input
-              className="w-full rounded-lg border border-light-border dark:border-dark-border bg-transparent px-3 py-2 text-sm text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+              className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm text-fg outline-none focus:ring-1 focus:ring-accent"
               value={edit.author}
               onChange={(e) => setEdit((s) => ({ ...s, author: e.target.value }))}
             />
@@ -147,9 +147,9 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
 
           {/* Reading Status */}
           <label className="block">
-            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted mb-1 block">Reading Status</span>
+            <span className="text-xs font-medium text-fg-muted mb-1 block">Reading Status</span>
             <select
-              className="w-full rounded-lg border border-light-border dark:border-dark-border bg-light-secondary dark:bg-dark-secondary px-3 py-2 text-sm text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+              className="w-full rounded-lg border border-line bg-subtle px-3 py-2 text-sm text-fg outline-none focus:ring-1 focus:ring-accent"
               value={edit.readingList ?? ""}
               onChange={(e) =>
                 setEdit((s) => ({
@@ -167,12 +167,12 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
 
           {/* Collections */}
           <div>
-            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted mb-2 block">Collections</span>
+            <span className="text-xs font-medium text-fg-muted mb-2 block">Collections</span>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {edit.collections.map((c) => (
                 <span
                   key={c}
-                  className="flex items-center gap-1 rounded-full bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border px-2.5 py-0.5 text-xs text-light-text dark:text-dark-text"
+                  className="flex items-center gap-1 rounded-full bg-surface/60 border border-line px-2.5 py-0.5 text-xs text-fg"
                 >
                   {c}
                   <button aria-label={`Remove collection ${c}`} onClick={() => removeCollection(c)} type="button">
@@ -190,7 +190,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
                   .map((c) => (
                     <button
                       key={c}
-                      className="rounded-full border border-light-border dark:border-dark-border px-2.5 py-0.5 text-xs text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:border-light-accent dark:hover:border-dark-accent transition-colors"
+                      className="rounded-full border border-line px-2.5 py-0.5 text-xs text-fg-muted hover:text-fg hover:border-accent transition-colors"
                       onClick={() => addCollection(c)}
                       type="button"
                     >
@@ -201,7 +201,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
             )}
             <div className="flex gap-1">
               <input
-                className="flex-1 rounded-lg border border-light-border dark:border-dark-border bg-transparent px-3 py-1.5 text-sm text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+                className="flex-1 rounded-lg border border-line bg-transparent px-3 py-1.5 text-sm text-fg outline-none focus:ring-1 focus:ring-accent"
                 placeholder="New collection…"
                 value={collectionInput}
                 onChange={(e) => setCollectionInput(e.target.value)}
@@ -210,7 +210,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
                 }}
               />
               <button
-                className="rounded-lg p-2 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+                className="rounded-lg p-2 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
                 onClick={() => addCollection(collectionInput)}
                 type="button"
               >
@@ -221,12 +221,12 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
 
           {/* Tags */}
           <div>
-            <span className="text-xs font-medium text-light-text-muted dark:text-dark-text-muted mb-2 block">Tags</span>
+            <span className="text-xs font-medium text-fg-muted mb-2 block">Tags</span>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {edit.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded-full bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border px-2.5 py-0.5 text-xs text-light-text dark:text-dark-text"
+                  className="flex items-center gap-1 rounded-full bg-surface/60 border border-line px-2.5 py-0.5 text-xs text-fg"
                 >
                   {tag}
                   <button aria-label={`Remove tag ${tag}`} onClick={() => removeTag(tag)} type="button">
@@ -237,7 +237,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
             </div>
             <div className="flex gap-1">
               <input
-                className="flex-1 rounded-lg border border-light-border dark:border-dark-border bg-transparent px-3 py-1.5 text-sm text-light-text dark:text-dark-text outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent"
+                className="flex-1 rounded-lg border border-line bg-transparent px-3 py-1.5 text-sm text-fg outline-none focus:ring-1 focus:ring-accent"
                 placeholder="Add tag…"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
@@ -247,7 +247,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
                 }}
               />
               <button
-                className="rounded-lg p-2 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+                className="rounded-lg p-2 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
                 onClick={() => addTag(tagInput)}
                 type="button"
               >
@@ -260,14 +260,14 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
         {/* Footer */}
         <div className="flex justify-end gap-2 mt-6">
           <button
-            className="rounded-xl px-4 py-2 text-sm font-medium text-light-text-muted dark:text-dark-text-muted hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+            className="rounded-xl px-4 py-2 text-sm font-medium text-fg-muted hover:bg-line/40 transition-colors"
             onClick={onClose}
            type="button"
 
            >            Cancel
           </button>
           <button
-            className="rounded-xl bg-light-accent dark:bg-dark-accent px-4 py-2 text-sm font-semibold text-white dark:text-black hover:opacity-90 transition-opacity"
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white dark:text-black hover:opacity-90 transition-opacity"
             onClick={handleSave}
            type="button"
 

@@ -10,7 +10,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { getAllBooks } from "@/utils/db";
 
 export function MigrationDialog() {
-  const { isLoaded, isSignedIn } = useSanctuaryAuth();
+  const { isLoaded, isSignedIn, user } = useSanctuaryAuth();
   const api = useSanctuaryApi();
   const { mode, setSession } = useSessionStore();
   
@@ -29,16 +29,16 @@ export function MigrationDialog() {
           setShow(true);
         } else {
           // No pending books, just switch mode safely
-          setSession("authenticated", "auto");
+          setSession("authenticated", user?.id ?? null);
         }
       });
     }
-  }, [isLoaded, isSignedIn, mode, setSession]);
+  }, [isLoaded, isSignedIn, mode, setSession, user?.id]);
 
   const handleDiscard = useCallback(() => {
     setShow(false);
-    setSession("authenticated", "auto");
-  }, [setSession]);
+    setSession("authenticated", user?.id ?? null);
+  }, [setSession, user?.id]);
 
   useEffect(() => {
     if (!show || isMigrating) return;
@@ -71,7 +71,7 @@ export function MigrationDialog() {
       }
       
       setShow(false);
-      setSession("authenticated", "auto");
+      setSession("authenticated", user?.id ?? null);
     } catch (error) {
       console.error("Migration failed:", error);
     } finally {
@@ -89,22 +89,22 @@ export function MigrationDialog() {
       aria-describedby="migration-dialog-desc"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn p-4"
     >
-      <div className="bg-light-primary dark:bg-dark-primary rounded-2xl p-6 w-full max-w-md shadow-2xl border border-light-border dark:border-dark-border">
+      <div className="bg-page rounded-2xl p-6 w-full max-w-md shadow-2xl border border-line">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0">
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <h3 id="migration-dialog-title" className="text-xl font-bold text-light-text dark:text-dark-text">
+            <h3 id="migration-dialog-title" className="text-xl font-bold text-fg">
               Sync Library
             </h3>
-            <p id="migration-dialog-desc" className="text-sm text-light-text-muted dark:text-dark-text-muted">
+            <p id="migration-dialog-desc" className="text-sm text-fg-muted">
               You have {pendingBooksCount} {pendingBooksCount === 1 ? "book" : "books"} from offline mode.
             </p>
           </div>
         </div>
         
-        <p className="text-sm text-light-text dark:text-dark-text mb-6 leading-relaxed">
+        <p className="text-sm text-fg mb-6 leading-relaxed">
           Would you like to sync your offline books to your account so they are available across all your devices?
         </p>
         
@@ -113,7 +113,7 @@ export function MigrationDialog() {
             onClick={handleDiscard}
             disabled={isMigrating}
             type="button"
-            className="px-4 py-2 text-sm font-medium text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text rounded-xl hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg rounded-xl hover:bg-line/40 transition-colors focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
           >
             Discard
           </button>
@@ -121,7 +121,7 @@ export function MigrationDialog() {
             onClick={handleMigrate}
             disabled={isMigrating}
             type="button"
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white dark:text-black bg-light-accent hover:bg-light-accent/90 dark:bg-dark-accent dark:hover:bg-dark-accent/90 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent disabled:opacity-60"
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white dark:text-black bg-accent hover:bg-accent/90 rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           >
             {isMigrating ? (
               <>

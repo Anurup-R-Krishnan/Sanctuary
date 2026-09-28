@@ -26,7 +26,7 @@ type SettingsValues = {
   continuous: boolean;
   readingMode: "paginated" | "scrolled" | "continuous";
   customPalettes: CustomPalette[];
-  dailyGoal: number;
+  dailyGoal: number; // in MINUTES (not pages)
   direction: "auto" | "ltr" | "rtl";
   fontPairing: string;
   fontSize: number;

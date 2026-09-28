@@ -100,8 +100,8 @@ export const ReaderAutoScrollController: React.FC<
           style={{ top: `${pacerY}px` }}
         >
           <div className="relative w-full flex items-center justify-center">
-            <div className="w-full h-[1.5px] bg-gradient-to-r from-transparent via-light-accent/60 dark:via-dark-accent/60 to-transparent shadow-[0_0_8px_rgba(166,126,80,0.4)] dark:shadow-[0_0_8px_rgba(200,160,106,0.4)]" />
-            <div className="absolute w-2 h-2 rounded-full bg-light-accent dark:bg-dark-accent ring-2 ring-light-accent/20 dark:ring-dark-accent/20 shadow-sm" />
+            <div className="w-full h-[1.5px] bg-gradient-to-r from-transparent via-accent/60 to-transparent shadow-[0_0_8px_rgba(166,126,80,0.4)] dark:shadow-[0_0_8px_rgba(200,160,106,0.4)]" />
+            <div className="absolute w-2 h-2 rounded-full bg-accent ring-2 ring-accent/20 shadow-sm" />
           </div>
         </div>
       )}
@@ -114,7 +114,7 @@ export const ReaderAutoScrollController: React.FC<
       >
         {/* Preset Selector Popover */}
         {showPresets && (
-          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-xl border border-light-border dark:border-dark-border shadow-2xl animate-scale-in">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-page/95 backdrop-blur-xl border border-line shadow-2xl animate-scale-in">
             {AUTO_SCROLL_PRESETS.map((preset) => {
               const isSelected =
                 Math.abs(preset.velocityPxPerSec - velocityPxPerSec) < 3;
@@ -122,8 +122,8 @@ export const ReaderAutoScrollController: React.FC<
                 <button
                   className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                     isSelected
-                      ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black shadow-sm font-semibold"
-                      : "text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                      ? "bg-accent text-white dark:text-black shadow-sm font-semibold"
+                      : "text-fg-muted hover:text-fg hover:bg-line/40"
                   }`}
                   key={preset.id}
                   onClick={() => {
@@ -133,7 +133,7 @@ export const ReaderAutoScrollController: React.FC<
                   type="button"
                 >
                   {preset.label}
-                  <span className="ml-1 text-[10px] opacity-70">
+                  <span className="ml-1 text-2xs opacity-70">
                     {preset.velocityPxPerSec}
                   </span>
                 </button>
@@ -143,14 +143,14 @@ export const ReaderAutoScrollController: React.FC<
         )}
 
         {/* Primary Floating Capsule */}
-        <div className="flex items-center gap-1.5 p-1.5 px-2.5 rounded-full bg-light-primary/95 dark:bg-dark-primary/95 backdrop-blur-xl border border-light-border dark:border-dark-border shadow-2xl text-light-text dark:text-dark-text">
+        <div className="flex items-center gap-1.5 p-1.5 px-2.5 rounded-full bg-page/95 backdrop-blur-xl border border-line shadow-2xl text-fg">
           {/* Play/Pause Button */}
           <button
             aria-label={isPlaying ? "Pause auto-scroll (Space)" : "Start auto-scroll (Space)"}
             className={`p-2 rounded-full transition-colors flex items-center justify-center ${
               isPlaying
-                ? "bg-light-accent dark:bg-dark-accent text-white dark:text-black shadow-sm hover:opacity-90"
-                : "bg-light-surface/80 dark:bg-dark-surface/80 text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                ? "bg-accent text-white dark:text-black shadow-sm hover:opacity-90"
+                : "bg-surface/80 text-fg hover:bg-line/40"
             }`}
             onClick={onTogglePlay}
             title={isPlaying ? "Pause (Space)" : "Play (Space)"}
@@ -163,13 +163,13 @@ export const ReaderAutoScrollController: React.FC<
             )}
           </button>
 
-          <div className="w-px h-5 bg-light-border dark:bg-dark-border mx-0.5" />
+          <div className="w-px h-5 bg-line mx-0.5" />
 
           {/* Speed Stepper Controls */}
           <div className="flex items-center gap-1">
             <button
               aria-label="Decrease scroll speed ([)"
-              className="p-1.5 rounded-full text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+              className="p-1.5 rounded-full text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
               onClick={() => onSpeedChange(stepVelocity(velocityPxPerSec, "down"))}
               title="Decrease speed ([)"
               type="button"
@@ -181,22 +181,22 @@ export const ReaderAutoScrollController: React.FC<
               aria-expanded={showPresets}
               aria-haspopup="listbox"
               aria-label={`Scroll speed: ${clampVelocity(velocityPxPerSec)} pixels per second. Click to toggle speed presets.`}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors tabular-nums"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-fg hover:bg-line/40 transition-colors tabular-nums"
               onClick={() => setShowPresets((prev) => !prev)}
               title="Click to select speed preset"
               type="button"
             >
               <span>{clampVelocity(velocityPxPerSec)} px/s</span>
               {showPresets ? (
-                <ChevronDown className="w-3 h-3 text-light-text-muted dark:text-dark-text-muted" />
+                <ChevronDown className="w-3 h-3 text-fg-muted" />
               ) : (
-                <ChevronUp className="w-3 h-3 text-light-text-muted dark:text-dark-text-muted" />
+                <ChevronUp className="w-3 h-3 text-fg-muted" />
               )}
             </button>
 
             <button
               aria-label="Increase scroll speed (])"
-              className="p-1.5 rounded-full text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+              className="p-1.5 rounded-full text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
               onClick={() => onSpeedChange(stepVelocity(velocityPxPerSec, "up"))}
               title="Increase speed (])"
               type="button"
@@ -205,15 +205,15 @@ export const ReaderAutoScrollController: React.FC<
             </button>
           </div>
 
-          <div className="w-px h-5 bg-light-border dark:bg-dark-border mx-0.5" />
+          <div className="w-px h-5 bg-line mx-0.5" />
 
           {/* Visual Pacer Guideline Toggle */}
           <button
             aria-label={isPacerEnabled ? "Disable pacer line" : "Enable pacer line"}
             className={`p-1.5 rounded-full transition-colors ${
               isPacerEnabled
-                ? "bg-light-accent/15 text-light-accent dark:bg-dark-accent/20 dark:text-dark-accent border border-light-accent/30 dark:border-dark-accent/30"
-                : "text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40"
+                ? "bg-accent/15 text-accent border border-accent/30"
+                : "text-fg-muted hover:text-fg hover:bg-line/40"
             }`}
             onClick={onTogglePacer}
             title={isPacerEnabled ? "Disable pacer line" : "Enable pacer line"}
@@ -225,7 +225,7 @@ export const ReaderAutoScrollController: React.FC<
           {/* Close Auto-Scroll Dock */}
           <button
             aria-label="Exit auto-scroll (Esc)"
-            className="p-1.5 rounded-full text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors ml-0.5"
+            className="p-1.5 rounded-full text-fg-muted hover:text-fg hover:bg-line/40 transition-colors ml-0.5"
             onClick={onClose}
             title="Exit auto-scroll (Esc)"
             type="button"

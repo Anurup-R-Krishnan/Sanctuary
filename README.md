@@ -31,7 +31,7 @@ To ensure a pristine, reproducible development environment (bypassing native OS 
 
 ### 🖥️ Bare-metal Development
 
-If you prefer to run on the host directly (required for Desktop and Mobile development):
+If you prefer to run on the host directly (required for Mobile development):
 
 1. Install dependencies:
    ```bash
@@ -42,17 +42,30 @@ If you prefer to run on the host directly (required for Desktop and Mobile devel
    bun run dev
    ```
 
-### 📦 Linux desktop release
+### 🖥️ Desktop (Linux)
 
-Sanctuary desktop uses the web app as its frontend inside Tauri. Build the
-offline-first Linux AppImage with:
+Build and run the Tauri-based desktop application for Linux.
 
+**Prerequisites:**
+- Rust (install from https://rustup.rs/)
+- Linux development dependencies (libssl-dev, libwebkit2gtk-4.1-dev, etc.)
+
+**Development:**
 ```bash
-cd apps/desktop
-./build-appimage.sh
+bun run desktop:dev
 ```
 
-See [the desktop release checklist](docs/DESKTOP_RELEASE_CHECKLIST.md) before distributing a build.
+**Build:**
+```bash
+bun run desktop:build
+```
+
+**Build AppImage:**
+```bash
+cd apps/web && ./build-appimage.sh
+```
+
+The AppImage will be installed to `~/Applications/Sanctuary.AppImage`.
 
 ## 🛠️ Code Quality Stack
 

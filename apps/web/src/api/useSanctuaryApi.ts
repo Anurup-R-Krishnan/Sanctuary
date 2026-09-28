@@ -5,7 +5,8 @@ import { useSanctuaryAuth } from "../auth/useSanctuaryAuth";
 
 export function useSanctuaryApi() {
   const { getToken } = useSanctuaryAuth();
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  // Same-origin by default; desktop/mobile builds point VITE_API_BASE_URL at the deployed API.
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
   const api = useMemo(() => {
     return new SanctuaryApiClient({

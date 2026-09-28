@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 
 import type { Book, BookSearchResult } from "@/types";
 
+import { CoverImage } from "@/components/ui/CoverImage";
 import { GenerativeBookCover } from "@/components/ui/GenerativeBookCover";
 import { searchLibrary } from "@/services/librarySearchIndex";
 
@@ -112,14 +113,14 @@ export function GlobalSearchModal({
       tabIndex={-1}
     >
       <div
-        className="w-full max-w-2xl bg-light-primary dark:bg-dark-primary rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden flex flex-col my-auto"
+        className="w-full max-w-2xl bg-page rounded-2xl shadow-2xl border border-line overflow-hidden flex flex-col my-auto"
       >
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-light-border dark:border-dark-border gap-3">
-          <Search className="w-5 h-5 text-light-text-muted dark:text-dark-text-muted shrink-0" />
+        <div className="flex items-center px-4 py-3.5 border-b border-line gap-3">
+          <Search className="w-5 h-5 text-fg-muted shrink-0" />
           <input
             aria-label="Search all books"
-            className="flex-1 bg-transparent text-sm sm:text-base text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted outline-none"
+            className="flex-1 bg-transparent text-sm sm:text-base text-fg placeholder:text-fg-muted outline-none"
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search across entire library..."
             ref={inputRef}
@@ -129,7 +130,7 @@ export function GlobalSearchModal({
           {query && (
             <button
               aria-label="Clear search input"
-              className="p-1 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text rounded-md transition-colors"
+              className="p-1 text-fg-muted hover:text-fg rounded-md transition-colors"
               onClick={() => setQuery("")}
             >
               <X className="w-4 h-4" />
@@ -137,7 +138,7 @@ export function GlobalSearchModal({
           )}
           <button
             aria-label="Close search"
-            className="p-1.5 text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text rounded-lg hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors text-xs font-medium"
+            className="p-1.5 text-fg-muted hover:text-fg rounded-lg hover:bg-line/40 transition-colors text-xs font-medium"
             onClick={onClose}
            type="button"
 
@@ -148,18 +149,18 @@ export function GlobalSearchModal({
         {/* Results Area */}
         <div className="max-h-[60vh] overflow-y-auto p-4 space-y-4">
           {isSearching && (
-            <div className="py-8 text-center text-xs text-light-text-muted dark:text-dark-text-muted">
+            <div className="py-8 text-center text-xs text-fg-muted">
               Searching entire library...
             </div>
           )}
 
           {!isSearching && query.trim().length >= 2 && results.length === 0 && (
             <div className="py-12 text-center space-y-2">
-              <FileText className="w-8 h-8 mx-auto text-light-text-muted/50 dark:text-dark-text-muted/50" />
-              <p className="text-sm font-medium text-light-text dark:text-dark-text">
+              <FileText className="w-8 h-8 mx-auto text-fg-muted/50" />
+              <p className="text-sm font-medium text-fg">
                 No matches found
               </p>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-xs text-fg-muted">
                 Try searching for a different word or phrase across your books.
               </p>
             </div>
@@ -167,19 +168,19 @@ export function GlobalSearchModal({
 
           {!isSearching && query.trim().length < 2 && (
             <div className="py-10 text-center space-y-2">
-              <BookOpen className="w-8 h-8 mx-auto text-light-accent/50 dark:text-dark-accent/50" />
-              <p className="text-sm font-medium text-light-text dark:text-dark-text">
+              <BookOpen className="w-8 h-8 mx-auto text-accent/50" />
+              <p className="text-sm font-medium text-fg">
                 Full-Text Library Search
               </p>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted max-w-sm mx-auto">
-                Search passages, quotes, or themes across all your books. Press <kbd className="px-1.5 py-0.5 rounded bg-light-border/60 dark:bg-dark-border/60 border border-light-border dark:border-dark-border text-[10px] font-mono">Cmd+K</kbd> anytime to open.
+              <p className="text-xs text-fg-muted max-w-sm mx-auto">
+                Search passages, quotes, or themes across all your books. Press <kbd className="px-1.5 py-0.5 rounded bg-line/60 border border-line text-2xs font-mono">Cmd+K</kbd> anytime to open.
               </p>
             </div>
           )}
 
           {!isSearching && results.length > 0 && (
             <>
-              <div className="text-[11px] font-semibold text-light-text-muted dark:text-dark-text-muted uppercase tracking-wider px-1">
+              <div className="text-xs font-semibold text-fg-muted uppercase tracking-wider px-1">
                 Found {totalMatches} {totalMatches === 1 ? "match" : "matches"} across {results.length} {results.length === 1 ? "book" : "books"}
               </div>
 
@@ -190,7 +191,7 @@ export function GlobalSearchModal({
 
                   return (
                     <div
-                      className="p-3.5 rounded-xl border border-light-border dark:border-dark-border bg-light-surface/40 dark:bg-dark-surface/40 space-y-2.5"
+                      className="p-3.5 rounded-xl border border-line bg-surface/40 space-y-2.5"
                       key={item.bookId}
                     >
                         <div className="flex items-center justify-between">
@@ -201,29 +202,27 @@ export function GlobalSearchModal({
                               onClose();
                             }}
                           >
-                            {item.coverUrl ? (
-                              <img
-                                alt=""
-                                className="w-7 h-10 object-cover rounded shadow-sm shrink-0"
-                                src={item.coverUrl}
-                              />
-                            ) : (
-                              <div className="w-7 h-10 rounded overflow-hidden shadow-sm shrink-0">
+                            <CoverImage
+                              className="w-7 h-10 object-cover rounded shadow-sm shrink-0"
+                              fallback={
+                                <div className="w-7 h-10 rounded overflow-hidden shadow-sm shrink-0">
                                 <GenerativeBookCover author={item.author} title={item.title} variant="compact" />
                               </div>
-                            )}
+                              }
+                              url={item.coverUrl}
+                            />
                             <div>
-                              <h4 className="text-sm font-semibold text-light-text dark:text-dark-text group-hover:text-light-accent dark:group-hover:text-dark-accent transition-colors line-clamp-1">
+                              <h4 className="text-sm font-semibold text-fg group-hover:text-accent transition-colors line-clamp-1">
                                 {item.title}
                               </h4>
                               {item.author && (
-                                <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+                                <p className="text-xs text-fg-muted">
                                   {item.author}
                                 </p>
                               )}
                             </div>
                           </button>
-                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-light-surface dark:bg-dark-surface text-light-text-muted dark:text-dark-text-muted border border-light-border/60 dark:border-dark-border/60 font-medium">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-surface text-fg-muted border border-line/60 font-medium">
                             {item.totalMatches} {item.totalMatches === 1 ? "match" : "matches"}
                           </span>
                         </div>
@@ -232,21 +231,21 @@ export function GlobalSearchModal({
                         <div className="space-y-1.5 pt-1">
                           {item.matches.map((match, mi) => (
                             <button
-                              className="w-full text-left p-2 rounded-lg hover:bg-light-surface dark:hover:bg-dark-surface text-xs text-light-text-muted dark:text-dark-text-muted flex items-start gap-2 group transition-colors"
+                              className="w-full text-left p-2 rounded-lg hover:bg-surface text-xs text-fg-muted flex items-start gap-2 group transition-colors"
                               key={mi}
                               onClick={() => {
                                 onSelectBook(book, match.cfi);
                                 onClose();
                               }}
                             >
-                              <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-light-text-muted/60 dark:text-dark-text-muted/60 group-hover:text-light-accent dark:group-hover:text-dark-accent" />
+                              <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-fg-muted/60 group-hover:text-accent" />
                               <div className="flex-1 min-w-0">
                                 {match.sectionTitle && (
-                                  <span className="block text-[10px] font-semibold text-light-text/70 dark:text-dark-text/70 mb-0.5">
+                                  <span className="block text-2xs font-semibold text-fg/70 mb-0.5">
                                     {match.sectionTitle}
                                   </span>
                                 )}
-                                <p className="leading-relaxed line-clamp-2 text-light-text dark:text-dark-text">
+                                <p className="leading-relaxed line-clamp-2 text-fg">
                                   <HighlightedSnippet query={query} text={match.snippet} />
                                 </p>
                               </div>

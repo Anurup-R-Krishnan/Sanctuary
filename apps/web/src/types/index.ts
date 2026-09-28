@@ -110,15 +110,13 @@ export interface ReadingStats {
   badges: Badge[];
   booksCompletedThisMonth: number;
   currentStreak: number;
-  dailyGoal: number;
-  dailyProgress: number;
+  dailyGoal: number; // in MINUTES (the stored field is in minutes, not pages)
+  dailyProgress: number; // in MINUTES (reading time accumulated today)
   genreDistribution: { genre: string; count: number; color: string }[];
   goals?: ReadingGoals;
   heatmapData: number[][];
   longestStreak: number;
   monthlyData: { month: string; hours: number; books: number }[];
-  personalityDescription: string;
-  readingPersonality: string;
   totalBooksInLibrary: number;
   totalBooksRead: number;
   totalPagesRead: number;
@@ -141,11 +139,6 @@ export const DEFAULT_WEEKLY_DATA = [
 ] as const;
 
 export const DEFAULT_DAILY_GOAL = 30;
-
-export const DEFAULT_PERSONALITY = {
-  personality: "Explorer" as string,
-  description: "You're just getting started on your reading journey!" as string,
-};
 
 export const DEFAULT_BADGES: Badge[] = [
   { id: "first_book", name: "First Steps", icon: "📖", description: "Complete your first book", unlocked: false, progress: 0, target: 1 },

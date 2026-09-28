@@ -71,19 +71,19 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
     <div
       className={`relative p-4 rounded-2xl border text-center transition-all flex flex-col justify-between overflow-hidden ${
         badge.unlocked
-          ? `bg-light-surface dark:bg-dark-surface ${rarityStyle.border} shadow-xs`
-          : "opacity-45 bg-light-surface/40 dark:bg-dark-surface/40 border-light-border dark:border-dark-border"
+          ? `bg-surface ${rarityStyle.border} shadow-xs`
+          : "opacity-45 bg-surface/40 border-line"
       }`}
     >
       {/* Top Meta: Rarity Tag */}
       <div className="flex items-center justify-between w-full mb-1">
         <span
-          className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${rarityStyle.badge}`}
+          className={`text-3xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${rarityStyle.badge}`}
         >
           {rarity}
         </span>
         {badge.unlocked && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+          <span className="inline-flex items-center gap-1 text-2xs text-emerald-600 dark:text-emerald-400 font-semibold">
             <CheckCircle2 className="w-3 h-3" />
             <span>Unlocked</span>
           </span>
@@ -96,20 +96,20 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
           className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-2.5 transition-transform ${
             badge.unlocked
               ? `bg-gradient-to-br ${rarityStyle.glow} shadow-inner`
-              : "bg-light-surface/60 dark:bg-dark-surface/60"
+              : "bg-surface/60"
           }`}
         >
           <IconComponent
             className={`w-5 h-5 ${
               badge.unlocked
-                ? "text-light-accent dark:text-dark-accent"
-                : "text-light-text-muted/40 dark:text-dark-text-muted/40"
+                ? "text-accent"
+                : "text-fg-muted/40"
             }`}
             strokeWidth={1.8}
           />
         </div>
-        <p className="font-semibold text-sm text-light-text dark:text-dark-text">{badge.name}</p>
-        <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted mt-1 leading-relaxed">
+        <p className="font-semibold text-sm text-fg">{badge.name}</p>
+        <p className="text-xs text-fg-muted mt-1 leading-relaxed">
           {badge.description}
         </p>
       </div>
@@ -118,19 +118,19 @@ export const BadgeCard = ({ badge }: BadgeCardProps) => {
       <div>
         {badge.target && !badge.unlocked && (
           <div className="mt-2">
-            <div className="h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-line/60 rounded-full overflow-hidden">
               <div
-                className="h-full bg-light-accent dark:bg-dark-accent rounded-full transition-all duration-300"
+                className="h-full bg-accent rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-[9px] text-light-text-muted dark:text-dark-text-muted mt-1 tabular-nums">
+            <p className="text-3xs text-fg-muted mt-1 tabular-nums">
               {badge.progress || 0} / {badge.target}
             </p>
           </div>
         )}
         {!badge.target && !badge.unlocked && (
-          <p className="text-[9px] text-light-text-muted/60 dark:text-dark-text-muted/60 mt-1 italic">
+          <p className="text-3xs text-fg-muted/60 mt-1">
             Habit challenge
           </p>
         )}

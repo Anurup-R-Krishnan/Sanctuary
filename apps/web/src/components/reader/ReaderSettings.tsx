@@ -25,15 +25,15 @@ const Slider = ({ label, value, min, max, step, onChange, format }: {
   onChange: (v: number) => void; format?: (v: number) => string;
 }) => (
   <div className="flex flex-wrap items-center gap-3">
-    <span className="w-24 shrink-0 text-sm font-medium text-light-text-muted dark:text-dark-text-muted">{label}</span>
+    <span className="w-24 shrink-0 text-sm font-medium text-fg-muted">{label}</span>
     <input
       type="range"
       min={min} max={max} step={step}
       value={value}
       onChange={(e) => onChange(parseFloat(e.target.value))}
-      className="flex-1 accent-light-accent dark:accent-dark-accent h-1.5 bg-light-border/60 dark:bg-dark-border/60 rounded-full appearance-none outline-none cursor-pointer"
+      className="flex-1 accent-accent h-1.5 bg-line/60 rounded-full appearance-none outline-none cursor-pointer"
     />
-    <span className="w-12 text-right text-xs font-mono text-light-text-muted dark:text-dark-text-muted">{format ? format(value) : value}</span>
+    <span className="w-12 text-right text-xs font-mono text-fg-muted">{format ? format(value) : value}</span>
   </div>
 );
 
@@ -46,7 +46,7 @@ const ButtonGroup = ({ actionNode, label, options, value, onChange }: {
 }) => (
   <div className="flex flex-col gap-2">
     <div className="flex items-center justify-between">
-      <span className="text-sm font-medium text-light-text-muted dark:text-dark-text-muted">{label}</span>
+      <span className="text-sm font-medium text-fg-muted">{label}</span>
       {actionNode}
     </div>
     <div className="flex flex-wrap gap-2">
@@ -58,8 +58,8 @@ const ButtonGroup = ({ actionNode, label, options, value, onChange }: {
             className={cx(
               "w-full py-1.5 px-3 rounded-lg border text-sm transition-all duration-instant active:scale-[0.98] text-center",
               value === opt.value
-                ? "bg-light-accent/10 border-light-accent text-light-accent dark:bg-dark-accent/10 dark:border-dark-accent dark:text-dark-accent"
-                : "border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 active:bg-light-border/60 dark:active:bg-dark-border/60"
+                ? "bg-accent/10 border-accent text-accent"
+                : "border-line text-fg hover:bg-line/40 active:bg-line/60"
             )}
           >
             {opt.icon && <span className="inline-block mr-2 align-middle">{opt.icon}</span>}
@@ -73,7 +73,7 @@ const ButtonGroup = ({ actionNode, label, options, value, onChange }: {
                 opt.onRemove?.();
               }}
               title={`Remove ${opt.label}`}
-              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] opacity-70 hover:opacity-100 transition-opacity"
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-2xs opacity-70 hover:opacity-100 transition-opacity"
             >
               <X className="w-2.5 h-2.5" />
             </button>
@@ -93,12 +93,12 @@ const MiniToggle = ({ checked, onChange, label }: { checked: boolean; onChange: 
     className={cx(
       "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-instant",
       checked
-        ? "bg-light-accent/10 dark:bg-dark-accent/10 text-light-text dark:text-dark-text"
-        : "bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border/40 dark:border-dark-border/40 text-light-text-muted dark:text-dark-text-muted hover:bg-light-surface/70 dark:hover:bg-dark-surface/70"
+        ? "bg-accent/10 text-fg"
+        : "bg-surface/40 border border-line/40 text-fg-muted hover:bg-surface/70"
     )}
   >
     <span className="font-medium">{label}</span>
-    <div className={cx("relative w-9 h-5 rounded-full transition-colors", checked ? "bg-light-accent dark:bg-dark-accent" : "bg-light-border dark:bg-dark-border")}>
+    <div className={cx("relative w-9 h-5 rounded-full transition-colors", checked ? "bg-accent" : "bg-line")}>
       <div className={cx("absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all", checked ? "left-4" : "left-0.5")} />
     </div>
   </button>
@@ -127,13 +127,13 @@ const ShortcutRow = ({ label, keys, onChange }: { label: string; keys: string[];
 
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-light-text dark:text-dark-text">{label}</span>
+      <span className="text-sm text-fg">{label}</span>
       <div className="flex items-center gap-2">
         {isEditing ? (
           <input
             type="text" readOnly autoFocus
             aria-label={`${label} shortcut editor`}
-            className="px-2 py-1 text-xs bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent cursor-text min-w-[100px] text-center"
+            className="px-2 py-1 text-xs bg-surface border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-accent cursor-text min-w-[100px] text-center"
             onKeyDown={handleKeyDown}
             onBlur={cancelEditing}
             value={tempKeys.length === 0 ? "Press keys…" : tempKeys.join(" + ")}
@@ -143,7 +143,7 @@ const ShortcutRow = ({ label, keys, onChange }: { label: string; keys: string[];
           <div className="flex items-center gap-1">
             {keys.map((key, i) => (
               <span key={i} className="relative group">
-                <kbd className="px-1.5 py-0.5 text-[11px] bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border rounded font-mono">
+                <kbd className="px-1.5 py-0.5 text-xs bg-surface border border-line rounded font-mono">
                   {key === " " ? "Space" : key}
                 </kbd>
                 <IconButton
@@ -159,7 +159,7 @@ const ShortcutRow = ({ label, keys, onChange }: { label: string; keys: string[];
               onClick={startEditing}
               variant="ghost" size="sm"
               aria-label={`Add key binding for ${label}`}
-              className="!px-1.5 !py-0.5 !rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 text-light-accent dark:text-dark-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/20"
+              className="!px-1.5 !py-0.5 !rounded-lg bg-accent/10 text-accent hover:bg-accent/20"
             >
               <Plus className="w-3 h-3" />
             </Button>
@@ -249,10 +249,10 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
+      <div className="p-4 border-b border-line flex items-center justify-between">
         <div>
-          <h2 className="font-semibold text-light-text dark:text-dark-text">Reader Settings</h2>
-          <p className="text-[11px] text-light-text-muted dark:text-dark-text-muted">Appearance & typography</p>
+          <h2 className="font-semibold text-fg">Reader Settings</h2>
+          <p className="text-xs text-fg-muted">Appearance & typography</p>
         </div>
         {onClose && (
           <button
@@ -260,7 +260,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
             aria-label="Close reader settings (Esc)"
             title="Close reader settings (Esc)"
             type="button"
-            className="p-2 rounded-full text-light-text-muted hover:text-light-text dark:text-dark-text-muted dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors border border-transparent hover:border-light-border dark:hover:border-dark-border cursor-pointer"
+            className="p-2 rounded-full text-fg-muted hover:text-fg hover:bg-line/40 transition-colors border border-transparent hover:border-line cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -272,11 +272,11 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
         {/* Colors */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight">Theme</h3>
+            <h3 className="text-base font-semibold text-fg tracking-tight">Theme</h3>
             <button
               onClick={() => setIsThemeStudioOpen(true)}
               type="button"
-              className="text-xs font-semibold text-light-accent dark:text-dark-accent hover:underline flex items-center gap-1.5"
+              className="text-xs font-semibold text-accent hover:underline flex items-center gap-1.5"
             >
               <Palette className="w-3.5 h-3.5" />
               <span>Theme Studio</span>
@@ -291,15 +291,15 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
                   onClick={() => { state.setReaderForeground(preset.fg); state.setReaderBackground(preset.bg); state.setReaderAccent(preset.accent); }}
                   className={cx(
                     "relative flex flex-col items-center p-3 rounded-xl border transition-all duration-instant",
-                    isActive ? "border-light-accent dark:border-dark-accent shadow-xs" : "border-light-border dark:border-dark-border hover:border-light-accent/40 dark:hover:border-dark-accent/40"
+                    isActive ? "border-accent shadow-xs" : "border-line hover:border-accent/40"
                   )}
                 >
-                  <div className="w-10 h-10 rounded-lg mb-2 flex items-center justify-center border border-light-border dark:border-dark-border shadow-xs" style={{ backgroundColor: preset.bg }}>
+                  <div className="w-10 h-10 rounded-lg mb-2 flex items-center justify-center border border-line shadow-xs" style={{ backgroundColor: preset.bg }}>
                     <span className="text-sm font-serif font-bold" style={{ color: preset.fg }}>Aa</span>
                   </div>
-                  <span className="text-xs font-medium text-light-text dark:text-dark-text">{preset.label}</span>
+                  <span className="text-xs font-medium text-fg">{preset.label}</span>
                   {isActive && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-light-accent dark:bg-dark-accent rounded-full flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full flex items-center justify-center">
                       <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                     </div>
                   )}
@@ -308,23 +308,23 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
             })}
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <label className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-light-border dark:border-dark-border cursor-pointer hover:bg-light-surface/50 dark:hover:bg-dark-surface/50 transition-colors">
+            <label className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-line cursor-pointer hover:bg-surface/50 transition-colors">
               <input type="color" value={state.readerForeground} onChange={(e) => state.setReaderForeground(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
-              <div className="w-6 h-6 rounded-md border border-light-border dark:border-dark-border shadow-2xs" style={{ backgroundColor: state.readerForeground }} />
-              <span className="text-[11px] font-medium text-light-text dark:text-dark-text">Text</span>
+              <div className="w-6 h-6 rounded-md border border-line shadow-2xs" style={{ backgroundColor: state.readerForeground }} />
+              <span className="text-xs font-medium text-fg">Text</span>
             </label>
-            <label className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-light-border dark:border-dark-border cursor-pointer hover:bg-light-surface/50 dark:hover:bg-dark-surface/50 transition-colors">
+            <label className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-line cursor-pointer hover:bg-surface/50 transition-colors">
               <input type="color" value={state.readerBackground} onChange={(e) => state.setReaderBackground(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
-              <div className="w-6 h-6 rounded-md border border-light-border dark:border-dark-border shadow-2xs" style={{ backgroundColor: state.readerBackground }} />
-              <span className="text-[11px] font-medium text-light-text dark:text-dark-text">Background</span>
+              <div className="w-6 h-6 rounded-md border border-line shadow-2xs" style={{ backgroundColor: state.readerBackground }} />
+              <span className="text-xs font-medium text-fg">Background</span>
             </label>
-            <label className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-light-border dark:border-dark-border cursor-pointer hover:bg-light-surface/50 dark:hover:bg-dark-surface/50 transition-colors">
+            <label className="relative flex flex-col items-center gap-1.5 p-2.5 rounded-xl border border-line cursor-pointer hover:bg-surface/50 transition-colors">
               <input type="color" value={state.readerAccent} onChange={(e) => state.setReaderAccent(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" />
-              <div className="w-6 h-6 rounded-md border border-light-border dark:border-dark-border shadow-2xs" style={{ backgroundColor: state.readerAccent }} />
-              <span className="text-[11px] font-medium text-light-text dark:text-dark-text">Accent</span>
+              <div className="w-6 h-6 rounded-md border border-line shadow-2xs" style={{ backgroundColor: state.readerAccent }} />
+              <span className="text-xs font-medium text-fg">Accent</span>
             </label>
           </div>
-          <div className="mt-2.5 flex items-center justify-between px-1 text-[11px] text-light-text-muted dark:text-dark-text-muted">
+          <div className="mt-2.5 flex items-center justify-between px-1 text-xs text-fg-muted">
             <span>Contrast: {currentWcag.ratio}:1</span>
             <span className={currentWcag.isAccessible ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-amber-600 dark:text-amber-400 font-medium"}>
               {currentWcag.label}
@@ -334,7 +334,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
         {/* Typography */}
         <div>
-          <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight mb-4">Typography</h3>
+          <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Typography</h3>
           <div className="space-y-4">
             <Slider label="Size" value={state.fontSize} min={12} max={32} step={1} onChange={state.setFontSize} format={(v) => v + "px"} />
             <Slider label="Line Height" value={state.lineHeight} min={1.1} max={2.5} step={0.05} onChange={state.setLineHeight} format={(v) => v.toFixed(2)} />
@@ -367,7 +367,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
             <ButtonGroup
               actionNode={
-                <label className="inline-flex items-center gap-1 text-xs font-medium text-light-accent dark:text-dark-accent hover:underline cursor-pointer">
+                <label className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline cursor-pointer">
                   <Upload className="w-3.5 h-3.5" />
                   <span>+ Upload Font</span>
                   <input
@@ -402,7 +402,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
         {/* Layout */}
         <div>
-          <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight mb-4">Layout</h3>
+          <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Layout</h3>
           <div className="space-y-4">
             <ButtonGroup
               label="Reading Mode"
@@ -444,7 +444,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
         {/* Display */}
         <div>
-          <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight mb-4">Display</h3>
+          <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Display</h3>
           <div className="space-y-4">
             <Slider label="Brightness" value={state.brightness} min={50} max={100} step={1} onChange={state.setBrightness} format={(v) => v + "%"} />
             <MiniToggle checked={state.grayscale} onChange={state.setGrayscale} label="Grayscale" />
@@ -476,15 +476,15 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
         {/* Text-to-Speech */}
         <div>
-          <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight mb-4">Read Aloud</h3>
+          <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Read Aloud</h3>
           <div className="space-y-4">
             {voices.length > 0 ? (
               <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-light-text-muted dark:text-dark-text-muted">Voice</span>
+                <span className="text-sm font-medium text-fg-muted">Voice</span>
                 <select
                   value={state.ttsVoiceURI ?? ""}
                   onChange={(e) => state.setTtsVoiceURI(e.target.value || null)}
-                  className="w-full h-10 rounded-xl border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface text-light-text dark:text-dark-text text-sm px-3 outline-none focus:ring-2 focus:ring-light-accent dark:focus:ring-dark-accent"
+                  className="w-full h-10 rounded-xl border border-line bg-surface text-fg text-sm px-3 outline-none focus:ring-2 focus:ring-accent"
                 >
                   {voices.map((v) => (
                     <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>
@@ -492,7 +492,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
                 </select>
               </div>
             ) : (
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">No voices available on this device.</p>
+              <p className="text-xs text-fg-muted">No voices available on this device.</p>
             )}
             <Slider label="Rate" value={state.ttsRate} min={0.5} max={2} step={0.1} onChange={state.setTtsRate} format={(v) => v.toFixed(1) + "x"} />
             <Slider label="Pitch" value={state.ttsPitch} min={0.5} max={2} step={0.1} onChange={state.setTtsPitch} format={(v) => v.toFixed(1)} />
@@ -502,11 +502,11 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
         {/* Ambient Soundscapes */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight">Ambient Soundscapes</h3>
+            <h3 className="text-base font-semibold text-fg tracking-tight">Ambient Soundscapes</h3>
             <button
               type="button"
               onClick={togglePlayAmbient}
-              className="text-xs font-medium px-2.5 py-1 rounded-lg bg-light-accent/10 dark:bg-dark-accent/10 text-light-accent dark:text-dark-accent hover:bg-light-accent/20 dark:hover:bg-dark-accent/20 transition-colors"
+              className="text-xs font-medium px-2.5 py-1 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
             >
               {isAmbientPlaying ? "Pause" : "Play"}
             </button>
@@ -534,8 +534,8 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
 
         {/* Keyboard Shortcuts */}
         <div>
-          <h3 className="text-base font-semibold text-light-text dark:text-dark-text tracking-tight mb-4">Keyboard Shortcuts</h3>
-          <div className="space-y-1 p-3 rounded-2xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border divide-y divide-light-border/60 dark:divide-dark-border/60">
+          <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Keyboard Shortcuts</h3>
+          <div className="space-y-1 p-3 rounded-2xl bg-surface/40 border border-line divide-y divide-line/60">
             {SHORTCUTS.map((s) => (
               <ShortcutRow
                 key={s.key}
@@ -545,16 +545,16 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
               />
             ))}
           </div>
-          <div className="mt-3 p-2.5 rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-[11px] text-light-text-muted dark:text-dark-text-muted leading-relaxed">
-            <span className="font-semibold text-light-text dark:text-dark-text">Quick keys: </span>
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">T</kbd> Contents ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">S</kbd> Settings ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">F</kbd> Search ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">Z</kbd> Zen Focus ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">X</kbd> X-Ray ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">A</kbd> Auto-Scroll ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">M</kbd> Readability ·{" "}
-            <kbd className="px-1.5 py-0.5 rounded bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-mono shadow-2xs">?</kbd> All Shortcuts
+          <div className="mt-3 p-2.5 rounded-xl bg-surface/60 border border-line text-xs text-fg-muted leading-relaxed">
+            <span className="font-semibold text-fg">Quick keys: </span>
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">T</kbd> Contents ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">S</kbd> Settings ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">F</kbd> Search ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">Z</kbd> Zen Focus ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">X</kbd> X-Ray ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">A</kbd> Auto-Scroll ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">M</kbd> Readability ·{" "}
+            <kbd className="px-1.5 py-0.5 rounded bg-surface border border-line font-mono shadow-2xs">?</kbd> All Shortcuts
           </div>
         </div>
       </div>

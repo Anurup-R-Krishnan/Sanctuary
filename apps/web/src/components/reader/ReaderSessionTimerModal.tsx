@@ -107,28 +107,28 @@ export function ReaderSessionTimerModal({
         type="button"
       />
 
-      <div className="relative z-10 w-full max-w-md p-6 rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl space-y-5 animate-scale-in">
+      <div className="relative z-10 w-full max-w-md p-6 rounded-2xl bg-page border border-line shadow-2xl space-y-5 animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-light-border/60 dark:border-dark-border/60">
+        <div className="flex items-center justify-between pb-3 border-b border-line/60">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-light-accent/10 dark:bg-dark-accent/10 text-light-accent dark:text-dark-accent">
+            <div className="p-2 rounded-xl bg-accent/10 text-accent">
               <Clock className="w-5 h-5" />
             </div>
             <div>
               <h2
-                className="text-base font-semibold text-light-text dark:text-dark-text"
+                className="text-base font-semibold text-fg"
                 id="reading-timer-modal-title"
               >
                 Reading Session Timer
               </h2>
-              <p className="text-xs text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-xs text-fg-muted">
                 Focus target &amp; daily habit tracking
               </p>
             </div>
           </div>
           <button
             aria-label="Close session timer dialog"
-            className="p-1.5 rounded-lg text-light-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+            className="p-1.5 rounded-lg text-light-text-muted hover:text-fg hover:bg-line/40 transition-colors"
             onClick={onClose}
             type="button"
           >
@@ -137,9 +137,9 @@ export function ReaderSessionTimerModal({
         </div>
 
         {/* Current Active Session Status */}
-        <div className="p-4 rounded-xl bg-light-secondary dark:bg-dark-secondary/60 border border-light-border/40 dark:border-dark-border/40 space-y-2">
+        <div className="p-4 rounded-xl bg-subtle dark:bg-subtle/60 border border-line/40 space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-light-text-muted dark:text-dark-text-muted font-medium flex items-center gap-1.5">
+            <span className="text-fg-muted font-medium flex items-center gap-1.5">
               {isIdle ? (
                 <>
                   <PauseCircle className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
@@ -154,7 +154,7 @@ export function ReaderSessionTimerModal({
                 </>
               )}
             </span>
-            <span className="font-mono text-xs font-semibold text-light-text dark:text-dark-text">
+            <span className="font-mono text-xs font-semibold text-fg">
               {sessionBudgetMinutes > 0
                 ? `${formatClock(remainingSeconds)} left`
                 : `${formatClock(elapsedSeconds)} read`}
@@ -162,10 +162,10 @@ export function ReaderSessionTimerModal({
           </div>
 
           <div className="flex items-baseline justify-between pt-1">
-            <span className="text-2xl font-bold font-mono tracking-tight text-light-text dark:text-dark-text">
+            <span className="text-2xl font-bold font-mono tracking-tight text-fg">
               {formatDurationCompact(elapsedSeconds)}
             </span>
-            <span className="text-xs text-light-text-muted dark:text-dark-text-muted">
+            <span className="text-xs text-fg-muted">
               {sessionBudgetMinutes > 0
                 ? `Target: ${sessionBudgetMinutes}m (${sessionPercent}%)`
                 : 'Untimed session'}
@@ -174,12 +174,12 @@ export function ReaderSessionTimerModal({
 
           {/* Session Progress Bar */}
           {sessionBudgetMinutes > 0 && (
-            <div className="w-full h-1.5 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden mt-1.5">
+            <div className="w-full h-1.5 rounded-full bg-line/60 overflow-hidden mt-1.5">
               <div
                 className={`h-full transition-all duration-300 rounded-full ${
                   isSessionGoalMet
                     ? 'bg-emerald-500'
-                    : 'bg-light-accent dark:bg-dark-accent'
+                    : 'bg-accent'
                 }`}
                 style={{ width: `${sessionPercent}%` }}
               />
@@ -197,11 +197,11 @@ export function ReaderSessionTimerModal({
         {/* Quick Session Budget Presets & Custom Duration */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold uppercase tracking-wider text-light-text-muted dark:text-dark-text-muted">
+            <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
               Session Target
             </label>
             {isCustomActive && (
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-light-accent/15 dark:bg-dark-accent/15 text-light-accent dark:text-dark-accent border border-light-accent/20">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-light-accent/20">
                 Custom ({sessionBudgetMinutes}m)
               </span>
             )}
@@ -214,8 +214,8 @@ export function ReaderSessionTimerModal({
                 <button
                   className={`px-2 py-2 rounded-xl text-xs font-medium border transition-all duration-instant flex items-center justify-center gap-1 ${
                     isSelected
-                      ? 'bg-light-accent dark:bg-dark-accent text-white border-transparent shadow-xs'
-                      : 'border-light-border dark:border-dark-border hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text dark:text-dark-text'
+                      ? 'bg-accent text-white border-transparent shadow-xs'
+                      : 'border-line hover:bg-line/40 text-fg'
                   }`}
                   key={mins}
                   onClick={() => setSessionBudgetMinutes(mins)}
@@ -232,7 +232,7 @@ export function ReaderSessionTimerModal({
           <div className="flex items-center gap-2 pt-0.5">
             <input
               aria-label="Custom session target minutes"
-              className="flex-1 px-3 py-1.5 rounded-xl text-xs bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text dark:text-dark-text placeholder:text-light-text-muted dark:placeholder:text-dark-text-muted focus:outline-none focus:ring-1 focus:ring-light-accent dark:focus:ring-dark-accent font-mono transition-all"
+              className="flex-1 px-3 py-1.5 rounded-xl text-xs bg-surface/60 border border-line text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-accent font-mono transition-all"
               max={180}
               min={1}
               onChange={(e) => setCustomInput(e.target.value)}
@@ -247,7 +247,7 @@ export function ReaderSessionTimerModal({
               value={customInput}
             />
             <button
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-light-accent dark:bg-dark-accent text-white hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none transition-all duration-instant shadow-xs"
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-accent text-white hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none transition-all duration-instant shadow-xs"
               disabled={!isValidCustom}
               onClick={handleApplyCustom}
               type="button"
@@ -258,18 +258,18 @@ export function ReaderSessionTimerModal({
         </div>
 
         {/* Daily Reading Goal Card */}
-        <div className="p-3.5 rounded-xl border border-light-border dark:border-dark-border bg-light-surface/60 dark:bg-dark-surface/60 space-y-2">
+        <div className="p-3.5 rounded-xl border border-line bg-surface/60 space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5 font-medium text-light-text dark:text-dark-text">
+            <div className="flex items-center gap-1.5 font-medium text-fg">
               <Flame className="w-4 h-4 text-orange-500" />
               <span>Today&apos;s Reading Goal</span>
             </div>
-            <span className="font-semibold text-light-text dark:text-dark-text">
+            <span className="font-semibold text-fg">
               {todayMinutesTotal} / {dailyGoalMinutes}m
             </span>
           </div>
 
-          <div className="w-full h-2 rounded-full bg-light-border/60 dark:bg-dark-border/60 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-line/60 overflow-hidden">
             <div
               className={`h-full transition-all duration-300 rounded-full ${
                 isDailyGoalMet
@@ -280,7 +280,7 @@ export function ReaderSessionTimerModal({
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-light-text-muted dark:text-dark-text-muted">
+          <div className="flex items-center justify-between text-xs text-fg-muted">
             <span>{dailyPercent}% completed today</span>
             {isDailyGoalMet ? (
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -305,8 +305,8 @@ export function ReaderSessionTimerModal({
               }
               className={`p-2 rounded-xl border transition-colors ${
                 sessionChimeEnabled
-                  ? 'bg-light-accent/10 dark:bg-dark-accent/10 border-light-accent/30 dark:border-dark-accent/30 text-light-accent dark:text-dark-accent'
-                  : 'border-light-border dark:border-dark-border text-light-text-muted dark:text-dark-text-muted'
+                  ? 'bg-accent/10 border-accent/30 text-accent'
+                  : 'border-line text-fg-muted'
               }`}
               onClick={() => setSessionChimeEnabled(!sessionChimeEnabled)}
               type="button"
@@ -319,33 +319,33 @@ export function ReaderSessionTimerModal({
             </button>
             <div className="text-left">
               <div className="flex items-center gap-1.5">
-                <p className="text-xs font-medium text-light-text dark:text-dark-text">
+                <p className="text-xs font-medium text-fg">
                   Completion Chime
                 </p>
                 <span
-                  className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                  className={`text-2xs font-semibold px-1.5 py-0.2 rounded-full ${
                     sessionChimeEnabled
                       ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-light-surface/80 dark:bg-dark-surface/80 border border-light-border/60 dark:border-dark-border/60 text-light-text-muted dark:text-dark-text-muted'
+                      : 'bg-surface/80 border border-line/60 text-fg-muted'
                   }`}
                 >
                   {sessionChimeEnabled ? 'On' : 'Off'}
                 </span>
               </div>
-              <p className="text-[10px] text-light-text-muted dark:text-dark-text-muted">
+              <p className="text-2xs text-fg-muted">
                 Plays a chime when your reading session ends
               </p>
             </div>
           </div>
 
           <button
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border border-light-border dark:border-dark-border hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-light-text dark:text-dark-text flex items-center gap-1.5 transition-opacity ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border border-line hover:bg-line/40 text-fg flex items-center gap-1.5 transition-opacity ${
               isPlayingChime ? 'opacity-60 pointer-events-none' : ''
             }`}
             onClick={handlePreviewChime}
             type="button"
           >
-            <Volume2 className="w-3.5 h-3.5 text-light-accent dark:text-dark-accent" />
+            <Volume2 className="w-3.5 h-3.5 text-accent" />
             <span>{isPlayingChime ? 'Playing...' : 'Test'}</span>
           </button>
         </div>

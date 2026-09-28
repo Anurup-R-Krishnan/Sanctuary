@@ -6,6 +6,9 @@ import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import { FoliateTestHarness } from "@/components/dev/FoliateTestHarness";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
+import { UploadErrorToast } from "@/components/ui/UploadErrorToast";
+import { useNativeBookEvents } from "@/hooks/useNativeBookEvents";
+import { appRuntime } from "@/platform/runtime";
 import { safeStorageGet } from "@/reader/persistence/storage";
 import { libraryIndexManager } from "@/services/librarySearchIndex";
 import { libraryService } from "@/services/LibraryService";
@@ -35,6 +38,9 @@ import { useProgressSync } from "./hooks/useProgressSync";
 import { useReadingSession } from "./hooks/useReadingSession";
 
 const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
+// The desktop app is offline-first: it opens straight into the local library,
+// and signing in to sync is optional (header "Sign In").
+const START_AS_GUEST = DISABLE_AUTH || appRuntime.isOfflineFirst;
 
 function App() {
   // Auth & Session
@@ -42,7 +48,7 @@ function App() {
   const { isLoaded, isSignedIn, user, signOut } = useSanctuaryAuth();
   const api = useSanctuaryApi();
   
-  const [explicitGuest, setExplicitGuest] = useState(DISABLE_AUTH);
+  const [explicitGuest, setExplicitGuest] = useState(START_AS_GUEST);
 
   const isGuest = mode === "guest";
   const isPersistent = mode === "authenticated";
@@ -82,6 +88,8 @@ function App() {
   // Stable API calls for children to prevent N+1 re-renders
   const handleGetBookContent = useCallback((id: string) => libraryService.getBookContent(id, api, isPersistent), [api, isPersistent]);
   const handleAddBook = useCallback((file: File) => libraryService.addBook(file, api, isPersistent), [api, isPersistent]);
+  const [nativeImportError, setNativeImportError] = useState<string | null>(null);
+  useNativeBookEvents(handleAddBook, setNativeImportError, mode !== "initializing");
   const handleToggleFavorite = useCallback((id: string) => libraryService.toggleFavorite(id, api, isPersistent), [api, isPersistent]);
   const handleDeleteBook = useCallback((id: string) => {
     void libraryIndexManager.removeBook(id);
@@ -167,15 +175,15 @@ function App() {
   // Render Helpers
   if (!DISABLE_AUTH && !isLoaded) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page">
         <div className="relative mb-6">
-          <div className="relative w-20 h-20 rounded-3xl bg-light-accent dark:bg-dark-accent flex items-center justify-center shadow-2xl">
+          <div className="relative w-20 h-20 rounded-3xl bg-accent flex items-center justify-center shadow-2xl">
             <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
           </div>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Preparing your reading sanctuary...</p>
+          <h2 className="text-xl font-semibold text-fg">Sanctuary</h2>
+          <p className="text-sm text-fg-muted">Loading…</p>
         </div>
       </div>
     );
@@ -187,15 +195,15 @@ function App() {
 
   if (isRestoringSession) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-light-primary dark:bg-dark-primary">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page">
         <div className="relative mb-6">
-          <div className="relative w-20 h-20 rounded-3xl bg-light-accent dark:bg-dark-accent flex items-center justify-center shadow-2xl">
+          <div className="relative w-20 h-20 rounded-3xl bg-accent flex items-center justify-center shadow-2xl">
             <BookOpen className="w-9 h-9 text-white animate-pulse-soft" strokeWidth={1.5} />
           </div>
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-light-text dark:text-dark-text">Sanctuary</h2>
-          <p className="text-sm text-light-text-muted dark:text-dark-text-muted">Returning to your book...</p>
+          <h2 className="text-xl font-semibold text-fg">Sanctuary</h2>
+          <p className="text-sm text-fg-muted">Opening book…</p>
         </div>
       </div>
     );
@@ -205,15 +213,22 @@ function App() {
 
 
   return (
-    <div className={`h-screen w-screen overflow-hidden select-none flex flex-col font-sans bg-light-primary dark:bg-dark-primary text-light-text dark:text-dark-text transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout app-ambient-bg"}`}>
+    <div className={`h-screen w-screen overflow-hidden select-none flex flex-col font-sans bg-page text-fg transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout app-ambient-bg"}`}>
       <MigrationDialog />
+      {nativeImportError && (
+        <UploadErrorToast
+          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+          message={nativeImportError}
+          onDismiss={() => setNativeImportError(null)}
+        />
+      )}
       {!isReader && (
         <Header
           isGuest={isGuest}
           onAddBook={handleAddBook}
           onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
           onSearch={setSearchTerm}
-          onShowLogin={isGuest ? handleShowLogin : undefined}
+          onShowLogin={isGuest && appRuntime.hasRemoteApi ? handleShowLogin : undefined}
           onSignOut={isSignedIn ? handleSignOut : undefined}
           onToggleTheme={toggleTheme}
           searchTerm={searchTerm}

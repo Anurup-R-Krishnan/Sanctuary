@@ -33,7 +33,7 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
       <>
         {hiddenInput}
         <div className="relative">
-          <Button onClick={openPicker} isLoading={isLoading} variant="primary" className="gap-2">
+          <Button onClick={openPicker} isLoading={isLoading} variant="primary" className="gap-2" aria-label="Add book">
             <Plus className="w-4 h-4" strokeWidth={2.5} />
             <span className="hidden sm:inline">Add Book</span>
           </Button>
@@ -88,13 +88,13 @@ function AddBookButton({ onAddBook, variant = "fab" }: AddBookButtonProps) {
           {...dropHandlers}
           className={cx(
             "w-14 h-14 !rounded-2xl shadow-lg border-0 group transition-all duration-instant",
-            "bg-light-accent dark:bg-dark-accent",
+            "bg-accent",
             isDragging ? "scale-110" : "hover:shadow-xl hover:scale-105"
           )}
         />
 
         {isDragging && (
-          <div className="absolute -inset-4 rounded-3xl border-2 border-dashed border-light-accent dark:border-dark-accent animate-pulse pointer-events-none" />
+          <div className="absolute -inset-4 rounded-3xl border-2 border-dashed border-accent animate-pulse pointer-events-none" />
         )}
 
         {errorMessage && (

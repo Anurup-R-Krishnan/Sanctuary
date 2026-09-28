@@ -15,8 +15,9 @@ import type {
   DocumentRendition,
   ReaderFlowOptions,
 } from "../contracts/rendition";
-import type { FoliateEpubAdapter } from "./FoliateEpubAdapter";
+import type { FoliateDocumentAdapter } from "./FoliateDocumentAdapter";
 
+import { isTinyInlineImage } from "../../components/reader/lightboxUtils";
 import { applyBionicReading } from "../../utils/bionicReading";
 import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
@@ -64,7 +65,7 @@ export function isColorDark(colorStr: string): boolean {
 
 export class FoliateRendition implements DocumentRendition {
   private container: HTMLDivElement;
-  private documentAdapter: FoliateEpubAdapter;
+  private documentAdapter: FoliateDocumentAdapter;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private view: any;
   private listeners = new Map<string, Set<EventListenerCallback>>();
@@ -83,7 +84,7 @@ export class FoliateRendition implements DocumentRendition {
 
   constructor(
     container: HTMLDivElement,
-    documentAdapter: FoliateEpubAdapter,
+    documentAdapter: FoliateDocumentAdapter,
     flowOptions: ReaderFlowOptions,
     background: string = "#ffffff"
   ) {
@@ -144,7 +145,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public static async create(
     container: HTMLDivElement,
-    documentAdapter: FoliateEpubAdapter,
+    documentAdapter: FoliateDocumentAdapter,
     flowOptions: ReaderFlowOptions,
     background: string = "#ffffff"
   ): Promise<FoliateRendition> {
@@ -463,12 +464,7 @@ export class FoliateRendition implements DocumentRendition {
           target.tagName.toLowerCase() === "img"
             ? (target as HTMLImageElement)
             : target.querySelector("img");
-        if (
-          htmlImg &&
-          htmlImg.clientWidth > 0 &&
-          htmlImg.clientWidth <= 28 &&
-          htmlImg.clientHeight <= 28
-        ) {
+        if (htmlImg && isTinyInlineImage(htmlImg.clientWidth, htmlImg.clientHeight)) {
           return;
         }
 

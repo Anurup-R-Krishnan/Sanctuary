@@ -135,12 +135,12 @@ export function WordDefinitionModal({
       tabIndex={-1}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-light-primary dark:bg-dark-primary border border-light-border dark:border-dark-border shadow-2xl overflow-hidden p-6 relative animate-scaleUp text-light-text dark:text-dark-text"
+        className="w-full max-w-md rounded-2xl bg-page border border-line shadow-2xl overflow-hidden p-6 relative animate-scaleUp text-fg"
       >
         {/* Close Button */}
         <button
           aria-label="Close definition (Esc)"
-          className="absolute top-4 right-4 rounded-full p-1.5 text-light-text-muted dark:text-dark-text-muted hover:text-light-text dark:hover:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+          className="absolute top-4 right-4 rounded-full p-1.5 text-fg-muted hover:text-fg hover:bg-line/40 transition-colors"
           onClick={onClose}
           type="button"
         >
@@ -149,16 +149,16 @@ export function WordDefinitionModal({
 
         {isLoading ? (
           <div className="py-8 text-center space-y-3">
-            <div className="w-8 h-8 mx-auto border-2 border-light-accent dark:border-dark-accent border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-light-text-muted dark:text-dark-text-muted">
+            <div className="w-8 h-8 mx-auto border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-fg-muted">
               Looking up &ldquo;{word}&rdquo;…
             </p>
           </div>
         ) : error ? (
           <div className="py-6 text-center space-y-4">
-            <p className="text-sm text-light-text-muted dark:text-dark-text-muted">{error}</p>
+            <p className="text-sm text-fg-muted">{error}</p>
             <button
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-light-surface/60 dark:bg-dark-surface/60 border border-light-border dark:border-dark-border text-light-text dark:text-dark-text hover:bg-light-border/40 dark:hover:bg-dark-border/40 transition-colors"
+              className="px-4 py-2 text-sm font-medium rounded-xl bg-surface/60 border border-line text-fg hover:bg-line/40 transition-colors"
               onClick={onClose}
               type="button"
             >
@@ -170,12 +170,12 @@ export function WordDefinitionModal({
             {/* Word Header */}
             <div>
               <div className="flex items-center gap-3">
-                <h2 id="word-definition-title" className="text-2xl font-serif font-bold text-light-text dark:text-dark-text capitalize">
+                <h2 id="word-definition-title" className="text-2xl font-serif font-bold text-fg capitalize">
                   {definition.word}
                 </h2>
                 <button
                   aria-label="Pronounce word"
-                  className="rounded-full p-2 text-light-accent dark:text-dark-accent hover:bg-light-accent/10 dark:hover:bg-dark-accent/15 transition-colors"
+                  className="rounded-full p-2 text-accent hover:bg-light-accent/10 dark:hover:bg-dark-accent/15 transition-colors"
                   onClick={handlePlayAudio}
                   title="Listen to pronunciation"
                   type="button"
@@ -186,12 +186,12 @@ export function WordDefinitionModal({
 
               <div className="flex items-center gap-2 mt-1">
                 {definition.phonetic && (
-                  <span className="text-sm text-light-text-muted dark:text-dark-text-muted font-mono">
+                  <span className="text-sm text-fg-muted font-mono">
                     {definition.phonetic}
                   </span>
                 )}
                 {definition.partOfSpeech && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-light-accent/15 dark:bg-dark-accent/20 text-light-accent dark:text-dark-accent font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-light-accent/15 dark:bg-dark-accent/20 text-accent font-medium">
                     {definition.partOfSpeech}
                   </span>
                 )}
@@ -199,20 +199,20 @@ export function WordDefinitionModal({
             </div>
 
             {/* Definition */}
-            <div className="p-4 rounded-xl bg-light-surface/40 dark:bg-dark-surface/40 border border-light-border dark:border-dark-border">
-              <p className="text-sm text-light-text dark:text-dark-text leading-relaxed">
+            <div className="p-4 rounded-xl bg-surface/40 border border-line">
+              <p className="text-sm text-fg leading-relaxed">
                 {definition.definition}
               </p>
               {definition.example && (
-                <p className="text-xs italic text-light-text-muted dark:text-dark-text-muted mt-2 border-l-2 border-light-accent/40 dark:border-dark-accent/40 pl-2">
-                  &ldquo;{definition.example}&rdquo;
+                <p className="text-xs text-fg-muted mt-2 border-l-2 border-accent/40 pl-2">
+                  "{definition.example}"
                 </p>
               )}
             </div>
 
             {/* Action Bar */}
             <div className="flex items-center justify-between pt-2">
-              <span className="text-[11px] text-light-text-muted dark:text-dark-text-muted">
+              <span className="text-xs text-fg-muted">
                 Free Dictionary API
               </span>
 
@@ -220,7 +220,7 @@ export function WordDefinitionModal({
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   isSaved
                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold"
-                    : "bg-light-accent dark:bg-dark-accent text-white dark:text-black hover:opacity-90 shadow-sm font-semibold"
+                    : "bg-accent text-white dark:text-black hover:opacity-90 shadow-sm font-semibold"
                 }`}
                 disabled={isSaved}
                 onClick={handleSave}

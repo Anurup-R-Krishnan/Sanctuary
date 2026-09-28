@@ -7,7 +7,7 @@ import type { IReaderSession, ReaderEngineCallbacks, ReaderEngineOptions } from 
 import type { ReaderFlowOptions } from "../contracts/rendition";
 import type { TTSControllerState } from "../foliate/FoliateTTSController";
 
-import { FoliateEpubAdapter } from "../foliate/FoliateEpubAdapter";
+import { FoliateDocumentAdapter } from "../foliate/FoliateDocumentAdapter";
 import { FoliateRendition } from "../foliate/FoliateRendition";
 
 export type FoliateReaderSessionOptions = ReaderEngineOptions;
@@ -15,7 +15,7 @@ export type FoliateReaderSessionCallbacks = ReaderEngineCallbacks;
 
 export class FoliateReaderSession implements IReaderSession {
   private aborted = false;
-  private adapter: FoliateEpubAdapter | null = null;
+  private adapter: FoliateDocumentAdapter | null = null;
   private bookId: string;
   private callbacks: FoliateReaderSessionCallbacks;
   private container: HTMLDivElement;
@@ -63,7 +63,7 @@ export class FoliateReaderSession implements IReaderSession {
       // IndexedDB stores a Blob without its original filename. Pass the saved
       // format so Markdown files without a leading heading/frontmatter still
       // open as Markdown instead of being downgraded to plain text.
-      this.adapter = await FoliateEpubAdapter.create(options.blob, options.formatHint);
+      this.adapter = await FoliateDocumentAdapter.create(options.blob, options.formatHint);
       if (this.aborted) {
         this.adapter.destroy();
         return;

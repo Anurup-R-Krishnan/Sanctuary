@@ -1,39 +1,3 @@
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-300.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-400.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-500.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-500.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("/fonts/Satoshi-700.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,24 +7,21 @@
      Core Design Tokens — Sanctuary Design System
      ========================================================================== */
 
-  /* Colors — Warm Gold / Amber Accent Palette (Light Mode) */
-  --color-accent: #A67E50;           /* Antique Gold */
-  --color-accent-hover: #8A6943;     /* Deep Antique Gold */
-  --color-accent-light: #F4EDE4;     /* Subtle Gold Tint */
-  --color-accent-muted: rgba(166, 126, 80, 0.15);
+  /* Semantic Color Tokens (Light Mode) — RGB channels for opacity modifiers */
+  --color-page: 255 252 248;          /* #FFFCF8 - Primary page background */
+  --color-surface: 243 236 225;       /* #F3ECE1 - Card/surface background */
+  --color-surface-raised: 254 252 248;/* #FEFCF8 - Raised surface (e.g., cards on page) */
+  --color-fg: 9 9 11;                 /* #09090B - Primary text */
+  --color-fg-muted: 113 113 122;      /* #71717A - Secondary/disabled text */
+  --color-subtle: 250 246 240;       /* #FAF6F0 - Quiet fill (legacy light.secondary) */
+  --color-line-subtle: 243 236 225;   /* #F3ECE1 - Hairline (legacy light.border-muted) */
+  --color-line: 231 220 201;          /* #E7DCC9 - Border color */
+  --color-accent: 166 126 80;         /* #A67E50 - Antique Gold accent */
+  --color-accent-fg: 255 255 255;     /* #FFFFFF - Text on accent (white) */
+  --color-danger: 220 38 38;          /* #DC2626 - Error/danger state */
+  --color-success: 34 197 94;         /* #22C55E - Success state */
 
-  /* Colors — Neutrals & Surfaces (Light Mode) */
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #FAFAFA;
-  --color-surface: #F4F4F5;          /* zinc-100 */
-  --color-surface-muted: #E4E4E7;    /* zinc-200 */
-  --color-card: #FFFFFF;
-  --color-text: #09090B;             /* zinc-950 */
-  --color-text-muted: #71717A;       /* zinc-500 */
-  --color-border: #E4E4E7;           /* zinc-200 */
-  --color-border-muted: #F4F4F5;     /* zinc-100 */
-
-  /* Backward-compatible RGB channel tokens for Tailwind / alpha compositions */
+  /* Backward-compatible legacy tokens for migration */
   --accent: 166 126 80;               /* #A67E50 - Antique Gold */
   --accent-dark: 200 160 106;         /* #C8A06A - Parchment Gold */
 
@@ -85,10 +46,11 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* Typography Scale */
-  --font-sans: 'Satoshi', system-ui, -apple-system, sans-serif;
-  --font-serif: 'Crimson Pro', Georgia, serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* Typography — Font Stacks */
+  --font-ui: 'Instrument Sans Variable', 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Newsreader Variable', 'Newsreader', Georgia, serif;
+  --font-reader: 'Crimson Pro', Georgia, serif;
+  --font-mono: 'JetBrains Mono', Menlo, Monaco, monospace;
 
   --text-xs: 0.75rem;                /* 12px - metadata, captions, timestamps */
   --text-sm: 0.875rem;               /* 14px - secondary labels, subheadings */
@@ -112,22 +74,19 @@
 }
 
 .dark {
-  /* Colors — Warm Gold / Amber Accent Palette (Dark Mode) */
-  --color-accent: #C8A06A;           /* Parchment Gold */
-  --color-accent-hover: #E2C9A6;     /* Lighter Parchment Gold */
-  --color-accent-light: #2A241C;     /* Dark Gold Tint */
-  --color-accent-muted: rgba(200, 160, 106, 0.15);
-
-  /* Colors — Neutrals & Surfaces (Dark Mode) */
-  --color-bg-primary: #09090B;       /* zinc-950 */
-  --color-bg-secondary: #18181B;     /* zinc-900 */
-  --color-surface: #27272A;          /* zinc-800 */
-  --color-surface-muted: #3F3F46;    /* zinc-700 */
-  --color-card: #18181B;             /* zinc-900 */
-  --color-text: #FAFAFA;             /* zinc-50 */
-  --color-text-muted: #A1A1AA;       /* zinc-400 */
-  --color-border: #27272A;           /* zinc-800 */
-  --color-border-muted: #18181B;     /* zinc-900 */
+  /* Semantic Color Tokens (Dark Mode) — RGB channels for opacity modifiers */
+  --color-page: 15 14 13;             /* #0F0E0D - Primary page background (warm near-black) */
+  --color-surface: 40 34 28;          /* #28221C - Card/surface background (warm dark) */
+  --color-surface-raised: 28 25 22;   /* #1C1916 - Raised surface */
+  --color-fg: 250 250 250;            /* #FAFAFA - Primary text (warm white) */
+  --color-fg-muted: 161 161 170;      /* #A1A1AA - Secondary/disabled text */
+  --color-subtle: 28 25 22;          /* #1C1916 */
+  --color-line-subtle: 28 25 22;     /* #1C1916 */
+  --color-line: 51 43 34;             /* #332B22 - Border color (warm dark) */
+  --color-accent: 200 160 106;        /* #C8A06A - Parchment Gold accent */
+  --color-accent-fg: 15 14 13;        /* #0F0E0D - Text on accent (dark) */
+  --color-danger: 239 68 68;          /* #EF4444 - Error/danger state (lighter for dark) */
+  --color-success: 74 222 128;        /* #4ADE80 - Success state (lighter for dark) */
 
   --shadow-color: 0 0 0;
 }
@@ -143,8 +102,8 @@
   body {
     overflow-x: hidden;
     letter-spacing: -0.01em;
-    font-family: 'Satoshi', system-ui, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-family: var(--font-ui);
+    font-feature-settings: 'tnum';
     /* Grainy texture overlay logic handled in main app wrapper for better performance */
   }
 
@@ -182,9 +141,19 @@
   h4,
   h5,
   h6 {
-    font-family: 'Crimson Pro', Georgia, serif;
+    font-family: var(--font-display);
     letter-spacing: -0.025em;
     font-weight: 600;
+    font-style: normal;
+  }
+
+  /* Prevent italics outside the reader */
+  em,
+  i,
+  cite,
+  dfn,
+  address {
+    font-style: normal;
   }
 
   /* Scrollbar Styling */
@@ -948,13 +917,5 @@
     color: black !important;
     box-shadow: none !important;
   }
-}
-
-
-/* Hide Clerk Development Badge */
-div[class*="cl-internal-"][style*="bottom:"],
-div[class*="cl-internal-"][style*="position: fixed"],
-div.cl-devMode {
-  display: none !important;
 }
 

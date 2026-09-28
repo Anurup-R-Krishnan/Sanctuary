@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opds="http://opds-spec.org/2010/catalog" xmlns:dcterms="http://purl.org/dc/terms/">
+  <id>http://www.gutenberg.org/ebooks.opds/</id>
+  <updated>2026-09-27T19:27:18Z</updated>
+  <title>Project Gutenberg</title>
+  <author>
+    <name>Project Gutenberg</name>
+    <uri>https://www.gutenberg.org</uri>
+  </author>
+  <link rel="search" type="application/opensearchdescription+xml" title="Project Gutenberg Catalog Search" href="https://www.gutenberg.org/catalog/osd-books.xml"/>
+  <link rel="self" title="This Page" type="application/atom+xml;profile=opds-catalog" href="/ebooks.opds/"/>
+  
+  <entry>
+    <updated>2026-09-27T19:27:32Z</updated>
+    <id>https://www.gutenberg.org/ebooks/1342.opds</id>
+    <title>Pride and Prejudice</title>
+    <author>
+      <name>Jane Austen</name>
+    </author>
+    <content type="text">A romantic novel of manners.</content>
+    <published>1813-01-28</published>
+    <link type="application/atom+xml;profile=opds-catalog" rel="subsection" href="/ebooks/1342.opds"/>
+    <link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="https://www.gutenberg.org/images/covers/1342-t.jpg"/>
+  </entry>
+  
+  <entry>
+    <updated>2026-09-27T19:27:32Z</updated>
+    <id>https://www.gutenberg.org/ebooks/2701</id>
+    <title>Moby Dick</title>
+    <author>
+      <name>Herman Melville</name>
+    </author>
+    <content type="text">An epic whaling adventure.</content>
+    <published>1851-10-18</published>
+    <link type="application/epub+zip" rel="http://opds-spec.org/acquisition" href="https://www.gutenberg.org/ebooks/2701.epub.images"/>
+    <link type="application/x-mobipocket-ebook" rel="http://opds-spec.org/acquisition" href="https://www.gutenberg.org/ebooks/2701.kindle.images"/>
+    <link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="https://www.gutenberg.org/images/covers/2701-t.jpg"/>
+  </entry>
+  
+  <entry>
+    <updated>2026-09-27T19:27:32Z</updated>
+    <id>https://www.gutenberg.org/ebooks/84</id>
+    <title>Frankenstein</title>
+    <author>
+      <name>Mary Wollstonecraft Shelley</name>
+    </author>
+    <content type="text">A Gothic horror novel.</content>
+    <published>1818-01-01</published>
+    <link type="application/epub3+zip" rel="http://opds-spec.org/acquisition" href="https://www.gutenberg.org/ebooks/84.epub3.images"/>
+    <link type="application/epub+zip" rel="http://opds-spec.org/acquisition" href="https://www.gutenberg.org/ebooks/84.epub.images"/>
+    <link type="text/plain" rel="http://opds-spec.org/acquisition" href="https://www.gutenberg.org/ebooks/84.txt.utf-8"/>
+    <link type="image/png" rel="http://opds-spec.org/image/thumbnail" href="https://www.gutenberg.org/images/covers/84-t.jpg"/>
+  </entry>
+</feed>

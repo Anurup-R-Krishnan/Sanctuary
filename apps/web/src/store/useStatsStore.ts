@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import type { ReadingStats, ReadingSession, ReadingGoals } from "@/types";
 
-import { DEFAULT_WEEKLY_DATA, DEFAULT_PERSONALITY, DEFAULT_DAILY_GOAL } from "@/types";
+import { DEFAULT_WEEKLY_DATA, DEFAULT_DAILY_GOAL } from "@/types";
 
 type StatsStoreState = {
   stats: ReadingStats;
@@ -32,8 +32,6 @@ const emptyStats: ReadingStats = {
   genreDistribution: [],
   authorNetwork: [],
   badges: [],
-  readingPersonality: DEFAULT_PERSONALITY.personality,
-  personalityDescription: DEFAULT_PERSONALITY.description,
 };
 
 export const useStatsStore = create<StatsStoreState>((set) => ({
