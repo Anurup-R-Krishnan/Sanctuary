@@ -12,6 +12,8 @@ import { useSettingsShallow } from "@/store/useSettingsStore";
 import { getWcagRating } from "@/utils/contrastEngine";
 import { cx } from "@/utils/cx";
 
+import { ReadAloudSettings } from "./ReadAloudSettings";
+
 const ThemeStudioModal = lazy(() =>
   import("@/components/reader/ThemeStudioModal").then((m) => ({ default: m.ThemeStudioModal }))
 );
@@ -468,26 +470,7 @@ export default function ReaderSettings({ onClose }: ReaderSettingsProps = {}) {
         {/* Text-to-Speech */}
         <div>
           <h3 className="text-base font-semibold text-fg tracking-tight mb-4">Read Aloud</h3>
-          <div className="space-y-4">
-            {voices.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-fg-muted">Voice</span>
-                <select
-                  value={state.ttsVoiceURI ?? ""}
-                  onChange={(e) => state.setTtsVoiceURI(e.target.value || null)}
-                  className="w-full h-10 rounded-xl border border-line bg-surface text-fg text-sm px-3 outline-none focus:ring-2 focus:ring-accent"
-                >
-                  {voices.map((v) => (
-                    <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <p className="text-xs text-fg-muted">No voices available on this device.</p>
-            )}
-            <Slider label="Rate" value={state.ttsRate} min={0.5} max={2} step={0.1} onChange={state.setTtsRate} format={(v) => v.toFixed(1) + "x"} />
-            <Slider label="Pitch" value={state.ttsPitch} min={0.5} max={2} step={0.1} onChange={state.setTtsPitch} format={(v) => v.toFixed(1)} />
-          </div>
+          <ReadAloudSettings renderSlider={(props) => <Slider {...props} />} voices={voices} />
         </div>
 
         {/* Keyboard Shortcuts */}

@@ -131,5 +131,9 @@
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^0.11.3",
     "wrangler": "^4.61.1"
+  },
+  "overrides": {
+    "onnxruntime-node": "file:./tooling/stubs/onnxruntime-node",
+    "sharp": "file:./tooling/stubs/sharp"
   }
 }
