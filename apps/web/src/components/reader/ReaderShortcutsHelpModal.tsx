@@ -5,8 +5,10 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export interface ReaderShortcutsHelpModalProps {
   isOpen: boolean;
@@ -63,6 +65,8 @@ export function ReaderShortcutsHelpModal({
   isOpen,
   onClose,
 }: ReaderShortcutsHelpModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   useEffect(() => {
     if (!isOpen) return;
 
@@ -82,9 +86,10 @@ export function ReaderShortcutsHelpModal({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-labelledby="shortcuts-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn pointer-events-auto select-none"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 animate-fadeIn pointer-events-auto select-none"
       role="dialog"
     >
       {/* Backdrop dismiss target */}

@@ -6,9 +6,11 @@ import {
   PauseCircle,
   X,
 } from 'lucide-react';
+import { useRef } from "react";
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   formatClock,
   formatDurationCompact,
@@ -47,6 +49,8 @@ export function ReaderSessionTimerModal({
   setSessionBudgetMinutes,
   todayMinutesTotal,
 }: ReaderSessionTimerModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const [customInput, setCustomInput] = useState('');
 
   // Keyboard accessibility: Escape key dismisses modal
@@ -76,9 +80,10 @@ export function ReaderSessionTimerModal({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-labelledby="reading-timer-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 animate-fade-in pointer-events-auto"
       role="dialog"
     >
       {/* Accessible Backdrop dismiss target */}

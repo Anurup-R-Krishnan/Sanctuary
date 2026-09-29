@@ -31,7 +31,7 @@ export function ReaderContentErrorBanner({
       aria-modal="true"
       aria-labelledby="reader-content-error-title"
       aria-describedby="reader-content-error-desc"
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6 animate-fadeIn"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 p-6 animate-fadeIn"
     >
       <div className="max-w-sm w-full rounded-xl bg-page border border-red-200/60 dark:border-red-800/40 p-8 text-center shadow-2xl">
         <div className="mx-auto mb-5 flex items-center justify-center w-14 h-14 rounded-xl bg-red-50 dark:bg-red-950/40">

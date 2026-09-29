@@ -209,7 +209,7 @@ export function ReaderZenFocusOverlay({
             : "opacity-40 hover:opacity-100 translate-y-0"
         }`}
       >
-        <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-page/90 backdrop-blur-xl border border-line shadow-lg text-fg">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-page/90 border border-line shadow-lg text-fg">
           {/* Zen Icon Pill */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-accent">
             <Moon className="w-3.5 h-3.5" />
@@ -270,7 +270,7 @@ export function ReaderZenFocusOverlay({
         <div
           aria-labelledby="sprint-complete-title"
           aria-modal="true"
-          className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
+          className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/50 animate-fadeIn"
           role="dialog"
         >
           <div className="relative w-full max-w-sm p-6 sm:p-7 rounded-xl bg-page border border-line shadow-2xl flex flex-col items-center text-center gap-4 animate-scaleUp text-fg">

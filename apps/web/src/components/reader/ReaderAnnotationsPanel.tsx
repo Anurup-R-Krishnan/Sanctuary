@@ -314,7 +314,7 @@ export function ReaderAnnotationsPanel({
               placeholder="Search highlights, notes, chapters..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-1 text-xs rounded-xl bg-page border border-line text-fg placeholder:text-fg-muted/60 outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+              className="w-full pl-8 pr-7 py-1 text-xs rounded-xl bg-page border border-line text-fg placeholder:text-fg-muted outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
             />
             {searchQuery && (
               <button
@@ -454,7 +454,7 @@ export function ReaderAnnotationsPanel({
 
                     <button
                       aria-label="Delete annotation"
-                      className="p-1.5 text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded hover:bg-rose-500/10 dark:hover:bg-rose-500/20"
+                      className="p-1.5 text-danger opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all rounded hover:bg-danger/10"
                       onClick={() => onDeleteAnnotation(item.id)}
                       title="Delete annotation"
                       type="button"
@@ -489,7 +489,7 @@ export function ReaderAnnotationsPanel({
                       <span className="text-xs font-medium text-accent truncate max-w-[140px]">
                         {item.chapterLabel || "Chapter"}
                       </span>
-                      <span className="text-xs text-fg-muted/60 ml-auto">
+                      <span className="text-xs text-fg-muted ml-auto">
                         {new Date(item.createdAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -586,7 +586,7 @@ export function ReaderAnnotationsPanel({
                   ) : (
                     <div className="mt-1 flex justify-end">
                       <button
-                        className="text-xs text-fg-muted/70 hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
+                        className="text-xs text-fg-muted hover:text-accent opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
                         onClick={() => handleStartEdit(item)}
                         type="button"
                       >

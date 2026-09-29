@@ -154,7 +154,7 @@ function Header({
   const isDark = theme === Theme.DARK;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-line bg-page/95 backdrop-blur-sm">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-line bg-page/95">
       <div className="container-wide h-[4.5rem] flex items-center gap-4 lg:gap-8">
         <BrandMark onClick={onGoHome} />
 

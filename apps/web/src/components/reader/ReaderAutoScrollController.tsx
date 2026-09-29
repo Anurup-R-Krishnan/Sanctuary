@@ -114,7 +114,7 @@ export const ReaderAutoScrollController: React.FC<
       >
         {/* Preset Selector Popover */}
         {showPresets && (
-          <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-page/95 backdrop-blur-xl border border-line shadow-2xl animate-scale-in">
+          <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-page/95 border border-line shadow-2xl animate-scale-in">
             {AUTO_SCROLL_PRESETS.map((preset) => {
               const isSelected =
                 Math.abs(preset.velocityPxPerSec - velocityPxPerSec) < 3;
@@ -143,7 +143,7 @@ export const ReaderAutoScrollController: React.FC<
         )}
 
         {/* Primary Floating Capsule */}
-        <div className="flex items-center gap-1.5 p-1.5 px-2.5 rounded-full bg-page/95 backdrop-blur-xl border border-line shadow-2xl text-fg">
+        <div className="flex items-center gap-1.5 p-1.5 px-2.5 rounded-full bg-page/95 border border-line shadow-2xl text-fg">
           {/* Play/Pause Button */}
           <button
             aria-label={isPlaying ? "Pause auto-scroll (Space)" : "Start auto-scroll (Space)"}

@@ -170,7 +170,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
         <>
           <button
             type="button"
-            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[90] pointer-events-auto transition-opacity backdrop-blur-[1px] cursor-default border-none"
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[90] pointer-events-auto transition-opacity-[1px] cursor-default border-none"
             onClick={() => {
               if (props.showControls) props.onCloseControls();
               if (props.showSettings) props.onCloseSettings();
@@ -181,7 +181,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
             tabIndex={-1}
           />
           <div
-            className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-surface/95 backdrop-blur-2xl shadow-2xl border-l border-line pointer-events-auto flex flex-col z-[100] animate-slideInRight"
+            className="absolute right-0 top-0 bottom-0 w-[min(400px,100vw)] bg-surface/95 shadow-2xl border-l border-line pointer-events-auto flex flex-col z-[100] animate-slideInRight"
             role="dialog"
             aria-modal="true"
             aria-label="Reader drawer"

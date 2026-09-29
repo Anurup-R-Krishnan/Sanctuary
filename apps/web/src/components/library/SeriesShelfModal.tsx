@@ -1,10 +1,12 @@
 import { AlertTriangle, BookOpen, CheckCircle2, ChevronRight, Layers, Search, X } from 'lucide-react';
+import { useRef } from "react";
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { Book } from '@/types';
 import type { SeriesGroup } from '@/utils/seriesEngine';
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { groupBooksBySeries } from '@/utils/seriesEngine';
 
 export interface SeriesShelfModalProps {
@@ -15,6 +17,8 @@ export interface SeriesShelfModalProps {
 }
 
 export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: SeriesShelfModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const [searchQuery, setSearchQuery] = useState('');
 
   const seriesGroups = useMemo(() => {
@@ -55,10 +59,11 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="series-shelf-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -103,7 +108,7 @@ export function SeriesShelfModal({ books, isOpen, onClose, onSelectBook }: Serie
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search series title or author..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-subtle border border-line text-fg placeholder:text-fg-muted/60 focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-subtle border border-line text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
         </div>

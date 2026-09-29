@@ -6,6 +6,7 @@ import type { Book, BookSearchResult } from "@/types";
 
 import { CoverImage } from "@/components/ui/CoverImage";
 import { GenerativeBookCover } from "@/components/ui/GenerativeBookCover";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { searchLibrary } from "@/services/librarySearchIndex";
 
 interface GlobalSearchModalProps {
@@ -45,6 +46,8 @@ export function GlobalSearchModal({
   onClose,
   onSelectBook,
 }: GlobalSearchModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -100,9 +103,10 @@ export function GlobalSearchModal({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-modal="true"
       aria-label="Global full-text search"
-      className="fixed inset-0 z-[80] flex items-start justify-center p-4 sm:p-6 md:p-20 bg-black/60 backdrop-blur-sm animate-fadeIn overflow-y-auto"
+      className="fixed inset-0 z-[80] flex items-start justify-center p-4 sm:p-6 md:p-20 bg-black/60 animate-fadeIn overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -238,7 +242,7 @@ export function GlobalSearchModal({
                                 onClose();
                               }}
                             >
-                              <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-fg-muted/60 group-hover:text-accent" />
+                              <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0 text-fg-muted group-hover:text-accent" />
                               <div className="flex-1 min-w-0">
                                 {match.sectionTitle && (
                                   <span className="block text-2xs font-semibold text-fg/70 mb-0.5">
