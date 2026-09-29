@@ -19,8 +19,6 @@ import type {
 
 import { detectBookFormat } from "../formats/FormatDetector";
 import { parseHtmlToBook } from "../formats/HtmlParser";
-import { parseMarkdownToBook } from "../formats/MarkdownParser";
-import { parsePdfToBook } from "../formats/PdfParser";
 import { parseTxtToBook, type SectionSource } from "../formats/TxtParser";
 import { installBookContentSecurity, secureSections } from "./contentSecurity";
 
@@ -208,6 +206,7 @@ export class FoliateDocumentAdapter implements BookDocument {
       }
 
       case "markdown": {
+        const { parseMarkdownToBook } = await import("../formats/MarkdownParser");
         rawBook = await parseMarkdownToBook(source, fileName);
         break;
       }
@@ -219,6 +218,7 @@ export class FoliateDocumentAdapter implements BookDocument {
       }
 
       case "pdf": {
+        const { parsePdfToBook } = await import("../formats/PdfParser");
         rawBook = await parsePdfToBook(source, fileName);
         break;
       }

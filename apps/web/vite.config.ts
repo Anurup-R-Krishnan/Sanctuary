@@ -86,7 +86,28 @@ export default defineConfig(({ mode }) => {
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,woff,woff2}']
+        globPatterns: ['**/*.{js,mjs,css,html,svg,woff,woff2}'],
+        globIgnores: ['pdfjs/**'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        manifestTransforms: [
+          async (entries) => ({
+            manifest: entries.filter((entry) => {
+              if (!/\.m?js$/.test(entry.url)) return true
+              return /(^|\/)(assets\/)?([A-Z]|index-|vendor-|workbox-|registerSW|sw\.)/.test(entry.url)
+            }),
+            warnings: [],
+          }),
+        ],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/pdfjs/')),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'sanctuary-lazy-assets',
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 90 },
+            },
+          },
+        ],
       }
       })
     ],
