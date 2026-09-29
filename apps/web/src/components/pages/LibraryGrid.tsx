@@ -191,7 +191,7 @@ function LibraryGrid({
   if (books.length === 0) {
     return (
       <>
-        <LibraryEmptyState onOpenCatalog={appRuntime.hasRemoteApi ? () => setIsCatalogOpen(true) : undefined} />
+        <LibraryEmptyState onAddBook={addBook} onOpenCatalog={appRuntime.hasRemoteApi ? () => setIsCatalogOpen(true) : undefined} />
         <Suspense fallback={null}>
           <CatalogBrowser
             api={api}

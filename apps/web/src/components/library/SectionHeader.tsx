@@ -15,25 +15,20 @@ export const SectionHeader = ({
 }: SectionHeaderProps) => {
   if (variant === "quiet") {
     return (
-      <div className="flex items-center gap-2 mb-3">
-        {Icon && <Icon className="w-3.5 h-3.5 text-fg-muted" strokeWidth={1.75} />}
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">{title}</h3>
-        {count !== undefined && (
-          <span className="text-xs text-fg-muted tabular-nums">{count}</span>
-        )}
+      <div className="mb-3 flex items-center gap-2">
+        {Icon && <Icon className="h-3.5 w-3.5 text-accent" strokeWidth={1.75} />}
+        <h3 className="label-caps">{title}</h3>
+        {count !== undefined && <span className="text-xs tabular-nums text-fg-muted">· {count}</span>}
+        <span aria-hidden="true" className="ml-2 h-px flex-1 bg-line/70" />
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 mb-4">
-      {Icon && <Icon className="w-5 h-5 text-accent" strokeWidth={1.75} />}
-      <h3 className="font-display font-medium text-2xl tracking-tight text-fg">{title}</h3>
-      {count !== undefined && (
-        <span className="px-2 py-0.5 rounded-full bg-accent/10 text-xs font-medium text-accent tabular-nums">
-          {count}
-        </span>
-      )}
+    <div className="mb-5 flex items-baseline gap-3 border-b border-line pb-3">
+      {Icon && <Icon className="h-4 w-4 self-center text-accent" strokeWidth={1.75} />}
+      <h3 className="font-display text-2xl font-medium tracking-tight text-fg">{title}</h3>
+      {count !== undefined && <span className="folio text-sm tabular-nums text-fg-muted">{count}</span>}
     </div>
   );
 };
