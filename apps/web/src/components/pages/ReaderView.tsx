@@ -12,6 +12,7 @@ import { ReaderFilterOverlay } from "@/components/reader/ReaderFilterOverlay";
 import { ReaderNoteDialog } from "@/components/reader/ReaderNoteDialog";
 import ReaderOverlay from "@/components/reader/ReaderOverlay";
 import { ReaderSelectionMenu } from "@/components/reader/ReaderSelectionMenu";
+import { ReaderZoomControl } from "@/components/reader/ReaderZoomControl";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 const ReaderAutoScrollController = lazy(() =>
@@ -345,8 +346,10 @@ function ReaderView({
     speak,
     speechState,
     startBookSpeech,
+    startSpeechFromCfi,
     stop: stopSpeech,
     stopBookSpeech,
+    togglePlayPause,
     voices,
   } = useReaderSpeech({
     bookId: book?.id,
@@ -362,16 +365,26 @@ function ReaderView({
   });
 
   const handleToggleTTS = useCallback(() => {
-    setIsTTSActive((prev) => {
-      const next = !prev;
-      if (next) {
-        void startBookSpeech(true);
-      } else {
-        stopBookSpeech();
-      }
-      return next;
-    });
-  }, [startBookSpeech, stopBookSpeech]);
+    if (isTTSActive) {
+      setIsTTSActive(false);
+      stopBookSpeech();
+    } else {
+      setIsTTSActive(true);
+      void startBookSpeech(true);
+    }
+  }, [isTTSActive, startBookSpeech, stopBookSpeech]);
+
+  const handleTTSPlayPause = useCallback(() => {
+    togglePlayPause();
+  }, [togglePlayPause]);
+
+  const handleReadFromHere = useCallback(() => {
+    const cfi = selection?.cfiRange;
+    engineRef.current?.clearSelection();
+    setIsTTSActive(true);
+    if (cfi) void startSpeechFromCfi(cfi);
+    else void startBookSpeech(true);
+  }, [selection?.cfiRange, startBookSpeech, startSpeechFromCfi]);
 
   const handleCloseTTS = useCallback(() => {
     setIsTTSActive(false);
@@ -512,6 +525,9 @@ function ReaderView({
       tabIndex={-1}
       className="h-[100dvh] w-screen overflow-hidden select-none flex flex-col fixed inset-0 z-50 bg-page font-sans"
     >
+      {status === "ready" && engineRef.current?.rendition?.isFixedLayout?.() && (
+        <ReaderZoomControl target={engineRef.current.rendition} />
+      )}
       {announcePageChanges && (
         <p aria-atomic="true" aria-live="polite" className="sr-only">
           {position.chapterLabel ? `${position.chapterLabel}. ` : ""}
@@ -613,6 +629,7 @@ function ReaderView({
         onToggleReadability={handleOpenReadabilityFromChapter}
         onToggleSpeedReader={handleOpenSpeedReaderFromChapter}
         onToggleTTS={handleToggleTTS}
+        onTTSPlayPause={handleTTSPlayPause}
         onToggleZenMode={handleToggleZenMode}
         paragraphPauseMs={paragraphPauseMs}
         speechState={speechState}
@@ -624,6 +641,7 @@ function ReaderView({
         onCopy={handleCopy}
         onDefine={handleDefine}
         onHighlight={handleHighlight}
+        onReadFromHere={handleReadFromHere}
         onSpeak={handleSpeak}
         onUnderline={handleUnderline}
         selection={selection}

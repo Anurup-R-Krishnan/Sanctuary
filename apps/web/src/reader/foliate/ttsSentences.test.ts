@@ -58,3 +58,10 @@ describe("FoliateTTSController with a failing voice", () => {
     controller.destroy();
   });
 });
+
+describe("buildSentences for PDF text layers", () => {
+  it("separates words drawn as separate spans", () => {
+    const sentences = buildSentences(docFrom('<div class="textLayer"><span>Hello</span><span>world.</span><span>Next</span><span>line.</span></div>'));
+    expect(sentences.map((s) => s.text)).toEqual(["Hello world.", "Next line."]);
+  });
+});

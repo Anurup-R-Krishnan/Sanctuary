@@ -78,6 +78,8 @@ export type EpubRendition = {
   display: (target?: string) => Promise<void> | void;
   getContents?(): EpubContentsLike[];
   getCurrentDocument?: () => Document | null;
+  getEffectiveScale(): number;
+  getZoom(): number | "fit-page" | "fit-width";
   hooks?: {
     content?: {
       register: (cb: (contents: EpubContentsLike) => void) => void;
@@ -86,6 +88,7 @@ export type EpubRendition = {
       register: (cb: (contents: EpubContentsLike) => void) => void;
     };
   };
+  isFixedLayout?: () => boolean;
   next: () => void;
   off: (event: string, cb: (...args: unknown[]) => void) => void;
   on(event: "relocated", cb: (location: EpubLocation) => void): void;
@@ -93,6 +96,7 @@ export type EpubRendition = {
   on(event: string, cb: (...args: unknown[]) => void): void;
   prev: () => void;
   resize: (width?: number, height?: number) => void;
+  setZoom(zoom: number | "fit-page" | "fit-width"): void;
   themes: {
     /** Sets the default theme. Stable API, safe to call before and after display(). */
     default: (styles: Record<string, Record<string, string>>) => void;

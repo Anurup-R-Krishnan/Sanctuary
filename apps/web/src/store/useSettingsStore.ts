@@ -183,7 +183,7 @@ const DEFAULTS: SettingsValues = {
   strongFocus: false,
   largeTargets: false,
   announcePageChanges: false,
-  accessibilitySetupPending: true,
+  accessibilitySetupPending: false,
   sessionBudgetMinutes: 20,
   bookVoiceOverrides: {},
   ttsVoiceURI: null,

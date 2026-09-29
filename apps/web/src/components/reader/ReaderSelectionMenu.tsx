@@ -1,4 +1,5 @@
 import {
+  PlayCircle,
   BookOpen,
   Check,
   Copy,
@@ -23,6 +24,7 @@ interface ReaderSelectionMenuProps {
   onCopy: () => void;
   onDefine?: () => void;
   onHighlight: (color?: string) => void;
+  onReadFromHere?: () => void;
   onSpeak: () => void;
   onUnderline: () => void;
   selection: ReaderSelection | null;
@@ -33,6 +35,7 @@ function ReaderSelectionMenuImpl({
   onCopy,
   onDefine,
   onHighlight,
+  onReadFromHere,
   onSpeak,
   onUnderline,
   selection,
@@ -163,6 +166,14 @@ function ReaderSelectionMenuImpl({
           label="Speak"
           onClick={onSpeak}
         />
+        {onReadFromHere && (
+          <ActionBtn
+            ariaLabel="Read aloud from here"
+            icon={PlayCircle}
+            label="Read from here"
+            onClick={onReadFromHere}
+          />
+        )}
       </div>
     </div>
   );

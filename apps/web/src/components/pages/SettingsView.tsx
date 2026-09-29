@@ -136,7 +136,7 @@ function SettingsView() {
                             <div className="mt-3"><ColorVisionPicker /></div>
                         </div>
                         <AccessibilityToggleList options={[...READING_SUPPORT_OPTIONS, ...NAVIGATION_OPTIONS]} />
-                        <SettingRow description="Walk through these options step by step. It also opens the next time the app starts while this is on." title="Accessibility setup">
+                        <SettingRow description="Walk through these options step by step. Turn on to open the setup now." title="Accessibility setup">
                             <div className="flex shrink-0 items-center gap-3">
                                 <Toggle checked={state.accessibilitySetupPending} label="Show accessibility setup" onChange={state.setAccessibilitySetupPending} />
                             </div>

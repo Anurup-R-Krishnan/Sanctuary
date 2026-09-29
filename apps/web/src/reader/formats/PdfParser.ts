@@ -25,6 +25,13 @@ interface LivePage {
 
 const PAGE_HREF_PREFIX = "page-";
 const COVER_WIDTH = 480;
+const MAX_CANVAS_PIXELS = 16_000_000;
+
+let lastPdfScale = 1;
+
+export function getLastPdfScale(): number {
+  return lastPdfScale;
+}
 
 let pdfjsPromise: Promise<PdfJs> | null = null;
 let appearance: PdfAppearance = { background: "#ffffff", mode: "plain" };
@@ -92,8 +99,11 @@ async function renderPage(live: LivePage): Promise<void> {
   const textHost = doc.querySelector<HTMLElement>(".textLayer");
   if (!host || !canvasHost || !textHost) return;
 
-  const ratio = Math.min(globalThis.devicePixelRatio || 1, 3);
+  lastPdfScale = scale;
   const viewport = page.getViewport({ scale });
+  const idealRatio = Math.min(Math.max(globalThis.devicePixelRatio || 1, 2), 3);
+  const areaLimit = Math.sqrt(MAX_CANVAS_PIXELS / Math.max(1, viewport.width * viewport.height));
+  const ratio = Math.max(1, Math.min(idealRatio, areaLimit));
   const outputViewport = page.getViewport({ scale: scale * ratio });
   const canvas = document.createElement("canvas");
   canvas.width = Math.floor(outputViewport.width);

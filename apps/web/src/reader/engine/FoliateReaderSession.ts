@@ -22,6 +22,12 @@ export type SessionRendition = Pick<
   | "getContents"
   | "getCurrentDocument"
   | "getTTSController"
+  | "getEffectiveScale"
+  | "getZoom"
+  | "isFixedLayout"
+  | "setZoom"
+  | "startTTS"
+  | "startTTSFromCfi"
   | "resize"
   | "setFlow"
   | "setStyles"
@@ -131,6 +137,7 @@ export class FoliateReaderSession implements IReaderSession {
       }
 
       this.totalLocations = this.renditionInstance.progressEstimator.totalLocations;
+      this.renditionInstance.setPersistenceKey(this.bookId);
 
       this.setupShims();
       this.setupListeners();
@@ -174,6 +181,12 @@ export class FoliateReaderSession implements IReaderSession {
       getContents: () => inst.getContents(),
       getCurrentDocument: () => inst.getCurrentDocument(),
       getTTSController: () => inst.getTTSController(),
+      getEffectiveScale: () => inst.getEffectiveScale(),
+      getZoom: () => inst.getZoom(),
+      isFixedLayout: () => inst.isFixedLayout(),
+      setZoom: (zoom) => inst.setZoom(zoom),
+      startTTS: (fromCurrentLocation?: boolean) => inst.startTTS(fromCurrentLocation),
+      startTTSFromCfi: (cfi: string) => inst.startTTSFromCfi(cfi),
       next: () => this.next(),
       off: (event, cb) => inst.off(event, cb),
       on: (event, cb) => inst.on(event, cb),
