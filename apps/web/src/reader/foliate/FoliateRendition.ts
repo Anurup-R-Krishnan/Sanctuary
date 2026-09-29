@@ -21,9 +21,12 @@ import { isTinyInlineImage } from "../../components/reader/lightboxUtils";
 import { applyBionicReading } from "../../utils/bionicReading";
 import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
-import { setPdfAppearance } from "../formats/PdfParser";
+import { getLastPdfScale, setPdfAppearance } from "../formats/PdfParser";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
 import { drawPatternedHighlight, highlightPatternFor } from "./highlightPatterns";
+
+export type ReaderZoom = number | "fit-page" | "fit-width";
+export const ZOOM_WHEEL_EVENT = "sanctuary-zoom-wheel";
 import { readerFontFaceCss } from "./readerFonts";
 import { ScrollContinuity } from "./ScrollContinuity";
 
@@ -81,6 +84,8 @@ export class FoliateRendition implements DocumentRendition {
   private activeSearchCfi: string | null = null;
   private ttsController: FoliateTTSController | null = null;
   private lastVisibleRange: Range | null = null;
+  private persistenceKey: string | null = null;
+  private zoom: ReaderZoom = "fit-page";
   private bionicCleanups = new WeakMap<Document, () => void>();
   private readonly scrollContinuity = new ScrollContinuity();
 
@@ -167,6 +172,7 @@ export class FoliateRendition implements DocumentRendition {
     if (this.view.renderer) {
       this.scrollContinuity.attachRenderer(this.view.renderer);
       this.setupRelocateListener();
+      if (this.isFixedLayout()) this.applyZoom();
     }
 
     // Setup visual search marks hook
@@ -234,6 +240,7 @@ export class FoliateRendition implements DocumentRendition {
       if (doc) {
         this.injectStylesToDocument(doc);
         this.setupDocumentKeyboardForwarding(doc);
+        if (this.isFixedLayout()) this.setupDocumentZoomForwarding(doc);
         this.setupDocumentSelection(doc, index);
         this.setupDocumentImageInteraction(doc);
         this.setupDocumentInteractivity(doc);
@@ -382,6 +389,25 @@ export class FoliateRendition implements DocumentRendition {
     } catch {
       // Cross-origin or transient access error
     }
+  }
+
+  private setupDocumentZoomForwarding(doc: Document): void {
+    doc.addEventListener(
+      "wheel",
+      (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent(ZOOM_WHEEL_EVENT, { detail: event.deltaY }));
+      },
+      { passive: false }
+    );
+    doc.addEventListener(
+      "keydown",
+      (event) => {
+        if ((event.ctrlKey || event.metaKey) && ["=", "+", "-", "0"].includes(event.key)) event.preventDefault();
+      },
+      { capture: true }
+    );
   }
 
   private setupDocumentKeyboardForwarding(doc: Document): void {
@@ -767,6 +793,32 @@ export class FoliateRendition implements DocumentRendition {
     return [];
   }
 
+  public isFixedLayout(): boolean {
+    return this.documentAdapter?.rawBook?.rendition?.layout === "pre-paginated";
+  }
+
+  public setZoom(zoom: ReaderZoom): void {
+    this.zoom = zoom;
+    this.applyZoom();
+  }
+
+  public getZoom(): ReaderZoom {
+    return this.zoom;
+  }
+
+  public getEffectiveScale(): number {
+    if (typeof this.zoom === "number") return this.zoom;
+    return this.documentAdapter?.format === "pdf" ? getLastPdfScale() : 1;
+  }
+
+  private applyZoom(): void {
+    const renderer = this.view?.renderer as HTMLElement | undefined;
+    if (!renderer || !this.isFixedLayout()) return;
+    renderer.style.justifyContent = "safe center";
+    renderer.style.alignItems = "safe center";
+    renderer.setAttribute("zoom", String(this.zoom));
+  }
+
   public setTextWidth(px: number): void {
     this.textWidthPx = px;
     this.view?.renderer?.setAttribute("max-inline-size", `${px}px`);
@@ -1116,15 +1168,63 @@ export class FoliateRendition implements DocumentRendition {
           }
         },
         onNextChapter: () => this.goToAdjacentSection(1),
+        onSentence: (range) => this.rememberTTSPosition(range),
         onPrevChapter: () => this.goToAdjacentSection(-1),
       });
     }
     return this.ttsController;
   }
 
+  public setPersistenceKey(key: string): void {
+    this.persistenceKey = key;
+  }
+
+  private ttsStorageKey(): string | null {
+    return this.persistenceKey ? `sanctuary.tts-position.${this.persistenceKey}` : null;
+  }
+
+  private rememberTTSPosition(range: Range): void {
+    const key = this.ttsStorageKey();
+    if (!key || !this.view?.getCFI) return;
+    try {
+      const cfi = this.view.getCFI(this.currentSectionIndex, range);
+      if (cfi) localStorage.setItem(key, cfi);
+    } catch {
+      return;
+    }
+  }
+
+  private async rangeForCfi(cfi: string, navigate: boolean): Promise<Range | null> {
+    if (!this.view) return null;
+    try {
+      const resolved = await this.view.resolveNavigation(cfi);
+      if (!resolved || typeof resolved.index !== "number") return null;
+      if (resolved.index !== this.currentSectionIndex) {
+        if (!navigate) return null;
+        await this.view.goTo(cfi);
+        this.currentSectionIndex = resolved.index;
+      }
+      const doc = this.getCurrentDocument();
+      const anchor = doc && typeof resolved.anchor === "function" ? resolved.anchor(doc) : null;
+      return anchor && typeof (anchor as Range).compareBoundaryPoints === "function" ? (anchor as Range) : null;
+    } catch {
+      return null;
+    }
+  }
+
   public async startTTS(fromCurrentLocation: boolean = true): Promise<void> {
     const controller = this.getTTSController();
-    await controller.start(fromCurrentLocation);
+    const key = this.ttsStorageKey();
+    const saved = fromCurrentLocation && key ? localStorage.getItem(key) : null;
+    const resumeAt = saved ? await this.rangeForCfi(saved, false) : null;
+    if (resumeAt) this.view?.renderer?.scrollToAnchor?.(resumeAt, true);
+    await controller.start(fromCurrentLocation, resumeAt);
+  }
+
+  public async startTTSFromCfi(cfi: string): Promise<void> {
+    const controller = this.getTTSController();
+    const startAt = await this.rangeForCfi(cfi, true);
+    await controller.start(true, startAt);
   }
 
   public pauseTTS(): void {

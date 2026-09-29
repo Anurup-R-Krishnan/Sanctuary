@@ -36,6 +36,7 @@ export interface TTSControllerOptions {
   initialRate?: number;
   onNextChapter?: () => Promise<boolean>;
   onPrevChapter?: () => Promise<boolean>;
+  onSentence?: (range: Range) => void;
   paragraphPauseMs?: number;
   revealRange?: (range: Range) => void;
   sentencePauseMs?: number;
@@ -69,6 +70,7 @@ export class FoliateTTSController {
   private destroyed = false;
   private consecutiveErrors = 0;
   private lastError: string | null = null;
+  private finishedWhilePaused = false;
 
   constructor(options: TTSControllerOptions) {
     this.options = options;
@@ -207,7 +209,7 @@ export class FoliateTTSController {
     return this.sentences;
   }
 
-  public async start(fromCurrentLocation: boolean = true): Promise<void> {
+  public async start(fromCurrentLocation: boolean = true, startAt: Range | null = null): Promise<void> {
     if (this.destroyed) return;
     this.consecutiveErrors = 0;
     this.lastError = null;
@@ -215,26 +217,50 @@ export class FoliateTTSController {
       clearTimeout(this.pauseTimeout);
       this.pauseTimeout = null;
     }
+    this.playback?.cancel();
     this.extractSentences();
 
+    if (this.sentences.length === 0 && this.options.onNextChapter) {
+      const hasNext = await this.options.onNextChapter();
+      if (hasNext) this.extractSentences();
+    }
     if (this.sentences.length === 0) {
-      // Try next chapter if current is empty
-      if (this.options.onNextChapter) {
-        const hasNext = await this.options.onNextChapter();
-        if (hasNext) {
-          this.extractSentences();
-        }
-      }
-      if (this.sentences.length === 0) {
-        this.stop();
-        return;
-      }
+      this.stop();
+      return;
     }
 
-    this.currentIndex = fromCurrentLocation ? this.resolveStartingIndex() : 0;
+    this.currentIndex = startAt ? this.indexForRange(startAt) : fromCurrentLocation ? this.resolveStartingIndex() : 0;
+    if (startAt) this.trimSentenceStart(this.currentIndex, startAt);
     this.isPlaying = true;
     this.isPaused = false;
     this.speakCurrentSentence();
+  }
+
+  private trimSentenceStart(index: number, startAt: Range): void {
+    const sentence = this.sentences[index];
+    if (!sentence) return;
+    try {
+      const startsInside = sentence.range.compareBoundaryPoints(Range.START_TO_START, startAt) < 0
+        && sentence.range.compareBoundaryPoints(Range.END_TO_START, startAt) > 0;
+      if (!startsInside) return;
+      const range = sentence.range.cloneRange();
+      range.setStart(startAt.startContainer, startAt.startOffset);
+      const text = range.toString().replace(/\s+/g, " ").trim();
+      if (text) this.sentences[index] = { ...sentence, range, text };
+    } catch {
+      return;
+    }
+  }
+
+  private indexForRange(target: Range): number {
+    for (let i = 0; i < this.sentences.length; i++) {
+      try {
+        if (this.sentences[i]!.range.compareBoundaryPoints(Range.START_TO_END, target) > 0) return i;
+      } catch {
+        return this.resolveStartingIndex();
+      }
+    }
+    return Math.max(0, this.sentences.length - 1);
   }
 
   public pause(): void {
@@ -253,7 +279,12 @@ export class FoliateTTSController {
     if (!this.isPlaying || !this.isPaused) return;
     this.isPaused = false;
     this.mediaSessionController.setPlaybackState("playing");
-    if (!this.playback?.resume()) this.speakCurrentSentence();
+    if (this.finishedWhilePaused) {
+      this.finishedWhilePaused = false;
+      this.next();
+    } else if (!this.playback?.resume()) {
+      this.speakCurrentSentence();
+    }
     this.notify();
   }
 
@@ -332,7 +363,7 @@ export class FoliateTTSController {
     if (!visible) return 0;
     for (let i = 0; i < this.sentences.length; i++) {
       try {
-        if (this.sentences[i]!.range.compareBoundaryPoints(Range.END_TO_START, visible) >= 0) return i;
+        if (this.sentences[i]!.range.compareBoundaryPoints(Range.START_TO_END, visible) > 0) return i;
       } catch {
         return 0;
       }
@@ -364,6 +395,7 @@ export class FoliateTTSController {
     try {
       this.options.highlightRange(item.range);
       this.options.revealRange?.(item.range);
+      this.options.onSentence?.(item.range);
     } catch {
       // Safe fallback if range is detached
     }
@@ -372,6 +404,7 @@ export class FoliateTTSController {
     this.notify();
 
     this.playback?.cancel();
+    this.finishedWhilePaused = false;
     const advance = () => {
       if (this.destroyed || !this.isPlaying || this.isPaused) return;
       const delay = item.isParagraphEnd ? this.paragraphPauseMs : this.sentencePauseMs;
@@ -389,6 +422,10 @@ export class FoliateTTSController {
       onEnd: () => {
         this.consecutiveErrors = 0;
         this.lastError = null;
+        if (this.isPaused) {
+          this.finishedWhilePaused = true;
+          return;
+        }
         advance();
       },
       onError: () => {
@@ -488,6 +525,7 @@ export function buildSentences(doc: Document): SentenceItem[] {
     }
     const entry = blocks[blocks.length - 1]!;
     const value = text.nodeValue ?? "";
+    if (block.classList?.contains("textLayer") && entry.text && !/\s$/.test(entry.text) && !/^\s/.test(value)) entry.text += " ";
     entry.spans.push({ end: entry.text.length + value.length, node: text, start: entry.text.length });
     entry.text += value;
   }

@@ -226,6 +226,14 @@ describe("MediaSessionController & Background Audio Controls", () => {
       speaking: false,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (globalThis as any).SpeechSynthesisUtterance = class MockUtterance {
+      public text: string;
+      constructor(text: string) {
+        this.text = text;
+      }
+    };
+
     const doc = document.implementation.createHTMLDocument("Test Book");
     doc.body.innerHTML = `
       <p>Sentence one of chapter one. Sentence two of chapter one.</p>

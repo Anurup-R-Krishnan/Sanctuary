@@ -31,39 +31,85 @@ function hasSpeechSynthesis(): boolean {
   return typeof window !== "undefined" && !!window.speechSynthesis && typeof SpeechSynthesisUtterance !== "undefined";
 }
 
+const liveUtterances = new Set<SpeechSynthesisUtterance>();
+const CANCEL_SETTLE_MS = 60;
+const KEEPALIVE_MS = 10000;
+
 export const systemSpeechEngine: SpeechEngine = {
   id: "system",
   speak: ({ pitch, rate, text, voice }, { onEnd, onError }) => {
-    if (!hasSpeechSynthesis()) return noopPlayback;
+    if (!hasSpeechSynthesis()) {
+      queueMicrotask(onError);
+      return noopPlayback;
+    }
     const synth = window.speechSynthesis;
-    synth.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = rate;
     utterance.pitch = pitch;
     if (voice) {
       const match = synth.getVoices?.().find((v) => v.voiceURI === voice);
-      if (match) utterance.voice = match;
+      if (match) {
+        utterance.voice = match;
+        utterance.lang = match.lang;
+      }
     }
+
     let cancelled = false;
+    let started = false;
+    let keepAlive: ReturnType<typeof setInterval> | null = null;
+    let startTimer: ReturnType<typeof setTimeout> | null = null;
+    const release = () => {
+      liveUtterances.delete(utterance);
+      if (keepAlive) clearInterval(keepAlive);
+      keepAlive = null;
+    };
+    utterance.onstart = () => {
+      started = true;
+      keepAlive = setInterval(() => {
+        if (synth.speaking && !synth.paused) {
+          synth.pause();
+          synth.resume();
+        }
+      }, KEEPALIVE_MS);
+    };
     utterance.onend = () => {
+      release();
       if (!cancelled) onEnd();
     };
     utterance.onerror = (event) => {
+      release();
       if (cancelled || event.error === "interrupted" || event.error === "canceled") return;
       onError();
     };
-    synth.speak(utterance);
+
+    liveUtterances.add(utterance);
+    const begin = () => {
+      startTimer = null;
+      if (cancelled) return;
+      if (synth.paused) synth.resume();
+      synth.speak(utterance);
+    };
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      startTimer = setTimeout(begin, CANCEL_SETTLE_MS);
+    } else {
+      begin();
+    }
+
     return {
       cancel: () => {
         cancelled = true;
+        if (startTimer) clearTimeout(startTimer);
+        release();
+        if (started || synth.speaking || synth.pending) synth.cancel();
+      },
+      pause: () => {
+        cancelled = true;
+        if (startTimer) clearTimeout(startTimer);
+        release();
         synth.cancel();
       },
-      pause: () => synth.pause(),
-      resume: () => {
-        if (!synth.paused) return false;
-        synth.resume();
-        return true;
-      },
+      resume: () => false,
     };
   },
   stopAll: () => {

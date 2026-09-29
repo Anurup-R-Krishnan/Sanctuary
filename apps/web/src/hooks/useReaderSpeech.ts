@@ -180,14 +180,33 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     return null;
   }, [session]);
 
+  const getRendition = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = session as any;
+    return s?.renditionInstance || s?.rendition || null;
+  }, [session]);
+
   const startBookSpeech = useCallback(
     async (fromCurrentLocation: boolean = true) => {
-      const ctrl = getTTSController();
-      if (ctrl) {
-        await ctrl.start(fromCurrentLocation);
+      adHocPlaybackRef.current?.cancel();
+      const rendition = getRendition();
+      if (typeof rendition?.startTTS === "function") {
+        await rendition.startTTS(fromCurrentLocation);
+        return;
       }
+      await getTTSController()?.start(fromCurrentLocation);
     },
-    [getTTSController]
+    [getRendition, getTTSController]
+  );
+
+  const startSpeechFromCfi = useCallback(
+    async (cfi: string) => {
+      adHocPlaybackRef.current?.cancel();
+      const rendition = getRendition();
+      if (typeof rendition?.startTTSFromCfi === "function") await rendition.startTTSFromCfi(cfi);
+      else await getTTSController()?.start(true);
+    },
+    [getRendition, getTTSController]
   );
 
   const pauseBookSpeech = useCallback(() => {
@@ -282,6 +301,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     speak,
     speechState: state,
     startBookSpeech,
+    startSpeechFromCfi,
     stop: stopBookSpeech,
     stopBookSpeech,
     togglePlayPause,

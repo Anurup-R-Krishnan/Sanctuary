@@ -73,6 +73,7 @@ interface ReaderOverlayProps {
   onToggleTOC: () => void;
   onToggleTTS?: () => void;
   onToggleZenMode?: () => void;
+  onTTSPlayPause?: () => void;
   onUpdateAnnotation?: (id: string, note: string, color?: string) => void;
   paragraphPauseMs?: number;
   progressFraction: number;
@@ -146,7 +147,7 @@ function ReaderOverlay(props: ReaderOverlayProps) {
             onClose={props.onCloseTTS || props.onToggleTTS || (() => {})}
             onNextSentence={props.onNextTTSSentence || (() => {})}
             onPrevSentence={props.onPrevTTSSentence || (() => {})}
-            onTogglePlayPause={props.onToggleTTS || (() => {})}
+            onTogglePlayPause={props.onTTSPlayPause || props.onToggleTTS || (() => {})}
             paragraphPauseMs={props.paragraphPauseMs}
             speechState={props.speechState}
             voices={props.voices}
