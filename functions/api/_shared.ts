@@ -47,7 +47,6 @@ export const json = (body: unknown, init: ResponseInit = {}) =>
   });
 
 // The WebWorker lib's CacheStorage type shadows workers-types' `caches.default`.
-const edgeCache = (): Cache => (caches as unknown as { default: Cache }).default;
 
 export const errorJson = (message: string, status = 400) => json({ error: message }, { status });
 
@@ -226,44 +225,4 @@ export function resolveBookContentType(file: File): string {
 export const MAX_EPUB_BYTES = 150 * 1024 * 1024; // 150 MB
 
 // --- Edge Caching ---
-export async function withEdgeCache(
-  request: Request,
-  cacheKeyModifier: string,
-  fetcher: () => Promise<Response>
-): Promise<Response> {
-  const cache = edgeCache();
-  const url = new URL(request.url);
-  url.searchParams.set("_cache", cacheKeyModifier);
-  
-  const cacheKey = new Request(url.toString(), { method: "GET" });
-  const cached = await cache.match(cacheKey);
-  
-  if (cached) {
-    const res = new Response(cached.body, cached);
-    res.headers.set("X-Cache-Status", "HIT");
-    res.headers.set("Access-Control-Allow-Origin", "*");
-    return res;
-  }
-
-  const response = await fetcher();
-  
-  if (response.status === 200) {
-    const responseToCache = new Response(response.clone().body, response);
-    responseToCache.headers.set("Cache-Control", "s-maxage=3600"); 
-    await cache.put(cacheKey, responseToCache);
-  }
-
-  const res = new Response(response.body, response);
-  res.headers.set("X-Cache-Status", "MISS");
-  return res;
-}
-
-export async function purgeEdgeCache(request: Request, cacheKeyModifier: string): Promise<void> {
-  const cache = edgeCache();
-  const url = new URL(request.url);
-  url.search = ""; // Strip query params to purge base route
-  url.searchParams.set("_cache", cacheKeyModifier);
-  const cacheKey = new Request(url.toString(), { method: "GET" });
-  await cache.delete(cacheKey);
-}
 
