@@ -5,9 +5,9 @@ import type { RawFoliateBook, RawFoliateSection, RawFoliateTocItem } from "./Txt
 
 type PdfJs = typeof PdfJsModule;
 
-export interface PdfPageColors {
+export interface PdfAppearance {
   background: string;
-  foreground: string;
+  mode: "dark" | "paper" | "plain";
 }
 
 interface OutlineNode {
@@ -20,13 +20,14 @@ interface LivePage {
   doc: Document;
   page: PDFPageProxy;
   scale: number;
+  task?: { cancel: () => void };
 }
 
 const PAGE_HREF_PREFIX = "page-";
 const COVER_WIDTH = 480;
 
 let pdfjsPromise: Promise<PdfJs> | null = null;
-let pageColors: PdfPageColors | null = null;
+let appearance: PdfAppearance = { background: "#ffffff", mode: "plain" };
 const livePages = new Set<LivePage>();
 
 function loadPdfJs(): Promise<PdfJs> {
@@ -51,17 +52,25 @@ export function pageIndexFromHref(href: string): number | null {
   return Number.isInteger(index) && index >= 0 ? index : null;
 }
 
-export function setPdfPageColors(colors: PdfPageColors | null): void {
-  const unchanged = colors?.background === pageColors?.background && colors?.foreground === pageColors?.foreground;
-  pageColors = colors;
-  if (unchanged) return;
-  for (const live of livePages) void renderPage(live);
+function applyAppearance(doc: Document): void {
+  doc.documentElement.style.backgroundColor = appearance.background;
+  doc.documentElement.dataset.pdfMode = appearance.mode;
+}
+
+export function setPdfAppearance(next: PdfAppearance): void {
+  if (next.background === appearance.background && next.mode === appearance.mode) return;
+  appearance = next;
+  for (const live of livePages) {
+    if (live.doc.defaultView) applyAppearance(live.doc);
+  }
 }
 
 const PAGE_STYLE = `
 html,body{margin:0;padding:0;overflow:hidden;background:transparent;--scale-round-x:1px;--scale-round-y:1px}
 #page{position:relative}
 #page canvas{display:block}
+html[data-pdf-mode="paper"] #page canvas{mix-blend-mode:multiply}
+html[data-pdf-mode="dark"] #page canvas{filter:invert(0.88) hue-rotate(180deg) contrast(0.95)}
 .textLayer{position:absolute;inset:0;overflow:clip;opacity:1;line-height:1;text-align:initial;transform-origin:0 0;z-index:0;
 --min-font-size:1;--text-scale-factor:calc(var(--total-scale-factor) * var(--min-font-size));--min-font-size-inv:calc(1 / var(--min-font-size))}
 .textLayer :is(span,br){color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
@@ -86,7 +95,7 @@ async function renderPage(live: LivePage): Promise<void> {
   const ratio = Math.min(globalThis.devicePixelRatio || 1, 3);
   const viewport = page.getViewport({ scale });
   const outputViewport = page.getViewport({ scale: scale * ratio });
-  const canvas = doc.createElement("canvas");
+  const canvas = document.createElement("canvas");
   canvas.width = Math.floor(outputViewport.width);
   canvas.height = Math.floor(outputViewport.height);
   canvas.style.width = `${Math.floor(viewport.width)}px`;
@@ -95,12 +104,17 @@ async function renderPage(live: LivePage): Promise<void> {
   host.style.width = `${Math.floor(viewport.width)}px`;
   host.style.height = `${Math.floor(viewport.height)}px`;
 
-  await page.render({
-    canvas,
-    viewport: outputViewport,
-    ...(pageColors ? { pageColors } : {}),
-  }).promise;
-  canvasHost.replaceChildren(canvas);
+  live.task?.cancel();
+  const task = page.render({ canvas, viewport: outputViewport });
+  live.task = task;
+  try {
+    await task.promise;
+  } catch {
+    return;
+  }
+  if (live.task !== task || !doc.defaultView) return;
+  applyAppearance(doc);
+  canvasHost.replaceChildren(doc.adoptNode(canvas));
 
   textHost.replaceChildren();
   const textLayer = new pdfjs.TextLayer({ container: textHost, textContentSource: page.streamTextContent(), viewport });
@@ -232,6 +246,7 @@ export async function parsePdfToBook(
           onZoom: ({ doc, scale }: { doc: Document; scale: number }) => {
             for (const live of tracked) {
               if (live.doc === doc || !live.doc.defaultView) {
+                live.task?.cancel();
                 tracked.delete(live);
                 livePages.delete(live);
               }
@@ -278,7 +293,7 @@ export async function parsePdfToBook(
       creator: metadataText(meta?.info, "Creator"),
       title: metadataText(meta?.info, "Title") ?? fallbackTitle,
     },
-    rendition: { layout: "pre-paginated", spread: "auto" },
+    rendition: { layout: "pre-paginated", spread: "none" },
     resolveHref: (href: string) => {
       const index = pageIndexFromHref(href);
       return index === null || index >= pdf.numPages ? null : { index };

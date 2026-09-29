@@ -33,6 +33,10 @@ export class ReaderSession implements IReaderSession {
     return (this.session as any).epubBook ?? null;
   }
 
+  public getCoverBlob(): Promise<Blob | null> {
+    return this.session.getCoverBlob?.() ?? Promise.resolve(null);
+  }
+
   public get totalLocations(): number {
     return this.session.totalLocations;
   }

@@ -35,7 +35,6 @@ class KokoroClient {
   private get location() {
     const runtimeFallback = typeof window === "undefined" ? "/ort/" : new URL("/ort/", window.location.href).href;
     return {
-      modelBase: resolveBase(import.meta.env.VITE_KOKORO_MODEL_BASE, null),
       runtimeBase: resolveBase(import.meta.env.VITE_KOKORO_RUNTIME_BASE, runtimeFallback) ?? runtimeFallback,
     };
   }

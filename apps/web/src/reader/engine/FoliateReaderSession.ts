@@ -301,6 +301,10 @@ export class FoliateReaderSession implements IReaderSession {
     this.renditionInstance?.updateBackground(bg);
   }
 
+  public async getCoverBlob(): Promise<Blob | null> {
+    return this.adapter ? this.adapter.getCoverBlob() : null;
+  }
+
   public async startTTS(fromCurrentLocation: boolean = true): Promise<void> {
     if (this.aborted || !this.renditionInstance) return;
     await this.renditionInstance.startTTS(fromCurrentLocation);

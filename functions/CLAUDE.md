@@ -38,7 +38,6 @@ touch it.
 | `api/annotations.ts` | `GET`/`POST`/`DELETE` | Highlights, underlines, and marginalia notes, keyed by `bookId` + `cfi`. `GET` filters by `?bookId=`. |
 | `api/settings.ts` | `GET`/`PUT` | Reader preferences as a single row. `GET` returns a sparse object (nulls stripped) so the client can merge partials; `PUT` writes only the columns present in `SETTINGS_COLUMNS`. Has a catch-all `onRequest` for unsupported verbs. |
 | `api/goals.ts` | `GET` | Aggregates sessions into day/week/month goal windows, each with `targetMinutes`, `totalMinutes`, and `progressPercent`. |
-| `models/[[path]].ts` | `GET`/`HEAD /models/*` | Public, read-only R2 proxy for the Kokoro read-aloud model under the `models/` key prefix (upload with `tooling/upload-kokoro-model.sh`). Only allowlisted model ids; supports `Range`; immutable caching. |
 | `api/opds-proxy.ts` | `GET /api/opds-proxy?url=` | CORS-bypass proxy for OPDS feeds and book downloads. **No account needed** (catalogs work for guests); limited to 600 requests / IP / hour via `auth_attempts`. Redirects followed by hand with every hop re-checked by `isBlockedHost` (loopback, private, CGNAT, IPv6 ULA/link-local, NAT64); `X-Target-Authorization` dropped on origin change; content-type allowlist; streamed 150 MB cap; `CSP: sandbox` on responses. |
 
 ## utils/

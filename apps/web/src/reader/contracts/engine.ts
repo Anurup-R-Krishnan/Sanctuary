@@ -52,6 +52,7 @@ export interface ReaderEngineCallbacks {
 export interface IReaderSession {
   destroy(): void;
   display(target: string): Promise<boolean>;
+  getCoverBlob?(): Promise<Blob | null>;
   getTTSState?(): TTSControllerState | null;
   next(): Promise<void>;
   nextTTS?(): void;

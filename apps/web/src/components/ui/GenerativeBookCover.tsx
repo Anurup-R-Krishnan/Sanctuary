@@ -1,9 +1,6 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
-import {
-  getGenerativeCoverStyle,
-  splitTitleForSvg,
-} from "@/utils/generativeCover";
+import { getCoverPalette, isUnknownAuthor, splitTitleForSvg } from "@/utils/generativeCover";
 
 export interface GenerativeBookCoverProps {
   author?: string;
@@ -12,243 +9,97 @@ export interface GenerativeBookCoverProps {
   variant?: "compact" | "default" | "featured";
 }
 
-export function GenerativeBookCover({
-  author,
-  className = "",
-  title,
-  variant = "default",
-}: GenerativeBookCoverProps) {
+const WIDTH = 400;
+const HEIGHT = 600;
+const LABEL = { height: 260, width: 268, x: 84, y: 150 };
+
+export function GenerativeBookCover({ author, className = "", title, variant = "default" }: GenerativeBookCoverProps) {
   const isCompact = variant === "compact";
-  const { motif, palette } = useMemo(
-    () => getGenerativeCoverStyle(title, author),
-    [title, author]
-  );
+  const palette = useMemo(() => getCoverPalette(title, author), [title, author]);
+  const lines = useMemo(() => splitTitleForSvg(title, isCompact ? 12 : 15), [title, isCompact]);
+  const showAuthor = !isUnknownAuthor(author);
+  const authorText = (author ?? "").trim().slice(0, 28).toUpperCase();
 
-  const titleLines = useMemo(
-    () => splitTitleForSvg(title, isCompact ? 12 : 16),
-    [title, isCompact]
-  );
-
-  const safeAuthor = (author || "").trim().slice(0, 26);
-  const titleFontSize = isCompact ? 22 : titleLines.length > 2 ? 24 : 28;
-  const titleLineHeight = titleFontSize * 1.3;
-  const titleBlockHeight = titleLines.length * titleLineHeight;
-  const titleStartY = 330 - titleBlockHeight / 2;
+  const longest = Math.max(...lines.map((line) => line.length), 1);
+  const authorSpace = showAuthor ? 64 : 0;
+  const widthFit = (LABEL.width - 44) / (longest * 0.52);
+  const heightFit = (LABEL.height - 44 - authorSpace) / (lines.length * 1.12);
+  const fontSize = Math.round(Math.max(18, Math.min(isCompact ? 44 : 40, widthFit, heightFit)));
+  const lineHeight = fontSize * 1.12;
+  const blockHeight = (lines.length - 1) * lineHeight + authorSpace;
+  const titleTop = LABEL.y + LABEL.height / 2 - blockHeight / 2 + fontSize * 0.34;
+  const ruleY = titleTop + (lines.length - 1) * lineHeight + 26;
 
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 400 600"
-      className={`w-full h-full object-cover select-none ${className}`}
-      role="img"
       aria-label={`Cover for ${title}`}
+      className={`h-full w-full select-none ${className}`}
+      height="100%"
+      preserveAspectRatio="xMidYMid slice"
+      role="img"
+      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+      width="100%"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <linearGradient id={`grad-${palette.id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={palette.bgTop} />
-          <stop offset="100%" stopColor={palette.bgBottom} />
-        </linearGradient>
-        <linearGradient id="spine-crease-3d" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgba(0,0,0,0.45)" />
-          <stop offset="3%" stopColor="rgba(255,255,255,0.18)" />
-          <stop offset="8%" stopColor="rgba(0,0,0,0.22)" />
-          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-        </linearGradient>
-      </defs>
+      <rect fill={palette.cloth} height={HEIGHT} width={WIDTH} />
+      <rect fill={palette.shade} height={HEIGHT} width="46" />
+      <rect fill="#000" height={HEIGHT} opacity="0.18" width="4" x="46" />
+      <rect fill="#fff" height={HEIGHT} opacity="0.07" width="2" x="50" />
 
-      {/* Book Cloth Background */}
-      <rect width="400" height="600" fill={`url(#grad-${palette.id})`} />
+      <rect fill="none" height="548" opacity="0.7" stroke={palette.foil} strokeWidth="2" width="290" x="73" y="26" />
+      <rect fill="none" height="536" opacity="0.45" stroke={palette.foil} strokeWidth="1" width="278" x="79" y="32" />
 
-      {/* Outer Foil Border */}
+      <rect fill="#000" height={LABEL.height} opacity="0.18" width={LABEL.width} x={LABEL.x + 3} y={LABEL.y + 4} />
+      <rect fill={palette.label} height={LABEL.height} width={LABEL.width} x={LABEL.x} y={LABEL.y} />
       <rect
-        x="20"
-        y="20"
-        width="360"
-        height="560"
         fill="none"
-        stroke={palette.foil}
-        strokeWidth="1.5"
-        opacity="0.35"
-      />
-      <rect
-        x="26"
-        y="26"
-        width="348"
-        height="548"
-        fill="none"
-        stroke={palette.foil}
-        strokeWidth="0.75"
-        opacity="0.2"
-      />
-
-      {/* Top Geometric Motif */}
-      <g>
-        {motif === "arches" && (
-          <>
-            <path
-              d="M 160 190 A 40 40 0 0 1 240 190 L 240 220 L 160 220 Z"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="2"
-              opacity="0.6"
-            />
-            <path
-              d="M 175 190 A 25 25 0 0 1 225 190 L 225 220 L 175 220 Z"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="1.5"
-              opacity="0.4"
-            />
-            <circle cx="200" cy="180" r="4" fill={palette.foil} opacity="0.8" />
-          </>
-        )}
-        {motif === "diamond" && (
-          <>
-            <polygon
-              points="200,150 235,185 200,220 165,185"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="2"
-              opacity="0.6"
-            />
-            <polygon
-              points="200,162 223,185 200,208 177,185"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="1.5"
-              opacity="0.4"
-            />
-            <circle cx="200" cy="185" r="3" fill={palette.foil} opacity="0.8" />
-          </>
-        )}
-        {motif === "celestial" && (
-          <>
-            <circle
-              cx="200"
-              cy="185"
-              r="35"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="1.5"
-              opacity="0.5"
-            />
-            <circle
-              cx="200"
-              cy="185"
-              r="22"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="2"
-              opacity="0.7"
-            />
-            <circle cx="200" cy="185" r="8" fill={palette.foil} opacity="0.8" />
-            <circle cx="230" cy="165" r="3" fill={palette.foil} opacity="0.9" />
-          </>
-        )}
-        {motif === "bookplate" && (
-          <>
-            <rect
-              x="170"
-              y="160"
-              width="60"
-              height="50"
-              fill="none"
-              stroke={palette.foil}
-              strokeWidth="1.5"
-              opacity="0.6"
-            />
-            <line
-              x1="160"
-              y1="185"
-              x2="240"
-              y2="185"
-              stroke={palette.foil}
-              strokeWidth="1"
-              opacity="0.4"
-            />
-            <line
-              x1="200"
-              y1="150"
-              x2="200"
-              y2="220"
-              stroke={palette.foil}
-              strokeWidth="1"
-              opacity="0.4"
-            />
-            <circle cx="200" cy="185" r="4" fill={palette.foil} opacity="0.8" />
-          </>
-        )}
-      </g>
-
-      {/* Divider Rule */}
-      <line
-        x1="140"
-        y1="260"
-        x2="260"
-        y2="260"
-        stroke={palette.foil}
+        height={LABEL.height - 16}
+        stroke={palette.ink}
+        strokeOpacity="0.55"
         strokeWidth="1"
-        opacity="0.5"
+        width={LABEL.width - 16}
+        x={LABEL.x + 8}
+        y={LABEL.y + 8}
       />
 
-      {/* Book Title Text */}
-      <g>
-        {titleLines.map((line, i) => (
-          <text
-            key={i}
-            x="200"
-            y={Math.round(titleStartY + i * titleLineHeight)}
-            textAnchor="middle"
-            fill={palette.textColor}
-            fontFamily="'Crimson Pro', Georgia, serif"
-            fontSize={titleFontSize}
-            fontWeight="600"
-            letterSpacing="0.5"
-          >
-            {line}
-          </text>
-        ))}
-      </g>
-
-      {/* Author Attribution */}
-      {safeAuthor && (
+      {lines.map((line, index) => (
         <text
-          x="200"
-          y="470"
-          textAnchor="middle"
-          fill={palette.accent}
-          fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-          fontSize="14"
+          fill={palette.ink}
+          fontFamily="Newsreader, 'Crimson Pro', Georgia, serif"
+          fontSize={fontSize}
           fontWeight="500"
-          letterSpacing="1.5"
+          key={index}
+          letterSpacing="-0.5"
+          textAnchor="middle"
+          x={LABEL.x + LABEL.width / 2}
+          y={Math.round(titleTop + index * lineHeight)}
         >
-          {safeAuthor.toUpperCase()}
+          {line}
         </text>
+      ))}
+
+      {showAuthor && (
+        <>
+          <line opacity="0.6" stroke={palette.ink} strokeWidth="1" x1={LABEL.x + LABEL.width / 2 - 22} x2={LABEL.x + LABEL.width / 2 + 22} y1={ruleY} y2={ruleY} />
+          <text
+            fill={palette.ink}
+            fontFamily="'Instrument Sans', system-ui, sans-serif"
+            fontSize={isCompact ? 17 : 14}
+            fontWeight="600"
+            letterSpacing="2.5"
+            opacity="0.85"
+            textAnchor="middle"
+            x={LABEL.x + LABEL.width / 2}
+            y={ruleY + 30}
+          >
+            {authorText}
+          </text>
+        </>
       )}
 
-      {/* Bottom Sanctuary Insignia */}
-      <text
-        x="200"
-        y="550"
-        textAnchor="middle"
-        fill={palette.foil}
-        opacity="0.3"
-        fontFamily="'Crimson Pro', Georgia, serif"
-        fontSize="10"
-        letterSpacing="2"
-      >
-        SANCTUARY
+      <text fill={palette.foil} fontFamily="Georgia, serif" fontSize="26" opacity="0.75" textAnchor="middle" x={LABEL.x + LABEL.width / 2} y="505">
+        ❧
       </text>
-
-      {/* Spine Crease Highlight */}
-      <rect
-        x="0"
-        y="0"
-        width="36"
-        height="600"
-        fill="url(#spine-crease-3d)"
-        pointerEvents="none"
-      />
     </svg>
   );
 }

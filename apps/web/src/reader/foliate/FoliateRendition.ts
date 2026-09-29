@@ -21,7 +21,7 @@ import { isTinyInlineImage } from "../../components/reader/lightboxUtils";
 import { applyBionicReading } from "../../utils/bionicReading";
 import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
-import { setPdfPageColors } from "../formats/PdfParser";
+import { setPdfAppearance } from "../formats/PdfParser";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
 import { readerFontFaceCss } from "./readerFonts";
 import { ScrollContinuity } from "./ScrollContinuity";
@@ -299,10 +299,11 @@ export class FoliateRendition implements DocumentRendition {
 
   private syncPdfPageColors(): void {
     if (this.documentAdapter?.format !== "pdf") return;
-    const foreground = this.flowOptions.themeStyles?.body?.color;
-    const isPlainWhite = /^#?f{3}(f{3})?$/i.test(this.background.trim().replace(/^#/, "")) || this.background.trim().toLowerCase() === "white";
-    setPdfPageColors(isPlainWhite || !foreground ? null : { background: this.background, foreground: String(foreground).replace(/\s*!important\s*$/i, "") });
+    const background = this.background.trim();
+    const isWhite = /^#?f{3}(f{3})?$/i.test(background.replace(/^#/, "")) || background.toLowerCase() === "white";
+    setPdfAppearance({ background, mode: isColorDark(background) ? "dark" : isWhite ? "plain" : "paper" });
   }
+
 
   private injectStylesToDocument(doc: Document): void {
     if (doc.documentElement.hasAttribute("data-sanctuary-pdf")) {

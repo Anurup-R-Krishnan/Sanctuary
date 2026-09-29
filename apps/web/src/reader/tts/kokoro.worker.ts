@@ -5,10 +5,7 @@ import type { KokoroVoiceId, KokoroWorkerRequest, KokoroWorkerResponse } from ".
 
 import { KOKORO_MODEL_ID } from "./kokoroProtocol";
 
-const HF_PREFIX = `https://huggingface.co/${KOKORO_MODEL_ID}/resolve/main/`;
-
 const scope = self as unknown as {
-  fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   onmessage: ((event: MessageEvent<KokoroWorkerRequest>) => void) | null;
   postMessage: (message: KokoroWorkerResponse, transfer?: Transferable[]) => void;
 };
@@ -21,23 +18,13 @@ function post(message: KokoroWorkerResponse, transfer?: Transferable[]) {
   scope.postMessage(message, transfer);
 }
 
-function configure(modelBase: string | null, runtimeBase: string) {
+function configure(runtimeBase: string) {
   const onnx = env.backends.onnx as { wasm?: { numThreads?: number; wasmPaths?: string } };
   if (onnx.wasm) {
     onnx.wasm.wasmPaths = runtimeBase;
     onnx.wasm.numThreads = globalThis.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
   }
   env.allowLocalModels = false;
-  if (!modelBase) return;
-  const base = modelBase.endsWith("/") ? modelBase : `${modelBase}/`;
-  env.remoteHost = base;
-  env.remotePathTemplate = "{model}/";
-  const nativeFetch = scope.fetch.bind(self);
-  scope.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    if (url.startsWith(HF_PREFIX)) return nativeFetch(`${base}${KOKORO_MODEL_ID}/${url.slice(HF_PREFIX.length)}`, init);
-    return nativeFetch(input, init);
-  };
 }
 
 function reportProgress(info: unknown) {
@@ -53,9 +40,9 @@ function reportProgress(info: unknown) {
   post({ loaded, total, type: "progress" });
 }
 
-function load(modelBase: string | null, runtimeBase: string): Promise<KokoroTTS> {
+function load(runtimeBase: string): Promise<KokoroTTS> {
   if (!ttsPromise) {
-    configure(modelBase, runtimeBase);
+    configure(runtimeBase);
     ttsPromise = KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
       device: "wasm",
       dtype: "q8",
@@ -71,13 +58,13 @@ function load(modelBase: string | null, runtimeBase: string): Promise<KokoroTTS>
 scope.onmessage = (event) => {
   const request = event.data;
   if (request.type === "load") {
-    load(request.modelBase, request.runtimeBase)
+    load(request.runtimeBase)
       .then(() => post({ type: "ready" }))
       .catch((error: unknown) => post({ message: error instanceof Error ? error.message : String(error), type: "error" }));
     return;
   }
   const job = queue.then(async () => {
-    const tts = await load(request.modelBase, request.runtimeBase);
+    const tts = await load(request.runtimeBase);
     const audio = await tts.generate(request.text, {
       speed: request.speed,
       voice: request.voice as KokoroVoiceId,

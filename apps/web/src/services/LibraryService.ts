@@ -251,6 +251,15 @@ export const libraryService = {
     useBookStore.getState().setBooks([]);
   },
 
+  async saveMissingCover(bookId: string, blob: Blob): Promise<void> {
+    const stored = await getAllBooks().then((books) => books.find((b) => b.id === bookId)).catch(() => undefined);
+    if (!stored || stored.coverBlob) return;
+    await putBookInDb({ ...stored, coverBlob: blob });
+    const coverUrl = trackCoverBlobForBook(bookId, blob);
+    const { books, setBooks } = useBookStore.getState();
+    setBooks(books.map((b) => (b.id === bookId ? { ...b, coverBlob: blob, coverUrl } : b)));
+  },
+
   cleanupAllObjectUrls() {
     for (const url of coverObjectUrlByBookId.values()) {
       URL.revokeObjectURL(url);
