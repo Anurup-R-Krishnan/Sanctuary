@@ -16,6 +16,7 @@ import {
   ANNOTATION_COLORS,
   DEFAULT_ANNOTATION_COLOR,
 } from "@/config/annotationConfig";
+import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderSelectionMenuProps {
   onAddNote: (color?: string) => void;
@@ -36,6 +37,7 @@ function ReaderSelectionMenuImpl({
   onUnderline,
   selection,
 }: ReaderSelectionMenuProps) {
+  const colorAssist = useSettings((state) => state.colorVision !== "default");
   const [activeColor, setActiveColor] = useState<string>(
     DEFAULT_ANNOTATION_COLOR.value
   );
@@ -102,12 +104,15 @@ function ReaderSelectionMenuImpl({
                 title={`${c.name} (${c.label})`}
                 type="button"
               >
-                {isSelected && (
-                  <Check
-                    className="w-2.5 h-2.5 text-white drop-shadow-sm"
-                    strokeWidth={3}
-                  />
-                )}
+                {isSelected ? (
+
+                  <Check className="w-2.5 h-2.5 text-white drop-shadow-sm" strokeWidth={3} />
+
+                ) : colorAssist ? (
+
+                  <span aria-hidden="true" className="text-3xs font-bold leading-none text-white">{c.label.charAt(0)}</span>
+
+                ) : null}
               </button>
             );
           })}

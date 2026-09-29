@@ -5,6 +5,7 @@ import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
 import HomeView from "@/components/pages/HomeView";
+import { AccessibilitySetup } from "@/components/ui/AccessibilitySetup";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
 import { UploadErrorToast } from "@/components/ui/UploadErrorToast";
 import { forgetBookExcerpt } from "@/hooks/useBookExcerpt";
@@ -242,6 +243,7 @@ function App() {
   return (
     <div className={`h-screen w-screen overflow-hidden select-none flex flex-col font-sans bg-page text-fg transition-colors duration-300 ${isReader ? "immersive-layout" : "standard-layout app-ambient-bg"}`}>
       <MigrationDialog />
+      <AccessibilitySetup />
       {nativeImportError && (
         <UploadErrorToast
           className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"

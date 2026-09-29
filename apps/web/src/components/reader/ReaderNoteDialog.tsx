@@ -8,6 +8,7 @@ import {
   DEFAULT_ANNOTATION_COLOR,
   getAnnotationColor,
 } from "@/config/annotationConfig";
+import { useSettings } from "@/store/useSettingsStore";
 
 interface ReaderNoteDialogProps {
   initialColor?: string;
@@ -28,6 +29,7 @@ export function ReaderNoteDialog({
   selectedText,
   title = "Add Note",
 }: ReaderNoteDialogProps) {
+  const colorAssist = useSettings((state) => state.colorVision !== "default");
   const [note, setNote] = useState(initialNote);
   const [selectedColor, setSelectedColor] = useState<string>(
     initialColor || DEFAULT_ANNOTATION_COLOR.value
@@ -113,12 +115,15 @@ export function ReaderNoteDialog({
                   title={`${c.name} (${c.label})`}
                   type="button"
                 >
-                  {isSelected && (
-                    <Check
-                      className="w-3 h-3 text-white drop-shadow-sm"
-                      strokeWidth={3}
-                    />
-                  )}
+                  {isSelected ? (
+
+                    <Check className="w-3 h-3 text-white drop-shadow-sm" strokeWidth={3} />
+
+                  ) : colorAssist ? (
+
+                    <span aria-hidden="true" className="text-3xs font-bold leading-none text-white">{c.label.charAt(0)}</span>
+
+                  ) : null}
                 </button>
               );
             })}

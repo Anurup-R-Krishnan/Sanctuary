@@ -120,7 +120,8 @@ function ReaderView({
   });
 
   // Settings
-  const { brightness, grayscale, keybinds } = useSettingsShallow((state) => ({
+  const { announcePageChanges, brightness, grayscale, keybinds } = useSettingsShallow((state) => ({
+    announcePageChanges: state.announcePageChanges,
     brightness: state.brightness,
     grayscale: state.grayscale,
     keybinds: state.keybinds,
@@ -511,6 +512,12 @@ function ReaderView({
       tabIndex={-1}
       className="h-[100dvh] w-screen overflow-hidden select-none flex flex-col fixed inset-0 z-50 bg-page font-sans"
     >
+      {announcePageChanges && (
+        <p aria-atomic="true" aria-live="polite" className="sr-only">
+          {position.chapterLabel ? `${position.chapterLabel}. ` : ""}
+          {`Page ${position.location} of ${position.totalLocations}, ${position.bookProgress}% of the book.`}
+        </p>
+      )}
       {contentError && !isLoading && (
         <ReaderContentErrorBanner
           contentError={contentError}
