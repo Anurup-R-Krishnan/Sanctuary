@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import type { CustomPalette } from "@/config/readerConfig";
 
+import { DEFAULT_KOKORO_VOICE, isKokoroVoice } from "@/reader/tts/kokoroProtocol";
 import { DEFAULT_DAILY_GOAL } from "@/types";
 
 type TextAlignment = "left" | "justify" | "center";
@@ -55,7 +56,9 @@ type SettingsValues = {
   ttsParagraphPauseMs: number;
   ttsPitch: number;
   ttsRate: number;
+  ttsEngine: "kokoro" | "system";
   ttsVoiceURI: string | null;
+  kokoroVoice: string;
   weeklyGoal: number;
   writingMode: "horizontal-tb" | "vertical-rl";
 };
@@ -101,6 +104,8 @@ type SettingsActions = {
   setTtsParagraphPauseMs: (v: number) => void;
   setTtsPitch: (v: number) => void;
   setTtsRate: (v: number) => void;
+  setTtsEngine: (v: "kokoro" | "system") => void;
+  setKokoroVoice: (v: string) => void;
   setTtsVoiceURI: (v: string | null) => void;
   setWeeklyGoal: (v: number) => void;
   setWritingMode: (v: "horizontal-tb" | "vertical-rl") => void;
@@ -154,6 +159,8 @@ const DEFAULTS: SettingsValues = {
   sessionBudgetMinutes: 20,
   bookVoiceOverrides: {},
   ttsVoiceURI: null,
+  ttsEngine: "system",
+  kokoroVoice: DEFAULT_KOKORO_VOICE,
   ttsRate: 1,
   ttsPitch: 1,
   ttsParagraphPauseMs: 350,
@@ -224,6 +231,8 @@ export const pickValues = (state: Settings): SettingsValues => ({
   sessionBudgetMinutes: state.sessionBudgetMinutes,
   bookVoiceOverrides: state.bookVoiceOverrides,
   ttsVoiceURI: state.ttsVoiceURI,
+  ttsEngine: state.ttsEngine,
+  kokoroVoice: state.kokoroVoice,
   ttsRate: state.ttsRate,
   ttsPitch: state.ttsPitch,
   ttsParagraphPauseMs: state.ttsParagraphPauseMs,
@@ -274,6 +283,8 @@ export const toRemotePayload = (state: SettingsValues) => ({
   showPageMeta: state.showPageCounter,
   // TTS
   ttsVoiceURI: state.ttsVoiceURI,
+  ttsEngine: state.ttsEngine,
+  kokoroVoice: state.kokoroVoice,
   ttsRate: state.ttsRate,
   ttsPitch: state.ttsPitch,
 });
@@ -341,6 +352,8 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   }
   if (typeof raw.ttsVoiceURI === "string" || raw.ttsVoiceURI === null) out.ttsVoiceURI = raw.ttsVoiceURI as string | null;
   if (typeof raw.ttsRate === "number") out.ttsRate = raw.ttsRate;
+  if (raw.ttsEngine === "kokoro" || raw.ttsEngine === "system") out.ttsEngine = raw.ttsEngine;
+  if (isKokoroVoice(raw.kokoroVoice)) out.kokoroVoice = raw.kokoroVoice;
   if (typeof raw.ttsPitch === "number") out.ttsPitch = raw.ttsPitch;
   if (typeof raw.ttsParagraphPauseMs === "number") out.ttsParagraphPauseMs = raw.ttsParagraphPauseMs;
 
@@ -435,6 +448,8 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
     out.ttsVoiceURI = remote.ttsVoiceURI as string | null;
   }
   if (typeof remote.ttsRate === "number") out.ttsRate = remote.ttsRate;
+  if (remote.ttsEngine === "kokoro" || remote.ttsEngine === "system") out.ttsEngine = remote.ttsEngine;
+  if (isKokoroVoice(remote.kokoroVoice)) out.kokoroVoice = remote.kokoroVoice;
   if (typeof remote.ttsPitch === "number") out.ttsPitch = remote.ttsPitch;
   if (typeof remote.ttsParagraphPauseMs === "number") out.ttsParagraphPauseMs = remote.ttsParagraphPauseMs;
 
@@ -499,6 +514,8 @@ export const useSettingsStore = create<Settings>((set) => ({
     })),
   setTtsVoiceURI: createSetAction("ttsVoiceURI", set),
   setTtsRate: createSetAction("ttsRate", set),
+  setTtsEngine: createSetAction("ttsEngine", set),
+  setKokoroVoice: createSetAction("kokoroVoice", set),
   setTtsPitch: createSetAction("ttsPitch", set),
   setTtsParagraphPauseMs: createSetAction("ttsParagraphPauseMs", set),
   addCustomPalette: (palette) => {

@@ -5,28 +5,42 @@ import path from 'path'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const PDFJS_ROOT = path.dirname(createRequire(import.meta.url).resolve('pdfjs-dist/package.json'))
-const PDFJS_ASSET_DIRS = ['cmaps', 'standard_fonts', 'wasm']
+const requireFromHere = createRequire(import.meta.url)
+const PDFJS_ROOT = path.dirname(requireFromHere.resolve('pdfjs-dist/package.json'))
+const TRANSFORMERS_DIST = path.dirname(requireFromHere.resolve('@huggingface/transformers'))
 
-function pdfjsAssets(): Plugin {
+const STATIC_MOUNTS = [
+  { entries: ['cmaps', 'standard_fonts', 'wasm'], prefix: 'pdfjs', root: PDFJS_ROOT },
+  { entries: ['ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm'], prefix: 'ort', root: TRANSFORMERS_DIST },
+]
+
+const MIME_BY_EXT: Record<string, string> = { '.mjs': 'text/javascript', '.wasm': 'application/wasm' }
+
+function vendorAssets(): Plugin {
   let outDir = 'dist'
   return {
-    name: 'sanctuary-pdfjs-assets',
+    name: 'sanctuary-vendor-assets',
     configResolved(config) {
       outDir = path.resolve(config.root, config.build.outDir)
     },
     configureServer(server) {
-      server.middlewares.use('/pdfjs', (req, res, next) => {
-        const relative = decodeURIComponent((req.url ?? '').split('?')[0] ?? '').replace(/^\/+/, '')
-        const [dir] = relative.split('/')
-        const file = path.resolve(PDFJS_ROOT, relative)
-        if (!dir || !PDFJS_ASSET_DIRS.includes(dir) || !file.startsWith(PDFJS_ROOT + path.sep) || !fs.existsSync(file)) return next()
-        fs.createReadStream(file).pipe(res)
-      })
+      for (const mount of STATIC_MOUNTS) {
+        server.middlewares.use(`/${mount.prefix}`, (req, res, next) => {
+          const relative = decodeURIComponent((req.url ?? '').split('?')[0] ?? '').replace(/^\/+/, '')
+          const [head] = relative.split('/')
+          const file = path.resolve(mount.root, relative)
+          if (!head || !mount.entries.includes(head) || !file.startsWith(mount.root + path.sep) || !fs.existsSync(file)) return next()
+          const type = MIME_BY_EXT[path.extname(file)]
+          if (type) res.setHeader('Content-Type', type)
+          fs.createReadStream(file).pipe(res)
+        })
+      }
     },
     closeBundle() {
-      for (const dir of PDFJS_ASSET_DIRS) {
-        fs.cpSync(path.join(PDFJS_ROOT, dir), path.join(outDir, 'pdfjs', dir), { recursive: true })
+      for (const mount of STATIC_MOUNTS) {
+        for (const entry of mount.entries) {
+          fs.cpSync(path.join(mount.root, entry), path.join(outDir, mount.prefix, entry), { recursive: true })
+        }
       }
     },
   }
@@ -58,7 +72,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      pdfjsAssets(),
+      vendorAssets(),
       {
         // The production CSP forbids inline script (book documents inherit it).
         // Vite's dev server injects an inline React-refresh preamble, so dev
@@ -87,7 +101,7 @@ export default defineConfig(({ mode }) => {
       },
       workbox: {
         globPatterns: ['**/*.{js,mjs,css,html,svg,woff,woff2}'],
-        globIgnores: ['pdfjs/**'],
+        globIgnores: ['pdfjs/**', 'ort/**'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         manifestTransforms: [
           async (entries) => ({
@@ -100,7 +114,7 @@ export default defineConfig(({ mode }) => {
         ],
         runtimeCaching: [
           {
-            urlPattern: ({ url, sameOrigin }) => sameOrigin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/pdfjs/')),
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/pdfjs/') || url.pathname.startsWith('/ort/')),
             handler: 'CacheFirst',
             options: {
               cacheName: 'sanctuary-lazy-assets',
@@ -111,6 +125,9 @@ export default defineConfig(({ mode }) => {
       }
       })
     ],
+    worker: {
+      format: 'es',
+    },
     build: {
       rollupOptions: {
         output: {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 import type { IReaderSession } from "../reader/contracts/engine";
 import type {
@@ -6,6 +6,8 @@ import type {
   TTSControllerState,
 } from "../reader/foliate/FoliateTTSController";
 
+import { kokoroSpeechEngine, setKokoroVoice } from "../reader/tts/kokoroSpeechEngine";
+import { type SpeechPlayback, systemSpeechEngine } from "../reader/tts/speechEngine";
 import { useSettingsShallow } from "../store/useSettingsStore";
 
 export interface SpeechState {
@@ -39,6 +41,8 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const {
+    kokoroVoice,
+    ttsEngine,
     bookVoiceOverrides,
     setBookVoiceOverride,
     setTtsParagraphPauseMs,
@@ -49,6 +53,8 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     ttsRate,
     ttsVoiceURI,
   } = useSettingsShallow((s) => ({
+    kokoroVoice: s.kokoroVoice,
+    ttsEngine: s.ttsEngine,
     bookVoiceOverrides: s.bookVoiceOverrides,
     setBookVoiceOverride: s.setBookVoiceOverride,
     setTtsParagraphPauseMs: s.setTtsParagraphPauseMs,
@@ -61,6 +67,12 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
   }));
 
   const activeVoiceURI = (bookId && bookVoiceOverrides[bookId]) || ttsVoiceURI;
+  const engine = ttsEngine === "kokoro" ? kokoroSpeechEngine : systemSpeechEngine;
+  const adHocPlaybackRef = useRef<SpeechPlayback | null>(null);
+
+  useEffect(() => {
+    setKokoroVoice(kokoroVoice);
+  }, [kokoroVoice]);
 
   // Load available voices
   useEffect(() => {
@@ -90,6 +102,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     const rendition = (session as any)?.renditionInstance || (session as any)?.rendition;
     if (rendition?.getTTSController) {
       const controller = rendition.getTTSController();
+      controller.setEngine(engine);
       controller.setVoice(activeVoiceURI);
       controller.setRate(ttsRate);
       controller.setPitch(ttsPitch);
@@ -105,7 +118,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
         }));
       });
     }
-  }, [session, activeVoiceURI, ttsRate, ttsPitch, ttsParagraphPauseMs]);
+  }, [session, engine, activeVoiceURI, ttsRate, ttsPitch, ttsParagraphPauseMs]);
 
   const metaTitle = options?.bookMetadata?.title;
   const metaAuthor = options?.bookMetadata?.author;
@@ -130,31 +143,18 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
   // Ad-hoc speech for selected text
   const speak = useCallback(
     (text: string) => {
-      if (typeof window === "undefined" || !window.speechSynthesis) return;
-
-      window.speechSynthesis.cancel();
-
-      setTimeout(() => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        if (activeVoiceURI) {
-          const voice = voices.find((v) => v.voiceURI === activeVoiceURI);
-          if (voice) utterance.voice = voice;
-        }
-        utterance.rate = ttsRate;
-        utterance.pitch = ttsPitch;
-
-        utterance.onstart = () =>
-          setState((s) => ({ ...s, currentText: text, isContinuous: false, isPaused: false, isPlaying: true }));
-        utterance.onend = () =>
-          setState((s) => ({ ...s, currentText: null, isContinuous: false, isPaused: false, isPlaying: false }));
-        utterance.onerror = () =>
-          setState((s) => ({ ...s, currentText: null, isContinuous: false, isPaused: false, isPlaying: false }));
-
-        window.speechSynthesis.speak(utterance);
-      }, 50);
+      adHocPlaybackRef.current?.cancel();
+      const finish = () => setState((s) => ({ ...s, currentText: null, isContinuous: false, isPaused: false, isPlaying: false }));
+      setState((s) => ({ ...s, currentText: text, isContinuous: false, isPaused: false, isPlaying: true }));
+      adHocPlaybackRef.current = engine.speak(
+        { pitch: ttsPitch, rate: ttsRate, text, voice: activeVoiceURI },
+        { onEnd: finish, onError: finish }
+      );
     },
-    [voices, activeVoiceURI, ttsRate, ttsPitch]
+    [engine, activeVoiceURI, ttsRate, ttsPitch]
   );
+
+  useEffect(() => () => adHocPlaybackRef.current?.cancel(), []);
 
   // Continuous book reading actions
   const getTTSController = useCallback(() => {
@@ -181,8 +181,8 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     const ctrl = getTTSController();
     if (ctrl) {
       ctrl.pause();
-    } else if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.pause();
+    } else if (adHocPlaybackRef.current) {
+      adHocPlaybackRef.current.pause();
       setState((s) => ({ ...s, isPaused: true }));
     }
   }, [getTTSController]);
@@ -191,8 +191,8 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     const ctrl = getTTSController();
     if (ctrl) {
       ctrl.resume();
-    } else if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.resume();
+    } else if (adHocPlaybackRef.current) {
+      adHocPlaybackRef.current.resume();
       setState((s) => ({ ...s, isPaused: false }));
     }
   }, [getTTSController]);
@@ -201,8 +201,9 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     const ctrl = getTTSController();
     if (ctrl) {
       ctrl.stop();
-    } else if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    } else {
+      adHocPlaybackRef.current?.cancel();
+      adHocPlaybackRef.current = null;
       setState((s) => ({ ...s, currentText: null, isContinuous: false, isPaused: false, isPlaying: false }));
     }
   }, [getTTSController]);
