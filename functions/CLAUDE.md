@@ -38,6 +38,7 @@ touch it.
 | `api/annotations.ts` | `GET`/`POST`/`DELETE` | Highlights, underlines, and marginalia notes, keyed by `bookId` + `cfi`. `GET` filters by `?bookId=`. |
 | `api/settings.ts` | `GET`/`PUT` | Reader preferences as a single row. `GET` returns a sparse object (nulls stripped) so the client can merge partials; `PUT` writes only the columns present in `SETTINGS_COLUMNS`. Has a catch-all `onRequest` for unsupported verbs. |
 | `api/goals.ts` | `GET` | Aggregates sessions into day/week/month goal windows, each with `targetMinutes`, `totalMinutes`, and `progressPercent`. |
+| `models/[[path]].ts` | `GET`/`HEAD /models/*` | Public, read-only R2 proxy for the Kokoro read-aloud model under the `models/` key prefix (upload with `tooling/upload-kokoro-model.sh`). Only allowlisted model ids; supports `Range`; immutable caching. |
 | `api/opds-proxy.ts` | `GET /api/opds-proxy?url=` | CORS-bypass proxy for OPDS feeds and book downloads. **No account needed** (catalogs work for guests); limited to 600 requests / IP / hour via `auth_attempts`. Redirects followed by hand with every hop re-checked by `isBlockedHost` (loopback, private, CGNAT, IPv6 ULA/link-local, NAT64); `X-Target-Authorization` dropped on origin change; content-type allowlist; streamed 150 MB cap; `CSP: sandbox` on responses. |
 
 ## utils/
@@ -85,8 +86,7 @@ Every route funnels through this module, so read it before adding a handler.
   (`<fictionbook`), HTML, and by extension `.txt/.md/.mobi/.azw3/.fb2/.html`.
   `resolveBookContentType` maps a file to a MIME type, defaulting to
   `application/epub+zip`. `MAX_EPUB_BYTES` is 150 MB.
-- `withEdgeCache(request, key, fetcher)` / `purgeEdgeCache` wrap the edge Cache
-  API and stamp `X-Cache-Status: HIT|MISS`. Use these for read-heavy routes;
-  remember to purge on write.
+- There is no edge caching of per-user responses: `caches.default` is per data
+  centre, so a purge in one location left other locations serving stale data.
 - Normalizers for untrusted input: `parseJsonObject`, `normalizeBookmarks`,
   `clampProgress`, `normalizeTotalPages`, `optionalText`, `requiredText`.

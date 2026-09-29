@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { getSchemaReady } from "../utils/schemaCache";
-import { errorJson, handleOptions, json, purgeEdgeCache, requireUser, withEdgeCache, type PagesContext } from "./_shared";
+import { errorJson, handleOptions, json, requireUser, type PagesContext } from "./_shared";
 
 export const onRequestOptions = () => handleOptions();
 
@@ -57,7 +57,7 @@ export async function onRequestGet({ env, request }: PagesContext): Promise<Resp
     return json(row ? fromDb(row) : {});
   };
 
-  return withEdgeCache(request, `settings-${user}`, fetcher);
+  return fetcher();
 }
 
 export async function onRequestPut({ env, request }: PagesContext): Promise<Response> {
@@ -93,7 +93,6 @@ export async function onRequestPut({ env, request }: PagesContext): Promise<Resp
     .bind(user, dailyGoal, weeklyGoal, serialized)
     .run();
 
-  await purgeEdgeCache(request, `settings-${user}`);
   return json({ success: true });
 }
 

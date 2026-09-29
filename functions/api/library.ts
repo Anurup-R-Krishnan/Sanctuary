@@ -13,8 +13,6 @@ import {
   requireUser,
   resolveBookContentType,
   toLibraryItem,
-  withEdgeCache,
-  purgeEdgeCache,
   type BookRow,
   type PagesContext,
 } from "./_shared";
@@ -85,8 +83,7 @@ export async function onRequestGet({ env, request }: PagesContext): Promise<Resp
     return json((result.results || []).map(toLibraryItem));
   };
 
-  if (search) return fetcher();
-  return withEdgeCache(request, `library-${user}`, fetcher);
+  return fetcher();
 }
 
 export async function onRequestPost({ env, request }: PagesContext): Promise<Response> {
@@ -171,7 +168,6 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
     .bind(id, user, title, author, coverUrl, contentHash, contentType, progress, totalPages, lastLocation, bookmarksJson, favorite, now)
     .run();
 
-  await purgeEdgeCache(request, `library-${user}`);
   return json({ success: true, coverUrl });
 }
 
@@ -226,7 +222,6 @@ export async function onRequestPatch({ env, request }: PagesContext): Promise<Re
     .bind(...fields.map((f) => f.value), context.id, context.user)
     .run();
 
-  await purgeEdgeCache(request, `library-${context.user}`);
   return json({ success: true });
 }
 
@@ -243,7 +238,6 @@ export async function onRequestDelete({ env, request }: PagesContext): Promise<R
     env.SANCTUARY_BUCKET.delete(coverKey(context.user, context.id)),
   ]);
 
-  await purgeEdgeCache(request, `library-${context.user}`);
   return json({ success: true });
 }
 
