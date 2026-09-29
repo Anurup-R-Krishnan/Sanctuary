@@ -21,7 +21,7 @@ import { detectBookFormat } from "../formats/FormatDetector";
 import { parseHtmlToBook } from "../formats/HtmlParser";
 import { parseMarkdownToBook } from "../formats/MarkdownParser";
 import { parsePdfToBook } from "../formats/PdfParser";
-import { parseTxtToBook } from "../formats/TxtParser";
+import { parseTxtToBook, type SectionSource } from "../formats/TxtParser";
 import { installBookContentSecurity, secureSections } from "./contentSecurity";
 
 export interface FoliateRawSection {
@@ -29,7 +29,7 @@ export interface FoliateRawSection {
   href?: string;
   id?: string | number;
   linear?: string;
-  load(): Promise<string> | string;
+  load(): Promise<SectionSource> | SectionSource;
   size?: number;
   title?: string;
   unload?(): void;
@@ -47,7 +47,7 @@ export interface FoliateRawBook {
   dir?: "ltr" | "rtl";
   getCover?(): Promise<Blob | null>;
   metadata?: Record<string, unknown>;
-  rendition?: { layout?: string };
+  rendition?: { layout?: string; spread?: string };
   resolveHref(href: string): { index: number; anchor?: (doc: Document) => Element | Range | null } | null;
   sections: FoliateRawSection[];
   splitTOCHref?(href: string): number[];
@@ -134,8 +134,8 @@ export class FoliateDocumentAdapter implements BookDocument {
             const doc = await sec.createDocument();
             if (doc) return doc;
           }
-          const loadedUrl = await sec.load();
-          return loadedUrl;
+          const loaded = await sec.load();
+          return typeof loaded === "string" ? loaded : loaded.src;
         },
         unload: () => {
           sec.unload?.();

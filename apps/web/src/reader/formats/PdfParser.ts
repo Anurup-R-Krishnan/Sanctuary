@@ -1,323 +1,293 @@
-/**
- * Lightweight Native PDF Document Parser for Sanctuary.
- * Parses PDF binary structures, extracts metadata, pages, and text streams,
- * and compiles them into a pre-paginated fixed-layout BookDocument.
- */
+import type * as PdfJsModule from "pdfjs-dist";
+import type { PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 
 import type { RawFoliateBook, RawFoliateSection, RawFoliateTocItem } from "./TxtParser";
 
-async function decompressFlate(bytes: Uint8Array): Promise<Uint8Array | null> {
+type PdfJs = typeof PdfJsModule;
+
+export interface PdfPageColors {
+  background: string;
+  foreground: string;
+}
+
+interface OutlineNode {
+  dest: string | unknown[] | null;
+  items?: OutlineNode[];
+  title: string;
+}
+
+interface LivePage {
+  doc: Document;
+  page: PDFPageProxy;
+  scale: number;
+}
+
+const PAGE_HREF_PREFIX = "page-";
+const COVER_WIDTH = 480;
+
+let pdfjsPromise: Promise<PdfJs> | null = null;
+let pageColors: PdfPageColors | null = null;
+const livePages = new Set<LivePage>();
+
+function loadPdfJs(): Promise<PdfJs> {
+  pdfjsPromise ??= Promise.all([
+    import("pdfjs-dist"),
+    import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
+  ]).then(([lib, worker]) => {
+    if (typeof worker.default === "string") lib.GlobalWorkerOptions.workerSrc = worker.default;
+    return lib;
+  });
+  return pdfjsPromise;
+}
+
+export function pageHref(index: number): string {
+  return `${PAGE_HREF_PREFIX}${index + 1}`;
+}
+
+export function pageIndexFromHref(href: string): number | null {
+  const match = /^page-(\d+)$/.exec(href.split("#")[0] ?? "");
+  if (!match) return null;
+  const index = Number(match[1]) - 1;
+  return Number.isInteger(index) && index >= 0 ? index : null;
+}
+
+export function setPdfPageColors(colors: PdfPageColors | null): void {
+  const unchanged = colors?.background === pageColors?.background && colors?.foreground === pageColors?.foreground;
+  pageColors = colors;
+  if (unchanged) return;
+  for (const live of livePages) void renderPage(live);
+}
+
+const PAGE_STYLE = `
+html,body{margin:0;padding:0;overflow:hidden;background:transparent;--scale-round-x:1px;--scale-round-y:1px}
+#page{position:relative}
+#page canvas{display:block}
+.textLayer{position:absolute;inset:0;overflow:clip;opacity:1;line-height:1;text-align:initial;transform-origin:0 0;z-index:0;
+--min-font-size:1;--text-scale-factor:calc(var(--total-scale-factor) * var(--min-font-size));--min-font-size-inv:calc(1 / var(--min-font-size))}
+.textLayer :is(span,br){color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
+.textLayer > :not(.markedContent),.textLayer .markedContent span:not(.markedContent){z-index:1;--font-height:0;font-size:calc(var(--text-scale-factor) * var(--font-height));--scale-x:1;--rotate:0deg;transform:rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv))}
+.textLayer .markedContent{display:contents}
+.textLayer ::selection{background:rgba(142,104,62,.3);color:transparent}
+.textLayer .endOfContent{display:block;position:absolute;inset:100% 0 0;z-index:0;cursor:default;user-select:none}
+`;
+
+function pageMarkup(width: number, height: number): string {
+  return `<!DOCTYPE html><html data-sanctuary-pdf=""><head><meta charset="utf-8"><meta name="viewport" content="width=${Math.round(width)}, height=${Math.round(height)}"><style>${PAGE_STYLE}</style></head><body><div id="page"><div id="canvas"></div><div class="textLayer"></div></div></body></html>`;
+}
+
+async function renderPage(live: LivePage): Promise<void> {
+  const pdfjs = await loadPdfJs();
+  const { doc, page, scale } = live;
+  const host = doc.getElementById("page");
+  const canvasHost = doc.getElementById("canvas");
+  const textHost = doc.querySelector<HTMLElement>(".textLayer");
+  if (!host || !canvasHost || !textHost) return;
+
+  const ratio = Math.min(globalThis.devicePixelRatio || 1, 3);
+  const viewport = page.getViewport({ scale });
+  const outputViewport = page.getViewport({ scale: scale * ratio });
+  const canvas = doc.createElement("canvas");
+  canvas.width = Math.floor(outputViewport.width);
+  canvas.height = Math.floor(outputViewport.height);
+  canvas.style.width = `${Math.floor(viewport.width)}px`;
+  canvas.style.height = `${Math.floor(viewport.height)}px`;
+  doc.documentElement.style.setProperty("--total-scale-factor", String(scale));
+  host.style.width = `${Math.floor(viewport.width)}px`;
+  host.style.height = `${Math.floor(viewport.height)}px`;
+
+  await page.render({
+    canvas,
+    viewport: outputViewport,
+    ...(pageColors ? { pageColors } : {}),
+  }).promise;
+  canvasHost.replaceChildren(canvas);
+
+  textHost.replaceChildren();
+  const textLayer = new pdfjs.TextLayer({ container: textHost, textContentSource: page.streamTextContent(), viewport });
+  await textLayer.render();
+  const end = doc.createElement("div");
+  end.className = "endOfContent";
+  textHost.append(end);
+}
+
+async function textDocument(page: PDFPageProxy, index: number): Promise<Document> {
+  const content = await page.getTextContent();
+  const lines: string[] = [];
+  let current = "";
+  for (const item of content.items) {
+    if (!("str" in item)) continue;
+    current += item.str;
+    if (item.hasEOL) {
+      lines.push(current);
+      current = "";
+    } else if (item.str && !item.str.endsWith(" ")) {
+      current += " ";
+    }
+  }
+  if (current.trim()) lines.push(current);
+  const doc = document.implementation.createHTMLDocument(`Page ${index + 1}`);
+  for (const line of lines) {
+    const text = line.replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    const paragraph = doc.createElement("p");
+    paragraph.textContent = text;
+    doc.body.append(paragraph);
+  }
+  return doc;
+}
+
+async function resolveDestIndex(pdf: PDFDocumentProxy, dest: OutlineNode["dest"]): Promise<number | null> {
   try {
-    const fflate = await import("foliate-js/vendor/fflate.js");
-    return fflate.unzlibSync(bytes);
+    const explicit = typeof dest === "string" ? await pdf.getDestination(dest) : dest;
+    const ref = explicit?.[0];
+    if (ref === undefined || ref === null) return null;
+    if (typeof ref === "number") return ref;
+    return await pdf.getPageIndex(ref as Parameters<PDFDocumentProxy["getPageIndex"]>[0]);
   } catch {
     return null;
   }
 }
 
-function decodePdfString(raw: string): string {
-  if (raw.startsWith("<") && raw.endsWith(">")) {
-    const hex = raw.slice(1, -1).trim();
-    let str = "";
-    for (let i = 0; i < hex.length; i += 2) {
-      const code = parseInt(hex.substring(i, i + 2), 16);
-      if (!isNaN(code)) str += String.fromCharCode(code);
-    }
-    return str;
-  }
-  if (raw.startsWith("(") && raw.endsWith(")")) {
-    return raw
-      .slice(1, -1)
-      .replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
-      .replace(/\\n/g, "\n")
-      .replace(/\\r/g, "\r")
-      .replace(/\\t/g, "\t")
-      .replace(/\\([()\\])/g, "$1");
-  }
-  return raw;
+async function buildToc(pdf: PDFDocumentProxy, nodes: OutlineNode[] | null | undefined): Promise<RawFoliateTocItem[]> {
+  if (!nodes?.length) return [];
+  const items = await Promise.all(nodes.map(async (node): Promise<RawFoliateTocItem | null> => {
+    const index = await resolveDestIndex(pdf, node.dest);
+    const subitems = await buildToc(pdf, node.items);
+    if (index === null && subitems.length === 0) return null;
+    return {
+      href: pageHref(index ?? pageIndexFromHref(subitems[0]?.href ?? "") ?? 0),
+      label: node.title?.trim() || "Untitled",
+      ...(subitems.length > 0 ? { subitems } : {}),
+    };
+  }));
+  return items.filter((item): item is RawFoliateTocItem => item !== null);
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+async function toBytes(source: Blob | File | ArrayBuffer | Uint8Array): Promise<Uint8Array> {
+  if (source instanceof Uint8Array) return source;
+  if (source instanceof ArrayBuffer) return new Uint8Array(source);
+  return new Uint8Array(await source.arrayBuffer());
 }
 
-export interface PdfParsedMetadata {
-  author: string;
-  creator: string;
-  pageCount: number;
-  title: string;
+export function isPdfBytes(bytes: Uint8Array): boolean {
+  return bytes.length >= 4 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
 }
 
-export function extractPdfInfo(bytes: Uint8Array, fileName: string): PdfParsedMetadata {
-  const text = new TextDecoder("latin1").decode(bytes);
-
-  // Fallback title from filename without .pdf
-  const fallbackTitle = fileName.replace(/\.pdf$/i, "").replace(/[-_]/g, " ").trim() || "Untitled Document";
-
-  let title = fallbackTitle;
-  let author = "Unknown Author";
-
-  const titleMatch = text.match(/\/Title\s*(\([^)]+\)|<[0-9a-fA-F]+>)/);
-  if (titleMatch) {
-    const parsedTitle = decodePdfString(titleMatch[1]).trim();
-    if (parsedTitle) title = parsedTitle;
-  }
-
-  const authorMatch = text.match(/\/Author\s*(\([^)]+\)|<[0-9a-fA-F]+>)/);
-  if (authorMatch) {
-    const parsedAuthor = decodePdfString(authorMatch[1]).trim();
-    if (parsedAuthor) author = parsedAuthor;
-  }
-
-  // Detect page count
-  let pageCount = 0;
-  const countMatch = text.match(/\/Type\s*\/Pages[\s\S]*?\/Count\s+(\d+)/);
-  if (countMatch) {
-    pageCount = parseInt(countMatch[1], 10);
-  }
-
-  if (!pageCount || isNaN(pageCount) || pageCount <= 0) {
-    // Count /Type /Page occurrences (page objects)
-    const pageMatches = text.match(/\/Type\s*\/Page\b/g);
-    pageCount = pageMatches ? pageMatches.length : 1;
-  }
-
-  return {
-    author,
-    creator: author,
-    pageCount: Math.max(1, pageCount),
-    title,
-  };
-}
-
-export async function extractPdfTextStreams(bytes: Uint8Array): Promise<string[]> {
-  const binaryString = new TextDecoder("latin1").decode(bytes);
-  const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
-  const pageTexts: string[] = [];
-
-  let match: RegExpExecArray | null;
-  while ((match = streamRegex.exec(binaryString)) !== null) {
-    const streamContentIndex = match.index + match[0].indexOf("\n") + 1;
-    const streamLength = match[1].length;
-    const streamBytes = bytes.subarray(streamContentIndex, streamContentIndex + streamLength);
-
-    // Look back in dictionary before stream for filter
-    const dictSlice = binaryString.slice(Math.max(0, match.index - 300), match.index);
-    const isFlate = dictSlice.includes("/FlateDecode") || dictSlice.includes("/Fl");
-
-    let decompressed: Uint8Array | null = null;
-    if (isFlate) {
-      decompressed = await decompressFlate(streamBytes);
-    }
-
-    const payload = decompressed
-      ? new TextDecoder("latin1").decode(decompressed)
-      : match[1];
-
-    // Extract text operators between BT and ET
-    const btEtRegex = /BT([\s\S]*?)ET/g;
-    let btMatch: RegExpExecArray | null;
-    const chunks: string[] = [];
-
-    while ((btMatch = btEtRegex.exec(payload)) !== null) {
-      const block = btMatch[1];
-      // Match (text) Tj
-      const tjRegex = /\(([^)]*)\)\s*Tj/g;
-      let tjMatch: RegExpExecArray | null;
-      while ((tjMatch = tjRegex.exec(block)) !== null) {
-        chunks.push(decodePdfString(`(${tjMatch[1]})`));
-      }
-
-      // Match [(text) -10 (more text)] TJ
-      const arrayTjRegex = /\[([^\]]*)\]\s*TJ/g;
-      let atjMatch: RegExpExecArray | null;
-      while ((atjMatch = arrayTjRegex.exec(block)) !== null) {
-        const inner = atjMatch[1];
-        const innerItems = inner.match(/\(([^)]*)\)/g);
-        if (innerItems) {
-          chunks.push(innerItems.map((item) => decodePdfString(item)).join(""));
-        }
-      }
-    }
-
-    if (chunks.length > 0) {
-      pageTexts.push(chunks.join(" ").trim());
-    }
-  }
-
-  return pageTexts;
+function metadataText(info: unknown, key: string): string | undefined {
+  if (!info || typeof info !== "object") return undefined;
+  const value = (info as Record<string, unknown>)[key];
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 export async function parsePdfToBook(
   source: Blob | File | ArrayBuffer | Uint8Array,
   fileName: string = "document.pdf"
 ): Promise<RawFoliateBook> {
-  let bytes: Uint8Array;
-  if (source instanceof Uint8Array) {
-    bytes = source;
-  } else if (source instanceof ArrayBuffer) {
-    bytes = new Uint8Array(source);
-  } else if (source instanceof Blob) {
-    bytes = new Uint8Array(await source.arrayBuffer());
-  } else {
-    throw new Error("Invalid PDF source payload.");
-  }
+  const bytes = await toBytes(source);
+  if (!isPdfBytes(bytes)) throw new Error("Invalid PDF document: missing %PDF- header.");
 
-  // Validate %PDF- magic signature
-  if (
-    bytes.length < 4 ||
-    bytes[0] !== 0x25 ||
-    bytes[1] !== 0x50 ||
-    bytes[2] !== 0x44 ||
-    bytes[3] !== 0x46
-  ) {
-    throw new Error("Invalid PDF document: missing %PDF- header.");
-  }
+  const pdfjs = await loadPdfJs();
+  const assetBase = typeof window !== "undefined" ? new URL("/pdfjs/", window.location.href).href : undefined;
+  const loadingTask = pdfjs.getDocument({
+    data: bytes.slice(),
+    ...(assetBase
+      ? {
+          cMapPacked: true,
+          cMapUrl: `${assetBase}cmaps/`,
+          standardFontDataUrl: `${assetBase}standard_fonts/`,
+          wasmUrl: `${assetBase}wasm/`,
+        }
+      : {}),
+  });
+  const pdf = await loadingTask.promise;
+  const [meta, outline] = await Promise.all([
+    pdf.getMetadata().catch(() => null),
+    pdf.getOutline().catch(() => null),
+  ]);
 
-  const { title, author, pageCount } = extractPdfInfo(bytes, fileName);
-  const textStreams = await extractPdfTextStreams(bytes);
-
-  const objectUrls: string[] = [];
-
-  const sections: RawFoliateSection[] = [];
-  for (let i = 0; i < pageCount; i++) {
-    const pageNum = i + 1;
-    const pageText = textStreams[i] || (textStreams.length === 1 && i === 0 ? textStreams[0] : "");
-    const pageBodyHtml = pageText
-      ? `<p>${escapeHtml(pageText).replace(/\n/g, "<br/>")}</p>`
-      : `<div class="pdf-placeholder"><p>Page ${pageNum}</p></div>`;
-
-    const xhtml = `<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=800, height=1100"/>
-  <title>Page ${pageNum}</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: transparent;
+  const fallbackTitle = fileName.replace(/\.pdf$/i, "").replace(/[-_]+/g, " ").trim() || "Untitled document";
+  const pages = new Map<number, Promise<PDFPageProxy>>();
+  const getPage = (index: number) => {
+    let pending = pages.get(index);
+    if (!pending) {
+      pending = pdf.getPage(index + 1);
+      pages.set(index, pending);
     }
-    .pdf-page-container {
-      width: 100%;
-      max-width: 800px;
-      min-height: 1000px;
-      margin: 0 auto;
-      box-sizing: border-box;
-      padding: 48px 40px;
-      background: var(--bg-color, inherit);
-      color: var(--text-color, inherit);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .pdf-page-header {
-      font-size: 0.85em;
-      opacity: 0.6;
-      border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-      padding-bottom: 8px;
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: space-between;
-    }
-    .pdf-page-body {
-      font-size: 1.05em;
-      line-height: 1.65;
-      flex-grow: 1;
-    }
-    .pdf-placeholder {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 300px;
-      color: rgba(128, 128, 128, 0.5);
-      font-size: 1.2em;
-    }
-    .pdf-page-footer {
-      margin-top: 32px;
-      text-align: center;
-      font-size: 0.8em;
-      opacity: 0.5;
-      border-top: 1px solid rgba(128, 128, 128, 0.15);
-      padding-top: 8px;
-    }
-  </style>
-</head>
-<body>
-  <div class="pdf-page-container">
-    <div class="pdf-page-header">
-      <span>${escapeHtml(title)}</span>
-      <span>Page ${pageNum} of ${pageCount}</span>
-    </div>
-    <div class="pdf-page-body">
-      ${pageBodyHtml}
-    </div>
-    <div class="pdf-page-footer">
-      - ${pageNum} -
-    </div>
-  </div>
-</body>
-</html>`;
+    return pending;
+  };
 
-    const blob = new Blob([xhtml], { type: "application/xhtml+xml" });
-    const url = URL.createObjectURL(blob);
-    objectUrls.push(url);
-
-    sections.push({
-      createDocument: () => {
-        const parser = new DOMParser();
-        return parser.parseFromString(xhtml, "application/xhtml+xml");
+  const sections: RawFoliateSection[] = Array.from({ length: pdf.numPages }, (_, index) => {
+    const urls: string[] = [];
+    const tracked = new Set<LivePage>();
+    return {
+      createDocument: async () => textDocument(await getPage(index), index),
+      href: pageHref(index),
+      id: index,
+      load: async () => {
+        const page = await getPage(index);
+        const { height, width } = page.getViewport({ scale: 1 });
+        const src = URL.createObjectURL(new Blob([pageMarkup(width, height)], { type: "text/html" }));
+        urls.push(src);
+        return {
+          onZoom: ({ doc, scale }: { doc: Document; scale: number }) => {
+            for (const live of tracked) {
+              if (live.doc === doc || !live.doc.defaultView) {
+                tracked.delete(live);
+                livePages.delete(live);
+              }
+            }
+            const live = { doc, page, scale };
+            tracked.add(live);
+            livePages.add(live);
+            void renderPage(live);
+          },
+          src,
+        };
       },
-      href: `page-${pageNum}.xhtml`,
-      id: i,
-      linear: "yes",
-      load: () => url,
-      size: blob.size,
-      title: `Page ${pageNum}`,
-    });
-  }
-
-  const toc: RawFoliateTocItem[] = sections.map((sec, idx) => ({
-    href: `${idx}`,
-    id: `toc-page-${idx + 1}`,
-    label: `Page ${idx + 1}`,
-  }));
+      size: 1500,
+      title: `Page ${index + 1}`,
+      unload: () => {
+        for (const live of tracked) livePages.delete(live);
+        tracked.clear();
+        for (const url of urls.splice(0)) URL.revokeObjectURL(url);
+      },
+    };
+  });
 
   return {
     destroy: () => {
-      for (const url of objectUrls) {
-        URL.revokeObjectURL(url);
+      for (const section of sections) section.unload?.();
+      void loadingTask.destroy();
+    },
+    getCover: async () => {
+      try {
+        const page = await getPage(0);
+        const base = page.getViewport({ scale: 1 });
+        const viewport = page.getViewport({ scale: COVER_WIDTH / base.width });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        await page.render({ canvas, viewport }).promise;
+        return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      } catch {
+        return null;
       }
     },
-    dir: "ltr",
-    getCover: async () => null,
-    getTOCFragment: (doc: Document) => doc.body,
     metadata: {
-      author,
-      creator: author,
-      direction: "ltr",
-      language: "en",
-      title,
+      author: metadataText(meta?.info, "Author") ?? "Unknown Author",
+      creator: metadataText(meta?.info, "Creator"),
+      title: metadataText(meta?.info, "Title") ?? fallbackTitle,
     },
-    rendition: { layout: "pre-paginated" },
+    rendition: { layout: "pre-paginated", spread: "auto" },
     resolveHref: (href: string) => {
-      const idx = Number(href.split("#")[0]);
-      const validIndex = !isNaN(idx) && idx >= 0 && idx < sections.length ? idx : 0;
-      return { anchor: (doc: Document) => doc.body, index: validIndex };
+      const index = pageIndexFromHref(href);
+      return index === null || index >= pdf.numPages ? null : { index };
     },
     sections,
-    splitTOCHref: (href: string) => [Number(href.split("#")[0]) || 0],
-    toc,
+    splitTOCHref: (href: string) => {
+      const index = pageIndexFromHref(href);
+      return index === null ? [] : [index];
+    },
+    toc: await buildToc(pdf, outline as OutlineNode[] | null),
   };
 }

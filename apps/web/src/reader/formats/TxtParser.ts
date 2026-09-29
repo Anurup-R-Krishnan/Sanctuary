@@ -12,12 +12,14 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
+export type SectionSource = string | { onZoom?: (options: { doc: Document; scale: number }) => void; src: string };
+
 export interface RawFoliateSection {
   createDocument?(): Promise<Document> | Document;
   href?: string;
   id: string | number;
   linear?: string;
-  load(): Promise<string> | string;
+  load(): Promise<SectionSource> | SectionSource;
   size?: number;
   title?: string;
   unload?(): void;
@@ -43,7 +45,7 @@ export interface RawFoliateBook {
     language?: string;
     title?: string;
   };
-  rendition?: { layout?: string };
+  rendition?: { layout?: string; spread?: string };
   resolveHref(href: string): { index: number; anchor?: (doc: Document) => Element | Range | null } | null;
   sections: RawFoliateSection[];
   splitTOCHref?(href: string): number[];

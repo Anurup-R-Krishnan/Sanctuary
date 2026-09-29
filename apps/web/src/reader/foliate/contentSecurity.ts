@@ -1,3 +1,5 @@
+import type { SectionSource } from "../formats/TxtParser";
+
 /**
  * Book documents render in iframes that foliate-js creates with
  * `allow-same-origin allow-scripts`, so script inside a book would run with the
@@ -19,6 +21,7 @@
  * `installBookContentSecurity` hooks foliate's EPUB loader so nested documents
  * (e.g. an XHTML page embedding another) are sanitized too.
  */
+
 const BOOK_CSP =
   "script-src 'none'; object-src 'none'; frame-src 'none'; child-src 'none'; base-uri 'none'; form-action 'none'";
 const CSP_MARKER = "sanctuary-book-csp";
@@ -187,7 +190,7 @@ export function installBookContentSecurity(rawBook: { transformTarget?: EventTar
 }
 
 interface LoadableSection {
-  load(): Promise<string> | string;
+  load(): Promise<SectionSource> | SectionSource;
   unload?(): void;
 }
 
@@ -199,7 +202,7 @@ export function secureSections(sections: LoadableSection[] | undefined): void {
   for (const section of sections ?? []) {
     const load = section.load.bind(section);
     const unload = section.unload?.bind(section);
-    let secured: Promise<string> | null = null;
+    let secured: Promise<SectionSource> | null = null;
 
     section.load = () => {
       secured ??= (async () => {
@@ -219,7 +222,7 @@ export function secureSections(sections: LoadableSection[] | undefined): void {
       const pending = secured;
       secured = null;
       void pending?.then((url) => {
-        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+        if (typeof url === "string" && url.startsWith("blob:")) URL.revokeObjectURL(url);
       });
       unload?.();
     };

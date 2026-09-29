@@ -21,6 +21,7 @@ import { isTinyInlineImage } from "../../components/reader/lightboxUtils";
 import { applyBionicReading } from "../../utils/bionicReading";
 import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../utils/footnoteResolver";
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
+import { setPdfPageColors } from "../formats/PdfParser";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
 import { readerFontFaceCss } from "./readerFonts";
 import { ScrollContinuity } from "./ScrollContinuity";
@@ -296,7 +297,19 @@ export class FoliateRendition implements DocumentRendition {
     });
   }
 
+  private syncPdfPageColors(): void {
+    if (this.documentAdapter?.format !== "pdf") return;
+    const foreground = this.flowOptions.themeStyles?.body?.color;
+    const isPlainWhite = /^#?f{3}(f{3})?$/i.test(this.background.trim().replace(/^#/, "")) || this.background.trim().toLowerCase() === "white";
+    setPdfPageColors(isPlainWhite || !foreground ? null : { background: this.background, foreground: String(foreground).replace(/\s*!important\s*$/i, "") });
+  }
+
   private injectStylesToDocument(doc: Document): void {
+    if (doc.documentElement.hasAttribute("data-sanctuary-pdf")) {
+      doc.documentElement.style.backgroundColor = this.background;
+      this.syncPdfPageColors();
+      return;
+    }
     try {
       const isDark = isColorDark(this.background);
       doc.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
@@ -754,6 +767,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public setStyles(styles: Record<string, Record<string, string>>, bionicReading?: boolean): void {
     this.flowOptions.themeStyles = styles;
+    this.syncPdfPageColors();
     if (bionicReading !== undefined) {
       this.flowOptions.bionicReading = bionicReading;
     }
@@ -778,6 +792,7 @@ export class FoliateRendition implements DocumentRendition {
 
   public updateBackground(color: string): void {
     this.background = color;
+    this.syncPdfPageColors();
     const renderer = this.view?.renderer;
     if (this.container) this.container.style.backgroundColor = color;
     if (this.view) this.view.style.backgroundColor = color;
