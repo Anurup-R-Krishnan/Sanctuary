@@ -37,16 +37,12 @@ export const bookService = {
         const local = await getBookById(id).catch(() => null);
         if (local?.epubBlob) return local.epubBlob;
 
-        const res = await api.fetchRaw(API.CONTENT(encodeId(id)));
-        if (!res.ok) throw new Error("Failed to fetch book content");
-        const { url } = await res.json() as { url: string };
-
-        const blobRes = await fetch(url);
-        if (!blobRes.ok) throw new Error("Failed to download book from storage");
-        return await blobRes.blob();
+        const res = await api.fetchRaw(`${API.CONTENT(encodeId(id))}?download=1`);
+        if (!res.ok) throw new Error(`Request to book content failed (${res.status})`);
+        return await res.blob();
     },
 
-    async addBook(file: File, metadata: Book, api: SanctuaryApiClient, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null }> {
+    async addBook(file: File, metadata: Book, api: SanctuaryApiClient, coverBlob?: Blob | null): Promise<{ coverUrl?: string | null; duplicateId?: string }> {
         const formData = new FormData();
         formData.append("file", file, file.name || `${metadata.id}.epub`);
         if (coverBlob && coverBlob.size > 0) {
@@ -59,7 +55,7 @@ export const bookService = {
                 title: metadata.title,
                 author: metadata.author,
                 contentHash: metadata.contentHash,
-                progress: 0,
+                progress: Math.max(0, Math.min(100, Math.round(metadata.progress || 0))),
                 totalPages: Math.max(1, metadata.totalPages || 100),
                 lastLocation: metadata.lastLocation || "",
                 favorite: !!metadata.isFavorite,
@@ -72,7 +68,7 @@ export const bookService = {
                 method: "POST",
                 body: formData,
             });
-            return await readJsonSafely<{ success: boolean; coverUrl?: string | null }>(res, "Failed to save book");
+            return await readJsonSafely<{ success: boolean; coverUrl?: string | null; duplicateId?: string }>(res, "Failed to save book");
         } catch (error) {
             // Best-effort cleanup for partial backend writes (binary uploaded, metadata failed).
             await api.deleteLibraryItem(metadata.id).catch(() => undefined);

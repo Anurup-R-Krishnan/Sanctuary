@@ -59,6 +59,7 @@ export interface ReaderSettings {
 export interface LibraryItem {
   author: string;
   bookmarks?: Array<{ cfi: string; title: string }>;
+  contentHash?: string;
   coverUrl?: string | null;
   favorite: boolean;
   format?: string;

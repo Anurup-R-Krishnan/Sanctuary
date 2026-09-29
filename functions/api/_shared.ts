@@ -13,6 +13,7 @@ export interface BookmarkPayload {
 export interface BookRow {
   author: string;
   bookmarks_json: string;
+  content_hash?: string | null;
   content_type: string | null;
   cover_url: string | null;
   id: string;
@@ -134,7 +135,27 @@ export function toLibraryItem(row: BookRow) {
     favorite: !!row.is_favorite,
     status: progressPercent <= 0 ? "to-read" : progressPercent >= 100 ? "finished" : "reading",
     updatedAt: row.updated_at,
+    format: formatForContentType(row.content_type),
+    contentHash: row.content_hash || undefined,
   };
+}
+
+const FORMAT_BY_CONTENT_TYPE: Record<string, string> = {
+  "application/epub+zip": "epub",
+  "application/pdf": "pdf",
+  "application/vnd.amazon.ebook": "azw3",
+  "application/vnd.comicbook+zip": "cbz",
+  "application/x-fictionbook+xml": "fb2",
+  "application/x-mobipocket-ebook": "mobi",
+  "application/x-zip-compressed-fb2": "fb2",
+  "text/html": "html",
+  "text/markdown": "markdown",
+  "text/plain": "txt",
+};
+
+export function formatForContentType(contentType: string | null | undefined): string {
+  const type = (contentType ?? "").split(";")[0]!.trim().toLowerCase();
+  return FORMAT_BY_CONTENT_TYPE[type] ?? "epub";
 }
 
 function parseJsonArray(input: string): unknown {
@@ -178,11 +199,14 @@ export async function isValidBookFile(file: File): Promise<boolean> {
     if (magic === "BOOKMOBI") return true;
   }
 
+  if (bytes.length >= 5 && String.fromCharCode(...bytes.slice(0, 5)) === "%PDF-") return true;
+
   // 3. FB2 XML or HTML document
   try {
     const snippet = new TextDecoder().decode(bytes).trimStart().toLowerCase();
     if (snippet.includes("<fictionbook")) return true;
-    if (snippet.startsWith("<!doctype html") || snippet.startsWith("<html")) return true;
+    const markup = snippet.replace(/^\ufeff/, "").replace(/^<\?xml[^>]*\?>\s*/, "");
+    if (markup.startsWith("<!doctype html") || markup.startsWith("<html")) return true;
   } catch {
     // ignore
   }
@@ -199,7 +223,10 @@ export async function isValidBookFile(file: File): Promise<boolean> {
     name.endsWith(".azw3") ||
     name.endsWith(".fb2") ||
     name.endsWith(".html") ||
-    name.endsWith(".xhtml")
+    name.endsWith(".xhtml") ||
+    name.endsWith(".htm") ||
+    name.endsWith(".pdf") ||
+    name.endsWith(".prc")
   ) {
     return true;
   }
@@ -207,18 +234,26 @@ export async function isValidBookFile(file: File): Promise<boolean> {
   return false;
 }
 
+const CONTENT_TYPE_BY_EXTENSION: Array<[RegExp, string]> = [
+  [/\.epub$/, "application/epub+zip"],
+  [/\.pdf$/, "application/pdf"],
+  [/\.cbz$/, "application/vnd.comicbook+zip"],
+  [/\.(mobi|prc)$/, "application/x-mobipocket-ebook"],
+  [/\.(azw|azw3|kf8)$/, "application/vnd.amazon.ebook"],
+  [/\.(fbz|fb2\.zip)$/, "application/x-zip-compressed-fb2"],
+  [/\.fb2$/, "application/x-fictionbook+xml"],
+  [/\.(txt|text)$/, "text/plain"],
+  [/\.(md|markdown)$/, "text/markdown"],
+  [/\.(html|htm|xhtml)$/, "text/html"],
+];
+
 export function resolveBookContentType(file: File): string {
-  if (file.type && file.type !== "application/octet-stream" && file.type !== "") {
-    return file.type;
-  }
   const name = file.name ? file.name.toLowerCase() : "";
-  if (name.endsWith(".mobi")) return "application/x-mobipocket-ebook";
-  if (name.endsWith(".azw") || name.endsWith(".azw3") || name.endsWith(".kf8")) return "application/vnd.amazon.ebook";
-  if (name.endsWith(".fb2")) return "application/x-fictionbook+xml";
-  if (name.endsWith(".fbz") || name.endsWith(".fb2.zip")) return "application/x-zip-compressed-fb2";
-  if (name.endsWith(".txt") || name.endsWith(".text")) return "text/plain";
-  if (name.endsWith(".md") || name.endsWith(".markdown")) return "text/markdown";
-  if (name.endsWith(".html") || name.endsWith(".xhtml")) return "text/html";
+  for (const [pattern, type] of CONTENT_TYPE_BY_EXTENSION) {
+    if (pattern.test(name)) return type;
+  }
+  const declared = (file.type || "").split(";")[0]!.trim().toLowerCase();
+  if (declared in FORMAT_BY_CONTENT_TYPE) return declared;
   return "application/epub+zip";
 }
 
