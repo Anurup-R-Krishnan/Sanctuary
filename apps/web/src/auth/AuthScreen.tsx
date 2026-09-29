@@ -1,4 +1,4 @@
-import { BookOpen } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import { useCallback, useState } from "react";
 
 import { authApiUrl, type AuthResponseUser } from "./authApi";
@@ -7,6 +7,15 @@ import { useSanctuaryAuth } from "./useSanctuaryAuth";
 interface AuthScreenProps {
   onCancel: () => void;
 }
+
+const SYNC_FACTS = [
+  { numeral: "I", text: "Books, progress, bookmarks and notes follow you to every device." },
+  { numeral: "II", text: "Everything still works offline. Changes upload when you reconnect." },
+  { numeral: "III", text: "Books already on this device can be uploaded after you sign in." },
+];
+
+const inputClass =
+  "w-full rounded-lg border border-line bg-surface-raised px-3.5 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20";
 
 export function AuthScreen({ onCancel }: AuthScreenProps) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -25,27 +34,20 @@ export function AuthScreen({ onCancel }: AuthScreenProps) {
 
       try {
         const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/login";
-        const response = await fetch(
-          authApiUrl(endpoint),
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-          }
-        );
+        const response = await fetch(authApiUrl(endpoint), {
+          body: JSON.stringify({ email, password }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
 
         const data = (await response.json().catch(() => ({}))) as { error?: string; token?: string; user?: AuthResponseUser };
         if (!response.ok || !data.token || !data.user) {
           setError(data.error || "Could not reach the server. Try again.");
           return;
         }
-        // No reload: a guest who signs in keeps their in-memory session mode,
-        // so MigrationDialog can offer to upload their local books.
         signIn(data.token, data.user);
-      } catch (err) {
-        setError(err instanceof Error && err.message ? "Could not reach the server. Try again." : "Something went wrong");
+      } catch {
+        setError("Could not reach the server. Try again.");
       } finally {
         setIsLoading(false);
       }
@@ -53,98 +55,120 @@ export function AuthScreen({ onCancel }: AuthScreenProps) {
     [isSignUp, email, password, signIn]
   );
 
+  const switchMode = (next: boolean) => {
+    setIsSignUp(next);
+    setError("");
+  };
+
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-page p-4 selection:bg-accent/30 selection:text-inherit">
-      <div className="mb-8 flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-xl bg-accent flex items-center justify-center shadow-glow-md mb-4 ring-1 ring-black/5 dark:ring-white/10 transition-transform duration-instant hover:scale-105">
-          <BookOpen className="w-8 h-8 text-white" strokeWidth={1.5} />
+    <div className="app-ambient-bg flex min-h-[100dvh] flex-col bg-page">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 pt-6 sm:px-8">
+        <button
+          className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          onClick={onCancel}
+          type="button"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to library
+        </button>
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent shadow-paper">
+            <BookOpen className="h-4 w-4 text-accent-fg" strokeWidth={1.75} />
+          </div>
+          <span className="font-display text-lg font-medium tracking-tight text-fg">Sanctuary</span>
         </div>
-        <h1 className="font-display font-medium text-3xl text-fg tracking-tight">Sanctuary</h1>
-        <p className="font-sans text-sm text-fg-muted mt-1.5 max-w-xs">
-          Optional. An account syncs your library and reading progress across devices.
-        </p>
       </div>
 
-      <div className="w-full max-w-sm">
-        <div className="bg-surface-raised border border-line shadow-xl rounded-xl p-6">
-          <h2 className="font-display font-medium text-2xl text-fg tracking-tight mb-1">
-            {isSignUp ? "Create Account" : "Sign In"}
-          </h2>
-          <p className="font-sans text-sm text-fg-muted mb-6">
-            {isSignUp ? "Create a new account to get started" : "Sign in to your account"}
-          </p>
+      <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-12 px-5 py-12 sm:px-8 lg:grid-cols-[1fr_24rem] lg:gap-20">
+        <section className="animate-fadeInUp">
+          <p className="label-caps">Optional account</p>
+          <h1 className="mt-4 font-display text-5xl font-medium leading-[1.02] tracking-[-0.03em] text-fg sm:text-6xl">
+            One library,
+            <br />
+            every device.
+          </h1>
+          <div className="mt-6 h-px w-14 bg-accent/70" />
+          <ol className="mt-8 max-w-md space-y-5">
+            {SYNC_FACTS.map((fact) => (
+              <li className="flex gap-4" key={fact.numeral}>
+                <span className="folio w-6 shrink-0 pt-0.5 text-sm text-accent">{fact.numeral}</span>
+                <p className="text-base leading-relaxed text-fg-muted">{fact.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <section className="paper-card animate-fadeInUp p-6 sm:p-8" style={{ animationDelay: "90ms", animationFillMode: "both" }}>
+          <div className="grid grid-cols-2 border-b border-line" role="tablist">
+            {[
+              { label: "Sign in", value: false },
+              { label: "Create account", value: true },
+            ].map((tab) => (
+              <button
+                aria-selected={isSignUp === tab.value}
+                className={`-mb-px border-b-2 pb-3 text-sm font-medium transition-colors ${
+                  isSignUp === tab.value ? "border-accent text-fg" : "border-transparent text-fg-muted hover:text-fg"
+                }`}
+                key={tab.label}
+                onClick={() => switchMode(tab.value)}
+                role="tab"
+                type="button"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="block font-sans text-sm font-medium text-fg mb-1.5">
-                Email
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-fg" htmlFor="auth-email">Email</label>
               <input
-                id="email"
-                type="email"
-                required
-                value={email}
+                autoComplete="email"
+                className={inputClass}
+                id="auth-email"
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full rounded-xl border border-line bg-surface text-fg placeholder:text-fg-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20 px-3 py-2.5 font-sans text-sm transition-colors"
+                placeholder="you@example.com"
+                required
+                type="email"
+                value={email}
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block font-sans text-sm font-medium text-fg mb-1.5">
-                Password
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-fg" htmlFor="auth-password">Password</label>
               <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={isSignUp ? "At least 10 characters" : ""}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
+                className={inputClass}
+                id="auth-password"
                 minLength={isSignUp ? 10 : 1}
-                className="w-full rounded-xl border border-line bg-surface text-fg placeholder:text-fg-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/20 px-3 py-2.5 font-sans text-sm transition-colors"
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                type="password"
+                value={password}
               />
-              {isSignUp && (
-                <p className="font-sans text-xs text-fg-muted mt-1">
-                  Password must be at least 10 characters long
-                </p>
-              )}
+              {isSignUp && <p className="mt-1.5 text-xs text-fg-muted">At least 10 characters.</p>}
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-3">
-                <p className="font-sans text-sm text-red-600 dark:text-red-400">{error}</p>
-              </div>
+              <p className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2.5 text-sm text-danger" role="alert">
+                {error}
+              </p>
             )}
 
             <button
-              type="submit"
+              className="w-full rounded-lg bg-accent py-2.5 text-sm font-medium text-accent-fg shadow-paper transition-[filter] hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-raised disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isLoading}
-              className="w-full rounded-xl bg-accent text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed font-sans shadow-glow-sm transition-all duration-instant font-medium py-2.5"
+              type="submit"
             >
-              {isLoading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
+              {isLoading ? "Please wait…" : isSignUp ? "Create account" : "Sign in"}
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError("");
-            }}
-            className="w-full mt-4 font-sans text-sm text-accent hover:underline"
-          >
-            {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Create one"}
-          </button>
-        </div>
-      </div>
-
-      <button
-        onClick={onCancel}
-        className="mt-8 px-5 py-2.5 rounded-xl text-sm font-medium text-fg-muted hover:text-fg bg-surface/40 hover:bg-surface/70 border border-line transition-all duration-instant shadow-xs"
-      >
-        Not now
-      </button>
+          <p className="mt-6 text-center text-xs leading-relaxed text-fg-muted">
+            Without an account, books stay on this device only.
+          </p>
+        </section>
+      </main>
     </div>
   );
 }

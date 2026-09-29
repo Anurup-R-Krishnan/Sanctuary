@@ -272,7 +272,7 @@ export function ReaderSessionTimerModal({
             <span>{dailyPercent}% completed today</span>
             {isDailyGoalMet ? (
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                Daily Goal Met 🎉
+                Daily goal met
               </span>
             ) : (
               <span>
