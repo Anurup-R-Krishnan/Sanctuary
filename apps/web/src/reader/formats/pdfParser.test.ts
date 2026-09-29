@@ -1,167 +1,66 @@
 import { describe, expect, it } from "bun:test";
-import { deflateSync } from "node:zlib";
 
 import { ensureTestDom } from "../foliate/testEnv";
 import { detectBookFormat, isSupportedExtension } from "./FormatDetector";
-import {
-  extractPdfInfo,
-  extractPdfTextStreams,
-  parsePdfToBook,
-} from "./PdfParser";
+import { isPdfBytes, pageHref, pageIndexFromHref, parsePdfToBook } from "./PdfParser";
 
 ensureTestDom();
 
-describe("Native PDF Document Parser & Ingestion", () => {
-  const createMinimalPdf = (options?: {
-    author?: string;
-    pageCount?: number;
-    textStream?: string;
-    title?: string;
-  }) => {
-    const title = options?.title ?? "Standard Algorithms and Computation";
-    const author = options?.author ?? "Ada Lovelace";
-    const count = options?.pageCount ?? 2;
+function buildPdf(pages: string[], info = "/Title (Standard Algorithms) /Author (Ada Lovelace)"): Uint8Array {
+  const objects: string[] = [];
+  const pageIds = pages.map((_, i) => 4 + i * 2);
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[2] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pages.length} >>`;
+  objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+  pages.forEach((text, i) => {
+    const stream = `BT /F1 24 Tf 72 700 Td (${text}) Tj ET`;
+    objects[pageIds[i]!] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${pageIds[i]! + 1} 0 R >>`;
+    objects[pageIds[i]! + 1] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  });
+  const infoId = objects.length;
+  objects[infoId] = `<< ${info} >>`;
 
-    let textStreamPart = "";
-    if (options?.textStream) {
-      textStreamPart = `
-6 0 obj
-<< /Length ${options.textStream.length} >>
-stream
-${options.textStream}
-endstream
-endobj`;
-    }
+  let body = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  for (let id = 1; id < objects.length; id++) {
+    offsets[id] = body.length;
+    body += `${id} 0 obj\n${objects[id]}\nendobj\n`;
+  }
+  const xrefOffset = body.length;
+  body += `xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for (let id = 1; id < objects.length; id++) body += `${String(offsets[id]).padStart(10, "0")} 00000 n \n`;
+  body += `trailer\n<< /Size ${objects.length} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new TextEncoder().encode(body);
+}
 
-    const pdfString = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Count ${count} >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R >>
-endobj
-4 0 obj
-<< /Type /Page /Parent 2 0 R >>
-endobj
-5 0 obj
-<< /Title (${title}) /Author (${author}) >>
-endobj${textStreamPart}
-trailer
-<< /Root 1 0 R /Info 5 0 R >>
-%%EOF`;
-
-    return new TextEncoder().encode(pdfString);
-  };
-
-  it("FormatDetector recognizes .pdf extension and %PDF- magic bytes", async () => {
-    expect(isSupportedExtension("document.pdf")).toBe(true);
+describe("PDF format", () => {
+  it("is detected by extension and magic bytes", async () => {
+    const bytes = buildPdf(["One"]);
     expect(isSupportedExtension("PAPER.PDF")).toBe(true);
-
-    const pdfBytes = createMinimalPdf();
-    const detectedFromExtension = await detectBookFormat(new Blob([pdfBytes]), "manual.pdf");
-    expect(detectedFromExtension).toBe("pdf");
-
-    // Sniffing without extension
-    const detectedFromMagicBytes = await detectBookFormat(pdfBytes);
-    expect(detectedFromMagicBytes).toBe("pdf");
+    expect(isPdfBytes(bytes)).toBe(true);
+    expect(await detectBookFormat(bytes)).toBe("pdf");
   });
 
-  it("rejects corrupted or non-PDF binary payloads", async () => {
-    const corrupted = new Uint8Array([0x00, 0x01, 0x02, 0x03]);
-    await expect(parsePdfToBook(corrupted, "corrupted.pdf")).rejects.toThrow(
-      "Invalid PDF document: missing %PDF- header."
-    );
+  it("maps pages to hrefs and back", () => {
+    expect(pageHref(0)).toBe("page-1");
+    expect(pageIndexFromHref("page-12")).toBe(11);
+    expect(pageIndexFromHref("page-0")).toBeNull();
+    expect(pageIndexFromHref("chapter.xhtml")).toBeNull();
   });
 
-  it("extracts document title, author, and page count accurately", () => {
-    const pdfBytes = createMinimalPdf({
-      author: "Grace Hopper",
-      pageCount: 3,
-      title: "Compilers and Nanoseconds",
-    });
-
-    const info = extractPdfInfo(pdfBytes, "compilers.pdf");
-    expect(info.title).toBe("Compilers and Nanoseconds");
-    expect(info.author).toBe("Grace Hopper");
-    expect(info.pageCount).toBe(3);
+  it("rejects payloads without a PDF header", async () => {
+    await expect(parsePdfToBook(new Uint8Array([0, 1, 2, 3]), "bad.pdf")).rejects.toThrow("missing %PDF- header");
   });
 
-  it("extracts uncompressed BT / ET text streams from PDF stream objects", async () => {
-    const streamContent = "BT /F1 12 Tf (Introduction to Computing) Tj ET";
-    const pdfBytes = createMinimalPdf({ textStream: streamContent });
-
-    const textStreams = await extractPdfTextStreams(pdfBytes);
-    expect(textStreams.length).toBeGreaterThan(0);
-    expect(textStreams[0]).toContain("Introduction to Computing");
-  });
-
-  it("decompresses FlateDecode zlib streams using fflate", async () => {
-    const rawStreamText = "BT /F1 14 Tf (Distributed Systems Architecture) Tj ET";
-    const compressed = deflateSync(new TextEncoder().encode(rawStreamText));
-
-    const header = `
-%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R >>
-endobj
-4 0 obj
-<< /Length ${compressed.length} /Filter /FlateDecode >>
-stream
-`;
-    const footer = `
-endstream
-endobj
-trailer
-<< /Root 1 0 R >>
-%%EOF`;
-
-    const headerBytes = new TextEncoder().encode(header);
-    const footerBytes = new TextEncoder().encode(footer);
-    const full = new Uint8Array(headerBytes.length + compressed.length + footerBytes.length);
-    full.set(headerBytes, 0);
-    full.set(compressed, headerBytes.length);
-    full.set(footerBytes, headerBytes.length + compressed.length);
-
-    const extracted = await extractPdfTextStreams(full);
-    expect(extracted.length).toBe(1);
-    expect(extracted[0]).toContain("Distributed Systems Architecture");
-  });
-
-  it("compiles standard pre-paginated BookDocument with fixed layout sections", async () => {
-    const pdfBytes = createMinimalPdf({
-      author: "Alan Turing",
-      pageCount: 2,
-      textStream: "BT /F1 12 Tf (On Computable Numbers) Tj ET",
-      title: "Mathematical Foundations",
-    });
-
-    const book = await parsePdfToBook(pdfBytes, "turing.pdf");
-    expect(book.metadata.title).toBe("Mathematical Foundations");
-    expect(book.metadata.author).toBe("Alan Turing");
+  it("opens a PDF as a fixed-layout book with one section per page", async () => {
+    const book = await parsePdfToBook(buildPdf(["Hello Sanctuary", "Second page"]), "algorithms.pdf");
+    expect(book.metadata.title).toBe("Standard Algorithms");
+    expect(book.metadata.author).toBe("Ada Lovelace");
     expect(book.rendition?.layout).toBe("pre-paginated");
-    expect(book.sections.length).toBe(2);
-    expect(book.toc.length).toBe(2);
-
-    expect(book.sections[0].title).toBe("Page 1");
-    expect(book.sections[1].title).toBe("Page 2");
-
-    // Load first section document
-    const doc = book.sections[0].createDocument?.() as Document;
-    expect(doc).toBeDefined();
-    expect(doc.title).toBe("Page 1");
-    expect(doc.body.textContent).toContain("On Computable Numbers");
-    expect(doc.body.textContent).toContain("Page 1 of 2");
-
-    // Cleanup resources
+    expect(book.sections).toHaveLength(2);
+    expect(book.resolveHref("page-2")?.index).toBe(1);
+    const doc = await book.sections[0]!.createDocument!();
+    expect(doc.body.textContent).toContain("Hello Sanctuary");
     book.destroy?.();
   });
 });

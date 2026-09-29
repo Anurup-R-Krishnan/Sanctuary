@@ -1,7 +1,36 @@
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+import { createRequire } from 'module'
 import path from 'path'
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const PDFJS_ROOT = path.dirname(createRequire(import.meta.url).resolve('pdfjs-dist/package.json'))
+const PDFJS_ASSET_DIRS = ['cmaps', 'standard_fonts', 'wasm']
+
+function pdfjsAssets(): Plugin {
+  let outDir = 'dist'
+  return {
+    name: 'sanctuary-pdfjs-assets',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir)
+    },
+    configureServer(server) {
+      server.middlewares.use('/pdfjs', (req, res, next) => {
+        const relative = decodeURIComponent((req.url ?? '').split('?')[0] ?? '').replace(/^\/+/, '')
+        const [dir] = relative.split('/')
+        const file = path.resolve(PDFJS_ROOT, relative)
+        if (!dir || !PDFJS_ASSET_DIRS.includes(dir) || !file.startsWith(PDFJS_ROOT + path.sep) || !fs.existsSync(file)) return next()
+        fs.createReadStream(file).pipe(res)
+      })
+    },
+    closeBundle() {
+      for (const dir of PDFJS_ASSET_DIRS) {
+        fs.cpSync(path.join(PDFJS_ROOT, dir), path.join(outDir, 'pdfjs', dir), { recursive: true })
+      }
+    },
+  }
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, path.resolve(__dirname, "../.."), "");
@@ -29,6 +58,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      pdfjsAssets(),
       {
         // The production CSP forbids inline script (book documents inherit it).
         // Vite's dev server injects an inline React-refresh preamble, so dev
