@@ -12,6 +12,7 @@ import { useSettingsShallow } from "../store/useSettingsStore";
 
 export interface SpeechState {
   currentText: string | null;
+  error: string | null;
   isContinuous: boolean;
   isPaused: boolean;
   isPlaying: boolean;
@@ -26,11 +27,27 @@ export interface UseReaderSpeechOptions {
   session?: IReaderSession | any;
 }
 
+export function pickDefaultVoice(voices: SpeechSynthesisVoice[], locale: string): SpeechSynthesisVoice | undefined {
+  const language = locale.toLowerCase();
+  const base = language.split("-")[0];
+  const score = (voice: SpeechSynthesisVoice) => {
+    const lang = voice.lang.toLowerCase().replace("_", "-");
+    let value = 0;
+    if (lang === language) value += 4;
+    else if (lang.split("-")[0] === base) value += 3;
+    if (voice.localService) value += 1;
+    if (voice.default) value += 1;
+    return value;
+  };
+  return [...voices].sort((a, b) => score(b) - score(a))[0];
+}
+
 export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
   const session = options?.session;
   const bookId = options?.bookId;
   const [state, setState] = useState<SpeechState>({
     currentText: null,
+    error: null,
     isContinuous: false,
     isPaused: false,
     isPlaying: false,
@@ -74,27 +91,22 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
     setKokoroVoice(kokoroVoice);
   }, [kokoroVoice]);
 
-  // Load available voices
+  const hasVoiceChoice = !!activeVoiceURI;
   useEffect(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
     const loadVoices = () => {
-      const available = window.speechSynthesis.getVoices();
+      const available = synth.getVoices();
       setVoices(available);
-      if (available.length > 0 && !activeVoiceURI) {
-        const defaultVoice = available.find((v) => v.default) || available[0];
-        if (defaultVoice) setTtsVoiceURI(defaultVoice.voiceURI);
+      if (available.length > 0 && !hasVoiceChoice) {
+        const preferred = pickDefaultVoice(available, navigator.language);
+        if (preferred) setTtsVoiceURI(preferred.voiceURI);
       }
     };
     loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = null;
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, [activeVoiceURI, setTtsVoiceURI]);
+    synth.addEventListener("voiceschanged", loadVoices);
+    return () => synth.removeEventListener("voiceschanged", loadVoices);
+  }, [hasVoiceChoice, setTtsVoiceURI]);
 
   // Keep state synchronized with Foliate session's TTS controller if present
   useEffect(() => {
@@ -111,6 +123,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
         setState((s) => ({
           ...s,
           currentText: ttsState.currentSentence,
+          error: ttsState.error,
           isContinuous: ttsState.isPlaying || ttsState.isPaused,
           isPaused: ttsState.isPaused,
           isPlaying: ttsState.isPlaying,

@@ -10,12 +10,24 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import React, { memo, useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 import type { SpeechState } from "@/hooks/useReaderSpeech";
 
 import { IconButton } from "@/components/ui/IconButton";
+import { kokoroClient, type KokoroState } from "@/reader/tts/kokoroClient";
+import { KOKORO_VOICES } from "@/reader/tts/kokoroProtocol";
+import { useSettingsShallow } from "@/store/useSettingsStore";
+
+interface VoiceOption {
+  lang: string;
+  name: string;
+  voiceURI: string;
+}
+
+const subscribeKokoro = (listener: () => void) => kokoroClient.subscribe(listener);
+const kokoroSnapshot = (): KokoroState => kokoroClient.getState();
 
 interface ReaderTTSBarProps {
   activeVoiceURI?: string | null;
@@ -53,7 +65,27 @@ function ReaderTTSBarComponent({
   speechState,
   voices = [],
 }: ReaderTTSBarProps) {
-  const { currentText, isPaused, isPlaying, rate } = speechState;
+  const { currentText, error, isPaused, isPlaying, rate } = speechState;
+  const { kokoroVoice, setKokoroVoice, ttsEngine } = useSettingsShallow((s) => ({
+    kokoroVoice: s.kokoroVoice,
+    setKokoroVoice: s.setKokoroVoice,
+    ttsEngine: s.ttsEngine,
+  }));
+  const kokoro = useSyncExternalStore(subscribeKokoro, kokoroSnapshot, kokoroSnapshot);
+  const isKokoro = ttsEngine === "kokoro";
+  const voiceOptions: VoiceOption[] = useMemo(
+    () => (isKokoro ? KOKORO_VOICES.map((v) => ({ lang: `${v.region} ${v.gender.toLowerCase()}`, name: v.label, voiceURI: v.id })) : voices),
+    [isKokoro, voices]
+  );
+  const selectedVoiceURI = isKokoro ? kokoroVoice : activeVoiceURI;
+  const selectVoice = (voiceURI: string) => (isKokoro ? setKokoroVoice(voiceURI) : onChangeVoice?.(voiceURI));
+  const loadingPercent = kokoro.totalBytes > 0 ? Math.round((kokoro.loadedBytes / kokoro.totalBytes) * 100) : 0;
+  const statusText = error
+    ?? (isKokoro && kokoro.status === "loading"
+      ? `Downloading voice model${kokoro.totalBytes > 0 ? ` · ${loadingPercent}%` : ""}`
+      : isKokoro && kokoro.status === "error"
+        ? `Voice model failed to load: ${kokoro.error ?? "unknown error"}`
+        : null);
   const [showVoicePopover, setShowVoicePopover] = useState(false);
   const [voiceQuery, setVoiceQuery] = useState("");
 
@@ -86,12 +118,13 @@ function ReaderTTSBarComponent({
   };
 
   const sortedVoices = useMemo(() => {
-    if (!voices || voices.length === 0) return [];
-    return [...voices].sort((a, b) => {
+    if (voiceOptions.length === 0) return [];
+    if (isKokoro) return voiceOptions;
+    return [...voiceOptions].sort((a, b) => {
       if (a.lang !== b.lang) return a.lang.localeCompare(b.lang);
       return a.name.localeCompare(b.name);
     });
-  }, [voices]);
+  }, [voiceOptions, isKokoro]);
 
   const filteredVoices = useMemo(() => {
     if (!voiceQuery.trim()) return sortedVoices;
@@ -102,14 +135,16 @@ function ReaderTTSBarComponent({
   }, [sortedVoices, voiceQuery]);
 
   const activeVoice = useMemo(() => {
-    return voices.find((v) => v.voiceURI === activeVoiceURI) || voices[0] || null;
-  }, [voices, activeVoiceURI]);
+    return voiceOptions.find((v) => v.voiceURI === selectedVoiceURI) || voiceOptions[0] || null;
+  }, [voiceOptions, selectedVoiceURI]);
 
-  const handlePreviewVoice = (e: React.MouseEvent, voice: SpeechSynthesisVoice) => {
+  const handlePreviewVoice = (e: React.MouseEvent, option: VoiceOption) => {
     e.stopPropagation();
     if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const voice = voices.find((v) => v.voiceURI === option.voiceURI);
+    if (!voice) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance("Sanctuary natural reading voice preview.");
+    const utterance = new SpeechSynthesisUtterance("This is how this voice sounds.");
     utterance.voice = voice;
     utterance.rate = rate;
     window.speechSynthesis.speak(utterance);
@@ -169,11 +204,11 @@ function ReaderTTSBarComponent({
                           ? "bg-accent/15 text-accent dark:bg-accent/20 font-semibold"
                           : "hover:bg-line/40 text-fg"
                       }`}
-                      onClick={() => onChangeVoice?.(v.voiceURI)}
+                      onClick={() => selectVoice(v.voiceURI)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          onChangeVoice?.(v.voiceURI);
+                          selectVoice(v.voiceURI);
                         }
                       }}
                       role="button"
@@ -186,7 +221,7 @@ function ReaderTTSBarComponent({
                           {v.lang}
                         </span>
                       </div>
-                      <button
+                      {!isKokoro && <button
                         aria-label={`Preview voice ${v.name}`}
                         className="p-1 rounded text-fg-muted hover:text-fg opacity-70 hover:opacity-100 flex-shrink-0"
                         onClick={(e) => handlePreviewVoice(e, v)}
@@ -194,7 +229,7 @@ function ReaderTTSBarComponent({
                         type="button"
                       >
                         <Volume2 className="w-3 h-3" />
-                      </button>
+                      </button>}
                     </div>
                   );
                 })}
@@ -256,6 +291,12 @@ function ReaderTTSBarComponent({
               </div>
             </div>
           </div>
+        )}
+
+        {statusText && (
+          <p className={`px-1 text-xs ${error || kokoro.status === "error" ? "text-danger" : "text-fg-muted"}`} role="status">
+            {statusText}
+          </p>
         )}
 
         {/* Top: Current sentence snippet */}
