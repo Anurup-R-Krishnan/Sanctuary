@@ -71,7 +71,7 @@ export const FoliateTestHarness: React.FC = () => {
   const [spread, setSpread] = useState(false);
   const [fontSize, setFontSize] = useState(18);
   const [theme, setTheme] = useState<"light" | "sepia" | "dark" | "oled">("sepia");
-  const [sampleBook, setSampleBook] = useState<"markdown" | "epub">("markdown");
+  const [sampleBook, setSampleBook] = useState<"markdown" | "epub">(() => (new URLSearchParams(window.location.search).has("book") ? "epub" : "markdown"));
 
   useEffect(() => {
     let active = true;
@@ -86,11 +86,12 @@ export const FoliateTestHarness: React.FC = () => {
           const rawBook = await parseMarkdownToBook(SAMPLE_MARKDOWN, "The Architecture of Sanctuary");
           adapter = new FoliateDocumentAdapter(rawBook, "markdown");
         } else {
-          const res = await fetch("/mobydick.epub");
-          if (!res.ok) throw new Error(`Failed to fetch mobydick.epub: ${res.statusText}`);
+          const bookUrl = new URLSearchParams(window.location.search).get("book") ?? "/mobydick.epub";
+          const res = await fetch(bookUrl);
+          if (!res.ok) throw new Error(`Failed to fetch ${bookUrl}: ${res.statusText}`);
           const blob = await res.blob();
           if (!active) return;
-          adapter = await FoliateDocumentAdapter.create(blob);
+          adapter = await FoliateDocumentAdapter.create(blob, bookUrl.split("/").pop() ?? "");
         }
 
         if (!active) {

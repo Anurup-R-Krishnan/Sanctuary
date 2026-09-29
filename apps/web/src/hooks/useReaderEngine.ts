@@ -8,6 +8,7 @@ import type { ReaderError, ReaderPosition, ReaderSelection, ReaderStatus } from 
 import type { TocItem } from "@/utils/epub";
 import type { ResolvedFootnote } from "@/utils/footnoteResolver";
 
+import { libraryService } from "@/services/LibraryService";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 
 import { ReaderSession } from "../reader/engine/ReaderSession";
@@ -124,6 +125,7 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     // destroying everything and re-parsing the ZIP.
     useEffect(() => {
         let mounted = true;
+        let coverChecked = false;
         const container = containerRef.current;
 
         if (!activeBlob || !container) {
@@ -175,6 +177,12 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             onStatusChange: (s) => {
                 if (!mounted) return;
                 setStatus(s);
+                if (s === "ready" && !book.coverUrl && !coverChecked) {
+                    coverChecked = true;
+                    void sessionRef.current?.getCoverBlob()
+                        .then((blob) => (blob ? libraryService.saveMissingCover(activeBookId, blob) : undefined))
+                        .catch(() => undefined);
+                }
                 if (["restoring-location", "ready", "generating-locations"].includes(s)) {
                     setRenditionReady(n => n + 1);
                 }

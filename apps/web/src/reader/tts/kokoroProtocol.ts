@@ -24,7 +24,6 @@ export function isKokoroVoice(value: unknown): value is KokoroVoiceId {
 }
 
 interface KokoroLocation {
-  modelBase: string | null;
   runtimeBase: string;
 }
 
