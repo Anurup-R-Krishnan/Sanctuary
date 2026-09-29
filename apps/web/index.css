@@ -965,3 +965,73 @@
   }
 }
 
+
+.a11y-high-contrast {
+  --color-fg: 20 14 6;
+  --color-fg-muted: 58 44 28;
+  --color-line: 120 98 66;
+  --color-line-subtle: 150 128 96;
+  --color-accent: 96 64 28;
+}
+
+.dark.a11y-high-contrast {
+  --color-page: 0 0 0;
+  --color-surface: 18 16 14;
+  --color-surface-raised: 10 9 8;
+  --color-fg: 255 255 255;
+  --color-fg-muted: 222 222 222;
+  --color-line: 150 150 150;
+  --color-line-subtle: 110 110 110;
+  --color-accent: 240 200 140;
+}
+
+.a11y-high-contrast .paper-card,
+.a11y-high-contrast .border-line {
+  border-color: rgb(var(--color-line));
+}
+
+.a11y-dyslexic {
+  --font-ui: "OpenDyslexic", "Instrument Sans Variable", sans-serif;
+  --font-display: "OpenDyslexic", "Newsreader Variable", serif;
+}
+
+.a11y-dyslexic :is(.text-3xs, .text-2xs, .text-xs, .text-sm, .text-base, .text-lg, p, li, label, dd, dt) {
+  line-height: 1.65 !important;
+}
+
+.a11y-dyslexic :is(h1, h2, h3, .font-display) {
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+}
+
+.a11y-dyslexic .label-caps {
+  letter-spacing: 0.04em;
+}
+
+.a11y-underline-links a,
+.a11y-underline-links button.text-accent,
+.a11y-underline-links a.text-accent {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.a11y-strong-focus :focus-visible,
+.a11y-strong-focus :focus {
+  outline: 3px solid rgb(var(--color-accent)) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px rgb(var(--color-page)) !important;
+}
+
+.a11y-large-targets :is(button, [role="button"], [role="switch"], [role="tab"], [role="radio"], select, input:not([type="range"]):not([type="checkbox"])) {
+  min-height: 44px;
+}
+
+.a11y-large-targets :is(button, [role="button"]):has(> svg:only-child) {
+  min-width: 44px;
+}
+
+html[data-color-vision="mono"] .bg-accent,
+html[data-color-vision="mono"] .bg-danger {
+  outline: 1px solid rgb(var(--color-fg) / 0.35);
+}

@@ -5,6 +5,7 @@ import type { CustomPalette } from "@/config/readerConfig";
 
 import { DEFAULT_KOKORO_VOICE, isKokoroVoice } from "@/reader/tts/kokoroProtocol";
 import { DEFAULT_DAILY_GOAL } from "@/types";
+import { type ColorVisionMode, isColorVisionMode, UI_TEXT_SCALES } from "@/utils/accessibility";
 
 type TextAlignment = "left" | "justify" | "center";
 
@@ -46,6 +47,15 @@ type SettingsValues = {
   readerBackground: string;
   readerForeground: string;
   reduceMotion: boolean;
+  colorVision: ColorVisionMode;
+  highContrast: boolean;
+  uiTextScale: number;
+  dyslexicUiFont: boolean;
+  underlineLinks: boolean;
+  strongFocus: boolean;
+  largeTargets: boolean;
+  announcePageChanges: boolean;
+  accessibilitySetupPending: boolean;
   sessionBudgetMinutes: number;
   showFloatingCapsule: boolean;
   showPageCounter: boolean;
@@ -94,6 +104,15 @@ type SettingsActions = {
   setReaderBackground: (v: string) => void;
   setReaderForeground: (v: string) => void;
   setReduceMotion: (v: boolean) => void;
+  setColorVision: (v: ColorVisionMode) => void;
+  setHighContrast: (v: boolean) => void;
+  setUiTextScale: (v: number) => void;
+  setDyslexicUiFont: (v: boolean) => void;
+  setUnderlineLinks: (v: boolean) => void;
+  setStrongFocus: (v: boolean) => void;
+  setLargeTargets: (v: boolean) => void;
+  setAnnouncePageChanges: (v: boolean) => void;
+  setAccessibilitySetupPending: (v: boolean) => void;
   setSessionBudgetMinutes: (v: number) => void;
   setShowFloatingCapsule: (v: boolean) => void;
   setShowPageCounter: (v: boolean) => void;
@@ -156,6 +175,15 @@ const DEFAULTS: SettingsValues = {
   weeklyGoal: 150,
   trackingEnabled: true,
   reduceMotion: false,
+  colorVision: "default",
+  highContrast: false,
+  uiTextScale: 100,
+  dyslexicUiFont: false,
+  underlineLinks: false,
+  strongFocus: false,
+  largeTargets: false,
+  announcePageChanges: false,
+  accessibilitySetupPending: true,
   sessionBudgetMinutes: 20,
   bookVoiceOverrides: {},
   ttsVoiceURI: null,
@@ -228,6 +256,15 @@ export const pickValues = (state: Settings): SettingsValues => ({
   weeklyGoal: state.weeklyGoal,
   trackingEnabled: state.trackingEnabled,
   reduceMotion: state.reduceMotion,
+  colorVision: state.colorVision,
+  highContrast: state.highContrast,
+  uiTextScale: state.uiTextScale,
+  dyslexicUiFont: state.dyslexicUiFont,
+  underlineLinks: state.underlineLinks,
+  strongFocus: state.strongFocus,
+  largeTargets: state.largeTargets,
+  announcePageChanges: state.announcePageChanges,
+  accessibilitySetupPending: state.accessibilitySetupPending,
   sessionBudgetMinutes: state.sessionBudgetMinutes,
   bookVoiceOverrides: state.bookVoiceOverrides,
   ttsVoiceURI: state.ttsVoiceURI,
@@ -279,6 +316,15 @@ export const toRemotePayload = (state: SettingsValues) => ({
   trackingEnabled: state.trackingEnabled,
   // Accessibility
   reduceMotion: state.reduceMotion,
+  colorVision: state.colorVision,
+  highContrast: state.highContrast,
+  uiTextScale: state.uiTextScale,
+  dyslexicUiFont: state.dyslexicUiFont,
+  underlineLinks: state.underlineLinks,
+  strongFocus: state.strongFocus,
+  largeTargets: state.largeTargets,
+  announcePageChanges: state.announcePageChanges,
+  accessibilitySetupPending: state.accessibilitySetupPending,
   motion: state.reduceMotion ? "reduced" as const : "full" as const,
   showPageMeta: state.showPageCounter,
   // TTS
@@ -346,6 +392,15 @@ export const normalizeStoredSettings = (input: unknown): Partial<SettingsValues>
   if (typeof raw.weeklyGoal === "number") out.weeklyGoal = raw.weeklyGoal;
   if (typeof raw.trackingEnabled === "boolean") out.trackingEnabled = raw.trackingEnabled;
   if (typeof raw.reduceMotion === "boolean") out.reduceMotion = raw.reduceMotion;
+  if (isColorVisionMode(raw.colorVision)) out.colorVision = raw.colorVision;
+  if (typeof raw.highContrast === "boolean") out.highContrast = raw.highContrast;
+  if (typeof raw.uiTextScale === "number" && UI_TEXT_SCALES.includes(raw.uiTextScale)) out.uiTextScale = raw.uiTextScale;
+  if (typeof raw.dyslexicUiFont === "boolean") out.dyslexicUiFont = raw.dyslexicUiFont;
+  if (typeof raw.underlineLinks === "boolean") out.underlineLinks = raw.underlineLinks;
+  if (typeof raw.strongFocus === "boolean") out.strongFocus = raw.strongFocus;
+  if (typeof raw.largeTargets === "boolean") out.largeTargets = raw.largeTargets;
+  if (typeof raw.announcePageChanges === "boolean") out.announcePageChanges = raw.announcePageChanges;
+  if (typeof raw.accessibilitySetupPending === "boolean") out.accessibilitySetupPending = raw.accessibilitySetupPending;
   if (typeof raw.sessionBudgetMinutes === "number") out.sessionBudgetMinutes = raw.sessionBudgetMinutes;
   if (raw.bookVoiceOverrides && typeof raw.bookVoiceOverrides === "object") {
     out.bookVoiceOverrides = raw.bookVoiceOverrides as Record<string, string>;
@@ -441,6 +496,15 @@ export const normalizeRemoteSettings = (input: unknown): Partial<SettingsValues>
   // ── Accessibility ─────────────────────────────────────────────────────────
   // reduceMotion: prefer the new field; fall back to legacy motion alias
   if (typeof remote.reduceMotion === "boolean") out.reduceMotion = remote.reduceMotion;
+  if (isColorVisionMode(remote.colorVision)) out.colorVision = remote.colorVision;
+  if (typeof remote.highContrast === "boolean") out.highContrast = remote.highContrast;
+  if (typeof remote.uiTextScale === "number" && UI_TEXT_SCALES.includes(remote.uiTextScale)) out.uiTextScale = remote.uiTextScale;
+  if (typeof remote.dyslexicUiFont === "boolean") out.dyslexicUiFont = remote.dyslexicUiFont;
+  if (typeof remote.underlineLinks === "boolean") out.underlineLinks = remote.underlineLinks;
+  if (typeof remote.strongFocus === "boolean") out.strongFocus = remote.strongFocus;
+  if (typeof remote.largeTargets === "boolean") out.largeTargets = remote.largeTargets;
+  if (typeof remote.announcePageChanges === "boolean") out.announcePageChanges = remote.announcePageChanges;
+  if (typeof remote.accessibilitySetupPending === "boolean") out.accessibilitySetupPending = remote.accessibilitySetupPending;
   else if (typeof remote.motion === "string") out.reduceMotion = remote.motion === "reduced";
 
   // ── Text-to-speech ────────────────────────────────────────────────────────
@@ -504,6 +568,15 @@ export const useSettingsStore = create<Settings>((set) => ({
   setWeeklyGoal: createSetAction("weeklyGoal", set),
   setTrackingEnabled: createSetAction("trackingEnabled", set),
   setReduceMotion: createSetAction("reduceMotion", set),
+  setColorVision: createSetAction("colorVision", set),
+  setHighContrast: createSetAction("highContrast", set),
+  setUiTextScale: createSetAction("uiTextScale", set),
+  setDyslexicUiFont: createSetAction("dyslexicUiFont", set),
+  setUnderlineLinks: createSetAction("underlineLinks", set),
+  setStrongFocus: createSetAction("strongFocus", set),
+  setLargeTargets: createSetAction("largeTargets", set),
+  setAnnouncePageChanges: createSetAction("announcePageChanges", set),
+  setAccessibilitySetupPending: createSetAction("accessibilitySetupPending", set),
   setSessionBudgetMinutes: createSetAction("sessionBudgetMinutes", set),
   setBookVoiceOverride: (bookId: string, voiceURI: string) =>
     set((state) => ({

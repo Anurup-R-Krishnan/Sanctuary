@@ -9,6 +9,8 @@ import '@fontsource/crimson-pro/600.css';
 import '@fontsource/crimson-pro/700.css';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/opendyslexic/400.css';
+import '@fontsource/opendyslexic/700.css';
 
 import { SanctuaryAuthProvider } from '@/auth/SanctuaryAuthProvider';
 import { SettingsProvider } from '@/components/ui/SettingsProvider';
@@ -16,6 +18,7 @@ import { appRuntime } from '@/platform/runtime';
 import { getReaderDiagnostics } from '@/services/readerDiagnostics';
 
 import App from './App';
+import { ColorVisionFilters } from './components/ui/ColorVisionFilters';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 // Prevent iframe sandboxing conflicts in epub.js (which cause about:srcdoc script blocking and escaping warnings)
@@ -53,6 +56,7 @@ root.render(
     <SanctuaryAuthProvider>
       <ErrorBoundary>
         <SettingsProvider>
+          <ColorVisionFilters />
           <App />
         </SettingsProvider>
       </ErrorBoundary>

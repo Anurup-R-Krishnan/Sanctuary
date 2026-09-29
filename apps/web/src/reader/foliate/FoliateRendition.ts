@@ -23,6 +23,7 @@ import { isFootnoteLink, resolveFootnote, type ResolvedFootnote } from "../../ut
 import { SpineWeightProgressEstimator } from "../engine/SpineWeightProgressEstimator";
 import { setPdfAppearance } from "../formats/PdfParser";
 import { FoliateTTSController, type TTSControllerState } from "./FoliateTTSController";
+import { drawPatternedHighlight, highlightPatternFor } from "./highlightPatterns";
 import { readerFontFaceCss } from "./readerFonts";
 import { ScrollContinuity } from "./ScrollContinuity";
 
@@ -250,8 +251,11 @@ export class FoliateRendition implements DocumentRendition {
       try {
         const { Overlayer } = await import("foliate-js/overlayer.js");
         const color = annotation?.color || "#facc15";
+        const colorAssist = document.documentElement.dataset.colorVision;
         if (annotation?.underline) {
           draw(Overlayer.underline, { color, width: 2 });
+        } else if (colorAssist && colorAssist !== "default") {
+          draw(drawPatternedHighlight, { color, pattern: highlightPatternFor(color) });
         } else {
           draw(Overlayer.highlight, { color });
         }

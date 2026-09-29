@@ -1,6 +1,7 @@
 import { RotateCcw, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
+import { AccessibilityToggleList, ColorVisionPicker, TextSizePicker } from "@/components/settings/AccessibilityControls";
 import { Slider } from "@/components/settings/Slider";
 import { StorageManagerCard } from "@/components/settings/StorageManagerCard";
 import { Button } from "@/components/ui/Button";
@@ -8,12 +9,14 @@ import { ConfirmDialog } from "@/components/ui/Dialog";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Toggle } from "@/components/ui/Toggle";
 import { useSettingsShallow } from "@/store/useSettingsStore";
+import { NAVIGATION_OPTIONS, READING_SUPPORT_OPTIONS } from "@/utils/accessibility";
 import { clearAllStores } from "@/utils/db";
 
 const SECTIONS = [
-    { id: "settings-behavior", numeral: "I", title: "Behavior" },
-    { id: "settings-goals", numeral: "II", title: "Reading goals" },
-    { id: "settings-data", numeral: "III", title: "Data & storage" },
+    { id: "settings-accessibility", numeral: "I", title: "Accessibility" },
+    { id: "settings-behavior", numeral: "II", title: "Behavior" },
+    { id: "settings-goals", numeral: "III", title: "Reading goals" },
+    { id: "settings-data", numeral: "IV", title: "Data & storage" },
 ] as const;
 
 function scrollToSection(id: string) {
@@ -72,10 +75,10 @@ function SettingsView() {
     const [resetError, setResetError] = useState<string | null>(null);
     const state = useSettingsShallow((s) => ({
         dailyGoal: s.dailyGoal,
-        reduceMotion: s.reduceMotion,
+        accessibilitySetupPending: s.accessibilitySetupPending,
         resetToDefaults: s.resetToDefaults,
         setDailyGoal: s.setDailyGoal,
-        setReduceMotion: s.setReduceMotion,
+        setAccessibilitySetupPending: s.setAccessibilitySetupPending,
         setTrackingEnabled: s.setTrackingEnabled,
         setWeeklyGoal: s.setWeeklyGoal,
         trackingEnabled: s.trackingEnabled,
@@ -122,23 +125,38 @@ function SettingsView() {
                 </aside>
 
                 <div className="space-y-14">
-                    <SettingsSection description="How the app behaves on this device." id="settings-behavior" numeral="I" title="Behavior">
-                        <SettingRow description="Turn off animations and transitions across the app." title="Reduce motion">
-                            <Toggle checked={state.reduceMotion} label="Reduce motion" onChange={state.setReduceMotion} />
+                    <SettingsSection description="Text size, colour vision, contrast and navigation." id="settings-accessibility" numeral="I" title="Accessibility">
+                        <div className="py-5">
+                            <p className="text-sm font-medium text-fg">Interface text size</p>
+                            <div className="mt-3"><TextSizePicker /></div>
+                        </div>
+                        <div className="py-5">
+                            <p className="text-sm font-medium text-fg">Colour vision</p>
+                            <p className="mt-0.5 text-sm text-fg-muted">Adjusts colours across the app and inside books. Highlights also get line patterns.</p>
+                            <div className="mt-3"><ColorVisionPicker /></div>
+                        </div>
+                        <AccessibilityToggleList options={[...READING_SUPPORT_OPTIONS, ...NAVIGATION_OPTIONS]} />
+                        <SettingRow description="Walk through these options step by step. It also opens the next time the app starts while this is on." title="Accessibility setup">
+                            <div className="flex shrink-0 items-center gap-3">
+                                <Toggle checked={state.accessibilitySetupPending} label="Show accessibility setup" onChange={state.setAccessibilitySetupPending} />
+                            </div>
                         </SettingRow>
+                    </SettingsSection>
+
+                    <SettingsSection description="How the app behaves on this device." id="settings-behavior" numeral="II" title="Behavior">
                         <SettingRow description="Record time spent reading for the Stats page. Nothing is recorded while this is off." title="Track reading time">
                             <Toggle checked={state.trackingEnabled} label="Track reading time" onChange={state.setTrackingEnabled} />
                         </SettingRow>
                     </SettingsSection>
 
-                    <SettingsSection description="Targets used by the Stats page." id="settings-goals" numeral="II" title="Reading goals">
+                    <SettingsSection description="Targets used by the Stats page." id="settings-goals" numeral="III" title="Reading goals">
                         <div className="grid gap-8 py-6 sm:grid-cols-2 sm:gap-10">
                             <Slider displayValue={`${state.dailyGoal} min`} label="Daily goal" max={120} min={5} onChange={state.setDailyGoal} step={5} value={state.dailyGoal} />
                             <Slider displayValue={`${state.weeklyGoal} min`} label="Weekly goal" max={500} min={20} onChange={state.setWeeklyGoal} step={10} value={state.weeklyGoal} />
                         </div>
                     </SettingsSection>
 
-                    <SettingsSection description="What this browser keeps for offline reading." id="settings-data" numeral="III" title="Data & storage">
+                    <SettingsSection description="What this browser keeps for offline reading." id="settings-data" numeral="IV" title="Data & storage">
                         <div className="py-6">
                             <StorageManagerCard />
                         </div>
