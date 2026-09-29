@@ -76,14 +76,14 @@ export function LibraryToolbar({
             label="Grid view"
             icon={<Grid3X3 className="w-4 h-4" />}
             variant="ghost"
-            className={viewMode === "grid" ? "bg-page shadow-xs text-fg font-medium" : "text-fg-muted/60 hover:text-fg"}
+            className={viewMode === "grid" ? "bg-page shadow-xs text-fg font-medium" : "text-fg-muted hover:text-fg"}
           />
           <IconButton
             onClick={() => setViewMode("list")}
             label="List view"
             icon={<List className="w-4 h-4" />}
             variant="ghost"
-            className={viewMode === "list" ? "bg-page shadow-xs text-fg font-medium" : "text-fg-muted/60 hover:text-fg"}
+            className={viewMode === "list" ? "bg-page shadow-xs text-fg font-medium" : "text-fg-muted hover:text-fg"}
           />
         </div>
 

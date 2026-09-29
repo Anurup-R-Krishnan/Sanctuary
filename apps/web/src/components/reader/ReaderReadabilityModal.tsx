@@ -7,11 +7,12 @@ import {
   Hash,
   X,
 } from "lucide-react";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import type { ReadabilityInterpretation } from "@/utils/readabilityEngine";
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { analyzeReadability } from "@/utils/readabilityEngine";
 
 export interface ReaderReadabilityModalProps {
@@ -70,6 +71,8 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
   rawText,
   readingSpeedWpm = 250,
 }) => {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const metrics = useMemo(() => {
     if (!isOpen) return null;
     return analyzeReadability(rawText || "", readingSpeedWpm);
@@ -95,9 +98,10 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-labelledby="readability-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn pointer-events-auto"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 animate-fadeIn pointer-events-auto"
       role="dialog"
     >
       {/* Backdrop dismiss */}
@@ -112,7 +116,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
       {/* Modal Container */}
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-page rounded-xl shadow-2xl border border-line flex flex-col z-10 custom-scrollbar text-fg animate-scaleUp">
         {/* Header */}
-        <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-page/95 backdrop-blur-md border-b border-line">
+        <div className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-page/95 border-b border-line">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-accent/15 text-accent border border-accent/20">
               <BarChart2 className="w-5 h-5" />
@@ -355,7 +359,7 @@ export const ReaderReadabilityModal: React.FC<ReaderReadabilityModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 z-20 flex items-center justify-between px-6 py-3.5 bg-page/95 backdrop-blur-md border-t border-line/60">
+        <div className="sticky bottom-0 z-20 flex items-center justify-between px-6 py-3.5 bg-page/95 border-t border-line/60">
           <p className="text-xs text-fg-muted hidden sm:block">
             Formulas: Flesch Reading Ease, Flesch-Kincaid, Gunning Fog & retext-readability.
           </p>

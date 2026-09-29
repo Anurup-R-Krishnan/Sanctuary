@@ -73,7 +73,7 @@ function ReaderSelectionMenuImpl({
     <div
       role="toolbar"
       aria-label="Text selection actions"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-page/95 backdrop-blur-xl shadow-2xl rounded-xl border border-line overflow-hidden flex flex-col animate-slideUp pointer-events-auto max-w-[calc(100vw-1.5rem)] sm:max-w-none"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-page/95 shadow-2xl rounded-xl border border-line overflow-hidden flex flex-col animate-slideUp pointer-events-auto max-w-[calc(100vw-1.5rem)] sm:max-w-none"
     >
       {/* Top Color Palette Swatch Bar */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-surface/60 border-b border-line gap-3">

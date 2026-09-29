@@ -11,6 +11,8 @@ import { createPortal } from "react-dom";
 
 import type { LightboxImageTarget } from "@/reader/contracts/engine";
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+
 import { calculateZoomIn, calculateZoomOut, sanitizeDownloadFilename } from "./lightboxUtils";
 
 export interface ReaderImageLightboxProps {
@@ -22,6 +24,8 @@ export function ReaderImageLightbox({
   image,
   onClose,
 }: ReaderImageLightboxProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, true);
   const [scale, setScale] = useState<number>(1);
   const [position, setPosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -198,13 +202,14 @@ export function ReaderImageLightbox({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-label="Image Lightbox"
       aria-modal="true"
-      className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-md flex flex-col justify-between select-none animate-fadeIn"
+      className="fixed inset-0 z-[120] bg-black/90 flex flex-col justify-between select-none animate-fadeIn"
       role="dialog"
     >
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-page/90 backdrop-blur border-b border-line text-fg z-10">
+      <div className="flex items-center justify-between px-4 py-3 bg-page/90 border-b border-line text-fg z-10">
         <div className="flex items-center gap-2.5 overflow-hidden mr-4">
           <span className="text-sm font-medium truncate max-w-[60vw]">
             {image.caption || image.title || image.alt || "Image View"}
@@ -244,7 +249,7 @@ export function ReaderImageLightbox({
 
       {/* Bottom Floating Controls Bar */}
       <div className="flex items-center justify-center p-4 z-10">
-        <div className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 rounded-full bg-page/95 border border-line text-fg shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 rounded-full bg-page/95 border border-line text-fg shadow-2xl">
           <button
             aria-label="Zoom out"
             className="p-2 rounded-full hover:bg-line/40 active:scale-90 transition-all text-fg-muted hover:text-fg"

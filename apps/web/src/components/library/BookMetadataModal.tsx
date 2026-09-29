@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 
 import type { Book } from "@/types";
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
+
 interface BookMetadataModalProps {
   allCollections: string[];
   book: Book | null;
@@ -21,6 +23,7 @@ type EditState = {
 
 export function BookMetadataModal({ allCollections, book, onClose, onSave }: BookMetadataModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(backdropRef, true);
   const [tagInput, setTagInput] = useState("");
   const [collectionInput, setCollectionInput] = useState("");
   const [edit, setEdit] = useState<EditState>({
@@ -100,7 +103,7 @@ export function BookMetadataModal({ allCollections, book, onClose, onSave }: Boo
       ref={backdropRef}
       aria-label="Edit book metadata"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 animate-fadeIn"
       role="dialog"
       onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}

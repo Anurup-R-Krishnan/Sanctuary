@@ -53,7 +53,7 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
             </p>
           )}
           {entry.published && (
-            <p className="text-xs text-fg-muted/70 mt-0.5">
+            <p className="text-xs text-fg-muted mt-0.5">
               {entry.published.slice(0, 10)}
             </p>
           )}
@@ -68,11 +68,11 @@ export const CatalogBookCard: React.FC<CatalogBookCardProps> = ({
       {/* Action footer */}
       <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between">
         {isNavigable ? (
-          <span className="text-xs text-fg-muted/70 uppercase tracking-wider font-mono">
+          <span className="text-xs text-fg-muted uppercase tracking-wider font-mono">
             CATALOG
           </span>
         ) : (
-          <span className="text-xs text-fg-muted/70 uppercase tracking-wider font-mono">
+          <span className="text-xs text-fg-muted uppercase tracking-wider font-mono">
             {entry.format?.includes("epub") ? "EPUB" : entry.format || "EBOOK"}
           </span>
         )}

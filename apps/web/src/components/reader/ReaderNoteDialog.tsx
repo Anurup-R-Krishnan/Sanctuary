@@ -126,7 +126,7 @@ export function ReaderNoteDialog({
         </div>
 
         <textarea
-          className="w-full resize-none rounded-xl border border-line bg-surface p-3 text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-fg-muted/60"
+          className="w-full resize-none rounded-xl border border-line bg-surface p-3 text-sm text-fg focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-fg-muted"
           onChange={(e) => setNote(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Write your note here... (Cmd+Enter to save)"

@@ -12,12 +12,14 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { createPortal } from "react-dom";
 
 import type { RsvpToken } from "@/utils/rsvpTokenEngine";
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   calculateTokenDuration,
   estimateRsvpDurationMs,
@@ -45,6 +47,8 @@ export function ReaderSpeedReaderModal({
   onClose,
   rawText,
 }: ReaderSpeedReaderModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const [wpm, setWpm] = useState<number>(initialWpm);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -187,9 +191,10 @@ export function ReaderSpeedReaderModal({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-labelledby="rsvp-modal-title"
       aria-modal="true"
-      className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-6 bg-black/60 animate-fadeIn"
       role="dialog"
     >
       <button

@@ -1,9 +1,10 @@
 import { Bookmark, Check, Volume2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import type { VocabularyDefinition } from "@/types";
 
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   lookupWord,
   saveVocabularyWord,
@@ -28,6 +29,8 @@ export function WordDefinitionModal({
   onClose,
   word,
 }: WordDefinitionModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const [definition, setDefinition] = useState<VocabularyDefinition | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -124,9 +127,10 @@ export function WordDefinitionModal({
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-labelledby="word-definition-title"
       aria-modal="true"
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 animate-fadeIn"
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.stopPropagation();

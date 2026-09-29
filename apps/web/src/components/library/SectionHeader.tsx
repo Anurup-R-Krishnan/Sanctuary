@@ -19,7 +19,7 @@ export const SectionHeader = ({
         {Icon && <Icon className="w-3.5 h-3.5 text-fg-muted" strokeWidth={1.75} />}
         <h3 className="text-xs font-semibold uppercase tracking-wide text-fg-muted">{title}</h3>
         {count !== undefined && (
-          <span className="text-xs text-fg-muted/60 tabular-nums">{count}</span>
+          <span className="text-xs text-fg-muted tabular-nums">{count}</span>
         )}
       </div>
     );

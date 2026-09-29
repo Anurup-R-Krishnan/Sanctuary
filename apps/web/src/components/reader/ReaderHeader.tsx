@@ -184,7 +184,7 @@ function ReaderHeader({
                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <IconButton
                         onClick={(e) => { e.stopPropagation(); onClose(); }}
-                        className="pointer-events-auto p-3 !rounded-full backdrop-blur-xl shadow-lg border border-line hover:scale-105 transition-all duration-instant group shrink-0"
+                        className="pointer-events-auto p-3 !rounded-full shadow-lg border border-line hover:scale-105 transition-all duration-instant group shrink-0"
                         style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
                         label="Close reader"
                         icon={<ArrowLeft className="w-5 h-5 transition-colors" style={{ color: readerForeground }} strokeWidth={2} />}
@@ -194,7 +194,7 @@ function ReaderHeader({
                     {/* Title, Chapter Progress & Session Timer (Floating Capsule) */}
                     {showFloatingCapsule && (
                         <div
-                            className="pointer-events-auto min-w-0 max-w-sm px-4 py-1.5 rounded-full backdrop-blur-xl shadow-lg border border-line hidden lg:flex items-center gap-2.5 transition-all duration-instant"
+                            className="pointer-events-auto min-w-0 max-w-sm px-4 py-1.5 rounded-full shadow-lg border border-line hidden lg:flex items-center gap-2.5 transition-all duration-instant"
                             style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
                         >
                             <Suspense fallback={null}>
@@ -234,7 +234,7 @@ function ReaderHeader({
 
                 {/* Right: Actions (Floating Group) */}
                 <div 
-                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full backdrop-blur-xl shadow-lg border border-line transition-all duration-instant shrink-0"
+                    className="pointer-events-auto flex flex-nowrap items-center gap-1 p-1.5 rounded-full shadow-lg border border-line transition-all duration-instant shrink-0"
                     style={{ backgroundColor: getTranslucentBg(readerBackground, "E6") }}
                 >
                     <ActionBtn 
@@ -262,7 +262,7 @@ function ReaderHeader({
 
                         {showToolsMenu && (
                             <div
-                                className="absolute right-0 top-full mt-2 w-52 p-1.5 rounded-xl backdrop-blur-2xl shadow-2xl border border-line animate-slideDown flex flex-col gap-0.5 z-50"
+                                className="absolute right-0 top-full mt-2 w-52 p-1.5 rounded-xl shadow-2xl border border-line animate-slideDown flex flex-col gap-0.5 z-50"
                                 style={{ backgroundColor: getTranslucentBg(readerBackground, "F5") }}
                             >
                                 {onToggleTTS && (

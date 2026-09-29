@@ -15,7 +15,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 
@@ -24,6 +24,7 @@ import type { OpdsEntry, OpdsFeed } from "@/types/opds";
 import { CatalogBookCard } from "@/components/library/CatalogBookCard";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   downloadCatalogBook,
   fetchCatalogFeed,
@@ -40,6 +41,8 @@ interface CatalogBrowserProps {
 }
 
 export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onClose, onImport }) => {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const { activeCatalogId, addCatalog, catalogs, removeCatalog, setActiveCatalog } =
     useCatalogStore(
       useShallow((state) => ({
@@ -214,9 +217,10 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
 
   return createPortal(
     <div
+      ref={focusTrapRef}
       aria-labelledby="catalog-browser-title"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pt-16 sm:pt-16 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 pt-16 sm:pt-16 bg-black/60 animate-fadeIn"
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.stopPropagation();
@@ -232,7 +236,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
     >
       <div className="relative w-full max-w-5xl h-[min(85vh,calc(100vh-5rem))] flex flex-col rounded-xl bg-surface border border-line shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-surface/80 backdrop-blur">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line bg-surface/80">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent/15 dark:bg-accent/20 text-accent flex items-center justify-center">
               <Globe className="w-5 h-5" />
@@ -307,7 +311,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted pointer-events-none" />
             <input
-              className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-page border border-line focus:outline-none focus:border-accent text-fg placeholder:text-fg-muted/60"
+              className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-page border border-line focus:outline-none focus:border-accent text-fg placeholder:text-fg-muted"
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter catalog books..."
               type="text"

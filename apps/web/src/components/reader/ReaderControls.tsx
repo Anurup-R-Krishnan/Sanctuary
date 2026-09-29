@@ -161,7 +161,7 @@ function ReaderControls({
                     variant="nav"
                     className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "chapters"
                         ? "text-accent font-semibold"
-                        : "text-fg-muted/60 hover:text-fg"
+                        : "text-fg-muted hover:text-fg"
                         }`}
                 >
                     {activeTab === "chapters" && (
@@ -177,7 +177,7 @@ function ReaderControls({
                     variant="nav"
                     className={`relative flex-1 gap-2 py-2 px-3 rounded-lg text-sm transition-all duration-instant ${activeTab === "bookmarks"
                         ? "text-accent font-semibold"
-                        : "text-fg-muted/60 hover:text-fg"
+                        : "text-fg-muted hover:text-fg"
                         }`}
                 >
                     {activeTab === "bookmarks" && (
@@ -231,7 +231,7 @@ function ReaderControls({
                                     </Button>
                                     <IconButton
                                         onClick={() => onRemoveBookmark(bm.id)}
-                                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-all"
+                                        className="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-danger/10 text-danger transition-all"
                                         label="Remove bookmark"
                                         icon={<X className="w-4 h-4" />}
                                         variant="ghost"

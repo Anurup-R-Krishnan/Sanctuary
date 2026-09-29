@@ -97,7 +97,7 @@ function ReaderFooter({
                 className={`fixed left-0 right-0 z-50 pointer-events-none transition-all duration-300 ${showUI ? "opacity-100" : "opacity-0"} ${isTop ? "top-0" : "bottom-0"}`}
             >
                 <div className={`absolute left-1/2 -translate-x-1/2 pointer-events-auto transition-all duration-300 ${pillPositionClass}`}>
-                    <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full backdrop-blur-xl shadow-lg border border-line flex items-center gap-3" style={{ backgroundColor: getTranslucentBg(readerBackground, "F0") }}>
+                    <div className="w-[min(640px,94vw)] px-4 py-2.5 rounded-full shadow-lg border border-line flex items-center gap-3" style={{ backgroundColor: getTranslucentBg(readerBackground, "F0") }}>
                         <div className="flex items-center shrink-0">
                             <IconButton
                                 onClick={(e) => { e.stopPropagation(); onPrevPage(); }}

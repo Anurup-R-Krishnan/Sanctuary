@@ -8,6 +8,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { useRef } from "react";
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -16,6 +17,7 @@ import {
   type ColorPreset,
   type CustomPalette,
 } from '@/config/readerConfig';
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useSettingsShallow } from '@/store/useSettingsStore';
 import {
   getContrastRatio,
@@ -30,6 +32,8 @@ export interface ThemeStudioModalProps {
 }
 
 export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, isOpen);
   const {
     customPalettes,
     addCustomPalette,
@@ -132,7 +136,8 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      ref={focusTrapRef}
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-black/60 animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -389,7 +394,7 @@ export function ThemeStudioModal({ isOpen, onClose }: ThemeStudioModalProps) {
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 placeholder="Name your recipe (e.g. Muted Espresso)..."
-                className="w-full sm:flex-1 px-3 py-1.5 rounded-xl text-xs bg-page border border-line text-fg placeholder:text-fg-muted/60 focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full sm:flex-1 px-3 py-1.5 rounded-xl text-xs bg-page border border-line text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-accent"
               />
               <button
                 type="submit"

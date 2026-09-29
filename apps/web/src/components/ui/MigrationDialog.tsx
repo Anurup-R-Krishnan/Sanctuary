@@ -1,9 +1,10 @@
 import { BookOpen, RefreshCw } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { libraryService } from "@/services/LibraryService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getAllBooks } from "@/utils/db";
@@ -16,6 +17,8 @@ export function MigrationDialog() {
   const [pendingBooksCount, setPendingBooksCount] = useState(0);
   const [isMigrating, setIsMigrating] = useState(false);
   const [show, setShow] = useState(false);
+  const focusTrapRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusTrapRef, show);
 
   useEffect(() => {
     if (isLoaded && isSignedIn && mode === "guest") {
@@ -70,11 +73,12 @@ export function MigrationDialog() {
 
   const dialog = (
     <div
+      ref={focusTrapRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="migration-dialog-title"
       aria-describedby="migration-dialog-desc"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-fadeIn p-4"
     >
       <div className="bg-page rounded-xl p-6 w-full max-w-md shadow-2xl border border-line">
         <div className="flex items-center gap-4 mb-4">
