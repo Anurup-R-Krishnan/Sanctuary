@@ -13,7 +13,7 @@ import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
 import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { calculateEpubHash } from "@/utils/crypto";
-import { deleteBook as deleteBookFromDb, deleteBookContent, getAllBooks, putBook as putBookInDb } from "@/utils/db";
+import { deleteBook as deleteBookFromDb, deleteBookContent, getAllBooks, purgeAccountData, putBook as putBookInDb } from "@/utils/db";
 import { extractCoverBlobFromEpubSource } from "@/utils/epub";
 
 type BookSyncMeta = {
@@ -139,6 +139,9 @@ export function fileForStoredBook(book: Pick<Book, "format" | "title">, blob: Bl
   return new File([blob], `${safeTitle}.${info.extension}`, { type: info.mime });
 }
 
+const normalizeIdentity = (value: string | undefined) =>
+  (value ?? "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
 const isUnsyncedLocalBook = (book: Pick<Book, "syncStatus">) =>
   book.syncStatus === "local-only" || book.syncStatus === "pending";
 
@@ -234,6 +237,20 @@ const syncBookUpdate = async (
 };
 
 export const libraryService = {
+  async clearAccountData(): Promise<void> {
+    const stored = await getAllBooks();
+    const kept = stored.filter((book) => isUnsyncedLocalBook(book));
+    const keptIds = new Set(kept.map((book) => book.id));
+    await purgeAccountData(keptIds);
+    await Promise.all(
+      kept.filter((book) => book.syncStatus !== "local-only").map((book) => putBookInDb({ ...book, syncStatus: "local-only" }))
+    );
+    const activeId = useReaderProgressStore.getState().active?.bookId;
+    if (activeId && !keptIds.has(activeId)) useReaderProgressStore.getState().clearActiveBook();
+    this.cleanupAllObjectUrls();
+    useBookStore.getState().setBooks([]);
+  },
+
   cleanupAllObjectUrls() {
     for (const url of coverObjectUrlByBookId.values()) {
       URL.revokeObjectURL(url);
@@ -303,7 +320,7 @@ export const libraryService = {
           coverBlob: local?.coverBlob || null,
           progress: s.progressPercent || 0,
           epubBlob: null,
-          contentHash: "",
+          contentHash: local?.contentHash || "",
           syncStatus: "synced",
           addedAt: s.updatedAt,
           lastOpenedAt: s.updatedAt,
@@ -482,6 +499,13 @@ export const libraryService = {
 
       const title = adapter.metadata.title ?? "Untitled";
       const author = adapter.metadata.author || "Unknown";
+      const identity = `${normalizeIdentity(title)}|${normalizeIdentity(author)}`;
+      const unhashedMatch = existingBooks.some(
+        (b) => !b.contentHash && `${normalizeIdentity(b.title)}|${normalizeIdentity(b.author)}` === identity
+      );
+      if (unhashedMatch) {
+        throw new Error(`"${title}" by ${author} is already in your library.`);
+      }
       const coverBlob = await adapter.getCoverBlob();
 
       const displayCoverUrl = coverBlob ? trackCoverBlobForBook(bookId, coverBlob) : "";

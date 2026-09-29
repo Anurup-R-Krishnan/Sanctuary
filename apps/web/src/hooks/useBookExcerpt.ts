@@ -10,19 +10,29 @@ const MAX_SECTIONS = 15;
 const STORAGE_PREFIX = "sanctuary.excerpt.";
 const memory = new Map<string, Promise<BookExcerpt | null>>();
 
-function readStored(bookId: string): BookExcerpt | null | undefined {
+function readStored(bookId: string): BookExcerpt | undefined {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + bookId);
     if (raw === null) return undefined;
-    return JSON.parse(raw) as BookExcerpt | null;
+    const parsed = JSON.parse(raw) as BookExcerpt | null;
+    return parsed ?? undefined;
   } catch {
     return undefined;
   }
 }
 
-function writeStored(bookId: string, excerpt: BookExcerpt | null) {
+function writeStored(bookId: string, excerpt: BookExcerpt) {
   try {
     localStorage.setItem(STORAGE_PREFIX + bookId, JSON.stringify(excerpt));
+  } catch {
+    return;
+  }
+}
+
+export function forgetBookExcerpt(bookId: string): void {
+  memory.delete(bookId);
+  try {
+    localStorage.removeItem(STORAGE_PREFIX + bookId);
   } catch {
     return;
   }
@@ -71,7 +81,10 @@ export function useBookExcerpt(book: Book | null): BookExcerpt | null {
     if (!pending) {
       pending = loadExcerpt(book).catch(() => null);
       memory.set(book.id, pending);
-      void pending.then((value) => writeStored(book.id, value));
+      void pending.then((value) => {
+        if (value) writeStored(book.id, value);
+        else memory.delete(book.id);
+      });
     }
     void pending.then((value) => {
       if (!cancelled) setExcerpt(value);

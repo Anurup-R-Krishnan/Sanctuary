@@ -15,7 +15,7 @@ describe("ReaderSession Facade", () => {
   });
 
   it("instantiates Foliate engine and exposes format-agnostic session", async () => {
-    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
+    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../../../mobydick.epub"));
     const blob = new Blob([buffer], { type: "application/epub+zip" });
     const container = document.getElementById("reader") as HTMLDivElement;
 

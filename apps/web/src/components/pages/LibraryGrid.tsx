@@ -32,7 +32,7 @@ interface LibraryGridProps {
   addBook: (file: File) => Promise<void>;
   api: SanctuaryApiClient;
   deleteBook: (id: string) => void;
-  onBatchDelete: (ids: string[]) => void;
+  onBatchDelete: (ids: string[]) => Promise<void>;
   onSelectBook: (book: Book) => void;
   onUpdateBook: (id: string, updates: Partial<Book>) => void;
   toggleFavorite: (id: string) => void;
@@ -153,8 +153,8 @@ function LibraryGrid({
     clearSelection();
   };
 
-  const handleBatchDelete = (bookIds: string[]) => {
-    onBatchDelete(bookIds);
+  const handleBatchDelete = async (bookIds: string[]) => {
+    await onBatchDelete(bookIds);
     clearSelection();
   };
 

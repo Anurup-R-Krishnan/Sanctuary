@@ -12,7 +12,7 @@ beforeAll(() => {
 
 describe("Foliate In-Book Search", () => {
   it("searches across book chapters and produces matching excerpts with CFIs", async () => {
-    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
+    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../../../mobydick.epub"));
     const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
     const adapter = await FoliateDocumentAdapter.create(file);
     const container = document.getElementById("reader-container") as HTMLDivElement;

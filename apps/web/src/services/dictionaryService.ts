@@ -29,10 +29,16 @@ export interface SaveWordParams {
 
 export function normalizeWord(raw: string): string {
   return raw
+    .normalize("NFC")
     .trim()
-    .toLowerCase()
-    .replace(/^[^a-z0-9]+/i, "")
-    .replace(/[^a-z0-9]+$/i, "");
+    .toLocaleLowerCase()
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/[^\p{L}\p{N}]+$/u, "");
+}
+
+export function extractLookupWord(selection: string): string {
+  const match = selection.normalize("NFC").match(/[\p{L}\p{N}][\p{L}\p{M}\p{N}'’-]*/u);
+  return match ? match[0].replace(/['’-]+$/u, "") : selection.trim();
 }
 
 export function calculateNextReview(
