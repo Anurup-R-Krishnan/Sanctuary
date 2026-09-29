@@ -65,7 +65,7 @@ export async function onRequestGet({ env, request }: PagesContext): Promise<Resp
       const safeTerm = search.trim().replace(/"/g, '""');
       const safeSearch = `"${safeTerm}"*`;
       const query = `
-        SELECT b.id, b.title, b.author, b.cover_url, b.content_type, b.progress, b.total_pages,
+        SELECT b.id, b.title, b.author, b.cover_url, b.content_hash, b.content_type, b.progress, b.total_pages,
           b.last_location, b.bookmarks_json, b.is_favorite, b.updated_at
         FROM books b
         JOIN books_fts fts ON b.id = fts.id
@@ -75,7 +75,7 @@ export async function onRequestGet({ env, request }: PagesContext): Promise<Resp
       result = await env.SANCTUARY_DB.prepare(query).bind(user, safeSearch).all<BookRow>();
     } else {
       result = await env.SANCTUARY_DB.prepare(
-        `SELECT id, title, author, cover_url, content_type, progress, total_pages,
+        `SELECT id, title, author, cover_url, content_hash, content_type, progress, total_pages,
           last_location, bookmarks_json, is_favorite, updated_at
          FROM books WHERE user_id = ? ORDER BY updated_at DESC`
       ).bind(user).all<BookRow>();
@@ -125,6 +125,16 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
   const now = new Date().toISOString();
   const bookKey = contentKey(user, id);
   const contentType = resolveBookContentType(file);
+  const contentHash = metadata.contentHash || null;
+
+  if (contentHash) {
+    const existing = await env.SANCTUARY_DB.prepare(
+      "SELECT id, cover_url FROM books WHERE user_id = ? AND content_hash = ?"
+    ).bind(user, contentHash).first<{ id: string; cover_url: string }>();
+    if (existing && existing.id !== id) {
+      return json({ coverUrl: existing.cover_url, duplicateId: existing.id, success: true });
+    }
+  }
 
   await env.SANCTUARY_BUCKET.put(bookKey, file.stream(), {
     httpMetadata: { contentType },
@@ -138,18 +148,6 @@ export async function onRequestPost({ env, request }: PagesContext): Promise<Res
       httpMetadata: { contentType: cover.type || "image/jpeg" },
     });
     coverUrl = contentUrl(id, "cover");
-  }
-
-  const contentHash = metadata.contentHash || null;
-  
-  if (contentHash) {
-    const existing = await env.SANCTUARY_DB.prepare(
-      "SELECT id, cover_url FROM books WHERE user_id = ? AND content_hash = ?"
-    ).bind(user, contentHash).first<{id: string, cover_url: string}>();
-
-    if (existing && existing.id !== id) {
-      return json({ success: true, coverUrl: existing.cover_url, duplicateId: existing.id });
-    }
   }
 
   await env.SANCTUARY_DB.prepare(

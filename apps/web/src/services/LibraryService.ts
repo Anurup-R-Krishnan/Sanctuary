@@ -14,7 +14,6 @@ import { useBookStore } from "@/store/useBookStore";
 import { useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { calculateEpubHash } from "@/utils/crypto";
 import { deleteBook as deleteBookFromDb, deleteBookContent, getAllBooks, purgeAccountData, putBook as putBookInDb } from "@/utils/db";
-import { extractCoverBlobFromEpubSource } from "@/utils/epub";
 
 type BookSyncMeta = {
   dirty: boolean;
@@ -260,6 +259,31 @@ export const libraryService = {
     setBooks(books.map((b) => (b.id === bookId ? { ...b, coverBlob: blob, coverUrl } : b)));
   },
 
+  async _restoreCover(id: string, blob: Blob, format: Book["format"], api: SanctuaryApiClient, isPersistent: boolean) {
+    let adapter: FoliateDocumentAdapter | null = null;
+    try {
+      adapter = await FoliateDocumentAdapter.create(blob, format ? `book.${format}` : "");
+      const cover = await adapter.getCoverBlob();
+      if (!cover) return;
+      await this.saveMissingCover(id, cover);
+      if (!isPersistent) return;
+      const durableCoverUrl = await bookService.uploadBookCover(id, cover, api);
+      const withServerCover = replaceBookInStore(id, (book) => ({ ...book, coverUrl: durableCoverUrl }));
+      if (withServerCover) await saveBookToDb(withServerCover, "Failed to persist durable cover URL locally:");
+      revokeTrackedCoverUrl(id);
+    } catch (error) {
+      console.warn("Could not restore a cover for this book:", error);
+    } finally {
+      adapter?.destroy();
+    }
+  },
+
+  async _dropDuplicateUpload(localId: string) {
+    useBookStore.getState().setBooks(useBookStore.getState().books.filter((book) => book.id !== localId));
+    revokeTrackedCoverUrl(localId);
+    await Promise.all([deleteBookFromDb(localId), deleteBookContent(localId)]).catch(() => undefined);
+  },
+
   cleanupAllObjectUrls() {
     for (const url of coverObjectUrlByBookId.values()) {
       URL.revokeObjectURL(url);
@@ -329,7 +353,8 @@ export const libraryService = {
           coverBlob: local?.coverBlob || null,
           progress: s.progressPercent || 0,
           epubBlob: null,
-          contentHash: local?.contentHash || "",
+          contentHash: local?.contentHash || s.contentHash || "",
+          format: local?.format ?? (s.format as Book["format"]),
           syncStatus: "synced",
           addedAt: s.updatedAt,
           lastOpenedAt: s.updatedAt,
@@ -410,6 +435,10 @@ export const libraryService = {
 
   async _migrateBook(file: File, localBook: Book, api: SanctuaryApiClient) {
     const result = await bookService.addBook(file, localBook, api, localBook.coverBlob);
+    if (result.duplicateId && result.duplicateId !== localBook.id) {
+      await this._dropDuplicateUpload(localBook.id);
+      return null;
+    }
     const persistedBook = { 
       ...localBook, 
       syncStatus: "synced" as const, 
@@ -483,6 +512,7 @@ export const libraryService = {
 
   async addBook(file: File, api: SanctuaryApiClient, isPersistent: boolean) {
     const bookId = uuidv4();
+    let duplicateOnServer = false;
     let adapter: FoliateDocumentAdapter | null = null;
 
     let importKey: string | null = null;
@@ -553,6 +583,9 @@ export const libraryService = {
 
       try {
         const result = await bookService.addBook(file, newBook, api, coverBlob);
+        if (result.duplicateId && result.duplicateId !== newBook.id) {
+          duplicateOnServer = true;
+        } else {
         const coverChanged = Boolean(result.coverUrl && result.coverUrl !== newBook.coverUrl);
         if (coverChanged) revokeTrackedCoverUrl(newBook.id);
         const persistedBook: Book = {
@@ -562,6 +595,7 @@ export const libraryService = {
         };
         replaceBookInStore(newBook.id, () => persistedBook);
         await saveBookToDb(persistedBook, "Failed to mark uploaded book as synced:");
+        }
       } catch (error) {
         console.error("Upload failed; the book stays on this device and will be retried:", error);
         syncMetaByBookId.set(newBook.id, {
@@ -572,6 +606,11 @@ export const libraryService = {
           syncInFlight: false,
         });
         return;
+      }
+      if (duplicateOnServer) {
+        await this._dropDuplicateUpload(newBook.id);
+        await this.loadBooks(api, isPersistent);
+        throw new Error(`The exact file "${file.name}" is already in your library.`);
       }
     } catch (error) {
       console.error("Error adding book:", error);
@@ -708,39 +747,15 @@ export const libraryService = {
     }
 
     const blob = await bookService.getBookContent(id, api);
-    await verifyBookContent(id, blob);
+    const format = existing?.format;
+    await verifyBookContent(id, blob, existing?.contentHash || undefined, format);
 
-    const updatedBook = replaceBookInStore(id, (book) => ({ ...book, epubBlob: blob, contentStatus: "available" }));
-
+    const updatedBook = replaceBookInStore(id, (book) => ({ ...book, contentStatus: "available", epubBlob: blob }));
     if (updatedBook) {
-      await saveBookToDb(updatedBook, "Failed to cache hydrated book content locally:");
-
-      if (!updatedBook.coverUrl) {
-        const blobBuffer = await blob.arrayBuffer();
-        const generatedCover = await extractCoverBlobFromEpubSource(blobBuffer);
-        if (generatedCover) {
-          const localCoverUrl = trackCoverBlobForBook(id, generatedCover);
-          const localBookWithCover = replaceBookInStore(id, (book) => ({ ...book, coverUrl: localCoverUrl }));
-          
-          if (localBookWithCover) {
-            await saveBookToDb(localBookWithCover, "Failed to cache regenerated cover locally:");
-          }
-
-          if (isPersistent) {
-            try {
-              const durableCoverUrl = await bookService.uploadBookCover(id, generatedCover, api);
-              revokeTrackedCoverUrl(id);
-              const serverBookWithCover = replaceBookInStore(id, (book) => ({ ...book, coverUrl: durableCoverUrl }));
-              
-              if (serverBookWithCover) {
-                await saveBookToDb(serverBookWithCover, "Failed to persist durable cover URL locally:");
-              }
-            } catch (error) {
-              console.error("Failed to sync regenerated cover to backend:", error);
-            }
-          }
-        }
-      }
+      await saveBookContent(updatedBook).catch((error) => {
+        console.error("Failed to keep downloaded book on this device:", error);
+      });
+      if (!updatedBook.coverUrl && !updatedBook.coverBlob) void this._restoreCover(id, blob, format, api, isPersistent);
     }
 
     return blob;

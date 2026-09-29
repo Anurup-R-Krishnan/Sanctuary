@@ -103,6 +103,10 @@ function getExtensionForContentType(contentType: string | undefined): string {
     case "text/html":
     case "application/xhtml+xml":
       return "html";
+    case "application/pdf":
+      return "pdf";
+    case "application/vnd.comicbook+zip":
+      return "cbz";
     case "application/epub+zip":
     default:
       return "epub";

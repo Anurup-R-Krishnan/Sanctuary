@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { Book } from "@/types";
 
 const stored = new Map<string, Book>();
+const savedContent: string[] = [];
 const deleted: string[] = [];
 
 const realDb = await import("@/utils/db");
@@ -26,7 +27,9 @@ mock.module("@/utils/db", () => ({
 mock.module("@/services/bookContentRepository", () => ({
   ...realContent,
   getVerifiedBookContent: async () => null,
-  saveBookContent: async () => undefined,
+  saveBookContent: async (book: Book) => {
+    savedContent.push(book.id);
+  },
   verifyBookContent: async () => undefined,
 }));
 
@@ -52,6 +55,7 @@ function makeApi(getLibrary: () => Promise<unknown[]>): SanctuaryApiClient {
 beforeEach(() => {
   stored.clear();
   deleted.length = 0;
+  savedContent.length = 0;
   useBookStore.getState().setBooks([]);
 });
 
@@ -83,5 +87,25 @@ describe("httpStatusOf", () => {
   it("reads the status from API client errors", () => {
     expect(httpStatusOf(new Error("Request to /api/library/x failed (404)"))).toBe(404);
     expect(httpStatusOf(new Error("Failed to fetch"))).toBeNull();
+  });
+});
+
+describe("libraryService.getBookContent", () => {
+  it("downloads with the signed-in client and keeps the file on this device", async () => {
+    const book = makeBook("remote", "synced");
+    stored.set("remote", book);
+    useBookStore.getState().setBooks([book]);
+    const requested: string[] = [];
+    const api = {
+      fetchRaw: async (path: string) => {
+        requested.push(path);
+        return new Response(new Blob(["PK\u0003\u0004data"]), { status: 200 });
+      },
+      getLibrary: async () => [],
+    } as unknown as SanctuaryApiClient;
+    const blob = await libraryService.getBookContent("remote", api, true);
+    expect(blob.size).toBeGreaterThan(0);
+    expect(requested).toEqual(["/api/content/remote?download=1"]);
+    expect(savedContent).toEqual(["remote"]);
   });
 });
