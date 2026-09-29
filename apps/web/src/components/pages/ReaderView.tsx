@@ -65,6 +65,7 @@ import { useReaderSessionStats } from "@/hooks/useReaderSessionStats";
 import { useReaderShortcuts } from "@/hooks/useReaderShortcuts";
 import { useReaderSpeech } from "@/hooks/useReaderSpeech";
 import { useReaderTextActions } from "@/hooks/useReaderTextActions";
+import { extractLookupWord } from "@/services/dictionaryService";
 import { useBookStore } from "@/store/useBookStore";
 import { useSettingsShallow } from "@/store/useSettingsStore";
 import {
@@ -208,7 +209,7 @@ function ReaderView({
       bookTitle: book?.title,
       cfi: selection.cfiRange,
       contextSentence: selection.text,
-      word: selection.text.trim(),
+      word: extractLookupWord(selection.text),
     });
     engineRef.current?.clearSelection();
   }, [selection, book?.title]);

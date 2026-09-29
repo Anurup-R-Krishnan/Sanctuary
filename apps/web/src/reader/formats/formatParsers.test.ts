@@ -552,7 +552,7 @@ The quantum world behaves differently.
     });
 
     it("renders EPUB file through FoliateDocumentAdapter", async () => {
-      const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
+      const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../../../mobydick.epub"));
       const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
       const adapter = await FoliateDocumentAdapter.create(file);
 

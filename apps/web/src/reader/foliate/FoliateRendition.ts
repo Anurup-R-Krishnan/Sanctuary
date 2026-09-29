@@ -590,7 +590,7 @@ export class FoliateRendition implements DocumentRendition {
 
       mermaid.initialize({
         startOnLoad: false,
-        securityLevel: "loose",
+        securityLevel: "strict",
         theme: isDark ? "dark" : "neutral",
         fontFamily: "inherit",
         themeVariables: {

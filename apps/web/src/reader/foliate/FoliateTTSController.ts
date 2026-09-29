@@ -7,6 +7,7 @@
  * continuous reading through window.speechSynthesis.
  */
 
+import { type SpeechEngine, type SpeechPlayback, systemSpeechEngine } from "../tts/speechEngine";
 import {
   MediaSessionController,
   type MediaSessionMetadata,
@@ -58,7 +59,8 @@ export class FoliateTTSController {
   private sentencePauseMs = 60;
   private chapterPauseMs = 800;
   private pauseTimeout: ReturnType<typeof setTimeout> | null = null;
-  private currentUtterance: SpeechSynthesisUtterance | null = null;
+  private playback: SpeechPlayback | null = null;
+  private engine: SpeechEngine = systemSpeechEngine;
   private listeners = new Set<(state: TTSControllerState) => void>();
   private mediaSessionController: MediaSessionController;
   private destroyed = false;
@@ -145,6 +147,25 @@ export class FoliateTTSController {
     }
   }
 
+  public setPitch(pitch: number): void {
+    this.pitch = Math.max(0.5, Math.min(2, pitch));
+    if (this.isPlaying && !this.isPaused && this.engine.id === "system") this.speakCurrentSentence();
+  }
+
+  public setEngine(engine: SpeechEngine): void {
+    if (engine === this.engine) return;
+    const wasActive = this.isPlaying && !this.isPaused;
+    this.playback?.cancel();
+    this.playback = null;
+    this.engine.stopAll();
+    this.engine = engine;
+    if (wasActive) this.speakCurrentSentence();
+  }
+
+  public getEngine(): SpeechEngine {
+    return this.engine;
+  }
+
   public setVoice(voiceURI: string | null): void {
     this.voiceURI = voiceURI;
     if (this.isPlaying && !this.isPaused) {
@@ -216,9 +237,7 @@ export class FoliateTTSController {
       this.pauseTimeout = null;
     }
     this.mediaSessionController.setPlaybackState("paused");
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.pause();
-    }
+    this.playback?.pause();
     this.notify();
   }
 
@@ -226,13 +245,7 @@ export class FoliateTTSController {
     if (!this.isPlaying || !this.isPaused) return;
     this.isPaused = false;
     this.mediaSessionController.setPlaybackState("playing");
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      } else {
-        this.speakCurrentSentence();
-      }
-    }
+    if (!this.playback?.resume()) this.speakCurrentSentence();
     this.notify();
   }
 
@@ -244,11 +257,10 @@ export class FoliateTTSController {
     this.isPlaying = false;
     this.isPaused = false;
     this.currentSentence = null;
-    this.currentUtterance = null;
+    this.playback?.cancel();
+    this.playback = null;
+    this.engine.stopAll();
     this.mediaSessionController.setPlaybackState("none");
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
     this.options.clearHighlight();
     this.notify();
   }
@@ -434,51 +446,28 @@ export class FoliateTTSController {
     this.mediaSessionController.setPlaybackState("playing");
     this.notify();
 
-    if (
-      typeof window === "undefined" ||
-      !window.speechSynthesis ||
-      typeof SpeechSynthesisUtterance === "undefined"
-    ) {
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(item.text);
-    utterance.rate = this.rate;
-    utterance.pitch = this.pitch;
-
-    if (this.voiceURI) {
-      const voices = window.speechSynthesis.getVoices?.() || [];
-      const match = voices.find((v) => v.voiceURI === this.voiceURI);
-      if (match) utterance.voice = match;
-    }
-
-    utterance.onend = () => {
-      if (!this.destroyed && this.isPlaying && !this.isPaused) {
-        const delay = item.isParagraphEnd ? this.paragraphPauseMs : this.sentencePauseMs;
-        if (delay > 0) {
-          this.pauseTimeout = setTimeout(() => {
-            this.pauseTimeout = null;
-            if (!this.destroyed && this.isPlaying && !this.isPaused) {
-              this.next();
-            }
-          }, delay);
-        } else {
-          this.next();
-        }
-      }
-    };
-
-    utterance.onerror = (e) => {
-      if (e.error === "interrupted" || e.error === "canceled") return;
-      if (!this.destroyed && this.isPlaying && !this.isPaused) {
+    this.playback?.cancel();
+    const advance = () => {
+      if (this.destroyed || !this.isPlaying || this.isPaused) return;
+      const delay = item.isParagraphEnd ? this.paragraphPauseMs : this.sentencePauseMs;
+      if (delay <= 0) {
         this.next();
+        return;
       }
+      this.pauseTimeout = setTimeout(() => {
+        this.pauseTimeout = null;
+        if (!this.destroyed && this.isPlaying && !this.isPaused) this.next();
+      }, delay);
     };
-
-    this.currentUtterance = utterance;
-    window.speechSynthesis.speak(utterance);
+    const request = { pitch: this.pitch, rate: this.rate, voice: this.voiceURI };
+    this.playback = this.engine.speak({ ...request, text: item.text }, {
+      onEnd: advance,
+      onError: () => {
+        if (!this.destroyed && this.isPlaying && !this.isPaused) this.next();
+      },
+    });
+    const upcoming = this.sentences[this.currentIndex + 1];
+    if (upcoming) this.engine.prefetch?.({ ...request, text: upcoming.text });
   }
 
   public destroy(): void {

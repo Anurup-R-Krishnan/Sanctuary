@@ -4,13 +4,14 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { useSanctuaryApi } from "@/api/useSanctuaryApi";
 import { AuthScreen } from "@/auth/AuthScreen";
 import { useSanctuaryAuth } from "@/auth/useSanctuaryAuth";
-import { FoliateTestHarness } from "@/components/dev/FoliateTestHarness";
 import HomeView from "@/components/pages/HomeView";
 import { MigrationDialog } from "@/components/ui/MigrationDialog";
 import { UploadErrorToast } from "@/components/ui/UploadErrorToast";
+import { forgetBookExcerpt } from "@/hooks/useBookExcerpt";
 import { useNativeBookEvents } from "@/hooks/useNativeBookEvents";
 import { appRuntime } from "@/platform/runtime";
 import { safeStorageGet } from "@/reader/persistence/storage";
+import { getVerifiedBookContent } from "@/services/bookContentRepository";
 import { libraryIndexManager } from "@/services/librarySearchIndex";
 import { libraryService } from "@/services/LibraryService";
 import { statsService } from "@/services/StatsService";
@@ -18,6 +19,7 @@ import { syncQueue } from "@/services/SyncQueue";
 import { useBookStore } from "@/store/useBookStore";
 import { ACTIVE_BOOK_STORAGE_KEY, useReaderProgressStore } from "@/store/useReaderProgressStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useStatsStore } from "@/store/useStatsStore";
 import { useUIStore } from "@/store/useUIStore";
 import { View } from "@/types";
 
@@ -28,6 +30,9 @@ const GlobalSearchModal = lazy(() =>
 );
 
 const SettingsView = lazy(() => import("./components/pages/SettingsView"));
+const FoliateTestHarness = import.meta.env.DEV
+  ? lazy(() => import("@/components/dev/FoliateTestHarness").then((m) => ({ default: m.FoliateTestHarness })))
+  : null;
 const StatsView = lazy(() => import("./components/pages/StatsView"));
 
 import LibraryGrid from "./components/pages/LibraryGrid";
@@ -39,6 +44,8 @@ import { useProgressSync } from "./hooks/useProgressSync";
 import { useReadingSession } from "./hooks/useReadingSession";
 
 const DISABLE_AUTH = import.meta.env.VITE_DISABLE_AUTH === "true";
+
+const readLocalBookBlob = (id: string) => getVerifiedBookContent(id).then((content) => content?.blob ?? null).catch(() => null);
 
 function App() {
   // Auth & Session
@@ -97,14 +104,16 @@ function App() {
   const handleToggleFavorite = useCallback((id: string) => libraryService.toggleFavorite(id, api, isPersistent), [api, isPersistent]);
   const handleDeleteBook = useCallback((id: string) => {
     void libraryIndexManager.removeBook(id);
+    forgetBookExcerpt(id);
     return libraryService.deleteBook(id, api, isPersistent);
   }, [api, isPersistent]);
   const handleUpdateBook = useCallback((id: string, updates: Parameters<typeof libraryService.updateBook>[1]) => libraryService.updateBook(id, updates, api, isPersistent), [api, isPersistent]);
-  const handleBatchDelete = useCallback((ids: string[]) => {
-    ids.forEach((id) => {
+  const handleBatchDelete = useCallback(async (ids: string[]) => {
+    await Promise.allSettled(ids.map(async (id) => {
       void libraryIndexManager.removeBook(id);
-      libraryService.deleteBook(id, api, isPersistent);
-    });
+      forgetBookExcerpt(id);
+      await libraryService.deleteBook(id, api, isPersistent);
+    }));
   }, [api, isPersistent]);
   const handleReplaceBookContent = useCallback((id: string, file: File) => libraryService.replaceBookContent(id, file, api, isPersistent), [api, isPersistent]);
 
@@ -112,9 +121,9 @@ function App() {
   useEffect(() => {
     if (books.length === 0) return;
     for (const b of books) {
-      libraryIndexManager.queueBook(b.id, (id) => handleGetBookContent(id));
+      libraryIndexManager.queueBook(b.id, readLocalBookBlob);
     }
-  }, [books, handleGetBookContent]);
+  }, [books]);
 
   // Global Cmd+K / Ctrl+K Search Shortcut
   useEffect(() => {
@@ -172,12 +181,22 @@ function App() {
     if (isSignedIn) {
       await signOut();
     }
+    try {
+      await libraryService.clearAccountData();
+    } catch (error) {
+      console.error("Failed to clear account data on sign-out:", error);
+    }
+    useStatsStore.getState().setSessions([]);
     resetSession();
   }, [isSignedIn, signOut, resetSession]);
 
   // Dev harness
-  if (typeof window !== "undefined" && window.location.search.includes("dev=foliate")) {
-    return <FoliateTestHarness />;
+  if (FoliateTestHarness && window.location.search.includes("dev=foliate")) {
+    return (
+      <Suspense fallback={null}>
+        <FoliateTestHarness />
+      </Suspense>
+    );
   }
 
   // Render Helpers

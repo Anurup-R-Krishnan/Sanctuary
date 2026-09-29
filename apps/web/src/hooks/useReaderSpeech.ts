@@ -92,6 +92,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
       const controller = rendition.getTTSController();
       controller.setVoice(activeVoiceURI);
       controller.setRate(ttsRate);
+      controller.setPitch(ttsPitch);
       controller.setParagraphPause(ttsParagraphPauseMs);
       return controller.subscribe((ttsState: TTSControllerState) => {
         setState((s) => ({
@@ -104,7 +105,7 @@ export const useReaderSpeech = (options?: UseReaderSpeechOptions) => {
         }));
       });
     }
-  }, [session, activeVoiceURI, ttsRate, ttsParagraphPauseMs]);
+  }, [session, activeVoiceURI, ttsRate, ttsPitch, ttsParagraphPauseMs]);
 
   const metaTitle = options?.bookMetadata?.title;
   const metaAuthor = options?.bookMetadata?.author;

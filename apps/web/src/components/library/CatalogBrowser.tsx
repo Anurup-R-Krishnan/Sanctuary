@@ -69,6 +69,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
   const [authType, setAuthType] = useState<"basic" | "bearer" | "none">("none");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberSecret, setRememberSecret] = useState(false);
   const [bearerToken, setBearerToken] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -183,8 +184,10 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
       authType,
       bearerToken: authType === "bearer" ? bearerToken.trim() : undefined,
       password: authType === "basic" ? password : undefined,
+      remember: rememberSecret,
       username: authType === "basic" ? username.trim() : undefined,
     });
+    setRememberSecret(false);
     setNewCatalogName("");
     setNewCatalogUrl("");
     setAuthType("none");
@@ -408,6 +411,18 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
               </div>
             )}
 
+            {authType !== "none" && (
+              <label className="flex items-start gap-2 text-xs text-fg-muted">
+                <input
+                  checked={rememberSecret}
+                  className="mt-0.5 accent-[rgb(var(--color-accent))]"
+                  onChange={(e) => setRememberSecret(e.target.checked)}
+                  type="checkbox"
+                />
+                <span>Remember the password on this device. Otherwise it is kept only until this tab closes.</span>
+              </label>
+            )}
+
             <div className="flex items-center gap-2 justify-end pt-1">
               <Button onClick={() => setShowAddForm(false)} size="sm" variant="ghost">
                 Cancel
@@ -417,7 +432,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({ api, isOpen, onC
               </Button>
             </div>
             {addError && (
-              <p className="w-full text-xs text-red-500 font-medium">{addError}</p>
+              <p className="w-full text-xs text-danger font-medium">{addError}</p>
             )}
           </form>
         )}

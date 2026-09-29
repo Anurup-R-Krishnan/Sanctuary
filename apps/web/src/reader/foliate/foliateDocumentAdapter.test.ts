@@ -11,7 +11,7 @@ beforeAll(() => {
 
 describe("FoliateDocumentAdapter", () => {
   it("parses an EPUB file into a valid BookDocument model", async () => {
-    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../public/mobydick.epub"));
+    const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../../../mobydick.epub"));
     const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
 
     const doc = await FoliateDocumentAdapter.create(file);

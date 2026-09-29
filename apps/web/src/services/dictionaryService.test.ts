@@ -18,6 +18,7 @@ import {
   getWordMasteryStats,
   LEITNER_INTERVALS,
   lookupWord,
+  extractLookupWord,
   normalizeWord,
   removeVocabularyWord,
   reviewVocabularyWord,
@@ -32,11 +33,21 @@ describe("dictionaryService — vocabulary lookup & Leitner spaced repetition", 
     (db.deleteVocabWord as ReturnType<typeof mock>).mockResolvedValue(undefined);
   });
 
+  describe("extractLookupWord", () => {
+    it("takes the first word of a selection", () => {
+      expect(extractLookupWord("  luminous, bright sky")).toBe("luminous");
+      expect(extractLookupWord("“Don’t”")).toBe("Don’t");
+      expect(extractLookupWord("Москва")).toBe("Москва");
+    });
+  });
+
   describe("normalizeWord", () => {
     it("strips whitespace, casing, and surrounding punctuation", () => {
       expect(normalizeWord("  \"Luminous\"! ")).toBe("luminous");
       expect(normalizeWord("—serendipity—")).toBe("serendipity");
       expect(normalizeWord("Ethereal...")).toBe("ethereal");
+      expect(normalizeWord("«Éphémère»")).toBe("éphémère");
+      expect(normalizeWord("Straße!")).toBe("straße");
     });
   });
 

@@ -19,6 +19,11 @@ export interface UseReaderEngineProps {
     onUpdateProgress: (id: string, progress: number, location: string) => void;
 }
 
+const INITIAL_POSITION: ReaderPosition = {
+    cfi: "", href: "", chapterLabel: "", bookProgress: 0, bookFraction: 0, chapterProgress: 0,
+    location: 1, totalLocations: 1
+};
+
 export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseReaderEngineProps) => {
     const activeBookId = book.id;
     const activeBlob = book.epubBlob;
@@ -26,10 +31,8 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
     // React State
     const [status, setStatus] = useState<ReaderStatus>("idle");
     const [error, setError] = useState<ReaderError | null>(null);
-    const [position, setPosition] = useState<ReaderPosition>({
-        cfi: "", href: "", chapterLabel: "", bookProgress: 0, bookFraction: 0, chapterProgress: 0,
-        location: 1, totalLocations: 1
-    });
+    const [position, setPosition] = useState<ReaderPosition>(INITIAL_POSITION);
+    const positionRef = useRef<ReaderPosition>(INITIAL_POSITION);
     const [tocItems, setTocItems] = useState<TocItem[]>([]);
     const [selection, setSelection] = useState<ReaderSelection | null>(null);
     const [activeFootnote, setActiveFootnote] = useState<{
@@ -160,14 +163,13 @@ export const useReaderEngine = ({ book, containerRef, onUpdateProgress }: UseRea
             },
             onPositionChange: (pos) => {
                 if (!mounted) return;
-                setPosition(prev => {
-                    const next = { ...prev, ...pos };
-                    // Inform app shell
-                    if (next.cfi && next.bookProgress !== prev.bookProgress || next.cfi !== prev.cfi) {
-                        onUpdateProgressRef.current(activeBookId, next.bookProgress, next.cfi);
-                    }
-                    return next;
-                });
+                const prev = positionRef.current;
+                const next = { ...prev, ...pos };
+                positionRef.current = next;
+                setPosition(next);
+                if (next.cfi && (next.bookProgress !== prev.bookProgress || next.cfi !== prev.cfi)) {
+                    onUpdateProgressRef.current(activeBookId, next.bookProgress, next.cfi);
+                }
             },
             onSelection: (sel) => mounted && setSelection(sel),
             onStatusChange: (s) => {
