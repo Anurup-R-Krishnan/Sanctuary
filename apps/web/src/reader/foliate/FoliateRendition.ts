@@ -79,6 +79,7 @@ export class FoliateRendition implements DocumentRendition {
   private totalSections = 1;
   private activeSearchCfi: string | null = null;
   private ttsController: FoliateTTSController | null = null;
+  private lastVisibleRange: Range | null = null;
   private bionicCleanups = new WeakMap<Document, () => void>();
   private readonly scrollContinuity = new ScrollContinuity();
 
@@ -181,6 +182,7 @@ export class FoliateRendition implements DocumentRendition {
     renderer.addEventListener("relocate", (e: CustomEvent) => {
       const detail = e.detail ?? {};
       const { fraction = 0, index = 0, range } = detail;
+      this.lastVisibleRange = range && typeof range.compareBoundaryPoints === "function" ? (range as Range) : null;
       if (index !== this.currentSectionIndex) {
         this.scrollContinuity.noteSectionChange();
       }
@@ -1077,6 +1079,20 @@ export class FoliateRendition implements DocumentRendition {
     return g;
   }
 
+  private async goToAdjacentSection(step: 1 | -1): Promise<boolean> {
+    const sections = this.documentAdapter?.sections ?? [];
+    let target = this.currentSectionIndex + step;
+    while (target >= 0 && target < sections.length && sections[target]?.linear === false) target += step;
+    if (!this.view || target < 0 || target >= sections.length) return false;
+    try {
+      await this.view.goTo(target);
+      this.currentSectionIndex = target;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   public getTTSController(): FoliateTTSController {
     if (!this.ttsController) {
       this.ttsController = new FoliateTTSController({
@@ -1086,25 +1102,17 @@ export class FoliateRendition implements DocumentRendition {
         },
         clearHighlight: () => this.clearTTSHighlight(),
         getDoc: () => this.getCurrentDocument(),
+        getVisibleRange: () => this.lastVisibleRange,
         highlightRange: (r) => this.highlightTTSRange(r),
-        onNextChapter: async () => {
-          if (!this.view) return false;
+        revealRange: (r) => {
           try {
-            await this.next();
-            return true;
+            this.view?.renderer?.scrollToAnchor?.(r, true);
           } catch {
-            return false;
+            return;
           }
         },
-        onPrevChapter: async () => {
-          if (!this.view) return false;
-          try {
-            await this.prev();
-            return true;
-          } catch {
-            return false;
-          }
-        },
+        onNextChapter: () => this.goToAdjacentSection(1),
+        onPrevChapter: () => this.goToAdjacentSection(-1),
       });
     }
     return this.ttsController;

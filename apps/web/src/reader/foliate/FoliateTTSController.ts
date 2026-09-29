@@ -18,6 +18,7 @@ export type TTSBookMetadata = MediaSessionMetadata;
 export interface TTSControllerState {
   currentIndex: number;
   currentSentence: string | null;
+  error: string | null;
   isPaused: boolean;
   isPlaying: boolean;
   rate: number;
@@ -29,12 +30,14 @@ export interface TTSControllerOptions {
   chapterPauseMs?: number;
   clearHighlight: () => void;
   getDoc: () => Document | null;
+  getVisibleRange?: () => Range | null;
   highlightRange: (range: Range) => void;
   initialPitch?: number;
   initialRate?: number;
   onNextChapter?: () => Promise<boolean>;
   onPrevChapter?: () => Promise<boolean>;
   paragraphPauseMs?: number;
+  revealRange?: (range: Range) => void;
   sentencePauseMs?: number;
   voiceURI?: string | null;
 }
@@ -64,6 +67,8 @@ export class FoliateTTSController {
   private listeners = new Set<(state: TTSControllerState) => void>();
   private mediaSessionController: MediaSessionController;
   private destroyed = false;
+  private consecutiveErrors = 0;
+  private lastError: string | null = null;
 
   constructor(options: TTSControllerOptions) {
     this.options = options;
@@ -115,6 +120,7 @@ export class FoliateTTSController {
     return {
       currentSentence: this.currentSentence,
       currentIndex: this.currentIndex,
+      error: this.lastError,
       isPaused: this.isPaused,
       isPlaying: this.isPlaying,
       rate: this.rate,
@@ -203,6 +209,8 @@ export class FoliateTTSController {
 
   public async start(fromCurrentLocation: boolean = true): Promise<void> {
     if (this.destroyed) return;
+    this.consecutiveErrors = 0;
+    this.lastError = null;
     if (this.pauseTimeout) {
       clearTimeout(this.pauseTimeout);
       this.pauseTimeout = null;
@@ -319,101 +327,22 @@ export class FoliateTTSController {
   }
 
   private resolveStartingIndex(): number {
-    // If sentences already loaded and there's a visible sentence, find it
-    const doc = this.options.getDoc();
-    if (!doc || this.sentences.length === 0) return 0;
-
+    if (this.sentences.length === 0) return 0;
+    const visible = this.options.getVisibleRange?.();
+    if (!visible) return 0;
     for (let i = 0; i < this.sentences.length; i++) {
-      const rect = this.sentences[i].range.getBoundingClientRect();
-      if (rect.bottom > 0 && rect.top < (window.innerHeight || 800)) {
-        return i;
+      try {
+        if (this.sentences[i]!.range.compareBoundaryPoints(Range.END_TO_START, visible) >= 0) return i;
+      } catch {
+        return 0;
       }
     }
     return 0;
   }
 
   public extractSentences(): void {
-    this.sentences = [];
     const doc = this.options.getDoc();
-    if (!doc || !doc.body) return;
-
-    const lang = doc.documentElement.getAttribute("lang") || "en";
-    let segmenter: Intl.Segmenter | null = null;
-    if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
-      try {
-        segmenter = new Intl.Segmenter(lang, { granularity: "sentence" });
-      } catch {
-        segmenter = new Intl.Segmenter("en", { granularity: "sentence" });
-      }
-    }
-
-    const BLOCK_SELECTOR =
-      "article, blockquote, div, footer, h1, h2, h3, h4, h5, h6, header, li, p, section";
-
-    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
-      acceptNode: (node) => {
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        const tag = parent.tagName.toLowerCase();
-        if (tag === "script" || tag === "style" || tag === "noscript") {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return node.nodeValue && node.nodeValue.trim().length > 0
-          ? NodeFilter.FILTER_ACCEPT
-          : NodeFilter.FILTER_SKIP;
-      },
-    });
-
-    const textNodes: Text[] = [];
-    let curr = walker.nextNode();
-    while (curr) {
-      textNodes.push(curr as Text);
-      curr = walker.nextNode();
-    }
-
-    const rawItems: { block: Element | null; range: Range; text: string }[] = [];
-
-    for (const node of textNodes) {
-      const fullText = node.nodeValue || "";
-      const block = node.parentElement?.closest(BLOCK_SELECTOR) || node.parentElement;
-      if (segmenter) {
-        const segments = Array.from(segmenter.segment(fullText));
-        for (const seg of segments) {
-          const str = seg.segment.trim();
-          if (str.length === 0) continue;
-          const range = doc.createRange();
-          range.setStart(node, seg.index);
-          range.setEnd(node, seg.index + seg.segment.length);
-          rawItems.push({ block, range, text: str });
-        }
-      } else {
-        const parts = fullText.split(/([.!?]+[\s\r\n]+)/);
-        let offset = 0;
-        for (let i = 0; i < parts.length; i += 2) {
-          const sentence = (parts[i] + (parts[i + 1] || "")).trim();
-          if (sentence.length > 0) {
-            const start = fullText.indexOf(sentence, offset);
-            if (start !== -1) {
-              const range = doc.createRange();
-              range.setStart(node, start);
-              range.setEnd(node, start + sentence.length);
-              rawItems.push({ block, range, text: sentence });
-              offset = start + sentence.length;
-            }
-          }
-        }
-      }
-    }
-
-    for (let i = 0; i < rawItems.length; i++) {
-      const isParagraphEnd =
-        i === rawItems.length - 1 || rawItems[i].block !== rawItems[i + 1].block;
-      this.sentences.push({
-        isParagraphEnd,
-        range: rawItems[i].range,
-        text: rawItems[i].text,
-      });
-    }
+    this.sentences = doc?.body ? buildSentences(doc) : [];
   }
 
   private speakCurrentSentence(): void {
@@ -434,11 +363,7 @@ export class FoliateTTSController {
     // Apply visual highlight in overlayer
     try {
       this.options.highlightRange(item.range);
-      // Auto-scroll range into visible view
-      const elem = item.range.startContainer.parentElement;
-      if (elem && typeof elem.scrollIntoView === "function") {
-        elem.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      this.options.revealRange?.(item.range);
     } catch {
       // Safe fallback if range is detached
     }
@@ -461,9 +386,20 @@ export class FoliateTTSController {
     };
     const request = { pitch: this.pitch, rate: this.rate, voice: this.voiceURI };
     this.playback = this.engine.speak({ ...request, text: item.text }, {
-      onEnd: advance,
+      onEnd: () => {
+        this.consecutiveErrors = 0;
+        this.lastError = null;
+        advance();
+      },
       onError: () => {
-        if (!this.destroyed && this.isPlaying && !this.isPaused) this.next();
+        if (this.destroyed || !this.isPlaying || this.isPaused) return;
+        this.consecutiveErrors += 1;
+        if (this.consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          this.lastError = "The voice stopped responding. Try again or choose another voice.";
+          this.stop();
+          return;
+        }
+        this.next();
       },
     });
     const upcoming = this.sentences[this.currentIndex + 1];
@@ -481,4 +417,104 @@ export class FoliateTTSController {
     this.sentences = [];
     this.listeners.clear();
   }
+}
+
+const MAX_CONSECUTIVE_ERRORS = 3;
+const BLOCK_SELECTOR = "address, article, aside, blockquote, dd, div, dt, figcaption, footer, h1, h2, h3, h4, h5, h6, header, li, p, pre, section, td, th";
+const SKIPPED_SELECTOR = "script, style, noscript, rt, rp, [aria-hidden='true'], [hidden]";
+const MAX_UTTERANCE_CHARS = 260;
+
+interface TextSpan {
+  end: number;
+  node: Text;
+  start: number;
+}
+
+function findPosition(spans: TextSpan[], offset: number, preferEnd: boolean): { node: Text; offset: number } | null {
+  for (const span of spans) {
+    if (offset < span.end || (preferEnd && offset === span.end)) {
+      return { node: span.node, offset: Math.max(0, offset - span.start) };
+    }
+  }
+  const last = spans[spans.length - 1];
+  return last ? { node: last.node, offset: last.end - last.start } : null;
+}
+
+function splitLong(text: string, start: number): Array<{ start: number; text: string }> {
+  if (text.length <= MAX_UTTERANCE_CHARS) return [{ start, text }];
+  const pieces: Array<{ start: number; text: string }> = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    let cut = Math.min(text.length, cursor + MAX_UTTERANCE_CHARS);
+    if (cut < text.length) {
+      const window = text.slice(cursor, cut);
+      const breakAt = Math.max(window.lastIndexOf(", "), window.lastIndexOf("; "), window.lastIndexOf(": "), window.lastIndexOf(" — "));
+      const spaceAt = window.lastIndexOf(" ");
+      cut = cursor + (breakAt > 40 ? breakAt + 1 : spaceAt > 40 ? spaceAt : window.length);
+    }
+    pieces.push({ start: start + cursor, text: text.slice(cursor, cut) });
+    cursor = cut;
+  }
+  return pieces;
+}
+
+export function buildSentences(doc: Document): SentenceItem[] {
+  const lang = doc.documentElement.getAttribute("lang") || doc.body.getAttribute("lang") || "en";
+  let segmenter: Intl.Segmenter | null = null;
+  if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+    try {
+      segmenter = new Intl.Segmenter(lang, { granularity: "sentence" });
+    } catch {
+      segmenter = new Intl.Segmenter("en", { granularity: "sentence" });
+    }
+  }
+
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      const parent = node.parentElement;
+      if (!parent || parent.closest(SKIPPED_SELECTOR)) return NodeFilter.FILTER_REJECT;
+      return node.nodeValue && node.nodeValue.length > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    },
+  });
+
+  const blocks: Array<{ spans: TextSpan[]; text: string }> = [];
+  let currentBlock: Element | null = null;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const text = node as Text;
+    const block = text.parentElement?.closest(BLOCK_SELECTOR) ?? doc.body;
+    if (block !== currentBlock || blocks.length === 0) {
+      blocks.push({ spans: [], text: "" });
+      currentBlock = block;
+    }
+    const entry = blocks[blocks.length - 1]!;
+    const value = text.nodeValue ?? "";
+    entry.spans.push({ end: entry.text.length + value.length, node: text, start: entry.text.length });
+    entry.text += value;
+  }
+
+  const sentences: SentenceItem[] = [];
+  for (const block of blocks) {
+    if (!block.text.trim()) continue;
+    const segments = segmenter
+      ? Array.from(segmenter.segment(block.text), (seg) => ({ index: seg.index, text: seg.segment }))
+      : Array.from(block.text.matchAll(/[^.!?]+[.!?]*\s*/g), (m) => ({ index: m.index ?? 0, text: m[0] }));
+    const blockSentences: SentenceItem[] = [];
+    for (const segment of segments) {
+      const leading = segment.text.length - segment.text.trimStart().length;
+      const trimmed = segment.text.trim();
+      if (!trimmed || !/[\p{L}\p{N}]/u.test(trimmed)) continue;
+      for (const piece of splitLong(trimmed, segment.index + leading)) {
+        const from = findPosition(block.spans, piece.start, false);
+        const to = findPosition(block.spans, piece.start + piece.text.length, true);
+        if (!from || !to) continue;
+        const range = doc.createRange();
+        range.setStart(from.node, from.offset);
+        range.setEnd(to.node, to.offset);
+        blockSentences.push({ range, text: piece.text.replace(/\s+/g, " ") });
+      }
+    }
+    if (blockSentences.length > 0) blockSentences[blockSentences.length - 1]!.isParagraphEnd = true;
+    sentences.push(...blockSentences);
+  }
+  return sentences;
 }
