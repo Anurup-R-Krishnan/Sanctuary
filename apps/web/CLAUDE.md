@@ -226,7 +226,6 @@ setView(View.READER);  // switches the main content pane
 
 **Test data:**
 - `services/__fixtures__/` holds OPDS feed samples (gutenberg-*.xml).
-- `mobydick.epub` in the repo root is used by reader tests.
 
 **Commands:**
 - `bun run test` (from repo root, runs `apps/web` suite only).

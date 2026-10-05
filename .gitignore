@@ -42,7 +42,6 @@ playwright-report/
 test-results/
 .playwright-cli/
 *.epub
-!apps/web/public/mobydick.epub
 .codegraph/
 .trace-mcp/
 

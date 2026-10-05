@@ -1,6 +1,4 @@
 import { beforeAll, describe, expect, it } from "bun:test";
-import * as fs from "fs";
-import path from "path";
 
 import { FoliateDocumentAdapter } from "../foliate/FoliateDocumentAdapter";
 import { FoliateRendition, isColorDark } from "../foliate/FoliateRendition";
@@ -548,18 +546,6 @@ The quantum world behaves differently.
       expect(rendition).toBeDefined();
 
       rendition.destroy();
-      adapter.destroy();
-    });
-
-    it("renders EPUB file through FoliateDocumentAdapter", async () => {
-      const buffer = fs.readFileSync(path.join(import.meta.dir, "../../../../../mobydick.epub"));
-      const file = new File([buffer], "mobydick.epub", { type: "application/epub+zip" });
-      const adapter = await FoliateDocumentAdapter.create(file);
-
-      expect(adapter.format).toBe("epub");
-      expect(adapter.metadata.title.toLowerCase()).toContain("moby");
-      expect(adapter.sections.length).toBeGreaterThan(0);
-
       adapter.destroy();
     });
   });

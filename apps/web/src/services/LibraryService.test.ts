@@ -1,6 +1,6 @@
 import type { SanctuaryApiClient } from "@sanctuary/core";
 
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { Book } from "@/types";
 
@@ -30,7 +30,6 @@ mock.module("@/services/bookContentRepository", () => ({
   saveBookContent: async (book: Book) => {
     savedContent.push(book.id);
   },
-  verifyBookContent: async () => undefined,
 }));
 
 const { httpStatusOf, libraryService } = await import("./LibraryService");
@@ -108,4 +107,16 @@ describe("libraryService.getBookContent", () => {
     expect(requested).toEqual(["/api/content/remote?download=1"]);
     expect(savedContent).toEqual(["remote"]);
   });
+});
+
+afterAll(() => {
+  mock.module("@/services/bookContentRepository", () => ({
+    BookContentError: realContent.BookContentError,
+    getVerifiedBookContent: realContent.getVerifiedBookContent,
+    saveBookContent: realContent.saveBookContent,
+    verifyBookContent: realContent.verifyBookContent,
+  }));
+  mock.module("@/utils/db", () => ({
+    ...realDb,
+  }));
 });
