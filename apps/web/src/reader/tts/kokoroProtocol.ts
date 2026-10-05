@@ -36,4 +36,4 @@ export type KokoroWorkerResponse =
   | { id: number; sampleRate: number; samples: Float32Array; type: "audio" }
   | { loaded: number; total: number; type: "progress" }
   | { message: string; type: "error" }
-  | { type: "ready" };
+  | { device: "cpu" | "gpu"; threads: number; type: "ready" };

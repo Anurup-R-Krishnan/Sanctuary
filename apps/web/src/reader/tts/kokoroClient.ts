@@ -3,6 +3,7 @@ import type { KokoroWorkerRequest, KokoroWorkerResponse } from "./kokoroProtocol
 export type KokoroStatus = "error" | "idle" | "loading" | "ready";
 
 export interface KokoroState {
+  device: "cpu" | "gpu" | null;
   error: string | null;
   loadedBytes: number;
   status: KokoroStatus;
@@ -30,7 +31,7 @@ class KokoroClient {
   private cache = new Map<string, Promise<KokoroAudio>>();
   private listeners = new Set<(state: KokoroState) => void>();
   private readyWaiters: Array<{ reject: (error: Error) => void; resolve: () => void }> = [];
-  private state: KokoroState = { error: null, loadedBytes: 0, status: "idle", totalBytes: 0 };
+  private state: KokoroState = { device: null, error: null, loadedBytes: 0, status: "idle", totalBytes: 0 };
 
   private get location() {
     const runtimeFallback = typeof window === "undefined" ? "/ort/" : new URL("/ort/", window.location.href).href;
@@ -107,7 +108,7 @@ class KokoroClient {
         this.setState({ loadedBytes: message.loaded, totalBytes: message.total });
         break;
       case "ready":
-        this.setState({ error: null, status: "ready" });
+        this.setState({ device: message.device, error: null, status: "ready" });
         for (const waiter of this.readyWaiters.splice(0)) waiter.resolve();
         break;
       case "error":

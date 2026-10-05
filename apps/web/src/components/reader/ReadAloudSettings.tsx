@@ -89,10 +89,16 @@ export function ReadAloudSettings({ renderSlider, voices }: ReadAloudSettingsPro
           </label>
 
           <div className="rounded-lg border border-line bg-surface px-3 py-3 text-xs text-fg-muted">
-            {kokoro.status === "ready" && <p>Voice model loaded. Reading works offline from now on.</p>}
+            {kokoro.status === "ready" && (
+              <p>
+                {kokoro.device === "gpu"
+                  ? "Voice model loaded on the graphics card. Works offline from now on."
+                  : "Voice model loaded on the processor. This device has no usable graphics acceleration, so long sentences can pause before they start."}
+              </p>
+            )}
             {kokoro.status === "idle" && (
               <div className="flex items-center justify-between gap-3">
-                <p>The voice model (about 90 MB) downloads once, then stays on this device.</p>
+                <p>The voice model downloads once and stays on this device: about 330 MB with graphics acceleration, 90 MB without.</p>
                 <button
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface-raised px-2.5 py-1.5 font-medium text-fg hover:border-accent/50 hover:text-accent"
                   onClick={() => void kokoroClient.load().catch(() => undefined)}

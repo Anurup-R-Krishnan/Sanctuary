@@ -11,6 +11,7 @@ const scope = self as unknown as {
 };
 
 let ttsPromise: Promise<KokoroTTS> | null = null;
+let device: "cpu" | "gpu" = "cpu";
 let queue: Promise<unknown> = Promise.resolve();
 const fileProgress = new Map<string, { loaded: number; total: number }>();
 
@@ -18,11 +19,15 @@ function post(message: KokoroWorkerResponse, transfer?: Transferable[]) {
   scope.postMessage(message, transfer);
 }
 
+function currentThreads(): number {
+  return globalThis.crossOriginIsolated ? Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 2) - 1)) : 1;
+}
+
 function configure(runtimeBase: string) {
   const onnx = env.backends.onnx as { wasm?: { numThreads?: number; wasmPaths?: string } };
   if (onnx.wasm) {
     onnx.wasm.wasmPaths = runtimeBase;
-    onnx.wasm.numThreads = globalThis.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
+    onnx.wasm.numThreads = currentThreads();
   }
   env.allowLocalModels = false;
 }
@@ -40,14 +45,49 @@ function reportProgress(info: unknown) {
   post({ loaded, total, type: "progress" });
 }
 
+interface GpuAdapterLike {
+  info?: { architecture?: string; isFallbackAdapter?: boolean };
+  isFallbackAdapter?: boolean;
+}
+
+const GPU_WARMUP_LIMIT_MS = 4000;
+
+async function hasHardwareGpu(): Promise<boolean> {
+  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(options?: { powerPreference?: string }): Promise<GpuAdapterLike | null> } }).gpu;
+  if (!gpu) return false;
+  try {
+    const adapter = await gpu.requestAdapter({ powerPreference: "high-performance" });
+    if (!adapter) return false;
+    const fallback = adapter.isFallbackAdapter ?? adapter.info?.isFallbackAdapter ?? false;
+    return !fallback && adapter.info?.architecture !== "swiftshader";
+  } catch {
+    return false;
+  }
+}
+
+async function loadModel(): Promise<KokoroTTS> {
+  if (await hasHardwareGpu()) {
+    try {
+      const tts = await KokoroTTS.from_pretrained(KOKORO_MODEL_ID, { device: "webgpu", dtype: "fp32", progress_callback: reportProgress });
+      const started = performance.now();
+      await tts.generate("Ready to read.", { voice: "af_heart" });
+      if (performance.now() - started < GPU_WARMUP_LIMIT_MS) {
+        device = "gpu";
+        return tts;
+      }
+    } catch {
+      fileProgress.clear();
+    }
+    fileProgress.clear();
+  }
+  device = "cpu";
+  return KokoroTTS.from_pretrained(KOKORO_MODEL_ID, { device: "wasm", dtype: "q8", progress_callback: reportProgress });
+}
+
 function load(runtimeBase: string): Promise<KokoroTTS> {
   if (!ttsPromise) {
     configure(runtimeBase);
-    ttsPromise = KokoroTTS.from_pretrained(KOKORO_MODEL_ID, {
-      device: "wasm",
-      dtype: "q8",
-      progress_callback: reportProgress,
-    });
+    ttsPromise = loadModel();
     ttsPromise.catch(() => {
       ttsPromise = null;
     });
@@ -59,7 +99,7 @@ scope.onmessage = (event) => {
   const request = event.data;
   if (request.type === "load") {
     load(request.runtimeBase)
-      .then(() => post({ type: "ready" }))
+      .then(() => post({ device, threads: currentThreads(), type: "ready" }))
       .catch((error: unknown) => post({ message: error instanceof Error ? error.message : String(error), type: "error" }));
     return;
   }

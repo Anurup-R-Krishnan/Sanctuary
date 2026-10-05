@@ -85,6 +85,7 @@ export class FoliateRendition implements DocumentRendition {
   private ttsController: FoliateTTSController | null = null;
   private lastVisibleRange: Range | null = null;
   private persistenceKey: string | null = null;
+  private lastSelection: { cfi: string; range: Range } | null = null;
   private zoom: ReaderZoom = "fit-page";
   private bionicCleanups = new WeakMap<Document, () => void>();
   private readonly scrollContinuity = new ScrollContinuity();
@@ -453,6 +454,7 @@ export class FoliateRendition implements DocumentRendition {
         }
         const range = sel.getRangeAt(0);
         const cfi = this.view?.getCFI?.(index, range) || "";
+        this.lastSelection = { cfi, range: range.cloneRange() };
         const section = this.documentAdapter.getSectionByIndex(index);
         const chapterLabel = this.findChapterLabel(section?.href ?? "");
         const selectionData: DocumentSelection = {
@@ -1223,7 +1225,11 @@ export class FoliateRendition implements DocumentRendition {
 
   public async startTTSFromCfi(cfi: string): Promise<void> {
     const controller = this.getTTSController();
-    const startAt = await this.rangeForCfi(cfi, true);
+    const selected = this.lastSelection;
+    const liveRange = selected && selected.cfi === cfi && selected.range.startContainer.ownerDocument === this.getCurrentDocument()
+      ? selected.range
+      : null;
+    const startAt = liveRange ?? (await this.rangeForCfi(cfi, true));
     await controller.start(true, startAt);
   }
 

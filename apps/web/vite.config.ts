@@ -9,6 +9,11 @@ const requireFromHere = createRequire(import.meta.url)
 const PDFJS_ROOT = path.dirname(requireFromHere.resolve('pdfjs-dist/package.json'))
 const TRANSFORMERS_DIST = path.dirname(requireFromHere.resolve('@huggingface/transformers'))
 
+const ISOLATION_HEADERS = {
+  'Cross-Origin-Embedder-Policy': 'credentialless',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+}
+
 const STATIC_MOUNTS = [
   { entries: ['cmaps', 'standard_fonts', 'wasm'], prefix: 'pdfjs', root: PDFJS_ROOT },
   { entries: ['ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm'], prefix: 'ort', root: TRANSFORMERS_DIST },
@@ -56,6 +61,7 @@ export default defineConfig(({ mode }) => {
     envDir: path.resolve(__dirname, "../.."),
     server: {
       headers: {
+        ...ISOLATION_HEADERS,
         "Permissions-Policy": "unload=self"
       },
       proxy: {
@@ -125,6 +131,9 @@ export default defineConfig(({ mode }) => {
       }
       })
     ],
+    preview: {
+      headers: ISOLATION_HEADERS,
+    },
     worker: {
       format: 'es',
     },
